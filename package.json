@@ -4,18 +4,27 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "bun run build.ts && bun run dist/"
+    "start": "bun run build.ts && bun run dist/",
+    "codegen": "graphql-codegen --config codegen.yml",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "@graphql-codegen/cli": "^5.0.7",
+    "@graphql-codegen/introspection": "^4.0.3",
+    "@graphql-codegen/typescript": "^4.1.6",
+    "@graphql-codegen/typescript-graphql-request": "^6.3.0",
+    "@graphql-codegen/typescript-operations": "^4.6.1",
+    "@types/bun": "latest",
+    "@types/react": "^19.0.0",
+    "graphql": "^16.11.0",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@opentui/core": "^0.1.23",
-    "@opentui/vue": "^0.1.23",
-    "bun-plugin-vue3": "^1.0.0-beta.2",
-    "vue": "^3.5.20"
+    "@opentui/core": "^0.1.25",
+    "@opentui/react": "^0.1.25",
+    "dotenv": "^17.2.2",
+    "react": "^19.0.0",
+    "superjson": "^2.2.2",
+    "zustand": "^5.0.8"
   }
 }

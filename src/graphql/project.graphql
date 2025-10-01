@@ -1,0 +1,11 @@
+query Project($fullPath: ID!) {
+  project(fullPath: $fullPath) {
+    mergeRequests(authorUsername: "r.schoorstra") {
+      nodes {
+        webPath
+        name
+      }
+    }
+  }
+}
+

@@ -1,0 +1,89 @@
+query ProjectMRs($projectPath: ID!, $state: MergeRequestState, $first: Int!) {
+  project(fullPath: $projectPath) {
+    id
+    name
+    path
+    fullPath
+    mergeRequests(state: $state, first: $first, sort: UPDATED_DESC) {
+      count
+      pageInfo {
+        hasNextPage
+      }
+      nodes {
+        id
+        iid
+
+        title
+        webUrl
+
+        sourceBranch
+        targetBranch
+        project {
+          name
+          path
+          fullPath
+        }
+
+        author {
+          name
+          username
+          avatarUrl
+        }
+        createdAt
+        updatedAt
+
+        state
+        approvedBy {
+          nodes {
+            id
+            name
+            username
+          }
+        }
+        discussions {
+          nodes {
+            resolved
+            resolvable
+            id
+            notes {
+              nodes {
+                id
+                __typename
+                body
+                author {
+                  name
+                }
+                createdAt
+                resolvable
+                resolved
+              }
+            }
+          }
+        }
+        headPipeline {
+          active
+          iid
+          stages {
+            __typename
+            nodes {
+              id
+              name
+              jobs {
+                nodes {
+                  id
+                  webPath
+                  name
+                  status
+                  failureMessage
+                  startedAt
+                }
+              }
+
+              status
+            }
+          }
+        }
+      }
+    }
+  }
+}

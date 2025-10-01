@@ -1,0 +1,15 @@
+query JobTrace($projectId: ID!, $jobId: JobID!) {
+
+  project(fullPath: $projectId) {
+    job(id: $jobId) {
+      id
+      name
+      status
+      failureMessage
+      trace {
+        __typename
+        htmlSummary
+      }
+    }
+  }
+}

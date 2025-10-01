@@ -1,0 +1,12 @@
+schema: https://git.elabnext.com/api/graphql
+documents:
+  - src/graphql/**/*.graphql
+extensions:
+  codegen:
+    configFile: codegen.yml
+  endpoints:
+    default:
+      url: https://git.elabnext.com/api/graphql
+      headers:
+        Authorization: "glpat-TODO"
+

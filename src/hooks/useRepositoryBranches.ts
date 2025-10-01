@@ -1,0 +1,52 @@
+import { useMemo } from 'react';
+import { loadSettings, saveSettings } from '../utils/settings';
+import { getCurrentBranch, getBranchDifference } from '../utils/git';
+import type { MergeRequest } from '../components/MergeRequestPane';
+
+export interface RepositoryBranch {
+  projectPath: string;
+  projectName: string;
+  localPath: string;
+  currentBranch: string | null;
+}
+
+export interface BranchDifference {
+  behind: number;
+  ahead: number;
+}
+
+export const useRepositoryBranches = (mergeRequests: MergeRequest[]): RepositoryBranch[] => {
+  return useMemo(() => {
+    const settings = loadSettings();
+    const projectPaths = new Set(mergeRequests.map(mr => mr.project.fullPath));
+    let settingsModified = false;
+
+    const repoBranches: RepositoryBranch[] = [];
+
+    for (const projectPath of projectPaths) {
+      let localPath = settings.repositoryPaths[projectPath];
+
+      if (!localPath) {
+        settings.repositoryPaths[projectPath] = "";
+        settingsModified = true;
+        localPath = "";
+      }
+
+      const currentBranch = localPath ? getCurrentBranch(localPath) : null;
+      const projectName = projectPath;
+
+      repoBranches.push({
+        projectPath,
+        projectName,
+        localPath,
+        currentBranch
+      });
+    }
+
+    if (settingsModified) {
+      saveSettings(settings);
+    }
+
+    return repoBranches.sort((a, b) => a.projectName.localeCompare(b.projectName));
+  }, [mergeRequests]);
+};

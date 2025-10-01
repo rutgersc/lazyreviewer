@@ -1,15 +1,8 @@
-import { pluginVue3 } from "bun-plugin-vue3";
-
 const result = await Bun.build({
-  entrypoints: ["./src/index.ts"],
+  entrypoints: ["./src/index.tsx"],
   outdir: "./dist",
   target: "bun",
   format: "esm",
-  plugins: [
-    pluginVue3({
-      isProduction: true,
-    }),
-  ],
   minify: process.env.NODE_ENV === "production",
   sourcemap: process.env.NODE_ENV !== "production" ? "external" : "none",
 });

@@ -1,0 +1,184 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+LazyGitLab is a terminal-based application for viewing GitLab merge requests with Jira integration. The app displays merge requests in a TUI (Terminal User Interface) with keyboard navigation and fetches associated Jira tickets.
+
+## Development Commands
+
+**IMPORTANT: NEVER run `bun run start` as it interferes with the Claude Code interface.**
+
+**Type checking:**
+```bash
+bun run typecheck
+```
+Uses TypeScript for validation.
+
+**GraphQL code generation:**
+```bash
+bun run codegen
+```
+Generates TypeScript types and operations from GraphQL schema at `git.elabnext.com/api/graphql`.
+
+**Install dependencies:**
+```bash
+bun install
+```
+
+## Architecture
+
+### Core Technologies
+- **Bun** as runtime and build tool with custom `build.ts` configuration
+- **GraphQL Code Generator** for type-safe GitLab API operations
+- **TypeScript** with strict configuration
+
+## Development Notes
+
+!IMPORTANT!: UI RENDERER SOURCE AVAILABLE AT (windows=F:\GitRepos\opentui, osx=/Users/rutgerschoorstra/Gitrepos/opentui)
+
+### Type-Driven Development Approach
+
+**ALWAYS start with types before making code changes:**
+**AVOID typing anything in typescript with `any`. Any shuts off typing, so don't ever use `any` at all. Absolutely never use any as a type to fix type errors.**
+**REPEAT: Avoid typing with `any`. any is NOT recommended**
+
+1. **Examine existing types first**: Before modifying any code, read and understand the type definitions involved:
+   - Check interface definitions (e.g., `JiraIssue`, `GitlabMergeRequest`)
+   - Look at function signatures and their parameter/return types
+   - Understand component prop types
+
+2. **Validate type compatibility**: Ensure your planned changes align with existing types:
+   - Does the data structure match what you're trying to access? (e.g., `issue.fields.summary` not `issue.summary`)
+   - Are you passing the correct types to functions and components?
+   - Do new props match the expected interface?
+
+3. **Design new types before implementation**: For new features, define types first:
+   - Consider creating interfaces for new data structures
+   - Define component prop types upfront
+   - Consider type unions and optional properties
+
+4. **Use TypeScript as your guide**: Let the type checker catch issues during development, not after:
+   - Run `bun run typecheck` frequently during development
+   - Address type errors immediately rather than fixing them post-implementation
+   - Use IDE type hints to understand available properties and methods
+
+**Example**: When adding Jira modal, first examine `JiraIssue` interface to understand `issue.fields.summary` structure, then design `JiraModalProps` interface, then implement the component.
+
+### Code Organization and Separation of Concerns
+
+**Only isolate code according to dependencies and responsibilities:**
+
+1. **Extract components**: Components that operate independently should be in separate modules:
+
+2. **Components and state**: React components should focus on UI logic:
+   - **NEVER duplicate state**: The same logical state must exist in exactly one place
+   - **Single source of truth**: Each piece of data has exactly one authoritative location
+   - **Use existing state directly**: If state exists elsewhere (store, parent), use it directly - never copy
+   - Don't bundle up state into an interface unless all of it is within the scope of one file. Prefer tracking individual properties regardless.
+
+
+### Plan-Driven Development for Complex Features
+
+**For significant new features, create implementation plans before coding:**
+
+1. **Document in `.claude/plans/`**: Create detailed implementation plan with research findings and step-by-step approach
+2. **Brief summary original prompt**: Capture the users intent.
+3. **Define plan phases and tasks**: Clearly define each phase, subdivided by tasks. Number accordingly for example, "Phase 1: add new pane" "Task 1.1: do something"). Implement in logical order (types → utilities → components → integration). Describe for each task what other tasks it depends on and what it is that it depends on. Structure the phases and tasks according to the dependencies between them.
+
+### Code Style
+- favor functions with parameters over classes
+- favor immutability over mutability
+- favor small functions taking input and output. Avoid side effects like state mutation, instead favor creating new values.
+   - example: use `arrayName.map(i => processI(i))` instead of `arrayName.foreach(i => /*sideEffect*/)`
+- DONT use INLINE imports via require. Always import top level
+
+### React: CRITICAL useEffect Antipattern
+
+**useEffect is a code smell and should be avoided unless there is NO OTHER WAY**
+
+**NEVER use useEffect to react to state changes when you control the setter:**
+- ❌ BAD: Using useEffect to trigger side effects when state changes
+- ✅ GOOD: Trigger side effects directly in the setter/action where state is updated
+
+**Example of the ANTIPATTERN (DO NOT DO THIS):**
+```typescript
+// ❌ BAD: Using useEffect to react to mergeRequests changes
+useEffect(() => {
+  if (mergeRequests.length > 0) {
+    fetchBranchDifferences(mergeRequests).then(differences => {
+      setBranchDifferences(differences);
+    });
+  }
+}, [mergeRequests]);
+```
+
+**The CORRECT approach:**
+```typescript
+// ✅ GOOD: Trigger side effects in the setter itself
+fetchMrs: async () => {
+  const mrs = await fetchMergeRequests(...);
+  set({ mergeRequests: mrs });
+
+  // Trigger background work right here, where we KNOW mrs changed
+  fetchBranchDifferences(mrs).then(differences => {
+    set({ branchDifferences: differences });
+  });
+}
+```
+
+**When useEffect IS acceptable:**
+- Component mount/unmount lifecycle (start/stop timers, subscriptions)
+- Reacting to external events you don't control (window resize, external library callbacks)
+- **ONLY when you have exhausted all other options**
+
+**Why this matters:**
+- useEffect creates hidden dependencies and makes code harder to follow
+- You lose explicit control flow - it's reactive magic instead of clear causation
+- It can cause unnecessary re-renders and performance issues
+- The execution order becomes unclear and hard to reason about
+
+**Rule of thumb:** If you KNOW where the state is being set (you control the setter), trigger side effects THERE, not in useEffect.
+
+### Code Quality Guidelines
+
+**Post-Coding Review Process:**
+After completing any coding session, ALWAYS:
+1. **Identify code duplication**: Look for repeated patterns, similar functions, or duplicated logic that can be extracted into reusable utilities
+2. **Simplification opportunities**: Check if complex code can be simplified without losing functionality
+3. **Refactor proactively**: Extract common patterns into hooks, utilities, or shared functions
+4. **Consolidate similar functions**: If multiple functions do similar things, consider unifying them with parameters
+
+**Comment Policy:**
+- **NEVER add excessive comments** - code should be self-documenting
+- **NO explanatory comments** for obvious operations
+- **NO code summaries** - avoid "what this does" comments
+- **ONLY add comments for**: business logic context, non-obvious algorithms, or external API quirks
+- **Prefer**: descriptive variable names, clear function names, and well-structured code over comments
+
+### UI Color Guidelines
+**NEVER use hard-to-read colors that reduce accessibility:**
+- AVOID `#6272a4` (grey) - too dim and hard to read on dark backgrounds
+- AVOID colors with low contrast ratios
+- USE high-contrast colors from the Dracula theme palette:
+  - `#f8f8f2` (foreground white)
+  - `#bd93f9` (purple) - good alternative to grey
+  - `#50fa7b` (green)
+  - `#8be9fd` (cyan)
+  - `#ffb86c` (orange)
+  - `#ff5555` (red)
+  - `#f1fa8c` (yellow)
+- When in doubt, use `#bd93f9` instead of grey tones
+
+**IMPORTANT ACCESSIBILITY RULE:**
+- ALWAYS review all text colors in new components for readability
+- Replace any instance of `#6272a4` with `#bd93f9` for better contrast
+- Test readability by checking if text is easily visible against dark backgrounds
+
+### openTUI info
+- when handling keys via useKeyboard, 'enter' is not a keycode. 'enter' is 'return' instead.
+
+### UI Component Guidelines
+- **Discussion counts**: Always show resolved/resolvable format (e.g., "💬 3/5" or "💬 0/0") - do not special-case zero values with conditional rendering
+- **MR row height**: The `useAutoScroll` hook's `itemHeight` parameter must match the actual number of rows rendered per MR item, otherwise keyboard navigation scrolling will be misaligned. When adding/removing rows from the MR display, update the `itemHeight` accordingly
