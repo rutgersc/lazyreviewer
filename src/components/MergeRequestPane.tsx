@@ -354,6 +354,7 @@ export default function MergeRequestPane({}: {}) {
   const setShowJiraModal = useAppStore((state) => state.setShowJiraModal);
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
   const ignoredMergeRequests = useAppStore((state) => state.ignoredMergeRequests);
+  const setActivePane = useAppStore((state) => state.setActivePane);
 
   const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -424,6 +425,9 @@ export default function MergeRequestPane({}: {}) {
 
     // console.log("key", key)
     switch (key.name) {
+      case 'return':
+        setActivePane(ActivePane.InfoPane);
+        break;
       case 'f':
         setShowFilterModal(true);
         break;

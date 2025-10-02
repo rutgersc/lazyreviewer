@@ -2,7 +2,6 @@ import { useKeyboard, useRenderer } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import UserSelectionPane from "./components/UserSelectionPane";
 import MergeRequestPane from "./components/MergeRequestPane";
-import MergeRequestDetailsPane from "./components/MergeRequestDetailsPane";
 import InfoPane from "./components/InfoPane";
 import ConsolePane from "./components/ConsolePane";
 import MrStateFilterModal from "./components/MrStateFilterModal";
@@ -21,7 +20,7 @@ import { useState } from 'react';
 
 export default function App() {
   const renderer = useRenderer();
-  const { activePane, setActivePane, loadMrs, scrollInfoPane } = useAppStore();
+  const { activePane, setActivePane, loadMrs, scrollInfoPane, cycleInfoPaneTab } = useAppStore();
   const showFilterModal = useAppStore(state => state.showMrFilterModal);
   const setShowFilterModal = useAppStore(state => state.setShowMrFilterModal);
   const showGitSwitchModal = useAppStore(state => state.showGitSwitchModal);
@@ -104,16 +103,25 @@ export default function App() {
           openSettingsFile();
         }
         break;
+      case '[':
+        cycleInfoPaneTab('prev');
+        break;
+      case ']':
+        cycleInfoPaneTab('next');
+        break;
+      case 'tab':
+        cycleInfoPaneTab('next');
+        break;
       case 'd':
         if (key.ctrl) {
-          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.MergeRequestDetails) {
+          if (activePane === ActivePane.MergeRequests) {
             scrollInfoPane('down');
           }
         }
         break;
       case 'u':
         if (key.ctrl) {
-          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.MergeRequestDetails) {
+          if (activePane === ActivePane.MergeRequests) {
             scrollInfoPane('up');
           }
         }
@@ -123,23 +131,23 @@ export default function App() {
         if (activePane === ActivePane.Console) {
           setActivePane(ActivePane.UserSelection);
         } else if (activePane === ActivePane.UserSelection) {
+          setActivePane(ActivePane.InfoPane);
+        } else if (activePane === ActivePane.InfoPane) {
           setActivePane(ActivePane.MergeRequests);
-        } else if (activePane === ActivePane.MergeRequests) {
-          setActivePane(ActivePane.MergeRequestDetails);
         } else {
           setActivePane(ActivePane.Console);
         }
         break;
       case 'l':
       case 'right':
-        if (activePane === ActivePane.MergeRequestDetails) {
-          setActivePane(ActivePane.MergeRequests);
-        } else if (activePane === ActivePane.MergeRequests) {
+        if (activePane === ActivePane.MergeRequests) {
+          setActivePane(ActivePane.InfoPane);
+        } else if (activePane === ActivePane.InfoPane) {
           setActivePane(ActivePane.UserSelection);
         } else if (activePane === ActivePane.UserSelection) {
           setActivePane(ActivePane.Console);
         } else {
-          setActivePane(ActivePane.MergeRequestDetails);
+          setActivePane(ActivePane.MergeRequests);
         }
         break;
     }
@@ -156,34 +164,17 @@ export default function App() {
 
       {/* Main content area - horizontal layout */}
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
-        {/* Left panel - three stacked panes */}
-        <box style={{ flexDirection: "column", width: "55%" }}>
-          {/* MR Details Pane (top) */}
-          <box
-            style={{
-              flexDirection: "column",
-              border: true,
-              borderColor: activePane === ActivePane.MergeRequestDetails ? "#50fa7b" : "#6272a4",
-              height: "30%",
-              minHeight: "30%",
-              maxHeight: "30%",
-              backgroundColor: '#282a36'
-            }}
-          >
-            <MergeRequestDetailsPane
-              isActive={activePane === ActivePane.MergeRequestDetails}
-            />
-          </box>
-
-          {/* Merge Request Pane (middle) */}
+        {/* Left panel - two stacked panes */}
+        <box style={{ flexDirection: "column", width: activePane === ActivePane.InfoPane ? "40%" : "55%" }}>
+          {/* Merge Request Pane (top) */}
           <box
             style={{
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.MergeRequests ? "#50fa7b" : "#6272a4",
-              height: "50%",
-              minHeight: "50%",
-              maxHeight: "50%",
+              height: activePane === ActivePane.InfoPane ? "85%" : "80%",
+              minHeight: activePane === ActivePane.InfoPane ? "85%" : "80%",
+              maxHeight: activePane === ActivePane.InfoPane ? "85%" : "80%",
               backgroundColor: '#282a36'
             }}
           >
@@ -196,9 +187,9 @@ export default function App() {
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.UserSelection ? "#50fa7b" : "#6272a4",
-              height: "20%",
-              minHeight: "20%",
-              maxHeight: "20%",
+              height: activePane === ActivePane.InfoPane ? "15%" : "20%",
+              minHeight: activePane === ActivePane.InfoPane ? "15%" : "20%",
+              maxHeight: activePane === ActivePane.InfoPane ? "15%" : "20%",
               backgroundColor: '#282a36'
             }}
           >
@@ -210,7 +201,7 @@ export default function App() {
         <box
           style={{
             flexDirection: "column",
-            width: "45%",
+            width: activePane === ActivePane.InfoPane ? "60%" : "45%",
             backgroundColor: '#282a36'
           }}
         >
@@ -219,7 +210,7 @@ export default function App() {
             style={{
               flexDirection: "column",
               border: true,
-              borderColor: "#6272a4",
+              borderColor: activePane === ActivePane.InfoPane ? "#50fa7b" : "#6272a4",
               height: "70%",
               minHeight: "70%",
               maxHeight: "70%",

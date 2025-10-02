@@ -65,40 +65,7 @@ export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
 
   return (
     <box style={{ flexDirection: "column", gap: 1, width: "100%" }}>
-      <text
-        style={{ fg: '#f8f8f2', attributes: TextAttributes.BOLD, marginBottom: 0 }}
-        wrap={true}
-      >
-        Jira Issue Details
-      </text>
-
       <box style={{ flexDirection: "column", marginBottom: 1, width: "100%" }}>
-        <text
-          style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD }}
-          wrap={true}
-        >
-          {`${issue.key}: ${issue.fields.summary}`}
-        </text>
-        <text
-          style={{ fg: '#ffb86c', marginBottom: 1 }}
-          wrap={true}
-        >
-          {`Status: ${issue.fields.status.name}`}
-        </text>
-        <text
-          style={{ fg: '#bd93f9', marginBottom: 1 }}
-          wrap={true}
-        >
-          {`Type: ${issue.fields.issuetype.name}`}
-        </text>
-        {issue.fields.parent && (
-          <text
-            style={{ fg: '#f1fa8c', marginBottom: 1 }}
-            wrap={true}
-          >
-            {`${issue.fields.parent.fields.issuetype.name}: ${issue.fields.parent.key} - ${issue.fields.parent.fields.summary}`}
-          </text>
-        )}
         {issue.fields.assignee && (
           <text
             style={{ fg: '#8be9fd', marginBottom: 1 }}

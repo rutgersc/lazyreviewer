@@ -3,7 +3,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MergeRequest } from '../components/MergeRequestPane';
 import type { UserGroup, UserOrGroupId, UserSelection, UserSelectionEntry } from '../types/userSelection';
 import { ActivePane } from '../types/userSelection';
-import type { DetailRow } from '../components/MergeRequestDetailsPane';
 import type { BranchDifference } from '../hooks/useRepositoryBranches';
 import { groups, mockUserSelections, users } from '../data/usersAndGroups';
 import { shallow } from "zustand/shallow";
@@ -13,6 +12,8 @@ import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from '
 import { dirname } from 'path';
 import { type MergeRequestState } from '../generated/gitlab-sdk';
 import { loadSettings, saveSettings } from '../utils/settings';
+
+export type InfoPaneTab = 'overview' | 'jira' | 'pipeline';
 
 interface AppStore {
   groups: UserGroup[]
@@ -34,10 +35,12 @@ interface AppStore {
 
   // Selection states
   selectedMergeRequest: number;
-  selectedDetailItem: DetailRow | undefined;
 
   // UI state
   activePane: ActivePane;
+  infoPaneTab: InfoPaneTab;
+  selectedJiraIndex: number;
+  selectedPipelineJobIndex: number;
   showMrFilterModal: boolean;
   showGitSwitchModal: boolean;
   showHelpModal: boolean;
@@ -49,9 +52,12 @@ interface AppStore {
 
   // Actions
   setActivePane: (pane: ActivePane) => void;
+  setInfoPaneTab: (tab: InfoPaneTab) => void;
+  cycleInfoPaneTab: (direction: 'next' | 'prev') => void;
+  setSelectedJiraIndex: (index: number) => void;
+  setSelectedPipelineJobIndex: (index: number) => void;
   setSelectedUserSelectionEntry: (entry: number) => void;
   setSelectedMergeRequest: (mergeRequest: number) => void;
-  setSelectedDetailItem: (item: DetailRow | undefined) => void;
   setMrState: (state: MergeRequestState) => void;
   setShowMrFilterModal: (show: boolean) => void;
   setShowGitSwitchModal: (show: boolean) => void;
@@ -73,8 +79,13 @@ const fileStorage = createJSONStorage(() => ({
   removeItem: () => { try { unlinkSync(STORE_FILE); } catch { /* noop */ } },
 }));
 
+const INFO_PANE_TABS: InfoPaneTab[] = ['overview', 'jira', 'pipeline'];
+
 export const useAppStore = create<AppStore>()(persist((set, get) => ({
   activePane: ActivePane.MergeRequests,
+  infoPaneTab: 'overview',
+  selectedJiraIndex: 0,
+  selectedPipelineJobIndex: 0,
 
   groups: groups,
   users: users,
@@ -82,7 +93,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
 
   // Initial state (rehydrated by persist middleware)
   selectedUserSelectionEntry: 0,
-  selectedDetailItem: undefined,
   mrState: 'opened',
   showMrFilterModal: false,
   showGitSwitchModal: false,
@@ -121,11 +131,26 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
   setSelectedUserSelectionEntry: (entry) =>
     set({ selectedUserSelectionEntry: entry }),
 
-  setSelectedDetailItem: (item) =>
-    set({ selectedDetailItem: item }),
-
   setActivePane: (pane) =>
     set({ activePane: pane }),
+
+  setInfoPaneTab: (tab) =>
+    set({ infoPaneTab: tab }),
+
+  cycleInfoPaneTab: (direction) => {
+    const state = get();
+    const currentIndex = INFO_PANE_TABS.indexOf(state.infoPaneTab);
+    const newIndex = direction === 'next'
+      ? (currentIndex + 1) % INFO_PANE_TABS.length
+      : (currentIndex - 1 + INFO_PANE_TABS.length) % INFO_PANE_TABS.length;
+    set({ infoPaneTab: INFO_PANE_TABS[newIndex] });
+  },
+
+  setSelectedJiraIndex: (index) =>
+    set({ selectedJiraIndex: index }),
+
+  setSelectedPipelineJobIndex: (index) =>
+    set({ selectedPipelineJobIndex: index }),
 
   setMrState: (state) =>
     set({ mrState: state }),
