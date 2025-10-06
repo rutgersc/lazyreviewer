@@ -42,6 +42,7 @@ interface AppStore {
   selectedJiraIndex: number;
   selectedJiraSubIndex: number;
   selectedPipelineJobIndex: number;
+  selectedDiscussionIndex: number;
   showMrFilterModal: boolean;
   showGitSwitchModal: boolean;
   showHelpModal: boolean;
@@ -58,6 +59,7 @@ interface AppStore {
   setSelectedJiraIndex: (index: number) => void;
   setSelectedJiraSubIndex: (index: number) => void;
   setSelectedPipelineJobIndex: (index: number) => void;
+  setSelectedDiscussionIndex: (index: number) => void;
   setSelectedUserSelectionEntry: (entry: number) => void;
   setSelectedMergeRequest: (mergeRequest: number) => void;
   setMrState: (state: MergeRequestState) => void;
@@ -89,6 +91,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
   selectedJiraIndex: 0,
   selectedJiraSubIndex: 0,
   selectedPipelineJobIndex: 0,
+  selectedDiscussionIndex: 0,
 
   groups: groups,
   users: users,
@@ -157,6 +160,9 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
 
   setSelectedPipelineJobIndex: (index) =>
     set({ selectedPipelineJobIndex: index }),
+
+  setSelectedDiscussionIndex: (index) =>
+    set({ selectedDiscussionIndex: index }),
 
   setMrState: (state) =>
     set({ mrState: state }),

@@ -2,12 +2,14 @@ import { TextAttributes } from '@opentui/core';
 import type { MergeRequest } from './MergeRequestPane';
 import type { Discussion, DiscussionNote } from '../gitlabgraphql';
 import { formatCompactTime } from '../formatting';
+import { Colors } from '../constants/colors';
 
 interface MergeRequestInfoProps {
   mergeRequest: MergeRequest;
+  selectedDiscussionIndex?: number;
 }
 
-export default function MergeRequestInfo({ mergeRequest }: MergeRequestInfoProps) {
+export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex = 0 }: MergeRequestInfoProps) {
   const renderDiscussionNote = (note: DiscussionNote, index: number) => {
     const isReply = index > 0; // First note is original, rest are replies
     const marginLeft = isReply ? 4 : 2;
@@ -76,11 +78,26 @@ export default function MergeRequestInfo({ mergeRequest }: MergeRequestInfoProps
         >
           {`Unresolved Discussions (${unresolvedDiscussions.length})`}
         </text>
-        {unresolvedDiscussions.map((discussion) => (
-          <box key={discussion.id} style={{ flexDirection: "column", marginLeft: 2, marginBottom: 1, width: "100%", backgroundColor: '#1a1a1a', padding: 1 }}>
-            {discussion.notes.map(renderDiscussionNote)}
-          </box>
-        ))}
+        {unresolvedDiscussions.map((discussion, index) => {
+          const isSelected = index === selectedDiscussionIndex;
+          return (
+            <box
+              key={discussion.id}
+              style={{
+                flexDirection: "column",
+                marginLeft: 2,
+                marginBottom: 1,
+                width: "100%",
+                backgroundColor: isSelected ? Colors.SELECTED : '#1a1a1a',
+                padding: 1,
+                border: isSelected,
+                borderColor: isSelected ? Colors.SUCCESS : undefined
+              }}
+            >
+              {discussion.notes.map(renderDiscussionNote)}
+            </box>
+          );
+        })}
       </box>
     );
   };

@@ -3,10 +3,12 @@ import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { ActivePane } from '../types/userSelection';
 import { Colors } from '../constants/colors';
+import { type InfoPaneTab } from '../store/appStore';
 
 interface HelpModalProps {
   isVisible: boolean;
   activePane: ActivePane;
+  infoPaneTab: InfoPaneTab;
   actions: HelpModalActions;
 }
 
@@ -42,7 +44,7 @@ interface KeyBinding {
   action?: () => void;
 }
 
-const buildPaneKeys = (activePane: ActivePane, actions: HelpModalActions): KeyBinding[] => {
+const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions: HelpModalActions): KeyBinding[] => {
   switch (activePane) {
     case ActivePane.MergeRequests:
       return [
@@ -56,10 +58,28 @@ const buildPaneKeys = (activePane: ActivePane, actions: HelpModalActions): KeyBi
         { key: 'Backspace', description: 'Toggle ignore MR', action: actions.onToggleIgnore },
       ];
     case ActivePane.InfoPane:
-      return [
-        { key: 'j/k, ↑/↓', description: 'Navigate (in Jira/Pipeline tabs)' },
-        { key: 'Esc', description: 'Return to MR pane' },
-      ];
+      // Return tab-specific keys
+      switch (infoPaneTab) {
+        case 'overview':
+          return [
+            { key: 'j/k, ↑/↓', description: 'Navigate discussions' },
+            { key: 'i', description: 'Open discussion in browser' },
+            { key: 'c', description: 'Copy discussion URL' },
+            { key: 'Esc', description: 'Return to MR pane' },
+          ];
+        case 'jira':
+          return [
+            { key: 'j/k, ↑/↓', description: 'Navigate Jira issues' },
+            { key: 'Esc', description: 'Return to MR pane' },
+          ];
+        case 'pipeline':
+          return [
+            { key: 'j/k, ↑/↓', description: 'Navigate pipeline jobs' },
+            { key: 'i', description: 'Download and open job log' },
+            { key: 'Esc', description: 'Return to MR pane' },
+          ];
+      }
+      break;
     case ActivePane.UserSelection:
       return [
         { key: 'j/k, ↑/↓', description: 'Navigate list' },
@@ -124,19 +144,23 @@ const KeyRow = ({
   </box>
 );
 
-const getPaneTitle = (pane: ActivePane): string => {
+const getPaneTitle = (pane: ActivePane, infoPaneTab?: InfoPaneTab): string => {
   switch (pane) {
     case ActivePane.MergeRequests: return 'Merge Requests Pane';
-    case ActivePane.InfoPane: return 'Info Pane';
+    case ActivePane.InfoPane:
+      if (infoPaneTab === 'overview') return 'Info Pane - Overview Tab';
+      if (infoPaneTab === 'jira') return 'Info Pane - Jira Tab';
+      if (infoPaneTab === 'pipeline') return 'Info Pane - Pipeline Tab';
+      return 'Info Pane';
     case ActivePane.UserSelection: return 'User Selection Pane';
     case ActivePane.Console: return 'Console Pane';
   }
 };
 
-export default function HelpModal({ isVisible, activePane, actions }: HelpModalProps) {
+export default function HelpModal({ isVisible, activePane, infoPaneTab, actions }: HelpModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const paneKeys = buildPaneKeys(activePane, actions);
+  const paneKeys = buildPaneKeys(activePane, infoPaneTab, actions);
   const globalKeys = buildGlobalKeys(actions);
   const allKeys = [...paneKeys, ...globalKeys];
 
@@ -202,7 +226,7 @@ export default function HelpModal({ isVisible, activePane, actions }: HelpModalP
         {paneKeys.length > 0 && (
           <>
             <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD, marginTop: 0.5 }} wrap={false}>
-              {getPaneTitle(activePane)}
+              {getPaneTitle(activePane, infoPaneTab)}
             </text>
             <box style={{ flexDirection: "column", gap: 0.3, marginBottom: 1 }}>
               {paneKeys.map((binding, index) => (

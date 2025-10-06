@@ -504,6 +504,8 @@ export default function MergeRequestPane({}: {}) {
       if (i === selectedIndex) continue;
 
       const mr = mergeRequests[i];
+      if (!mr) continue;
+
       const mrTicketKey = mr.jiraIssues?.[0]?.key;
       const mrParentKey = mr.jiraIssues?.[0]?.fields.parent?.key;
 

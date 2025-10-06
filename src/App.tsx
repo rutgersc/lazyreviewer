@@ -22,7 +22,7 @@ import { openUrl } from "./utils/url";
 
 export default function App() {
   const renderer = useRenderer();
-  const { activePane, setActivePane, loadMrs, scrollInfoPane, cycleInfoPaneTab } = useAppStore();
+  const { activePane, infoPaneTab, setActivePane, loadMrs, scrollInfoPane, cycleInfoPaneTab } = useAppStore();
   const showFilterModal = useAppStore(state => state.showMrFilterModal);
   const setShowFilterModal = useAppStore(state => state.setShowMrFilterModal);
   const showGitSwitchModal = useAppStore(state => state.showGitSwitchModal);
@@ -402,7 +402,7 @@ export default function App() {
       />
 
       {/* Help Modal - rendered at app level to cover entire screen */}
-      <HelpModal isVisible={showHelpModal} activePane={activePane} actions={helpModalActions} />
+      <HelpModal isVisible={showHelpModal} activePane={activePane} infoPaneTab={infoPaneTab} actions={helpModalActions} />
 
       {/* Jira Modal - rendered at app level to cover entire screen */}
       <JiraModal

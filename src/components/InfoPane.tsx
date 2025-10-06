@@ -11,6 +11,8 @@ import { getJobStatusDisplay } from '../utils/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlabgraphql';
 import type { JiraIssue } from '../services/jiraService';
 import { openUrl } from '../utils/url';
+import { copyToClipboard } from '../utils/clipboard';
+import { loadJobLog } from '../pipelinejob-log';
 
 interface InfoPaneProps {
   // No props needed - everything comes from store!
@@ -23,7 +25,7 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
 };
 
 export default function InfoPane({}: InfoPaneProps) {
-  const { activePane, infoPaneScrollOffset, infoPaneTab, selectedJiraIndex, selectedJiraSubIndex, selectedPipelineJobIndex, setSelectedJiraIndex, setSelectedJiraSubIndex, setSelectedPipelineJobIndex } = useAppStore();
+  const { activePane, infoPaneScrollOffset, infoPaneTab, selectedJiraIndex, selectedJiraSubIndex, selectedPipelineJobIndex, selectedDiscussionIndex, setSelectedJiraIndex, setSelectedJiraSubIndex, setSelectedPipelineJobIndex, setSelectedDiscussionIndex } = useAppStore();
   const scrollBoxRef = useRef<any>(null);
 
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
@@ -48,6 +50,11 @@ export default function InfoPane({}: InfoPaneProps) {
     return selectedMergeRequest.jiraIssues || [];
   }, [selectedMergeRequest]);
 
+  const unresolvedDiscussions = useMemo(() => {
+    if (!selectedMergeRequest?.discussions) return [];
+    return selectedMergeRequest.discussions.filter(d => d.resolvable && !d.resolved);
+  }, [selectedMergeRequest]);
+
   // Keyboard navigation for jira and pipeline tabs
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane) return;
@@ -55,6 +62,37 @@ export default function InfoPane({}: InfoPaneProps) {
     // Escape goes back to MergeRequests pane
     if (key.name === 'escape') {
       useAppStore.getState().setActivePane(ActivePane.MergeRequests);
+      return;
+    }
+
+    // Overview tab - navigate through unresolved discussions
+    if (infoPaneTab === 'overview' && unresolvedDiscussions.length > 0) {
+      switch (key.name) {
+        case 'j':
+        case 'down':
+          setSelectedDiscussionIndex(Math.min(selectedDiscussionIndex + 1, unresolvedDiscussions.length - 1));
+          break;
+        case 'k':
+        case 'up':
+          setSelectedDiscussionIndex(Math.max(selectedDiscussionIndex - 1, 0));
+          break;
+        case 'i':
+          // Open discussion in browser
+          const selectedDiscussion = unresolvedDiscussions[selectedDiscussionIndex];
+          if (selectedDiscussion && selectedMergeRequest?.webUrl) {
+            const discussionUrl = `${selectedMergeRequest.webUrl}#note_${selectedDiscussion.id}`;
+            openUrl(discussionUrl);
+          }
+          break;
+        case 'c':
+          // Copy discussion URL
+          const discussion = unresolvedDiscussions[selectedDiscussionIndex];
+          if (discussion && selectedMergeRequest?.webUrl) {
+            const discussionUrl = `${selectedMergeRequest.webUrl}#note_${discussion.id}`;
+            copyToClipboard(discussionUrl);
+          }
+          break;
+      }
       return;
     }
 
@@ -93,9 +131,8 @@ export default function InfoPane({}: InfoPaneProps) {
           break;
         case 'i':
           const selectedJob = pipelineJobs[selectedPipelineJobIndex];
-          if (selectedJob?.job.webPath) {
-            const fullUrl = `https://git.elabnext.com${selectedJob.job.webPath}`;
-            openUrl(fullUrl);
+          if (selectedJob && selectedMergeRequest) {
+            loadJobLog(selectedMergeRequest, selectedJob.job);
           }
           break;
       }
@@ -147,7 +184,7 @@ export default function InfoPane({}: InfoPaneProps) {
     switch (infoPaneTab) {
       case 'overview':
         if ((activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) && selectedMergeRequest) {
-          return <MergeRequestInfo mergeRequest={selectedMergeRequest} />;
+          return <MergeRequestInfo mergeRequest={selectedMergeRequest} selectedDiscussionIndex={selectedDiscussionIndex} />;
         } else if (activePane === ActivePane.UserSelection && selectedUserSelectionEntry) {
           return <UserSelectionInfo userSelection={selectedUserSelectionEntry} />;
         }
