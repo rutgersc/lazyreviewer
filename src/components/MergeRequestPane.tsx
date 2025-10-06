@@ -382,15 +382,17 @@ export default function MergeRequestPane({}: {}) {
     const selectedMr = mergeRequests[selectedIndex];
     return {
       ticketKey: selectedMr?.jiraIssues[0]?.key || null,
-      parentKey: selectedMr?.jiraIssues[0]?.fields.parent?.key || null
+      ticketSummary: selectedMr?.jiraIssues[0]?.fields.summary || null,
+      parentKey: selectedMr?.jiraIssues[0]?.fields.parent?.key || null,
+      parentSummary: selectedMr?.jiraIssues[0]?.fields.parent?.fields.summary || null
     };
   }, [mergeRequests, selectedIndex]);
 
-  // Function to determine background color for an MR item
-  const getBackgroundColor = (mr: MergeRequest, index: number): string => {
+  // Function to determine background color and shared ticket info for an MR item
+  const getMrHighlightInfo = (mr: MergeRequest, index: number): { backgroundColor: string; sharedTicket: { key: string; summary: string } | null } => {
     // Current selection gets priority
     if (index === selectedIndex) {
-      return Colors.TRACK;
+      return { backgroundColor: Colors.TRACK, sharedTicket: null };
     }
 
     const mrTicketKey = mr.jiraIssues[0]?.key;
@@ -398,15 +400,27 @@ export default function MergeRequestPane({}: {}) {
 
     // Highlight if same Jira ticket
     if (selectedMrJiraInfo.ticketKey && mrTicketKey === selectedMrJiraInfo.ticketKey) {
-      return Colors.SELECTED;
+      return {
+        backgroundColor: Colors.SELECTED,
+        sharedTicket: {
+          key: selectedMrJiraInfo.ticketKey,
+          summary: selectedMrJiraInfo.ticketSummary || ''
+        }
+      };
     }
 
     // Highlight if same parent ticket
     if (selectedMrJiraInfo.parentKey && mrParentKey === selectedMrJiraInfo.parentKey) {
-      return Colors.SELECTED;
+      return {
+        backgroundColor: Colors.SELECTED,
+        sharedTicket: {
+          key: selectedMrJiraInfo.parentKey,
+          summary: selectedMrJiraInfo.parentSummary || ''
+        }
+      };
     }
 
-    return "transparent";
+    return { backgroundColor: "transparent", sharedTicket: null };
   };
 
 
@@ -489,20 +503,71 @@ export default function MergeRequestPane({}: {}) {
     }
   });
 
+  // Get shared ticket info for the selected MR
+  const selectedMrSharedTicket = useMemo(() => {
+    const selectedMr = mergeRequests[selectedIndex];
+    if (!selectedMr?.jiraIssues?.[0]) return null;
+
+    const selectedTicketKey = selectedMr.jiraIssues[0].key;
+    const selectedTicketSummary = selectedMr.jiraIssues[0].fields.summary;
+    const selectedParentKey = selectedMr.jiraIssues[0].fields.parent?.key;
+    const selectedParentSummary = selectedMr.jiraIssues[0].fields.parent?.fields.summary;
+
+    // Find if any other MR shares the same ticket or parent
+    for (let i = 0; i < mergeRequests.length; i++) {
+      if (i === selectedIndex) continue;
+
+      const mr = mergeRequests[i];
+      const mrTicketKey = mr.jiraIssues?.[0]?.key;
+      const mrParentKey = mr.jiraIssues?.[0]?.fields.parent?.key;
+
+      // Check if they share the same direct ticket
+      if (selectedTicketKey && mrTicketKey === selectedTicketKey) {
+        return { key: selectedTicketKey, summary: selectedTicketSummary };
+      }
+
+      // Check if they share the same parent ticket
+      if (selectedParentKey && mrParentKey === selectedParentKey) {
+        return { key: selectedParentKey, summary: selectedParentSummary || '' };
+      }
+    }
+
+    return null;
+  }, [mergeRequests, selectedIndex]);
+
   return (
     <box style={{ flexDirection: "column", height: "100%" }}>
-      <text
-        style={{
-          fg: Colors.PRIMARY,
-          marginBottom: 1,
-          attributes: TextAttributes.BOLD,
-        }}
-        wrap={false}
-      >
-        {`Merge Requests - ${
-          mrState.charAt(0).toUpperCase() + mrState.slice(1)
-        } (${mergeRequests.length})`}
-      </text>
+      <box style={{ flexDirection: "row", alignItems: "center", gap: 2, marginBottom: 1 }}>
+        <text
+          style={{
+            fg: Colors.PRIMARY,
+            attributes: TextAttributes.BOLD,
+          }}
+          wrap={false}
+        >
+          {`Merge Requests - ${
+            mrState.charAt(0).toUpperCase() + mrState.slice(1)
+          } (${mergeRequests.length})`}
+        </text>
+
+        {selectedMrSharedTicket && (
+          <box
+            style={{
+              backgroundColor: Colors.INFO,
+              flexDirection: "row",
+              gap: 1,
+              alignItems: "center"
+            }}
+          >
+            <text style={{ fg: Colors.BACKGROUND, attributes: TextAttributes.BOLD }} wrap={false}>
+              🔗 {selectedMrSharedTicket.key}:
+            </text>
+            <text style={{ fg: Colors.BACKGROUND }} wrap={false}>
+              {selectedMrSharedTicket.summary}
+            </text>
+          </box>
+        )}
+      </box>
 
       <scrollbox
         ref={scrollBoxRef}
@@ -528,13 +593,14 @@ export default function MergeRequestPane({}: {}) {
           const currentBranch = projectBranchMap.get(mr.project.path);
           const isActiveInLocalRepo = currentBranch === mr.sourcebranch;
           const isIgnored = ignoredMergeRequests.has(mr.id);
+          const highlightInfo = getMrHighlightInfo(mr, index);
 
           return (
             <box
               key={mr.id}
               style={{
                 flexDirection: "column",
-                backgroundColor: getBackgroundColor(mr, index),
+                backgroundColor: highlightInfo.backgroundColor,
               }}
             >
               {isIgnored ? (

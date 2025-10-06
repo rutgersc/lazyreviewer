@@ -40,6 +40,7 @@ interface AppStore {
   activePane: ActivePane;
   infoPaneTab: InfoPaneTab;
   selectedJiraIndex: number;
+  selectedJiraSubIndex: number;
   selectedPipelineJobIndex: number;
   showMrFilterModal: boolean;
   showGitSwitchModal: boolean;
@@ -55,6 +56,7 @@ interface AppStore {
   setInfoPaneTab: (tab: InfoPaneTab) => void;
   cycleInfoPaneTab: (direction: 'next' | 'prev') => void;
   setSelectedJiraIndex: (index: number) => void;
+  setSelectedJiraSubIndex: (index: number) => void;
   setSelectedPipelineJobIndex: (index: number) => void;
   setSelectedUserSelectionEntry: (entry: number) => void;
   setSelectedMergeRequest: (mergeRequest: number) => void;
@@ -85,6 +87,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
   activePane: ActivePane.MergeRequests,
   infoPaneTab: 'overview',
   selectedJiraIndex: 0,
+  selectedJiraSubIndex: 0,
   selectedPipelineJobIndex: 0,
 
   groups: groups,
@@ -147,7 +150,10 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
   },
 
   setSelectedJiraIndex: (index) =>
-    set({ selectedJiraIndex: index }),
+    set({ selectedJiraIndex: index, selectedJiraSubIndex: 0 }),
+
+  setSelectedJiraSubIndex: (index) =>
+    set({ selectedJiraSubIndex: index }),
 
   setSelectedPipelineJobIndex: (index) =>
     set({ selectedPipelineJobIndex: index }),
@@ -210,6 +216,8 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
       mrs = [];
     }
 
+    set({ mergeRequests: [], branchDifferences: new Map() });
+    await new Promise(resolve => setTimeout(resolve, 100));
     set({ mergeRequests: mrs });
 
     fetchBranchDifferences(mrs).then(differences => {

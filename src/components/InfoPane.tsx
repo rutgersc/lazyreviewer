@@ -9,6 +9,7 @@ import { ActivePane } from '../types/userSelection';
 import { Colors } from '../constants/colors';
 import { getJobStatusDisplay } from '../utils/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlabgraphql';
+import type { JiraIssue } from '../services/jiraService';
 
 interface InfoPaneProps {
   // No props needed - everything comes from store!
@@ -21,7 +22,7 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
 };
 
 export default function InfoPane({}: InfoPaneProps) {
-  const { activePane, infoPaneScrollOffset, infoPaneTab, selectedJiraIndex, selectedPipelineJobIndex, setSelectedJiraIndex, setSelectedPipelineJobIndex } = useAppStore();
+  const { activePane, infoPaneScrollOffset, infoPaneTab, selectedJiraIndex, selectedJiraSubIndex, selectedPipelineJobIndex, setSelectedJiraIndex, setSelectedJiraSubIndex, setSelectedPipelineJobIndex } = useAppStore();
   const scrollBoxRef = useRef<any>(null);
 
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
@@ -34,7 +35,6 @@ export default function InfoPane({}: InfoPaneProps) {
     }
   }, [infoPaneScrollOffset]);
 
-  // Flatten pipeline jobs for easy indexing
   const pipelineJobs = useMemo(() => {
     if (!selectedMergeRequest?.pipeline?.stage) return [];
     return selectedMergeRequest.pipeline.stage.flatMap((stage: PipelineStage) =>
@@ -43,7 +43,8 @@ export default function InfoPane({}: InfoPaneProps) {
   }, [selectedMergeRequest]);
 
   const jiraIssues = useMemo(() => {
-    return selectedMergeRequest?.jiraIssues || [];
+    if (!selectedMergeRequest) return [];
+    return selectedMergeRequest.jiraIssues || [];
   }, [selectedMergeRequest]);
 
   // Keyboard navigation for jira and pipeline tabs
@@ -51,14 +52,26 @@ export default function InfoPane({}: InfoPaneProps) {
     if (activePane !== ActivePane.InfoPane) return;
 
     if (infoPaneTab === 'jira' && jiraIssues.length > 0) {
+      const selectedIssue = jiraIssues[selectedJiraIndex];
+      const hasParent = selectedIssue?.fields.parent !== undefined;
+      const maxSubIndex = hasParent ? 1 : 0;
+
       switch (key.name) {
         case 'j':
         case 'down':
-          setSelectedJiraIndex(Math.min(selectedJiraIndex + 1, jiraIssues.length - 1));
+          if (selectedJiraSubIndex < maxSubIndex) {
+            setSelectedJiraSubIndex(selectedJiraSubIndex + 1);
+          } else if (selectedJiraIndex < jiraIssues.length - 1) {
+            setSelectedJiraIndex(selectedJiraIndex + 1);
+          }
           break;
         case 'k':
         case 'up':
-          setSelectedJiraIndex(Math.max(selectedJiraIndex - 1, 0));
+          if (selectedJiraSubIndex > 0) {
+            setSelectedJiraSubIndex(selectedJiraSubIndex - 1);
+          } else if (selectedJiraIndex > 0) {
+            setSelectedJiraIndex(selectedJiraIndex - 1);
+          }
           break;
       }
     } else if (infoPaneTab === 'pipeline' && pipelineJobs.length > 0) {
@@ -137,71 +150,109 @@ export default function InfoPane({}: InfoPaneProps) {
           );
         }
 
-        const selectedJira = jiraIssues[selectedJiraIndex];
+        // Build flat list of main issues and their parents
+        type JiraListItem = {
+          issue: JiraIssue;
+          isParent: boolean;
+          parentIssueIndex: number;
+          subIndex: number;
+        };
+
+        const jiraListItems: JiraListItem[] = [];
+        jiraIssues.forEach((issue, issueIndex) => {
+          jiraListItems.push({
+            issue,
+            isParent: false,
+            parentIssueIndex: issueIndex,
+            subIndex: 0
+          });
+
+          if (issue.fields.parent) {
+            // Create a pseudo JiraIssue from parent data
+            const parentAsIssue: JiraIssue = {
+              key: issue.fields.parent.key,
+              id: '',
+              self: '',
+              fields: {
+                summary: issue.fields.parent.fields.summary,
+                parent: undefined,
+                status: { name: 'To Do', statusCategory: { name: '' } },
+                assignee: null,
+                priority: { name: '' },
+                issuetype: issue.fields.parent.fields.issuetype,
+                created: '',
+                updated: '',
+                comment: { total: 0, comments: [] }
+              }
+            };
+
+            jiraListItems.push({
+              issue: parentAsIssue,
+              isParent: true,
+              parentIssueIndex: issueIndex,
+              subIndex: 1
+            });
+          }
+        });
+
+        // Find the currently selected item
+        const selectedListItem = jiraListItems.find(
+          item => item.parentIssueIndex === selectedJiraIndex && item.subIndex === selectedJiraSubIndex
+        );
 
         return (
           <box style={{ flexDirection: "column", gap: 1 }}>
             {/* List of Jira issues */}
             <box style={{ flexDirection: "column", gap: 0 }}>
-              {jiraIssues.map((issue, index) => (
-                <box
-                  key={issue.key}
-                  style={{
-                    flexDirection: "column",
-                    gap: 0,
-                    backgroundColor: index === selectedJiraIndex ? Colors.SELECTED : 'transparent'
-                  }}
-                >
-                  <box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+              {jiraListItems.map((item, flatIndex) => {
+                const isSelected = item.parentIssueIndex === selectedJiraIndex && item.subIndex === selectedJiraSubIndex;
+
+                return (
+                  <box
+                    key={`${item.issue.key}-${item.isParent ? 'parent' : 'main'}`}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 2,
+                      backgroundColor: isSelected ? Colors.SELECTED : 'transparent',
+                      marginLeft: item.isParent ? 2 : 0
+                    }}
+                  >
+                    {item.isParent && (
+                      <text
+                        style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
+                        wrap={false}
+                      >
+                        ↳
+                      </text>
+                    )}
                     <text
                       style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }}
                       wrap={false}
                     >
-                      {issue.key}
+                      {item.issue.key}
                     </text>
                     <text
                       style={{ fg: Colors.WARNING, attributes: TextAttributes.DIM }}
                       wrap={false}
                     >
-                      {issue.fields.status.name}
+                      {item.issue.fields.status.name}
                     </text>
                     <text
                       style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
                       wrap={false}
                     >
-                      {issue.fields.issuetype.name}
+                      {item.issue.fields.issuetype.name}
                     </text>
                     <text
                       style={{ fg: Colors.PRIMARY }}
                       wrap={false}
                     >
-                      {issue.fields.summary}
+                      {item.issue.fields.summary}
                     </text>
                   </box>
-                  {issue.fields.parent && (
-                    <box style={{ flexDirection: "row", alignItems: "center", gap: 2, marginLeft: 2 }}>
-                      <text
-                        style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
-                        wrap={false}
-                      >
-                        ↳ Parent:
-                      </text>
-                      <text
-                        style={{ fg: Colors.INFO, attributes: TextAttributes.DIM }}
-                        wrap={false}
-                      >
-                        {issue.fields.parent.key}
-                      </text>
-                      <text
-                        style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
-                        wrap={false}
-                      >
-                        {issue.fields.parent.fields.summary}
-                      </text>
-                    </box>
-                  )}
-                </box>
-              ))}
+                );
+              })}
             </box>
 
             {/* Separator */}
@@ -210,7 +261,7 @@ export default function InfoPane({}: InfoPaneProps) {
             </text>
 
             {/* Details of selected Jira issue */}
-            {selectedJira && <JiraIssueInfo issue={selectedJira} />}
+            {selectedListItem && <JiraIssueInfo issue={selectedListItem.issue} />}
           </box>
         );
 
