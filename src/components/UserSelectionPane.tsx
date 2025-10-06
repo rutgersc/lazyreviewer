@@ -58,11 +58,8 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
         break;
       }
       case 'escape':
-        // setNavState(prevState => navigateUp(prevState));
+        // Reset highlight
         setHighlightIndex(0);
-        break;
-      case 's':
-        fetchMrs();
         break;
     }
   });

@@ -428,25 +428,17 @@ export default function MergeRequestPane({}: {}) {
     // Only handle keys when this pane is active
     if (!isActive) return;
 
+    // Don't handle keys when modals are open (handled globally)
     if (showHelpModal || showJiraModal || showFilterModal) {
-      if (key.name === "escape") {
-        setShowHelpModal(false);
-        setShowJiraModal(false);
-        setShowFilterModal(false);
-      }
       return;
     }
 
-    // console.log("key", key)
     switch (key.name) {
       case 'return':
         setActivePane(ActivePane.InfoPane);
         break;
       case 'f':
         setShowFilterModal(true);
-        break;
-      case 's':
-        fetchMrs();
         break;
       case "j":
       case "down":
@@ -489,17 +481,12 @@ export default function MergeRequestPane({}: {}) {
       case 't':
         setShowJiraModal(true);
         break;
-      case 'i':
+      case 'escape':
+        // Toggle ignore when no modals are open
         if (mergeRequests[selectedIndex]) {
           toggleIgnoreMergeRequest(mergeRequests[selectedIndex].id);
         }
         break;
-      case '?':
-        setShowHelpModal(true);
-        break;
-      case 'q':
-      case 'ctrl+c':
-        process.exit();
     }
   });
 

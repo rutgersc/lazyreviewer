@@ -6,17 +6,19 @@ import InfoPane from "./components/InfoPane";
 import ConsolePane from "./components/ConsolePane";
 import MrStateFilterModal from "./components/MrStateFilterModal";
 import GitSwitchModal from "./components/GitSwitchModal";
-import HelpModal from "./components/HelpModal";
+import HelpModal, { type HelpModalActions } from "./components/HelpModal";
 import JiraModal from "./components/JiraModal";
 import EventLogPane from "./components/EventLogPane";
 import { ActivePane } from "./types/userSelection";
 import { useAppStore } from "./store/appStore";
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { startJobMonitoring, stopJobMonitoring } from "./services/jobMonitor";
 import { type MergeRequestState } from "./generated/gitlab-sdk";
 import { openSettingsFile } from "./utils/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { useState } from 'react';
+import { copyToClipboard } from "./utils/clipboard";
+import { openUrl } from "./utils/url";
 
 export default function App() {
   const renderer = useRenderer();
@@ -39,6 +41,129 @@ export default function App() {
 
   const repositoryBranches = useRepositoryBranches(mergeRequests);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
+  const toggleIgnoreMergeRequest = useAppStore(state => state.toggleIgnoreMergeRequest);
+  const setSelectedUserSelectionEntry = useAppStore(state => state.setSelectedUserSelectionEntry);
+  const selectedUserSelectionEntry = useAppStore(state => state.selectedUserSelectionEntry);
+
+  // Build help modal actions
+  const helpModalActions = useMemo<HelpModalActions>(() => ({
+    // Global actions
+    onRefresh: () => {
+      setShowHelpModal(false);
+      fetchMrs();
+    },
+    onOpenSettings: () => {
+      setShowHelpModal(false);
+      openSettingsFile();
+    },
+    onToggleConsole: () => {
+      setShowHelpModal(false);
+      renderer.console.toggle();
+    },
+    onOpenEventLog: () => {
+      setShowHelpModal(false);
+      if (mergeRequests.length > 0) {
+        setShowEventLogPane(true);
+      }
+    },
+    onCycleInfoTab: () => {
+      setShowHelpModal(false);
+      cycleInfoPaneTab('next');
+    },
+    onScrollInfoPaneDown: () => {
+      setShowHelpModal(false);
+      if (activePane === ActivePane.MergeRequests) {
+        scrollInfoPane('down');
+      }
+    },
+    onScrollInfoPaneUp: () => {
+      setShowHelpModal(false);
+      if (activePane === ActivePane.MergeRequests) {
+        scrollInfoPane('up');
+      }
+    },
+    onCyclePaneRight: () => {
+      setShowHelpModal(false);
+      if (activePane === ActivePane.MergeRequests) {
+        setActivePane(ActivePane.InfoPane);
+      } else if (activePane === ActivePane.InfoPane) {
+        setActivePane(ActivePane.UserSelection);
+      } else if (activePane === ActivePane.UserSelection) {
+        setActivePane(ActivePane.Console);
+      } else {
+        setActivePane(ActivePane.MergeRequests);
+      }
+    },
+    onCyclePaneLeft: () => {
+      setShowHelpModal(false);
+      if (activePane === ActivePane.Console) {
+        setActivePane(ActivePane.UserSelection);
+      } else if (activePane === ActivePane.UserSelection) {
+        setActivePane(ActivePane.InfoPane);
+      } else if (activePane === ActivePane.InfoPane) {
+        setActivePane(ActivePane.MergeRequests);
+      } else {
+        setActivePane(ActivePane.Console);
+      }
+    },
+
+    // MR Pane actions
+    onFocusInfoPane: () => {
+      setShowHelpModal(false);
+      setActivePane(ActivePane.InfoPane);
+    },
+    onFilterMRs: () => {
+      setShowHelpModal(false);
+      setShowFilterModal(true);
+    },
+    onCopyBranch: () => {
+      setShowHelpModal(false);
+      if (mergeRequests[selectedIndex]) {
+        const sourceBranch = mergeRequests[selectedIndex].sourcebranch;
+        copyToClipboard(sourceBranch).then((success) => {
+          if (success) {
+            setCopyNotification(`Copied: ${sourceBranch}`);
+            setTimeout(() => setCopyNotification(null), 2000);
+          }
+        });
+      }
+    },
+    onOpenInBrowser: () => {
+      setShowHelpModal(false);
+      if (mergeRequests[selectedIndex]) {
+        openUrl(mergeRequests[selectedIndex].webUrl);
+      }
+    },
+    onGitSwitch: () => {
+      setShowHelpModal(false);
+      setShowGitSwitchModal(true);
+    },
+    onShowJiraTickets: () => {
+      setShowHelpModal(false);
+      setShowJiraModal(true);
+    },
+    onToggleIgnore: () => {
+      setShowHelpModal(false);
+      if (mergeRequests[selectedIndex]) {
+        toggleIgnoreMergeRequest(mergeRequests[selectedIndex].id);
+      }
+    },
+
+    // User Selection Pane actions
+    onSelectEntry: () => {
+      setShowHelpModal(false);
+      loadMrs();
+    },
+    onResetHighlight: () => {
+      setShowHelpModal(false);
+      // This would need to be implemented via store if needed
+    },
+  }), [
+    fetchMrs, setShowHelpModal, renderer, mergeRequests, setShowEventLogPane,
+    cycleInfoPaneTab, activePane, scrollInfoPane, setActivePane, setShowFilterModal,
+    selectedIndex, setCopyNotification, setShowGitSwitchModal, setShowJiraModal,
+    toggleIgnoreMergeRequest, loadMrs
+  ]);
 
   useEffect(() => {
     // On app start, load MRs using the persisted selection entry
@@ -71,9 +196,29 @@ export default function App() {
   };
 
   useKeyboard((key: ParsedKey) => {
-    // Handle escape in event log pane
-    if (showEventLogPane && key.name === 'escape') {
-      setShowEventLogPane(false);
+    // Handle escape - priority order: event log, modals, then pane-level
+    if (key.name === 'escape') {
+      if (showEventLogPane) {
+        setShowEventLogPane(false);
+        return;
+      }
+      if (showHelpModal) {
+        setShowHelpModal(false);
+        return;
+      }
+      if (showJiraModal) {
+        setShowJiraModal(false);
+        return;
+      }
+      if (showFilterModal) {
+        setShowFilterModal(false);
+        return;
+      }
+      if (showGitSwitchModal) {
+        setShowGitSwitchModal(false);
+        return;
+      }
+      // If no modals open, let pane-level handlers process escape
       return;
     }
 
@@ -83,9 +228,6 @@ export default function App() {
     }
 
     switch (key.name) {
-      // case 'd':
-      //   console.log("debug")
-      //   break;
       case 'q':
       case 'ctrl+c':
         process.exit();
@@ -101,7 +243,13 @@ export default function App() {
       case 's':
         if (key.ctrl) {
           openSettingsFile();
+        } else {
+          // Global refresh
+          fetchMrs();
         }
+        break;
+      case '?':
+        setShowHelpModal(true);
         break;
       case '[':
         cycleInfoPaneTab('prev');
@@ -110,13 +258,15 @@ export default function App() {
         cycleInfoPaneTab('next');
         break;
       case 'tab':
-        cycleInfoPaneTab('next');
-        break;
       case 'd':
-        if (key.ctrl) {
+        if (key.ctrl && key.name === 'd') {
+          // Ctrl+D for scrolling
           if (activePane === ActivePane.MergeRequests) {
             scrollInfoPane('down');
           }
+        } else if (key.name === 'tab' || key.name === 'd') {
+          // Tab or d for cycling tabs
+          cycleInfoPaneTab('next');
         }
         break;
       case 'u':
@@ -259,7 +409,7 @@ export default function App() {
       />
 
       {/* Help Modal - rendered at app level to cover entire screen */}
-      <HelpModal isVisible={showHelpModal} />
+      <HelpModal isVisible={showHelpModal} activePane={activePane} actions={helpModalActions} />
 
       {/* Jira Modal - rendered at app level to cover entire screen */}
       <JiraModal
@@ -274,6 +424,29 @@ export default function App() {
           mergeRequests={mergeRequests}
           onClose={() => setShowEventLogPane(false)}
         />
+      )}
+
+      {/* Copy Notification - from help modal actions */}
+      {copyNotification && (
+        <box
+          style={{
+            position: "absolute",
+            top: 3,
+            right: 3,
+            padding: 1,
+            border: true,
+            borderColor: '#50fa7b',
+            backgroundColor: '#282a36',
+            zIndex: 1000,
+          }}
+        >
+          <text
+            style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD }}
+            wrap={false}
+          >
+            {copyNotification}
+          </text>
+        </box>
       )}
     </box>
   );

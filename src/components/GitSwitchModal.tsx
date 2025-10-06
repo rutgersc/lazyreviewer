@@ -43,7 +43,6 @@ export default function GitSwitchModal({
     if (!isVisible) return;
 
     switch (key.name) {
-      case 'escape':
       case 'n':
         onClose();
         break;

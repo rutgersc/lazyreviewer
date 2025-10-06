@@ -30,12 +30,7 @@ export default function MrStateFilterModal({
   useKeyboard((key: ParsedKey) => {
     if (!isVisible) return;
 
-    console.log("statefiltermodal", key)
-
     switch (key.name) {
-      case 'escape':
-        onClose();
-        break;
       case 'j':
       case 'down':
         setSelectedIndex(prev => Math.min(prev + 1, MR_STATES.length - 1));
