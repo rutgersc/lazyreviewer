@@ -72,13 +72,13 @@ export default function App() {
     },
     onScrollInfoPaneDown: () => {
       setShowHelpModal(false);
-      if (activePane === ActivePane.MergeRequests) {
+      if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
         scrollInfoPane('down');
       }
     },
     onScrollInfoPaneUp: () => {
       setShowHelpModal(false);
-      if (activePane === ActivePane.MergeRequests) {
+      if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
         scrollInfoPane('up');
       }
     },
@@ -88,22 +88,18 @@ export default function App() {
         setActivePane(ActivePane.InfoPane);
       } else if (activePane === ActivePane.InfoPane) {
         setActivePane(ActivePane.UserSelection);
-      } else if (activePane === ActivePane.UserSelection) {
-        setActivePane(ActivePane.Console);
       } else {
         setActivePane(ActivePane.MergeRequests);
       }
     },
     onCyclePaneLeft: () => {
       setShowHelpModal(false);
-      if (activePane === ActivePane.Console) {
-        setActivePane(ActivePane.UserSelection);
-      } else if (activePane === ActivePane.UserSelection) {
+      if (activePane === ActivePane.UserSelection) {
         setActivePane(ActivePane.InfoPane);
       } else if (activePane === ActivePane.InfoPane) {
         setActivePane(ActivePane.MergeRequests);
       } else {
-        setActivePane(ActivePane.Console);
+        setActivePane(ActivePane.UserSelection);
       }
     },
 
@@ -260,8 +256,8 @@ export default function App() {
       case 'tab':
       case 'd':
         if (key.ctrl && key.name === 'd') {
-          // Ctrl+D for scrolling
-          if (activePane === ActivePane.MergeRequests) {
+          // Ctrl+D for scrolling (works when MR or Info pane is active)
+          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
             scrollInfoPane('down');
           }
         } else if (key.name === 'tab' || key.name === 'd') {
@@ -271,21 +267,20 @@ export default function App() {
         break;
       case 'u':
         if (key.ctrl) {
-          if (activePane === ActivePane.MergeRequests) {
+          // Ctrl+U for scrolling (works when MR or Info pane is active)
+          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
             scrollInfoPane('up');
           }
         }
         break;
       case 'h':
       case 'left':
-        if (activePane === ActivePane.Console) {
-          setActivePane(ActivePane.UserSelection);
-        } else if (activePane === ActivePane.UserSelection) {
+        if (activePane === ActivePane.UserSelection) {
           setActivePane(ActivePane.InfoPane);
         } else if (activePane === ActivePane.InfoPane) {
           setActivePane(ActivePane.MergeRequests);
         } else {
-          setActivePane(ActivePane.Console);
+          setActivePane(ActivePane.UserSelection);
         }
         break;
       case 'l':
@@ -294,8 +289,6 @@ export default function App() {
           setActivePane(ActivePane.InfoPane);
         } else if (activePane === ActivePane.InfoPane) {
           setActivePane(ActivePane.UserSelection);
-        } else if (activePane === ActivePane.UserSelection) {
-          setActivePane(ActivePane.Console);
         } else {
           setActivePane(ActivePane.MergeRequests);
         }

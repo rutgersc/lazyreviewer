@@ -341,7 +341,6 @@ export default function MergeRequestPane({}: {}) {
   );
   const selectedIndex = useAppStore((state) => state.selectedMergeRequest);
   const mergeRequests = useAppStore((state) => state.mergeRequests);
-  const fetchMrs = useAppStore((state) => state.fetchMrs);
 
   const activePane = useAppStore((state) => state.activePane);
   const mrState = useAppStore((state) => state.mrState);
@@ -481,7 +480,7 @@ export default function MergeRequestPane({}: {}) {
       case 't':
         setShowJiraModal(true);
         break;
-      case 'escape':
+      case 'backspace':
         // Toggle ignore when no modals are open
         if (mergeRequests[selectedIndex]) {
           toggleIgnoreMergeRequest(mergeRequests[selectedIndex].id);

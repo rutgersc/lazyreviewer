@@ -52,6 +52,12 @@ export default function InfoPane({}: InfoPaneProps) {
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane) return;
 
+    // Escape goes back to MergeRequests pane
+    if (key.name === 'escape') {
+      useAppStore.getState().setActivePane(ActivePane.MergeRequests);
+      return;
+    }
+
     if (infoPaneTab === 'jira' && jiraIssues.length > 0) {
       const selectedIssue = jiraIssues[selectedJiraIndex];
       const hasParent = selectedIssue?.fields.parent !== undefined;
@@ -140,7 +146,7 @@ export default function InfoPane({}: InfoPaneProps) {
   const renderTabContent = () => {
     switch (infoPaneTab) {
       case 'overview':
-        if (activePane === ActivePane.MergeRequests && selectedMergeRequest) {
+        if ((activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) && selectedMergeRequest) {
           return <MergeRequestInfo mergeRequest={selectedMergeRequest} />;
         } else if (activePane === ActivePane.UserSelection && selectedUserSelectionEntry) {
           return <UserSelectionInfo userSelection={selectedUserSelectionEntry} />;

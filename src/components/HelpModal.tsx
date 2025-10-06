@@ -53,11 +53,12 @@ const buildPaneKeys = (activePane: ActivePane, actions: HelpModalActions): KeyBi
         { key: 'x', description: 'Open MR in browser', action: actions.onOpenInBrowser },
         { key: 'g', description: 'Git switch to branch', action: actions.onGitSwitch },
         { key: 't', description: 'Show Jira tickets', action: actions.onShowJiraTickets },
-        { key: 'Esc', description: 'Toggle ignore MR', action: actions.onToggleIgnore },
+        { key: 'Backspace', description: 'Toggle ignore MR', action: actions.onToggleIgnore },
       ];
     case ActivePane.InfoPane:
       return [
         { key: 'j/k, ↑/↓', description: 'Navigate (in Jira/Pipeline tabs)' },
+        { key: 'Esc', description: 'Return to MR pane' },
       ];
     case ActivePane.UserSelection:
       return [
