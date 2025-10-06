@@ -199,6 +199,8 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
 
     if (!selectionEntry) return;
 
+    const previouslySelectedMrId = state.mergeRequests[state.selectedMergeRequest]?.id;
+
     const { usernames, repositories } = extractSelectionData(
       state.selectedUserSelectionEntry,
       state.userSelections,
@@ -218,7 +220,15 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
 
     set({ mergeRequests: [], branchDifferences: new Map() });
     await new Promise(resolve => setTimeout(resolve, 100));
-    set({ mergeRequests: mrs });
+
+    const newSelectedIndex = previouslySelectedMrId
+      ? mrs.findIndex(mr => mr.id === previouslySelectedMrId)
+      : -1;
+
+    set({
+      mergeRequests: mrs,
+      selectedMergeRequest: newSelectedIndex >= 0 ? newSelectedIndex : 0
+    });
 
     fetchBranchDifferences(mrs).then(differences => {
       set({ branchDifferences: differences });

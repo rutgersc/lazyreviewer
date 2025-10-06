@@ -10,6 +10,7 @@ import { Colors } from '../constants/colors';
 import { getJobStatusDisplay } from '../utils/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlabgraphql';
 import type { JiraIssue } from '../services/jiraService';
+import { openUrl } from '../utils/url';
 
 interface InfoPaneProps {
   // No props needed - everything comes from store!
@@ -83,6 +84,13 @@ export default function InfoPane({}: InfoPaneProps) {
         case 'k':
         case 'up':
           setSelectedPipelineJobIndex(Math.max(selectedPipelineJobIndex - 1, 0));
+          break;
+        case 'i':
+          const selectedJob = pipelineJobs[selectedPipelineJobIndex];
+          if (selectedJob?.job.webPath) {
+            const fullUrl = `https://git.elabnext.com${selectedJob.job.webPath}`;
+            openUrl(fullUrl);
+          }
           break;
       }
     }
