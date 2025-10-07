@@ -3,6 +3,7 @@ import { type MergeRequest } from "./MergeRequestPane";
 import { Colors } from "../constants/colors";
 import { formatCompactTime } from "../formatting";
 import { extractTextFromJiraComment } from "../services/jiraService";
+import type { PipelineJob } from "../gitlabgraphql";
 
 type EventType =
   | 'mr_created'
@@ -14,13 +15,18 @@ type EventType =
   | 'pipeline'
   | 'jira_comment';
 
-interface Event {
+export interface Event {
   timestamp: Date;
   type: EventType;
   mrTitle: string;
   mrColor: string;
   repoPath: string;
   data: any;
+  actionData?: {
+    url?: string;
+    job?: PipelineJob;
+    discussionId?: string;
+  };
 }
 
 type ColumnType = 'time' | 'repo' | 'mrTitle' | 'eventType' | 'eventDetails';
@@ -28,6 +34,7 @@ type ColumnType = 'time' | 'repo' | 'mrTitle' | 'eventType' | 'eventDetails';
 interface ActivityLogProps {
   mergeRequest: MergeRequest;
   columns: ColumnType[];
+  selectedActivityIndex?: number;
 }
 
 const getMrColor = (mrId: string): string => {
@@ -36,17 +43,20 @@ const getMrColor = (mrId: string): string => {
   return colors[hash % colors.length] ?? Colors.INFO;
 };
 
-const getEventTypeLabel = (type: EventType): string => {
+const getEventTypeLabel = (type: EventType, data?: any): string => {
+  // Each label is padded to exactly 16 JavaScript characters for alignment
   switch (type) {
-    case 'mr_created': return 'MR_CREATED';
-    case 'mr_updated': return 'MR_UPDATED';
-    case 'approval': return 'APPROVAL';
-    case 'discussion_created': return 'DISCUSSION';
-    case 'discussion_resolved': return 'RESOLVED';
-    case 'comment': return 'COMMENT';
-    case 'pipeline': return 'PIPELINE';
-    case 'jira_comment': return 'JIRA';
-    default: return 'UNKNOWN';
+    case 'mr_created': return '📝 MrCreated    ';
+    case 'mr_updated': return '📝 MrUpdated    ';
+    case 'approval': return '✅ Approval     ';
+    case 'discussion_created': return '💬 Discussion   ';
+    case 'discussion_resolved': return '✅ Resolved     ';
+    case 'comment': return '💭 MrComment    ';
+    case 'pipeline':
+      if (data?.hasFailures) return '❌ JobFailed    ';
+      return '✅ JobSuccess   ';
+    case 'jira_comment': return '🎫 JiraComment  ';
+    default: return '❓ Unknown      ';
   }
 };
 
@@ -62,7 +72,8 @@ const extractEvents = (mr: MergeRequest): Event[] => {
     mrTitle,
     mrColor,
     repoPath,
-    data: { author: mr.author }
+    data: { author: mr.author },
+    actionData: { url: mr.webUrl }
   });
 
   mr.approvedBy.forEach(approver => {
@@ -72,12 +83,14 @@ const extractEvents = (mr: MergeRequest): Event[] => {
       mrTitle,
       mrColor,
       repoPath,
-      data: { approver: approver.username }
+      data: { approver: approver.username },
+      actionData: { url: mr.webUrl }
     });
   });
 
   mr.discussions.forEach(discussion => {
     discussion.notes.forEach(note => {
+      const discussionUrl = `${mr.webUrl}#note_${discussion.id}`;
       if (note.resolvable && discussion.resolved) {
         events.push({
           timestamp: note.createdAt,
@@ -85,7 +98,8 @@ const extractEvents = (mr: MergeRequest): Event[] => {
           mrTitle,
           mrColor,
           repoPath,
-          data: { author: note.author, body: note.body }
+          data: { author: note.author, body: note.body },
+          actionData: { url: discussionUrl, discussionId: discussion.id }
         });
       } else if (note.resolvable) {
         events.push({
@@ -94,7 +108,8 @@ const extractEvents = (mr: MergeRequest): Event[] => {
           mrTitle,
           mrColor,
           repoPath,
-          data: { author: note.author, body: note.body }
+          data: { author: note.author, body: note.body },
+          actionData: { url: discussionUrl, discussionId: discussion.id }
         });
       } else {
         events.push({
@@ -103,7 +118,8 @@ const extractEvents = (mr: MergeRequest): Event[] => {
           mrTitle,
           mrColor,
           repoPath,
-          data: { author: note.author, body: note.body }
+          data: { author: note.author, body: note.body },
+          actionData: { url: discussionUrl, discussionId: discussion.id }
         });
       }
     });
@@ -132,13 +148,19 @@ const extractEvents = (mr: MergeRequest): Event[] => {
         data: {
           hasFailures,
           failedJobs: failedJobs.map(j => j.name)
-        }
+        },
+        actionData: hasFailures ? { job: failedJobs[0] } : undefined
       });
     }
   }
 
   mr.jiraIssues.forEach(issue => {
     issue.fields.comment.comments.forEach(comment => {
+      // Convert Jira API URL to browse URL with focused comment
+      // issue.self is like "https://scisure.atlassian.net/rest/api/3/issue/66048"
+      // We want "https://scisure.atlassian.net/browse/ELAB-18165?focusedCommentId=149420"
+      const jiraBaseUrl = issue.self.split('/rest/')[0];
+      const jiraUrl = `${jiraBaseUrl}/browse/${issue.key}?focusedCommentId=${comment.id}`;
       events.push({
         timestamp: new Date(comment.created),
         type: 'jira_comment',
@@ -148,7 +170,8 @@ const extractEvents = (mr: MergeRequest): Event[] => {
         data: {
           author: comment.author.displayName,
           body: extractTextFromJiraComment(comment)
-        }
+        },
+        actionData: { url: jiraUrl }
       });
     });
   });
@@ -156,18 +179,16 @@ const extractEvents = (mr: MergeRequest): Event[] => {
   return events;
 };
 
-const getEventTypeColor = (type: EventType): string => {
-  switch (type) {
-    case 'mr_created': return Colors.INFO;
-    case 'mr_updated': return Colors.SECONDARY;
-    case 'approval': return Colors.SUCCESS;
-    case 'discussion_created': return Colors.WARNING;
-    case 'discussion_resolved': return Colors.SUCCESS;
-    case 'comment': return Colors.PRIMARY;
-    case 'pipeline': return Colors.INFO;
-    case 'jira_comment': return Colors.NEUTRAL;
-    default: return Colors.PRIMARY;
+const getEventTypeColor = (type: EventType, data?: any): string => {
+  // Color code by source
+  if (type === 'jira_comment') {
+    return '#bd93f9'; // Purple for Jira
   }
+  if (type === 'pipeline') {
+    return data?.hasFailures ? Colors.ERROR : Colors.SUCCESS;
+  }
+  // MR-related events
+  return '#8be9fd'; // Cyan for MR events
 };
 
 const removeDatesFromString = (str: string): string => {
@@ -177,31 +198,31 @@ const removeDatesFromString = (str: string): string => {
 const formatEventDetails = (event: Event): string => {
   switch (event.type) {
     case 'mr_created':
-      const author = event.data.author.padEnd(15, ' ').substring(0, 15);
+      const author = event.data.author.padEnd(6, ' ').substring(0, 6);
       return author;
     case 'approval':
-      const approver = event.data.approver.padEnd(15, ' ').substring(0, 15);
+      const approver = event.data.approver.padEnd(6, ' ').substring(0, 6);
       return approver;
     case 'discussion_created':
-      const discussionAuthor = event.data.author.padEnd(15, ' ').substring(0, 15);
+      const discussionAuthor = event.data.author.padEnd(6, ' ').substring(0, 6);
       const discussionPreview = event.data.body.substring(0, 60).replace(/\n/g, ' ');
       return `${discussionAuthor} | ${discussionPreview}${event.data.body.length > 60 ? '...' : ''}`;
     case 'discussion_resolved':
-      const resolvedAuthor = event.data.author.padEnd(15, ' ').substring(0, 15);
+      const resolvedAuthor = event.data.author.padEnd(6, ' ').substring(0, 6);
       const resolvedPreview = event.data.body.substring(0, 60).replace(/\n/g, ' ');
       return `${resolvedAuthor} | ${resolvedPreview}${event.data.body.length > 60 ? '...' : ''}`;
     case 'comment':
-      const commentAuthor = event.data.author.padEnd(15, ' ').substring(0, 15);
+      const commentAuthor = event.data.author.padEnd(6, ' ').substring(0, 6);
       const commentPreview = event.data.body.substring(0, 60).replace(/\n/g, ' ');
       return `${commentAuthor} | ${commentPreview}${event.data.body.length > 60 ? '...' : ''}`;
     case 'pipeline':
       if (event.data.hasFailures) {
-        return `FAILED: ${event.data.failedJobs.join(', ')}`;
+        return `${event.data.failedJobs.join(', ')}`;
       } else {
-        return 'SUCCESS';
+        return '';
       }
     case 'jira_comment':
-      const jiraAuthor = event.data.author.padEnd(15, ' ').substring(0, 15);
+      const jiraAuthor = event.data.author.padEnd(6, ' ').substring(0, 6);
       const jiraPreview = event.data.body.substring(0, 60).replace(/\n/g, ' ');
       return `${jiraAuthor} | ${jiraPreview}${event.data.body.length > 60 ? '...' : ''}`;
     default:
@@ -209,19 +230,14 @@ const formatEventDetails = (event: Event): string => {
   }
 };
 
-export default function ActivityLog({ mergeRequest, columns }: ActivityLogProps) {
+export default function ActivityLog({ mergeRequest, columns, selectedActivityIndex = -1 }: ActivityLogProps) {
   const events = extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   return (
     <box style={{ flexDirection: "column", gap: 0 }}>
       {events.map((event, index) => {
-        const isPipeline = event.type === 'pipeline';
-        const isComment = event.type === 'comment';
-        const eventTypeColor = isPipeline && event.data?.hasFailures
-          ? Colors.ERROR
-          : isPipeline
-          ? Colors.SUCCESS
-          : getEventTypeColor(event.type);
+        const isSelected = index === selectedActivityIndex;
+        const eventTypeColor = getEventTypeColor(event.type, event.data);
 
         const parts: { text: string; color: string; bold?: boolean }[] = [];
 
@@ -245,18 +261,25 @@ export default function ActivityLog({ mergeRequest, columns }: ActivityLogProps)
               parts.push({ text: paddedMrTitle, color: event.mrColor });
               break;
             case 'eventType':
-              const typeLabel = getEventTypeLabel(event.type).padEnd(14, ' ').substring(0, 14);
+              const typeLabel = getEventTypeLabel(event.type, event.data);
               parts.push({ text: typeLabel, color: eventTypeColor });
               break;
             case 'eventDetails':
               const details = formatEventDetails(event);
-              parts.push({ text: details, color: eventTypeColor, bold: isComment });
+              parts.push({ text: details, color: Colors.PRIMARY });
               break;
           }
         });
 
         return (
-          <box key={index} style={{ flexDirection: "row", gap: 0 }}>
+          <box
+            key={index}
+            style={{
+              flexDirection: "row",
+              gap: 0,
+              backgroundColor: isSelected ? Colors.SELECTED : 'transparent'
+            }}
+          >
             {parts.map((part, partIndex) => (
               <text
                 key={partIndex}
@@ -274,4 +297,9 @@ export default function ActivityLog({ mergeRequest, columns }: ActivityLogProps)
       })}
     </box>
   );
+}
+
+// Export function to extract events for external use (e.g., in InfoPane for actions)
+export function extractActivityEvents(mergeRequest: MergeRequest): Event[] {
+  return extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 }

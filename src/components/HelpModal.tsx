@@ -78,8 +78,18 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
             { key: 'i', description: 'Download and open job log' },
             { key: 'Esc', description: 'Return to MR pane' },
           ];
+        case 'activity':
+          return [
+            { key: 'j/k, ↑/↓', description: 'Navigate activity items' },
+            { key: 'i, Enter', description: 'Open event (job log/URL)' },
+            { key: 'c', description: 'Copy event URL' },
+            { key: 'Esc', description: 'Return to MR pane' },
+          ];
+        default:
+          return [
+            { key: 'Esc', description: 'Return to MR pane' },
+          ];
       }
-      break;
     case ActivePane.UserSelection:
       return [
         { key: 'j/k, ↑/↓', description: 'Navigate list' },
@@ -89,6 +99,7 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
     case ActivePane.Console:
       return [];
   }
+  return [];
 };
 
 const buildGlobalKeys = (actions: HelpModalActions): KeyBinding[] => [
@@ -151,6 +162,7 @@ const getPaneTitle = (pane: ActivePane, infoPaneTab?: InfoPaneTab): string => {
       if (infoPaneTab === 'overview') return 'Info Pane - Overview Tab';
       if (infoPaneTab === 'jira') return 'Info Pane - Jira Tab';
       if (infoPaneTab === 'pipeline') return 'Info Pane - Pipeline Tab';
+      if (infoPaneTab === 'activity') return 'Info Pane - Activity Tab';
       return 'Info Pane';
     case ActivePane.UserSelection: return 'User Selection Pane';
     case ActivePane.Console: return 'Console Pane';

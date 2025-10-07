@@ -4,7 +4,7 @@ import { useKeyboard } from '@opentui/react';
 import JiraIssueInfo from './JiraIssueInfo';
 import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
-import ActivityLog from './ActivityLog';
+import ActivityLog, { extractActivityEvents } from './ActivityLog';
 import { useAppStore, type InfoPaneTab } from '../store/appStore';
 import { ActivePane } from '../types/userSelection';
 import { Colors } from '../constants/colors';
@@ -27,7 +27,7 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
 };
 
 export default function InfoPane({}: InfoPaneProps) {
-  const { activePane, infoPaneScrollOffset, infoPaneTab, selectedJiraIndex, selectedJiraSubIndex, selectedPipelineJobIndex, selectedDiscussionIndex, setSelectedJiraIndex, setSelectedJiraSubIndex, setSelectedPipelineJobIndex, setSelectedDiscussionIndex } = useAppStore();
+  const { activePane, infoPaneScrollOffset, infoPaneTab, selectedJiraIndex, selectedJiraSubIndex, selectedPipelineJobIndex, selectedDiscussionIndex, selectedActivityIndex, setSelectedJiraIndex, setSelectedJiraSubIndex, setSelectedPipelineJobIndex, setSelectedDiscussionIndex, setSelectedActivityIndex } = useAppStore();
   const scrollBoxRef = useRef<any>(null);
 
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
@@ -55,6 +55,11 @@ export default function InfoPane({}: InfoPaneProps) {
   const unresolvedDiscussions = useMemo(() => {
     if (!selectedMergeRequest?.discussions) return [];
     return selectedMergeRequest.discussions.filter(d => d.resolvable && !d.resolved);
+  }, [selectedMergeRequest]);
+
+  const activityEvents = useMemo(() => {
+    if (!selectedMergeRequest) return [];
+    return extractActivityEvents(selectedMergeRequest);
   }, [selectedMergeRequest]);
 
   // Keyboard navigation for jira and pipeline tabs
@@ -135,6 +140,35 @@ export default function InfoPane({}: InfoPaneProps) {
           const selectedJob = pipelineJobs[selectedPipelineJobIndex];
           if (selectedJob && selectedMergeRequest) {
             loadJobLog(selectedMergeRequest, selectedJob.job);
+          }
+          break;
+      }
+    } else if (infoPaneTab === 'activity' && activityEvents.length > 0) {
+      switch (key.name) {
+        case 'j':
+        case 'down':
+          setSelectedActivityIndex(Math.min(selectedActivityIndex + 1, activityEvents.length - 1));
+          break;
+        case 'k':
+        case 'up':
+          setSelectedActivityIndex(Math.max(selectedActivityIndex - 1, 0));
+          break;
+        case 'i':
+        case 'return':
+          const selectedEvent = activityEvents[selectedActivityIndex];
+          if (selectedEvent && selectedMergeRequest) {
+            // Handle action based on event type
+            if (selectedEvent.type === 'pipeline' && selectedEvent.actionData?.job) {
+              loadJobLog(selectedMergeRequest, selectedEvent.actionData.job);
+            } else if (selectedEvent.actionData?.url) {
+              openUrl(selectedEvent.actionData.url);
+            }
+          }
+          break;
+        case 'c':
+          const event = activityEvents[selectedActivityIndex];
+          if (event?.actionData?.url) {
+            copyToClipboard(event.actionData.url);
           }
           break;
       }
@@ -414,7 +448,7 @@ export default function InfoPane({}: InfoPaneProps) {
           return renderEmptyState();
         }
 
-        return <ActivityLog mergeRequest={selectedMergeRequest} columns={['time', 'eventType', 'eventDetails']} />;
+        return <ActivityLog mergeRequest={selectedMergeRequest} columns={['time', 'eventType', 'eventDetails']} selectedActivityIndex={selectedActivityIndex} />;
 
     }
   };

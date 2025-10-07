@@ -22,7 +22,7 @@ export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
     }
 
     return (
-      <box style={{ flexDirection: "column", gap: 1, width: "100%" }}>
+      <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
         <text
           style={{ fg: '#bd93f9', attributes: TextAttributes.BOLD, marginBottom: 1 }}
           wrap={true}
@@ -33,7 +33,7 @@ export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
           const commentText = extractTextFromJiraComment(comment);
 
           return (
-            <box key={comment.id} style={{ flexDirection: "column", marginLeft: 2, marginBottom: 1, width: "100%", backgroundColor: '#1a1a1a', padding: 1 }}>
+            <box key={comment.id} style={{ flexDirection: "column", marginLeft: 2, width: "100%", backgroundColor: '#1a1a1a', padding: 1 }}>
               <box style={{ flexDirection: "row", gap: 0, width: "100%" }}>
                 <text
                   style={{ fg: '#8be9fd', attributes: TextAttributes.BOLD }}
