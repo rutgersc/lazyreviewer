@@ -104,22 +104,6 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
 
   return (
     <box style={{ flexDirection: "column", gap: 1, width: "100%" }}>
-      <text
-        style={{ fg: '#f8f8f2', attributes: TextAttributes.BOLD, marginBottom: 0 }}
-        wrap={true}
-      >
-        Merge Request Details
-      </text>
-
-      <box style={{ flexDirection: "column", marginBottom: 1, width: "100%" }}>
-        <text
-          style={{ fg: '#f8f8f2' }}
-          wrap={true}
-        >
-          {`Title: ${mergeRequest.title}`}
-        </text>
-      </box>
-
       <box style={{ marginBottom: 1, width: "100%" }}>
         {renderUnresolvedDiscussions(mergeRequest.discussions || [])}
       </box>
