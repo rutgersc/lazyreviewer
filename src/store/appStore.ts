@@ -13,7 +13,7 @@ import { dirname } from 'path';
 import { type MergeRequestState } from '../generated/gitlab-sdk';
 import { loadSettings, saveSettings } from '../utils/settings';
 
-export type InfoPaneTab = 'overview' | 'jira' | 'pipeline';
+export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
 
 interface AppStore {
   groups: UserGroup[]
@@ -83,7 +83,7 @@ const fileStorage = createJSONStorage(() => ({
   removeItem: () => { try { unlinkSync(STORE_FILE); } catch { /* noop */ } },
 }));
 
-const INFO_PANE_TABS: InfoPaneTab[] = ['overview', 'jira', 'pipeline'];
+const INFO_PANE_TABS: InfoPaneTab[] = ['overview', 'jira', 'pipeline', 'activity'];
 
 export const useAppStore = create<AppStore>()(persist((set, get) => ({
   activePane: ActivePane.MergeRequests,

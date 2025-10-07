@@ -4,6 +4,7 @@ import { useKeyboard } from '@opentui/react';
 import JiraIssueInfo from './JiraIssueInfo';
 import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
+import ActivityLog from './ActivityLog';
 import { useAppStore, type InfoPaneTab } from '../store/appStore';
 import { ActivePane } from '../types/userSelection';
 import { Colors } from '../constants/colors';
@@ -21,7 +22,8 @@ interface InfoPaneProps {
 const TAB_LABELS: Record<InfoPaneTab, string> = {
   overview: 'Merge request',
   jira: 'Jira',
-  pipeline: 'Pipeline'
+  pipeline: 'Pipeline',
+  activity: 'Activity'
 };
 
 export default function InfoPane({}: InfoPaneProps) {
@@ -140,7 +142,7 @@ export default function InfoPane({}: InfoPaneProps) {
   });
 
   const renderTabBar = () => {
-    const tabs: InfoPaneTab[] = ['overview', 'jira', 'pipeline'];
+    const tabs: InfoPaneTab[] = ['overview', 'jira', 'pipeline', 'activity'];
 
     return (
       <box style={{ flexDirection: "column", gap: 0, marginBottom: 1 }}>
@@ -406,6 +408,13 @@ export default function InfoPane({}: InfoPaneProps) {
             )}
           </box>
         );
+
+      case 'activity':
+        if (!selectedMergeRequest) {
+          return renderEmptyState();
+        }
+
+        return <ActivityLog mergeRequest={selectedMergeRequest} columns={['time', 'eventType', 'eventDetails']} />;
 
     }
   };
