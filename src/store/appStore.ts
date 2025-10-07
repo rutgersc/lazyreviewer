@@ -256,11 +256,10 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
       set({ mergeRequests: cachedMrs });
 
       setTimeout(() => {
-        console.log("hoi", )
         fetchBranchDifferences(cachedMrs).then(differences => {
           set({ branchDifferences: differences });
         });
-      }, 1000);
+      }, 1);
     }
 
     return;

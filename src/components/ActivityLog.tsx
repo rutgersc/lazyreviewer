@@ -205,16 +205,16 @@ const formatEventDetails = (event: Event): string => {
       return approver;
     case 'discussion_created':
       const discussionAuthor = event.data.author.padEnd(6, ' ').substring(0, 6);
-      const discussionPreview = event.data.body.substring(0, 60).replace(/\n/g, ' ');
-      return `${discussionAuthor} | ${discussionPreview}${event.data.body.length > 60 ? '...' : ''}`;
+      const discussionPreview = event.data.body.replace(/\n/g, ' ');
+      return `${discussionAuthor} | ${discussionPreview}`;
     case 'discussion_resolved':
       const resolvedAuthor = event.data.author.padEnd(6, ' ').substring(0, 6);
-      const resolvedPreview = event.data.body.substring(0, 60).replace(/\n/g, ' ');
-      return `${resolvedAuthor} | ${resolvedPreview}${event.data.body.length > 60 ? '...' : ''}`;
+      const resolvedPreview = event.data.body.replace(/\n/g, ' ');
+      return `${resolvedAuthor} | ${resolvedPreview}`;
     case 'comment':
       const commentAuthor = event.data.author.padEnd(6, ' ').substring(0, 6);
-      const commentPreview = event.data.body.substring(0, 60).replace(/\n/g, ' ');
-      return `${commentAuthor} | ${commentPreview}${event.data.body.length > 60 ? '...' : ''}`;
+      const commentPreview = event.data.body.replace(/\n/g, ' ');
+      return `${commentAuthor} | ${commentPreview}`;
     case 'pipeline':
       if (event.data.hasFailures) {
         return `${event.data.failedJobs.join(', ')}`;
@@ -223,8 +223,8 @@ const formatEventDetails = (event: Event): string => {
       }
     case 'jira_comment':
       const jiraAuthor = event.data.author.padEnd(6, ' ').substring(0, 6);
-      const jiraPreview = event.data.body.substring(0, 60).replace(/\n/g, ' ');
-      return `${jiraAuthor} | ${jiraPreview}${event.data.body.length > 60 ? '...' : ''}`;
+      const jiraPreview = event.data.body.replace(/\n/g, ' ');
+      return `${jiraAuthor} | ${jiraPreview}`;
     default:
       return '';
   }
@@ -239,37 +239,10 @@ export default function ActivityLog({ mergeRequest, columns, selectedActivityInd
         const isSelected = index === selectedActivityIndex;
         const eventTypeColor = getEventTypeColor(event.type, event.data);
 
-        const parts: { text: string; color: string; bold?: boolean }[] = [];
-
-        columns.forEach((column, columnIndex) => {
-          if (columnIndex > 0) {
-            parts.push({ text: ' | ', color: Colors.NEUTRAL });
-          }
-
-          switch (column) {
-            case 'time':
-              const time = formatCompactTime(event.timestamp).padEnd(5, ' ').substring(0, 5);
-              parts.push({ text: time, color: event.mrColor });
-              break;
-            case 'repo':
-              const repoName = (event.repoPath.split('/').pop() || event.repoPath).padEnd(15, ' ').substring(0, 15);
-              parts.push({ text: repoName, color: event.mrColor });
-              break;
-            case 'mrTitle':
-              const cleanedMrTitle = removeDatesFromString(event.mrTitle);
-              const paddedMrTitle = cleanedMrTitle.padEnd(50, ' ').substring(0, 50);
-              parts.push({ text: paddedMrTitle, color: event.mrColor });
-              break;
-            case 'eventType':
-              const typeLabel = getEventTypeLabel(event.type, event.data);
-              parts.push({ text: typeLabel, color: eventTypeColor });
-              break;
-            case 'eventDetails':
-              const details = formatEventDetails(event);
-              parts.push({ text: details, color: Colors.PRIMARY });
-              break;
-          }
-        });
+        // Build the display data
+        const time = formatCompactTime(event.timestamp);
+        const typeLabel = getEventTypeLabel(event.type, event.data);
+        const details = formatEventDetails(event);
 
         return (
           <box
@@ -280,18 +253,37 @@ export default function ActivityLog({ mergeRequest, columns, selectedActivityInd
               backgroundColor: isSelected ? Colors.SELECTED : 'transparent'
             }}
           >
-            {parts.map((part, partIndex) => (
-              <text
-                key={partIndex}
-                style={{
-                  fg: part.color,
-                  attributes: part.bold ? TextAttributes.BOLD : undefined
-                }}
-                wrap={false}
-              >
-                {part.text}
-              </text>
-            ))}
+            {/* Time column - fixed width */}
+            <text
+              style={{ fg: event.mrColor }}
+              wrap={false}
+            >
+              {time}
+            </text>
+
+            {/* Separator */}
+            <text style={{ fg: Colors.NEUTRAL }} wrap={false}> | </text>
+
+            {/* Event type column - fixed width */}
+            <text
+              style={{ fg: eventTypeColor }}
+              wrap={false}
+            >
+              {typeLabel}
+            </text>
+
+            {/* Separator */}
+            <text style={{ fg: Colors.NEUTRAL }} wrap={false}> | </text>
+
+            {/* Event details - takes remaining space */}
+            <text
+
+              style={{ fg: Colors.PRIMARY, width: "80%" }}
+              wrap={false}
+            >
+              {details}
+            </text>
+
           </box>
         );
       })}

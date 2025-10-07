@@ -12,6 +12,7 @@ import { ActivePane } from "../types/userSelection";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { Colors } from "../constants/colors";
 import { useRepositoryBranches } from "../hooks/useRepositoryBranches";
+import { loadSettings } from "../utils/settings";
 
 const TimeColumnAuthorTitle = ({
   mr
@@ -92,10 +93,11 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
   );
 };
 
-const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date }) => {
+const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string }) => {
   const currentUser = useAppStore((state) => state.currentUser);
   const isApprovedByMe = mr.approvedBy.some(approver => approver.username === currentUser);
   const isMyMr = mr.author === currentUser;
+  const projectColor = repoColor || Colors.SUCCESS;
 
   return (
     <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
@@ -108,10 +110,10 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt }: { mr: MergeRe
         </text>
       </box>
 
-      <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? Colors.SUCCESS : "transparent" }}>
+      <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? projectColor : "transparent" }}>
         <text
           style={{
-            fg: isActiveInLocalRepo ? Colors.BACKGROUND : Colors.SUCCESS,
+            fg: isActiveInLocalRepo ? Colors.BACKGROUND : projectColor,
             attributes: TextAttributes.DIM
           }}
           wrap={false}
@@ -222,59 +224,64 @@ const BranchInformation = ({ mr, branchDifferenceMap }: { mr: MergeRequest; bran
 
 const IgnoredMergeRequestRow = ({
   mr,
-  isActiveInLocalRepo
+  isActiveInLocalRepo,
+  repoColor
 }: {
   mr: MergeRequest;
   isActiveInLocalRepo: boolean;
-}) => (
-  <>
-    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-      <box style={{ width: 3 }}>
-        <text
-          style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {formatCompactTime(mr.updatedAt)}
-        </text>
+  repoColor?: string;
+}) => {
+  const projectColor = repoColor || Colors.SUCCESS;
+
+  return (
+    <>
+      <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+        <box style={{ width: 3 }}>
+          <text
+            style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
+            wrap={false}
+          >
+            {formatCompactTime(mr.updatedAt)}
+          </text>
+        </box>
+
+        <box style={{ width: 15 }}>
+          <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
+            {mr.author}
+          </text>
+        </box>
+
+        <box style={{ flexGrow: 1 }}>
+          <text
+            style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
+            wrap={false}
+          >
+            {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
+          </text>
+        </box>
       </box>
 
-      <box style={{ width: 15 }}>
-        <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
-          {mr.author}
-        </text>
-      </box>
+      <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+        <box style={{ width: 3 }}>
+          <text
+            style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
+            wrap={false}
+          >
+            {formatCompactTime(mr.createdAt)}
+          </text>
+        </box>
 
-      <box style={{ flexGrow: 1 }}>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
-        </text>
-      </box>
-    </box>
-
-    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-      <box style={{ width: 3 }}>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {formatCompactTime(mr.createdAt)}
-        </text>
-      </box>
-
-      <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? Colors.SUCCESS : "transparent" }}>
-        <text
-          style={{
-            fg: isActiveInLocalRepo ? Colors.BACKGROUND : Colors.SUCCESS,
-            attributes: TextAttributes.DIM
-          }}
-          wrap={false}
-        >
-          {mr.project.name}
-        </text>
-      </box>
+        <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? projectColor : "transparent" }}>
+          <text
+            style={{
+              fg: isActiveInLocalRepo ? Colors.BACKGROUND : projectColor,
+              attributes: TextAttributes.DIM
+            }}
+            wrap={false}
+          >
+            {mr.project.name}
+          </text>
+        </box>
     </box>
 
     <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
@@ -303,6 +310,7 @@ const IgnoredMergeRequestRow = ({
     </box>
   </>
 );
+};
 
 const CopyNotificationPopup = ({
   notification,
@@ -364,6 +372,7 @@ export default function MergeRequestPane({}: {}) {
 
   const repositoryBranches = useRepositoryBranches(mergeRequests);
   const branchDifferences = useAppStore((state) => state.branchDifferences);
+  const settings = loadSettings();
 
   // Create a map of project path to current branch
   const projectBranchMap = useMemo(() => {
@@ -578,10 +587,11 @@ export default function MergeRequestPane({}: {}) {
         focused={false}
       >
         {mergeRequests.map((mr, index) => {
-          const currentBranch = projectBranchMap.get(mr.project.path);
+          const currentBranch = projectBranchMap.get(mr.project.fullPath);
           const isActiveInLocalRepo = currentBranch === mr.sourcebranch;
           const isIgnored = ignoredMergeRequests.has(mr.id);
           const highlightInfo = getMrHighlightInfo(mr, index);
+          const repoColor = settings.repositoryColors[mr.project.fullPath];
 
           return (
             <box
@@ -592,11 +602,11 @@ export default function MergeRequestPane({}: {}) {
               }}
             >
               {isIgnored ? (
-                <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} />
+                <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} />
               ) : (
                 <>
                   <TimeColumnAuthorTitle mr={mr} />
-                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} />
+                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} />
                   <BranchInformation mr={mr} branchDifferenceMap={branchDifferences} />
                 </>
               )}

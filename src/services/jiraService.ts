@@ -114,6 +114,11 @@ export const extractTextFromJiraComment = (comment: JiraComment): string => {
         case 'text':
           return contentBlock.text || '';
 
+        case 'mention':
+          // Handle @mentions - show the text attribute which contains the display name
+          const mentionText = contentBlock.attrs?.text || contentBlock.text || 'user';
+          return mentionText.startsWith('@') ? mentionText : `@${mentionText}`;
+
         default:
           // For any other type, try to parse nested content
           return parseContent(contentBlock.content);

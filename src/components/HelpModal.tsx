@@ -70,6 +70,8 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
         case 'jira':
           return [
             { key: 'j/k, ↑/↓', description: 'Navigate Jira issues' },
+            { key: 'i, Enter', description: 'Open issue in browser' },
+            { key: 'c', description: 'Copy issue URL' },
             { key: 'Esc', description: 'Return to MR pane' },
           ];
         case 'pipeline':

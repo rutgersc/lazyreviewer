@@ -125,6 +125,23 @@ export default function InfoPane({}: InfoPaneProps) {
             setSelectedJiraIndex(selectedJiraIndex - 1);
           }
           break;
+        case 'i':
+        case 'return':
+          // Open the issue in browser
+          if (selectedIssue) {
+            const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
+            const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
+            openUrl(jiraUrl);
+          }
+          break;
+        case 'c':
+          // Copy issue URL to clipboard
+          if (selectedIssue) {
+            const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
+            const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
+            copyToClipboard(jiraUrl);
+          }
+          break;
       }
     } else if (infoPaneTab === 'pipeline' && pipelineJobs.length > 0) {
       switch (key.name) {
@@ -448,7 +465,10 @@ export default function InfoPane({}: InfoPaneProps) {
           return renderEmptyState();
         }
 
-        return <ActivityLog mergeRequest={selectedMergeRequest} columns={['time', 'eventType', 'eventDetails']} selectedActivityIndex={selectedActivityIndex} />;
+        return <ActivityLog
+          mergeRequest={selectedMergeRequest}
+          columns={['time', 'eventType', 'eventDetails']}
+          selectedActivityIndex={selectedActivityIndex} />;
 
     }
   };

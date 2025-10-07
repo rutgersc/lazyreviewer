@@ -354,9 +354,7 @@ export default function App() {
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.InfoPane ? "#50fa7b" : "#6272a4",
-              height: "70%",
-              minHeight: "70%",
-              maxHeight: "70%",
+              height: "90%",
               backgroundColor: '#282a36'
             }}
           >
@@ -369,9 +367,7 @@ export default function App() {
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.Console ? "#50fa7b" : "#6272a4",
-              height: "30%",
-              minHeight: "30%",
-              maxHeight: "30%",
+              height: "10%",
               backgroundColor: '#282a36'
             }}
           >
@@ -392,7 +388,7 @@ export default function App() {
       <GitSwitchModal
         isVisible={showGitSwitchModal}
         branchName={mergeRequests[selectedIndex]?.sourcebranch || ""}
-        repoPath={repositoryBranches.find(r => r.projectPath === mergeRequests[selectedIndex]?.project.path)?.localPath || null}
+        repoPath={repositoryBranches.find(r => r.projectPath === mergeRequests[selectedIndex]?.project.fullPath)?.localPath || null}
         onClose={() => setShowGitSwitchModal(false)}
         onSuccess={() => {
           setCopyNotification('Branch switched!');

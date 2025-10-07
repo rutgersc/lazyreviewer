@@ -5,11 +5,13 @@ const SETTINGS_FILE = 'lazygitlab-settings.json';
 
 export interface Settings {
   repositoryPaths: Record<string, string>;
+  repositoryColors: Record<string, string>;
   ignoredMergeRequests: string[];
 }
 
 const defaultSettings: Settings = {
   repositoryPaths: {},
+  repositoryColors: {},
   ignoredMergeRequests: []
 };
 

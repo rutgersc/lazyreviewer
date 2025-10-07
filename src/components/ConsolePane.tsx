@@ -68,7 +68,7 @@ export default function ConsolePane({ isActive }: { isActive: boolean }) {
   };
 
   return (
-    <box style={{ flexDirection: "column", height: "100%", padding: 1 }}>
+    <box style={{ flexDirection: "column", height: "100%", paddingLeft: 1 }}>
       <text style={{ fg: '#f8f8f2', marginBottom: 1, attributes: TextAttributes.BOLD }} wrap={false}>
         Console Output (~)
       </text>
