@@ -118,7 +118,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { 
           }}
           wrap={false}
         >
-          {mr.project.name}
+         {mr.project.name}
         </text>
       </box>
 
