@@ -366,6 +366,7 @@ export default function MergeRequestPane({}: {}) {
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
   const ignoredMergeRequests = useAppStore((state) => state.ignoredMergeRequests);
   const setActivePane = useAppStore((state) => state.setActivePane);
+  const refetchSelectedMrPipeline = useAppStore((state) => state.refetchSelectedMrPipeline);
 
   const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -494,9 +495,16 @@ export default function MergeRequestPane({}: {}) {
         setShowJiraModal(true);
         break;
       case 'backspace':
-        // Toggle ignore when no modals are open
         if (mergeRequests[selectedIndex]) {
           toggleIgnoreMergeRequest(mergeRequests[selectedIndex].id);
+        }
+        break;
+      case 'p':
+        if (mergeRequests[selectedIndex]) {
+          refetchSelectedMrPipeline().then(() => {
+            setCopyNotification('Pipeline refreshed!');
+            setTimeout(() => setCopyNotification(null), 2000);
+          });
         }
         break;
     }

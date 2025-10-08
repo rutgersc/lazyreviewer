@@ -354,7 +354,7 @@ export default function App() {
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.InfoPane ? "#50fa7b" : "#6272a4",
-              height: "90%",
+              height: "80%",
               backgroundColor: '#282a36'
             }}
           >
@@ -367,7 +367,7 @@ export default function App() {
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.Console ? "#50fa7b" : "#6272a4",
-              height: "10%",
+              height: "20%",
               backgroundColor: '#282a36'
             }}
           >

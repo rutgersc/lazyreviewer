@@ -283,7 +283,7 @@ export const getGitlabMrsByProject = async (projectPath: string, state: MergeReq
   const data = await sdk.ProjectMRs({
     projectPath: projectPath,
     state: state,
-    first: 7
+    first: 20
   });
 
   const fs = require('fs');
@@ -319,6 +319,54 @@ export const getJobTrace = async (projectId: string, jobId: string): Promise<str
     return traceData;
   } catch (error) {
     console.error('Failed to fetch job trace:', error);
+    return null;
+  }
+}
+
+export const getMrPipeline = async (projectPath: string, iid: string): Promise<{ stage: PipelineStage[] } | null> => {
+  const endpoint = `https://git.elabnext.com/api/graphql`;
+  const token = process.env.GITLAB_TOKEN;
+  const client = new GraphQLClient(endpoint, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const sdk = getSdk(client);
+
+  try {
+    const data = await sdk.MRPipeline({
+      projectPath,
+      iid
+    });
+
+    const mr = data.project?.mergeRequest;
+    if (!mr?.headPipeline) {
+      console.log(`[Pipeline] No pipeline found for MR ${iid} in ${projectPath}`);
+      return null;
+    }
+
+    const pipeline = {
+      stage: mr.headPipeline.stages?.nodes
+        ?.map(stage => ({
+          name: stage?.name || '',
+          jobs: stage?.jobs?.nodes
+            ?.map(job => ({
+              id: job?.id || '',
+              localId: job?.id.split('/').pop(),
+              name: job?.name || '',
+              status: job?.status || 'CREATED',
+              failureMessage: job?.failureMessage || null,
+              webPath: job?.webPath || null,
+              startedAt: job?.startedAt || ''
+            } satisfies PipelineJob))
+            .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
+            || []
+        })) || []
+    };
+
+    console.log(`[Pipeline] Fetched pipeline for MR ${iid}: ${pipeline.stage.length} stages`);
+    return pipeline;
+  } catch (error) {
+    console.error(`[Pipeline] Failed to fetch pipeline for MR ${iid}:`, error);
     return null;
   }
 }

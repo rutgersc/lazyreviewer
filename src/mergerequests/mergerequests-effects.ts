@@ -1,5 +1,5 @@
 import type { MergeRequest } from "../components/MergeRequestPane";
-import { getGitlabMrs, getGitlabMrsByProject, type GitlabMergeRequest } from "../gitlabgraphql";
+import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline, type GitlabMergeRequest } from "../gitlabgraphql";
 import { loadJiraTickets, type JiraIssue } from "../services/jiraService";
 import { loadCache, saveCache } from "../utils/diskCache";
 import { type MergeRequestState } from "../generated/gitlab-sdk";
@@ -106,4 +106,40 @@ export function getCachedMergeRequests(
   const result = processMrsWithJira(cachedMrs, cachedTickets);
   console.log(`[MR] Loaded ${result.length} MRs from cache for key: ${mrKey}`);
   return result;
+}
+
+export async function refetchMrPipeline(
+  selectedUserSelectionEntry: string,
+  mrId: string,
+  projectPath: string,
+  iid: string,
+  state: MergeRequestState = 'opened'
+): Promise<void> {
+  console.log(`[Pipeline] Refetching pipeline for MR ${iid} (${mrId})`);
+
+  const pipeline = await getMrPipeline(projectPath, iid);
+  if (!pipeline) {
+    console.log(`[Pipeline] No pipeline data returned for MR ${iid}`);
+    return;
+  }
+
+  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
+  const mrCacheFile = getMrCacheFile(mrKey);
+
+  const cachedMrs = loadCache<GitlabMergeRequest[]>(mrCacheFile);
+  if (!cachedMrs) {
+    console.log(`[Pipeline] No cache found, cannot update pipeline`);
+    return;
+  }
+
+  const updatedMrs = cachedMrs.map(mr => {
+    if (mr.id === mrId) {
+      console.log(`[Pipeline] Updated pipeline for MR ${iid}`);
+      return { ...mr, pipeline };
+    }
+    return mr;
+  });
+
+  saveCache(mrCacheFile, updatedMrs);
+  console.log(`[Pipeline] Cache updated for MR ${iid}`);
 }

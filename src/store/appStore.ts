@@ -6,7 +6,7 @@ import { ActivePane } from '../types/userSelection';
 import type { BranchDifference } from '../hooks/useRepositoryBranches';
 import { groups, mockUserSelections, users } from '../data/usersAndGroups';
 import { shallow } from "zustand/shallow";
-import { getCachedMergeRequests, fetchMergeRequests, fetchMergeRequestsByProject } from '../mergerequests/mergerequests-effects';
+import { getCachedMergeRequests, fetchMergeRequests, fetchMergeRequestsByProject, refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 import { fetchBranchDifferences } from '../mergerequests/branch-difference-effects';
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
@@ -32,6 +32,7 @@ interface AppStore {
   loadMrs: () => Promise<void>
   setBranchDifferences: (differences: Map<string, BranchDifference>) => void
   toggleIgnoreMergeRequest: (mrId: string) => void;
+  refetchSelectedMrPipeline: () => Promise<void>;
 
   // Selection states
   selectedMergeRequest: number;
@@ -263,6 +264,36 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
     }
 
     return;
+  },
+
+  refetchSelectedMrPipeline: async () => {
+    const state = get();
+    const selectedMr = state.mergeRequests[state.selectedMergeRequest];
+    if (!selectedMr) {
+      console.log('[Pipeline] No MR selected');
+      return;
+    }
+
+    const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
+    if (!selectionEntry) {
+      console.log('[Pipeline] No selection entry found');
+      return;
+    }
+
+    console.log(`[Pipeline] Refetching pipeline for MR !${selectedMr.iid}`);
+
+    await refetchMrPipeline(
+      selectionEntry.name,
+      selectedMr.id,
+      selectedMr.project.fullPath,
+      selectedMr.iid,
+      state.mrState
+    );
+
+    const updatedMrs = getCachedMergeRequests(selectionEntry.name, state.mrState);
+    set({ mergeRequests: updatedMrs });
+
+    console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid}`);
   },
 }), {
   name: 'lazygitlab-store',

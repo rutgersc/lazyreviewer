@@ -29716,6 +29716,14 @@ export type JobTraceQueryVariables = Exact<{
 
 export type JobTraceQuery = { project: { job: { id: any | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, trace: { __typename: 'CiJobTrace', htmlSummary: string } | null } | null } | null };
 
+export type MrPipelineQueryVariables = Exact<{
+  projectPath: Scalars['ID']['input'];
+  iid: Scalars['String']['input'];
+}>;
+
+
+export type MrPipelineQuery = { project: { mergeRequest: { id: string, iid: string, headPipeline: { active: boolean, iid: string, stages: { __typename: 'CiStageConnection', nodes: Array<{ id: string, name: string | null, status: string | null, jobs: { nodes: Array<{ id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null } | null> | null } | null } | null> | null } | null } | null } | null } | null };
+
 export type MRsQueryVariables = Exact<{
   usernames: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
   state: InputMaybe<MergeRequestState>;
@@ -29769,6 +29777,38 @@ export const JobTraceDocument = gql`
       trace {
         __typename
         htmlSummary
+      }
+    }
+  }
+}
+    `;
+export const MrPipelineDocument = gql`
+    query MRPipeline($projectPath: ID!, $iid: String!) {
+  project(fullPath: $projectPath) {
+    mergeRequest(iid: $iid) {
+      id
+      iid
+      headPipeline {
+        active
+        iid
+        stages {
+          __typename
+          nodes {
+            id
+            name
+            jobs {
+              nodes {
+                id
+                webPath
+                name
+                status
+                failureMessage
+                startedAt
+              }
+            }
+            status
+          }
+        }
       }
     }
   }
@@ -29988,6 +30028,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     JobTrace(variables: JobTraceQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<JobTraceQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<JobTraceQuery>({ document: JobTraceDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'JobTrace', 'query', variables);
+    },
+    MRPipeline(variables: MrPipelineQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<MrPipelineQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<MrPipelineQuery>({ document: MrPipelineDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'MRPipeline', 'query', variables);
     },
     MRs(variables: MRsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<MRsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<MRsQuery>({ document: MRsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'MRs', 'query', variables);
