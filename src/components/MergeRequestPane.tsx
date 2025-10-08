@@ -15,9 +15,11 @@ import { useRepositoryBranches } from "../hooks/useRepositoryBranches";
 import { loadSettings } from "../utils/settings";
 
 const TimeColumnAuthorTitle = ({
-  mr
+  mr,
+  isMyMr
 }: {
   mr: MergeRequest;
+  isMyMr: boolean;
 }) => (
   <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
     <box style={{ width: 3 }}>
@@ -29,8 +31,8 @@ const TimeColumnAuthorTitle = ({
       </text>
     </box>
 
-    <box style={{ width: 15 }}>
-      <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+    <box style={{ width: 15, backgroundColor: isMyMr ? Colors.INFO : "transparent" }}>
+      <text style={{ fg: isMyMr ? Colors.BACKGROUND : Colors.NEUTRAL }} wrap={false}>
         {mr.author}
       </text>
     </box>
@@ -225,11 +227,13 @@ const BranchInformation = ({ mr, branchDifferenceMap }: { mr: MergeRequest; bran
 const IgnoredMergeRequestRow = ({
   mr,
   isActiveInLocalRepo,
-  repoColor
+  repoColor,
+  isMyMr
 }: {
   mr: MergeRequest;
   isActiveInLocalRepo: boolean;
   repoColor?: string;
+  isMyMr: boolean;
 }) => {
   const projectColor = repoColor || Colors.SUCCESS;
 
@@ -245,8 +249,8 @@ const IgnoredMergeRequestRow = ({
           </text>
         </box>
 
-        <box style={{ width: 15 }}>
-          <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
+        <box style={{ width: 15, backgroundColor: isMyMr ? Colors.INFO : "transparent" }}>
+          <text style={{ fg: isMyMr ? Colors.BACKGROUND : Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
             {mr.author}
           </text>
         </box>
@@ -592,6 +596,8 @@ export default function MergeRequestPane({}: {}) {
           const isIgnored = ignoredMergeRequests.has(mr.id);
           const highlightInfo = getMrHighlightInfo(mr, index);
           const repoColor = settings.repositoryColors[mr.project.fullPath];
+          const currentUser = useAppStore.getState().currentUser;
+          const isMyMr = mr.author === currentUser;
 
           return (
             <box
@@ -602,10 +608,10 @@ export default function MergeRequestPane({}: {}) {
               }}
             >
               {isIgnored ? (
-                <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} />
+                <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} isMyMr={isMyMr} />
               ) : (
                 <>
-                  <TimeColumnAuthorTitle mr={mr} />
+                  <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} />
                   <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} />
                   <BranchInformation mr={mr} branchDifferenceMap={branchDifferences} />
                 </>
