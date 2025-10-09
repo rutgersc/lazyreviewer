@@ -1,5 +1,5 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useKeyboard } from '@opentui/react';
 import Overview from './Overview';
 import ActivityLog, { extractActivityEvents } from './ActivityLog';
@@ -40,27 +40,17 @@ export default function InfoPane({}: InfoPaneProps) {
     }
   }, [infoPaneScrollOffset]);
 
-  const pipelineJobs = useMemo(() => {
-    if (!selectedMergeRequest?.pipeline?.stage) return [];
-    return selectedMergeRequest.pipeline.stage.flatMap((stage: PipelineStage) =>
-      stage.jobs.map((job: PipelineJob) => ({ stage, job }))
-    );
-  }, [selectedMergeRequest]);
+  const pipelineJobs = !selectedMergeRequest?.pipeline?.stage
+    ? []
+    : selectedMergeRequest.pipeline.stage.flatMap((stage: PipelineStage) =>
+        stage.jobs.map((job: PipelineJob) => ({ stage, job }))
+      );
 
-  const jiraIssues = useMemo(() => {
-    if (!selectedMergeRequest) return [];
-    return selectedMergeRequest.jiraIssues || [];
-  }, [selectedMergeRequest]);
+  const jiraIssues = selectedMergeRequest?.jiraIssues || [];
 
-  const unresolvedDiscussions = useMemo(() => {
-    if (!selectedMergeRequest?.discussions) return [];
-    return selectedMergeRequest.discussions.filter(d => d.resolvable && !d.resolved);
-  }, [selectedMergeRequest]);
+  const unresolvedDiscussions = selectedMergeRequest?.discussions.filter(d => d.resolvable && !d.resolved) || [];
 
-  const activityEvents = useMemo(() => {
-    if (!selectedMergeRequest) return [];
-    return extractActivityEvents(selectedMergeRequest);
-  }, [selectedMergeRequest]);
+  const activityEvents = selectedMergeRequest ? extractActivityEvents(selectedMergeRequest) : [];
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane) return;
