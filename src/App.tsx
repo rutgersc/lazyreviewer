@@ -22,7 +22,12 @@ import { openUrl } from "./utils/url";
 
 export default function App() {
   const renderer = useRenderer();
-  const { activePane, infoPaneTab, setActivePane, loadMrs, scrollInfoPane, cycleInfoPaneTab } = useAppStore();
+  const activePane = useAppStore(state => state.activePane);
+  const infoPaneTab = useAppStore(state => state.infoPaneTab);
+  const setActivePane = useAppStore(state => state.setActivePane);
+  const loadMrs = useAppStore(state => state.loadMrs);
+  const scrollInfoPane = useAppStore(state => state.scrollInfoPane);
+  const cycleInfoPaneTab = useAppStore(state => state.cycleInfoPaneTab);
   const showFilterModal = useAppStore(state => state.showMrFilterModal);
   const setShowFilterModal = useAppStore(state => state.setShowMrFilterModal);
   const showGitSwitchModal = useAppStore(state => state.showGitSwitchModal);

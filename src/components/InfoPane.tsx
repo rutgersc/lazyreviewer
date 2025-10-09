@@ -26,7 +26,19 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
 };
 
 export default function InfoPane({}: InfoPaneProps) {
-  const { activePane, infoPaneScrollOffset, infoPaneTab, selectedJiraIndex, selectedJiraSubIndex, selectedPipelineJobIndex, selectedDiscussionIndex, selectedActivityIndex, setSelectedJiraIndex, setSelectedJiraSubIndex, setSelectedPipelineJobIndex, setSelectedDiscussionIndex, setSelectedActivityIndex } = useAppStore();
+  const activePane = useAppStore(state => state.activePane);
+  const infoPaneScrollOffset = useAppStore(state => state.infoPaneScrollOffset);
+  const infoPaneTab = useAppStore(state => state.infoPaneTab);
+  const selectedJiraIndex = useAppStore(state => state.selectedJiraIndex);
+  const selectedJiraSubIndex = useAppStore(state => state.selectedJiraSubIndex);
+  const selectedPipelineJobIndex = useAppStore(state => state.selectedPipelineJobIndex);
+  const selectedDiscussionIndex = useAppStore(state => state.selectedDiscussionIndex);
+  const selectedActivityIndex = useAppStore(state => state.selectedActivityIndex);
+  const setSelectedJiraIndex = useAppStore(state => state.setSelectedJiraIndex);
+  const setSelectedJiraSubIndex = useAppStore(state => state.setSelectedJiraSubIndex);
+  const setSelectedPipelineJobIndex = useAppStore(state => state.setSelectedPipelineJobIndex);
+  const setSelectedDiscussionIndex = useAppStore(state => state.setSelectedDiscussionIndex);
+  const setSelectedActivityIndex = useAppStore(state => state.setSelectedActivityIndex);
   const scrollBoxRef = useRef<any>(null);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 

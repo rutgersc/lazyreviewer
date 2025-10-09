@@ -13,11 +13,10 @@ interface LocalNavigationState {
 }
 
 export default function UserSelectionPane({ }: UserSelectionPaneProps) {
-  const {
-    activePane,
-    selectedUserSelectionEntry,
-    userSelections,
-    switchUserSelection } = useAppStore();
+  const activePane = useAppStore(state => state.activePane);
+  const selectedUserSelectionEntry = useAppStore(state => state.selectedUserSelectionEntry);
+  const userSelections = useAppStore(state => state.userSelections);
+  const switchUserSelection = useAppStore(state => state.switchUserSelection);
 
   const isActive = activePane === ActivePane.UserSelection;
   const [navState, setNavState] = useState<LocalNavigationState>(() =>
