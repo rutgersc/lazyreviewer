@@ -255,13 +255,14 @@ export default function App() {
         break;
       case 'tab':
       case 'd':
+      case ';':
         if (key.ctrl && key.name === 'd') {
           // Ctrl+D for scrolling (works when MR or Info pane is active)
           if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
             scrollInfoPane('down');
           }
-        } else if (key.name === 'tab' || key.name === 'd') {
-          // Tab or d for cycling tabs
+        } else if (key.name === 'tab' || key.name === 'd' || key.name === ';') {
+          // Tab or ; for cycling tabs
           cycleInfoPaneTab('next');
         }
         break;
