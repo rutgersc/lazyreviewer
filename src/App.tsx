@@ -6,24 +6,20 @@ import InfoPane from "./components/InfoPane";
 import ConsolePane from "./components/ConsolePane";
 import MrStateFilterModal from "./components/MrStateFilterModal";
 import GitSwitchModal from "./components/GitSwitchModal";
-import HelpModal, { type HelpModalActions } from "./components/HelpModal";
+import HelpModal from "./components/HelpModal";
 import JiraModal from "./components/JiraModal";
 import EventLogPane from "./components/EventLogPane";
 import { ActivePane } from "./userselection/userSelection";
 import { useAppStore } from "./store/appStore";
-import { useEffect, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { startJobMonitoring, stopJobMonitoring } from "./services/jobMonitor";
 import { type MergeRequestState } from "./generated/gitlab-sdk";
 import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
-import { useState } from 'react';
-import { copyToClipboard } from "./system/clipboard-effect";
-import { openUrl } from "./system/url-effect";
 
 export default function App() {
   const renderer = useRenderer();
   const activePane = useAppStore(state => state.activePane);
-  const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setActivePane = useAppStore(state => state.setActivePane);
   const loadMrs = useAppStore(state => state.loadMrs);
   const scrollInfoPane = useAppStore(state => state.scrollInfoPane);
@@ -46,125 +42,6 @@ export default function App() {
 
   const repositoryBranches = useRepositoryBranches(mergeRequests);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
-  const toggleIgnoreMergeRequest = useAppStore(state => state.toggleIgnoreMergeRequest);
-  const setSelectedUserSelectionEntry = useAppStore(state => state.setSelectedUserSelectionEntry);
-  const selectedUserSelectionEntry = useAppStore(state => state.selectedUserSelectionEntry);
-
-  // Build help modal actions
-  const helpModalActions = useMemo<HelpModalActions>(() => ({
-    // Global actions
-    onRefresh: () => {
-      setShowHelpModal(false);
-      fetchMrs();
-    },
-    onOpenSettings: () => {
-      setShowHelpModal(false);
-      openSettingsFile();
-    },
-    onToggleConsole: () => {
-      setShowHelpModal(false);
-      renderer.console.toggle();
-    },
-    onOpenEventLog: () => {
-      setShowHelpModal(false);
-      if (mergeRequests.length > 0) {
-        setShowEventLogPane(true);
-      }
-    },
-    onCycleInfoTab: () => {
-      setShowHelpModal(false);
-      cycleInfoPaneTab('next');
-    },
-    onScrollInfoPaneDown: () => {
-      setShowHelpModal(false);
-      if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
-        scrollInfoPane('down');
-      }
-    },
-    onScrollInfoPaneUp: () => {
-      setShowHelpModal(false);
-      if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
-        scrollInfoPane('up');
-      }
-    },
-    onCyclePaneRight: () => {
-      setShowHelpModal(false);
-      if (activePane === ActivePane.MergeRequests) {
-        setActivePane(ActivePane.InfoPane);
-      } else if (activePane === ActivePane.InfoPane) {
-        setActivePane(ActivePane.UserSelection);
-      } else {
-        setActivePane(ActivePane.MergeRequests);
-      }
-    },
-    onCyclePaneLeft: () => {
-      setShowHelpModal(false);
-      if (activePane === ActivePane.UserSelection) {
-        setActivePane(ActivePane.InfoPane);
-      } else if (activePane === ActivePane.InfoPane) {
-        setActivePane(ActivePane.MergeRequests);
-      } else {
-        setActivePane(ActivePane.UserSelection);
-      }
-    },
-
-    // MR Pane actions
-    onFocusInfoPane: () => {
-      setShowHelpModal(false);
-      setActivePane(ActivePane.InfoPane);
-    },
-    onFilterMRs: () => {
-      setShowHelpModal(false);
-      setShowFilterModal(true);
-    },
-    onCopyBranch: () => {
-      setShowHelpModal(false);
-      if (mergeRequests[selectedIndex]) {
-        const sourceBranch = mergeRequests[selectedIndex].sourcebranch;
-        copyToClipboard(sourceBranch).then((success) => {
-          if (success) {
-            setCopyNotification(`Copied: ${sourceBranch}`);
-            setTimeout(() => setCopyNotification(null), 2000);
-          }
-        });
-      }
-    },
-    onOpenInBrowser: () => {
-      setShowHelpModal(false);
-      if (mergeRequests[selectedIndex]) {
-        openUrl(mergeRequests[selectedIndex].webUrl);
-      }
-    },
-    onGitSwitch: () => {
-      setShowHelpModal(false);
-      setShowGitSwitchModal(true);
-    },
-    onShowJiraTickets: () => {
-      setShowHelpModal(false);
-      setShowJiraModal(true);
-    },
-    onToggleIgnore: () => {
-      setShowHelpModal(false);
-      if (mergeRequests[selectedIndex]) {
-        toggleIgnoreMergeRequest(mergeRequests[selectedIndex].id);
-      }
-    },
-
-    // User Selection Pane actions
-    onSelectEntry: () => {
-      setShowHelpModal(false);
-      loadMrs();
-    },
-    onResetHighlight: () => {
-      setShowHelpModal(false);
-      // This would need to be implemented via store if needed
-    },
-  }), [
-    fetchMrs, setShowHelpModal, renderer, mergeRequests, setShowEventLogPane,
-    cycleInfoPaneTab, activePane, scrollInfoPane, setActivePane, setShowFilterModal,
-    selectedIndex, setCopyNotification, setShowGitSwitchModal, setShowJiraModal,
-    toggleIgnoreMergeRequest, loadMrs
-  ]);
 
   useEffect(() => {
     // On app start, load MRs using the persisted selection entry
@@ -404,7 +281,7 @@ export default function App() {
       />
 
       {/* Help Modal - rendered at app level to cover entire screen */}
-      <HelpModal isVisible={showHelpModal} activePane={activePane} infoPaneTab={infoPaneTab} actions={helpModalActions} />
+      <HelpModal isVisible={showHelpModal} setCopyNotification={setCopyNotification} />
 
       {/* Jira Modal - rendered at app level to cover entire screen */}
       <JiraModal

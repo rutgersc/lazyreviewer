@@ -366,7 +366,6 @@ export default function MergeRequestPane({}: {}) {
   const setShowFilterModal = useAppStore((state) => state.setShowMrFilterModal);
   const setShowGitSwitchModal = useAppStore((state) => state.setShowGitSwitchModal);
   const showHelpModal = useAppStore((state) => state.showHelpModal);
-  const setShowHelpModal = useAppStore((state) => state.setShowHelpModal);
   const showJiraModal = useAppStore((state) => state.showJiraModal);
   const setShowJiraModal = useAppStore((state) => state.setShowJiraModal);
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);

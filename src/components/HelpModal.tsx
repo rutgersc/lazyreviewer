@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { useKeyboard } from '@opentui/react';
+import { useKeyboard, useRenderer } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
-import { type InfoPaneTab } from '../store/appStore';
+import { type InfoPaneTab, useAppStore } from '../store/appStore';
+import { openSettingsFile } from '../settings/settings';
+import { copyToClipboard } from '../system/clipboard-effect';
+import { openUrl } from '../system/url-effect';
 
 interface HelpModalProps {
   isVisible: boolean;
-  activePane: ActivePane;
-  infoPaneTab: InfoPaneTab;
-  actions: HelpModalActions;
+  setCopyNotification?: (notification: string | null) => void;
 }
 
 export interface HelpModalActions {
@@ -171,8 +172,137 @@ const getPaneTitle = (pane: ActivePane, infoPaneTab?: InfoPaneTab): string => {
   }
 };
 
-export default function HelpModal({ isVisible, activePane, infoPaneTab, actions }: HelpModalProps) {
+export default function HelpModal({ isVisible, setCopyNotification }: HelpModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const renderer = useRenderer();
+
+  // Store selectors
+  const activePane = useAppStore(state => state.activePane);
+  const infoPaneTab = useAppStore(state => state.infoPaneTab);
+  const setActivePane = useAppStore(state => state.setActivePane);
+  const cycleInfoPaneTab = useAppStore(state => state.cycleInfoPaneTab);
+  const scrollInfoPane = useAppStore(state => state.scrollInfoPane);
+  const setShowHelpModal = useAppStore(state => state.setShowHelpModal);
+  const setShowFilterModal = useAppStore(state => state.setShowMrFilterModal);
+  const setShowGitSwitchModal = useAppStore(state => state.setShowGitSwitchModal);
+  const setShowJiraModal = useAppStore(state => state.setShowJiraModal);
+  const setShowEventLogPane = useAppStore(state => state.setShowEventLogPane);
+  const fetchMrs = useAppStore(state => state.fetchMrs);
+  const loadMrs = useAppStore(state => state.loadMrs);
+  const mergeRequests = useAppStore(state => state.mergeRequests);
+  const selectedMrIndex = useAppStore(state => state.selectedMergeRequest);
+  const toggleIgnoreMergeRequest = useAppStore(state => state.toggleIgnoreMergeRequest);
+
+  // Build help modal actions
+  const actions: HelpModalActions = {
+    // Global actions
+    onRefresh: () => {
+      setShowHelpModal(false);
+      fetchMrs();
+    },
+    onOpenSettings: () => {
+      setShowHelpModal(false);
+      openSettingsFile();
+    },
+    onToggleConsole: () => {
+      setShowHelpModal(false);
+      renderer.console.toggle();
+    },
+    onOpenEventLog: () => {
+      setShowHelpModal(false);
+      if (mergeRequests.length > 0) {
+        setShowEventLogPane(true);
+      }
+    },
+    onCycleInfoTab: () => {
+      setShowHelpModal(false);
+      cycleInfoPaneTab('next');
+    },
+    onScrollInfoPaneDown: () => {
+      setShowHelpModal(false);
+      if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
+        scrollInfoPane('down');
+      }
+    },
+    onScrollInfoPaneUp: () => {
+      setShowHelpModal(false);
+      if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
+        scrollInfoPane('up');
+      }
+    },
+    onCyclePaneRight: () => {
+      setShowHelpModal(false);
+      if (activePane === ActivePane.MergeRequests) {
+        setActivePane(ActivePane.InfoPane);
+      } else if (activePane === ActivePane.InfoPane) {
+        setActivePane(ActivePane.UserSelection);
+      } else {
+        setActivePane(ActivePane.MergeRequests);
+      }
+    },
+    onCyclePaneLeft: () => {
+      setShowHelpModal(false);
+      if (activePane === ActivePane.UserSelection) {
+        setActivePane(ActivePane.InfoPane);
+      } else if (activePane === ActivePane.InfoPane) {
+        setActivePane(ActivePane.MergeRequests);
+      } else {
+        setActivePane(ActivePane.UserSelection);
+      }
+    },
+
+    // MR Pane actions
+    onFocusInfoPane: () => {
+      setShowHelpModal(false);
+      setActivePane(ActivePane.InfoPane);
+    },
+    onFilterMRs: () => {
+      setShowHelpModal(false);
+      setShowFilterModal(true);
+    },
+    onCopyBranch: () => {
+      setShowHelpModal(false);
+      if (mergeRequests[selectedMrIndex]) {
+        const sourceBranch = mergeRequests[selectedMrIndex].sourcebranch;
+        copyToClipboard(sourceBranch).then((success) => {
+          if (success && setCopyNotification) {
+            setCopyNotification(`Copied: ${sourceBranch}`);
+            setTimeout(() => setCopyNotification(null), 2000);
+          }
+        });
+      }
+    },
+    onOpenInBrowser: () => {
+      setShowHelpModal(false);
+      if (mergeRequests[selectedMrIndex]) {
+        openUrl(mergeRequests[selectedMrIndex].webUrl);
+      }
+    },
+    onGitSwitch: () => {
+      setShowHelpModal(false);
+      setShowGitSwitchModal(true);
+    },
+    onShowJiraTickets: () => {
+      setShowHelpModal(false);
+      setShowJiraModal(true);
+    },
+    onToggleIgnore: () => {
+      setShowHelpModal(false);
+      if (mergeRequests[selectedMrIndex]) {
+        toggleIgnoreMergeRequest(mergeRequests[selectedMrIndex].id);
+      }
+    },
+
+    // User Selection Pane actions
+    onSelectEntry: () => {
+      setShowHelpModal(false);
+      loadMrs();
+    },
+    onResetHighlight: () => {
+      setShowHelpModal(false);
+      // This would need to be implemented via store if needed
+    },
+  };
 
   const paneKeys = buildPaneKeys(activePane, infoPaneTab, actions);
   const globalKeys = buildGlobalKeys(actions);
