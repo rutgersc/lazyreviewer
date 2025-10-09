@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextAttributes } from '@opentui/core';
-import type { UserSelectionEntry } from '../types/userSelection';
+import type { UserSelectionEntry } from '../userselection/userSelection';
 
 interface UserSelectionInfoProps {
   userSelection: UserSelectionEntry;

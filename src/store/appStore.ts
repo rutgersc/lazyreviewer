@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MergeRequest } from '../components/MergeRequestPane';
-import type { UserGroup, UserOrGroupId, UserSelection, UserSelectionEntry } from '../types/userSelection';
-import { ActivePane } from '../types/userSelection';
+import type { UserGroup, UserOrGroupId, UserSelection, UserSelectionEntry } from '../userselection/userSelection';
+import { ActivePane } from '../userselection/userSelection';
 import type { BranchDifference } from '../hooks/useRepositoryBranches';
 import { groups, mockUserSelections, users } from '../data/usersAndGroups';
 import { shallow } from "zustand/shallow";
@@ -11,7 +11,7 @@ import { fetchBranchDifferences } from '../mergerequests/branch-difference-effec
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
 import { type MergeRequestState } from '../generated/gitlab-sdk';
-import { loadSettings, saveSettings } from '../utils/settings';
+import { loadSettings, saveSettings } from '../settings/settings';
 
 export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
 
@@ -177,11 +177,8 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
       console.log(`[UserSelection] Loaded ${cachedMrs.length} cached MRs for ${selectionEntry.name}`);
       set({ mergeRequests: cachedMrs });
 
-      setTimeout(() => {
-        fetchBranchDifferences(cachedMrs).then(differences => {
-          set({ branchDifferences: differences });
-        });
-      }, 1);
+      const differences = await fetchBranchDifferences(cachedMrs);
+      set({ branchDifferences: differences });
     }
   },
 

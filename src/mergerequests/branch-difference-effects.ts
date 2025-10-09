@@ -1,5 +1,5 @@
-import { getBranchDifference } from '../utils/git';
-import { loadSettings } from '../utils/settings';
+import { getBranchDifference } from '../git/git-effects';
+import { loadSettings } from '../settings/settings';
 import type { MergeRequest } from '../components/MergeRequestPane';
 import type { BranchDifference } from '../hooks/useRepositoryBranches';
 

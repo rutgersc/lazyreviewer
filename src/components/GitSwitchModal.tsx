@@ -1,6 +1,6 @@
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
-import { Colors } from "../constants/colors";
+import { Colors } from "../colors";
 import { execSync } from "child_process";
 
 interface GitSwitchModalProps {

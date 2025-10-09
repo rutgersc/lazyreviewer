@@ -1,4 +1,4 @@
-import type { MergeRequest } from "./components/MergeRequestPane";
+import type { MergeRequest } from "../components/MergeRequestPane";
 import { getJobTrace, type PipelineJob } from "./gitlabgraphql";
 import { existsSync, writeFileSync, mkdirSync } from "fs"
  import { join } from "path"

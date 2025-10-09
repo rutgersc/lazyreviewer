@@ -1,8 +1,8 @@
 import { TextAttributes } from '@opentui/core';
 import type { MergeRequest } from './MergeRequestPane';
-import type { Discussion, DiscussionNote } from '../gitlabgraphql';
-import { formatCompactTime } from '../formatting';
-import { Colors } from '../constants/colors';
+import type { Discussion, DiscussionNote } from '../gitlab/gitlabgraphql';
+import { formatCompactTime } from '../utils/formatting';
+import { Colors } from '../colors';
 
 interface MergeRequestInfoProps {
   mergeRequest: MergeRequest;

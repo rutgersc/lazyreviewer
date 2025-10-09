@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { getJobTrace } from '../gitlabgraphql';
-import { openUrl } from '../utils/url';
+import { getJobTrace } from '../gitlab/gitlabgraphql';
+import { openUrl } from '../system/url-effect';
 import type { CiJobStatus } from '../generated/gitlab-sdk';
 
 export interface MonitoredJob {

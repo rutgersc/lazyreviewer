@@ -1,7 +1,12 @@
-import { TextAttributes } from '@opentui/core';
+import { TextAttributes, type ParsedKey } from '@opentui/core';
+import { useKeyboard } from '@opentui/react';
 import JiraIssueInfo from './JiraIssueInfo';
-import { Colors } from '../constants/colors';
-import type { JiraIssue } from '../services/jiraService';
+import { Colors } from '../colors';
+import type { JiraIssue } from '../jira/jiraService';
+import { useAppStore } from '../store/appStore';
+import { ActivePane } from '../userselection/userSelection';
+import { openUrl } from '../system/url-effect';
+import { copyToClipboard } from '../system/clipboard-effect';
 
 interface JiraIssuesListProps {
   jiraIssues: JiraIssue[];
@@ -17,6 +22,53 @@ type JiraListItem = {
 };
 
 export default function JiraIssuesList({ jiraIssues, selectedJiraIndex, selectedJiraSubIndex }: JiraIssuesListProps) {
+  const activePane = useAppStore(state => state.activePane);
+  const infoPaneTab = useAppStore(state => state.infoPaneTab);
+  const setSelectedJiraIndex = useAppStore(state => state.setSelectedJiraIndex);
+  const setSelectedJiraSubIndex = useAppStore(state => state.setSelectedJiraSubIndex);
+
+  useKeyboard((key: ParsedKey) => {
+    if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'jira') return;
+    if (jiraIssues.length === 0) return;
+
+    const selectedIssue = jiraIssues[selectedJiraIndex];
+    const hasParent = selectedIssue?.fields.parent !== undefined;
+    const maxSubIndex = hasParent ? 1 : 0;
+
+    switch (key.name) {
+      case 'j':
+      case 'down':
+        if (selectedJiraSubIndex < maxSubIndex) {
+          setSelectedJiraSubIndex(selectedJiraSubIndex + 1);
+        } else if (selectedJiraIndex < jiraIssues.length - 1) {
+          setSelectedJiraIndex(selectedJiraIndex + 1);
+        }
+        break;
+      case 'k':
+      case 'up':
+        if (selectedJiraSubIndex > 0) {
+          setSelectedJiraSubIndex(selectedJiraSubIndex - 1);
+        } else if (selectedJiraIndex > 0) {
+          setSelectedJiraIndex(selectedJiraIndex - 1);
+        }
+        break;
+      case 'i':
+      case 'return':
+        if (selectedIssue) {
+          const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
+          const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
+          openUrl(jiraUrl);
+        }
+        break;
+      case 'c':
+        if (selectedIssue) {
+          const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
+          const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
+          copyToClipboard(jiraUrl);
+        }
+        break;
+    }
+  });
   if (jiraIssues.length === 0) {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>

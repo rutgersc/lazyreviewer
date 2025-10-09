@@ -1,6 +1,6 @@
 import { GraphQLClient } from "graphql-request"
-import { getSdk, type MRsQuery, type ProjectMRsQuery, type CiJobStatus, type MergeRequestState } from "./generated/gitlab-sdk";
-import { extractElabTicketsFromTitle } from "./services/jiraService";
+import { getSdk, type MRsQuery, type ProjectMRsQuery, type CiJobStatus, type MergeRequestState } from "../generated/gitlab-sdk";
+import { extractElabTicketsFromTitle } from "../jira/jiraService";
 
 export interface PipelineJob {
   id: string;

@@ -1,18 +1,14 @@
-import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { useRef, useEffect, useState } from 'react';
+import { ScrollBoxRenderable, TextAttributes, type ParsedKey } from '@opentui/core';
+import { useRef, useEffect } from 'react';
 import { useKeyboard } from '@opentui/react';
 import Overview from './Overview';
-import ActivityLog, { extractActivityEvents } from './ActivityLog';
+import ActivityLog from './ActivityLog';
 import JiraIssuesList from './JiraIssuesList';
 import PipelineJobsList from './PipelineJobsList';
 import { useAppStore, type InfoPaneTab } from '../store/appStore';
-import { ActivePane } from '../types/userSelection';
-import { Colors } from '../constants/colors';
-import type { PipelineJob, PipelineStage } from '../gitlabgraphql';
-import { handleOverviewKeys } from './OverviewKeyHandler';
-import { handleJiraKeys } from './JiraIssuesListKeyHandler';
-import { handlePipelineKeys } from './PipelineJobsListKeyHandler';
-import { handleActivityKeys } from './ActivityLogKeyHandler';
+import { ActivePane } from '../userselection/userSelection';
+import { Colors } from '../colors';
+import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 
 interface InfoPaneProps {
   // No props needed - everything comes from store!
@@ -34,13 +30,7 @@ export default function InfoPane({}: InfoPaneProps) {
   const selectedPipelineJobIndex = useAppStore(state => state.selectedPipelineJobIndex);
   const selectedDiscussionIndex = useAppStore(state => state.selectedDiscussionIndex);
   const selectedActivityIndex = useAppStore(state => state.selectedActivityIndex);
-  const setSelectedJiraIndex = useAppStore(state => state.setSelectedJiraIndex);
-  const setSelectedJiraSubIndex = useAppStore(state => state.setSelectedJiraSubIndex);
-  const setSelectedPipelineJobIndex = useAppStore(state => state.setSelectedPipelineJobIndex);
-  const setSelectedDiscussionIndex = useAppStore(state => state.setSelectedDiscussionIndex);
-  const setSelectedActivityIndex = useAppStore(state => state.setSelectedActivityIndex);
-  const scrollBoxRef = useRef<any>(null);
-  const [copyNotification, setCopyNotification] = useState<string | null>(null);
+  const scrollBoxRef = useRef<ScrollBoxRenderable>(null);
 
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const selectedUserSelectionEntry = useAppStore(state => state.userSelections[state.selectedUserSelectionEntry]);
@@ -60,52 +50,12 @@ export default function InfoPane({}: InfoPaneProps) {
 
   const jiraIssues = selectedMergeRequest?.jiraIssues || [];
 
-  const unresolvedDiscussions = selectedMergeRequest?.discussions.filter(d => d.resolvable && !d.resolved) || [];
-
-  const activityEvents = selectedMergeRequest ? extractActivityEvents(selectedMergeRequest) : [];
-
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane) return;
 
     if (key.name === 'escape') {
       useAppStore.getState().setActivePane(ActivePane.MergeRequests);
       return;
-    }
-
-    if (infoPaneTab === 'overview') {
-      handleOverviewKeys({
-        key,
-        unresolvedDiscussions,
-        selectedDiscussionIndex,
-        setSelectedDiscussionIndex,
-        selectedMergeRequest,
-        setCopyNotification
-      });
-    } else if (infoPaneTab === 'jira') {
-      handleJiraKeys({
-        key,
-        jiraIssues,
-        selectedJiraIndex,
-        selectedJiraSubIndex,
-        setSelectedJiraIndex,
-        setSelectedJiraSubIndex
-      });
-    } else if (infoPaneTab === 'pipeline') {
-      handlePipelineKeys({
-        key,
-        pipelineJobs,
-        selectedPipelineJobIndex,
-        setSelectedPipelineJobIndex,
-        selectedMergeRequest
-      });
-    } else if (infoPaneTab === 'activity') {
-      handleActivityKeys({
-        key,
-        activityEvents,
-        selectedActivityIndex,
-        setSelectedActivityIndex,
-        selectedMergeRequest
-      });
     }
   });
 
@@ -205,28 +155,6 @@ export default function InfoPane({}: InfoPaneProps) {
       >
         {renderTabContent()}
       </scrollbox>
-
-      {copyNotification && (
-        <box
-          style={{
-            position: "absolute",
-            top: 3,
-            right: 3,
-            padding: 1,
-            border: true,
-            borderColor: Colors.SUCCESS,
-            backgroundColor: Colors.BACKGROUND,
-            zIndex: 1000,
-          }}
-        >
-          <text
-            style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }}
-            wrap={false}
-          >
-            {copyNotification}
-          </text>
-        </box>
-      )}
     </box>
   );
 }

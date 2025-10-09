@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
-import type { UserSelection, UserSelectionEntry } from '../types/userSelection';
-import { ActivePane } from '../types/userSelection';
+import type { UserSelection, UserSelectionEntry } from '../userselection/userSelection';
+import { ActivePane } from '../userselection/userSelection';
 import { useAppStore } from '../store/appStore';
 
 interface UserSelectionPaneProps {

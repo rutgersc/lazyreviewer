@@ -9,16 +9,16 @@ import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal, { type HelpModalActions } from "./components/HelpModal";
 import JiraModal from "./components/JiraModal";
 import EventLogPane from "./components/EventLogPane";
-import { ActivePane } from "./types/userSelection";
+import { ActivePane } from "./userselection/userSelection";
 import { useAppStore } from "./store/appStore";
 import { useEffect, useMemo } from 'react';
 import { startJobMonitoring, stopJobMonitoring } from "./services/jobMonitor";
 import { type MergeRequestState } from "./generated/gitlab-sdk";
-import { openSettingsFile } from "./utils/settings";
+import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { useState } from 'react';
-import { copyToClipboard } from "./utils/clipboard";
-import { openUrl } from "./utils/url";
+import { copyToClipboard } from "./system/clipboard-effect";
+import { openUrl } from "./system/url-effect";
 
 export default function App() {
   const renderer = useRenderer();

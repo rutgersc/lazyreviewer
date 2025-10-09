@@ -1,4 +1,4 @@
-import type { Discussion, DiscussionNote } from '../gitlabgraphql';
+import type { Discussion, DiscussionNote } from './gitlabgraphql';
 import type { MergeRequest } from '../components/MergeRequestPane';
 
 const formatTimestamp = (date: Date): string => {

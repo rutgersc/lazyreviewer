@@ -1,4 +1,4 @@
-import type { GroupId, UserGroup, UserId, UserSelection, UserSelectionEntry, RepositoryId } from '../types/userSelection';
+import type { GroupId, UserGroup, UserId, UserSelection, UserSelectionEntry, RepositoryId } from '../userselection/userSelection';
 
 const rutger = { type: 'userId', id: 'r.schoorstra'  } satisfies UserId;
 const menno = { type: 'userId', id: 'MennoGerbens'  } satisfies UserId;

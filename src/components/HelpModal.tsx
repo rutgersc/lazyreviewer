@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { ActivePane } from '../types/userSelection';
-import { Colors } from '../constants/colors';
+import { ActivePane } from '../userselection/userSelection';
+import { Colors } from '../colors';
 import { type InfoPaneTab } from '../store/appStore';
 
 interface HelpModalProps {

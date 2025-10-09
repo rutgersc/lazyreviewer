@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextAttributes } from '@opentui/core';
-import type { JiraIssue } from '../services/jiraService';
+import type { JiraIssue } from '../jira/jiraService';
 
 interface JiraModalProps {
   isVisible: boolean;
@@ -61,7 +61,7 @@ export default function JiraModal({ isVisible, jiraIssues, onClose }: JiraModalP
                     {issue.fields.summary}
                   </text>
                 </box>
-                
+
                 {/* Issue type and status */}
                 <box style={{ flexDirection: 'row', gap: 2, marginLeft: 2 }}>
                   <text style={{ fg: '#bd93f9', attributes: TextAttributes.DIM }} wrap={false}>

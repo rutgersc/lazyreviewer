@@ -1,18 +1,18 @@
 import { useState, useMemo } from "react";
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
-import { type JiraIssue } from "../services/jiraService";
-import { type GitlabMergeRequest, type PipelineStage, type PipelineJob } from "../gitlabgraphql";
-import { formatCompactTime } from "../formatting";
-import { copyToClipboard } from "../utils/clipboard";
-import { openUrl } from "../utils/url";
-import { getJobStatusDisplay } from "../utils/jobStatus";
+import { type JiraIssue } from "../jira/jiraService";
+import { type GitlabMergeRequest, type PipelineStage, type PipelineJob } from "../gitlab/gitlabgraphql";
+import { formatCompactTime } from "../utils/formatting";
+import { copyToClipboard } from "../system/clipboard-effect";
+import { openUrl } from "../system/url-effect";
+import { getJobStatusDisplay } from "../gitlab/jobStatus";
 import { useAppStore } from "../store/appStore";
-import { ActivePane } from "../types/userSelection";
+import { ActivePane } from "../userselection/userSelection";
 import { useAutoScroll } from "../hooks/useAutoScroll";
-import { Colors } from "../constants/colors";
+import { Colors } from "../colors";
 import { useRepositoryBranches } from "../hooks/useRepositoryBranches";
-import { loadSettings } from "../utils/settings";
+import { loadSettings } from "../settings/settings";
 
 const TimeColumnAuthorTitle = ({
   mr,

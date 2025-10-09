@@ -1,7 +1,7 @@
 import type { MergeRequest } from "../components/MergeRequestPane";
-import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline, type GitlabMergeRequest } from "../gitlabgraphql";
-import { loadJiraTickets, type JiraIssue } from "../services/jiraService";
-import { loadCache, saveCache } from "../utils/diskCache";
+import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline, type GitlabMergeRequest } from "../gitlab/gitlabgraphql";
+import { loadJiraTickets, type JiraIssue } from "../jira/jiraService";
+import { loadCache, saveCache } from "../system/diskCache";
 import { type MergeRequestState } from "../generated/gitlab-sdk";
 
 function buildCacheKeys(selectedUserSelectionEntry: string, state: MergeRequestState) {

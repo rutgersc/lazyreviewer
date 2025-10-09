@@ -1,9 +1,15 @@
-import { TextAttributes } from "@opentui/core";
+import { TextAttributes, type ParsedKey } from "@opentui/core";
+import { useKeyboard } from '@opentui/react';
 import { type MergeRequest } from "./MergeRequestPane";
-import { Colors } from "../constants/colors";
-import { formatCompactTime } from "../formatting";
-import { extractTextFromJiraComment } from "../services/jiraService";
-import type { PipelineJob } from "../gitlabgraphql";
+import { Colors } from "../colors";
+import { formatCompactTime } from "../utils/formatting";
+import { extractTextFromJiraComment } from "../jira/jiraService";
+import type { PipelineJob } from "../gitlab/gitlabgraphql";
+import { useAppStore } from '../store/appStore';
+import { ActivePane } from '../userselection/userSelection';
+import { openUrl } from '../system/url-effect';
+import { copyToClipboard } from '../system/clipboard-effect';
+import { loadJobLog } from '../gitlab/pipelinejob-log';
 
 type EventType =
   | 'mr_created'
@@ -191,10 +197,6 @@ const getEventTypeColor = (type: EventType, data?: any): string => {
   return '#8be9fd'; // Cyan for MR events
 };
 
-const removeDatesFromString = (str: string): string => {
-  return str.replace(/\d{4}-\d{2}-\d{2}/g, '').trim();
-};
-
 const formatEventDetails = (event: Event): string => {
   switch (event.type) {
     case 'mr_created':
@@ -231,7 +233,44 @@ const formatEventDetails = (event: Event): string => {
 };
 
 export default function ActivityLog({ mergeRequest, columns, selectedActivityIndex = -1 }: ActivityLogProps) {
+  const activePane = useAppStore(state => state.activePane);
+  const infoPaneTab = useAppStore(state => state.infoPaneTab);
+  const setSelectedActivityIndex = useAppStore(state => state.setSelectedActivityIndex);
+
   const events = extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+  useKeyboard((key: ParsedKey) => {
+    if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'activity') return;
+    if (events.length === 0) return;
+
+    switch (key.name) {
+      case 'j':
+      case 'down':
+        setSelectedActivityIndex(Math.min(selectedActivityIndex + 1, events.length - 1));
+        break;
+      case 'k':
+      case 'up':
+        setSelectedActivityIndex(Math.max(selectedActivityIndex - 1, 0));
+        break;
+      case 'i':
+      case 'return':
+        const selectedEvent = events[selectedActivityIndex];
+        if (selectedEvent && mergeRequest) {
+          if (selectedEvent.type === 'pipeline' && selectedEvent.actionData?.job) {
+            loadJobLog(mergeRequest, selectedEvent.actionData.job);
+          } else if (selectedEvent.actionData?.url) {
+            openUrl(selectedEvent.actionData.url);
+          }
+        }
+        break;
+      case 'c':
+        const event = events[selectedActivityIndex];
+        if (event?.actionData?.url) {
+          copyToClipboard(event.actionData.url);
+        }
+        break;
+    }
+  });
 
   return (
     <box style={{ flexDirection: "column", gap: 0 }}>
@@ -291,7 +330,3 @@ export default function ActivityLog({ mergeRequest, columns, selectedActivityInd
   );
 }
 
-// Export function to extract events for external use (e.g., in InfoPane for actions)
-export function extractActivityEvents(mergeRequest: MergeRequest): Event[] {
-  return extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-}

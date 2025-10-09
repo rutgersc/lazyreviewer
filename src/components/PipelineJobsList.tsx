@@ -1,7 +1,11 @@
-import { TextAttributes } from '@opentui/core';
-import { Colors } from '../constants/colors';
-import { getJobStatusDisplay } from '../utils/jobStatus';
-import type { PipelineJob, PipelineStage } from '../gitlabgraphql';
+import { TextAttributes, type ParsedKey } from '@opentui/core';
+import { useKeyboard } from '@opentui/react';
+import { Colors } from '../colors';
+import { getJobStatusDisplay } from '../gitlab/jobStatus';
+import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
+import { useAppStore } from '../store/appStore';
+import { ActivePane } from '../userselection/userSelection';
+import { loadJobLog } from '../gitlab/pipelinejob-log';
 
 interface PipelineJobsListProps {
   pipelineJobs: Array<{ stage: PipelineStage; job: PipelineJob }>;
@@ -9,6 +13,32 @@ interface PipelineJobsListProps {
 }
 
 export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobIndex }: PipelineJobsListProps) {
+  const activePane = useAppStore(state => state.activePane);
+  const infoPaneTab = useAppStore(state => state.infoPaneTab);
+  const setSelectedPipelineJobIndex = useAppStore(state => state.setSelectedPipelineJobIndex);
+  const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
+
+  useKeyboard((key: ParsedKey) => {
+    if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
+    if (pipelineJobs.length === 0) return;
+
+    switch (key.name) {
+      case 'j':
+      case 'down':
+        setSelectedPipelineJobIndex(Math.min(selectedPipelineJobIndex + 1, pipelineJobs.length - 1));
+        break;
+      case 'k':
+      case 'up':
+        setSelectedPipelineJobIndex(Math.max(selectedPipelineJobIndex - 1, 0));
+        break;
+      case 'i':
+        const selectedJob = pipelineJobs[selectedPipelineJobIndex];
+        if (selectedJob && selectedMergeRequest) {
+          loadJobLog(selectedMergeRequest, selectedJob.job);
+        }
+        break;
+    }
+  });
   if (pipelineJobs.length === 0) {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
