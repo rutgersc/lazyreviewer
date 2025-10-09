@@ -158,19 +158,19 @@ export default function App() {
         break;
       case 'h':
       case 'left':
-        if (activePane === ActivePane.UserSelection) {
-          setActivePane(ActivePane.InfoPane);
-        } else if (activePane === ActivePane.InfoPane) {
-          setActivePane(ActivePane.MergeRequests);
-        } else {
+        if (activePane === ActivePane.InfoPane) {
+          cycleInfoPaneTab('prev');
+        } else if (activePane === ActivePane.MergeRequests) {
           setActivePane(ActivePane.UserSelection);
+        } else {
+          setActivePane(ActivePane.MergeRequests);
         }
         break;
       case 'l':
       case 'right':
-        if (activePane === ActivePane.MergeRequests) {
-          setActivePane(ActivePane.InfoPane);
-        } else if (activePane === ActivePane.InfoPane) {
+        if (activePane === ActivePane.InfoPane) {
+          cycleInfoPaneTab('next');
+        } else if (activePane === ActivePane.MergeRequests) {
           setActivePane(ActivePane.UserSelection);
         } else {
           setActivePane(ActivePane.MergeRequests);

@@ -50,6 +50,7 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
     case ActivePane.MergeRequests:
       return [
         { key: 'j/k, ↑/↓', description: 'Navigate list' },
+        { key: 'h/l, ←/→', description: 'Toggle MR/User panes' },
         { key: 'Enter', description: 'Focus info pane', action: actions.onFocusInfoPane },
         { key: 'f', description: 'Filter MRs by state', action: actions.onFilterMRs },
         { key: 'c', description: 'Copy branch name', action: actions.onCopyBranch },
@@ -64,6 +65,7 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
         case 'overview':
           return [
             { key: 'j/k, ↑/↓', description: 'Navigate discussions' },
+            { key: 'h/l, ←/→', description: 'Cycle tabs' },
             { key: 'i', description: 'Open discussion in browser' },
             { key: 'c', description: 'Copy discussion URL' },
             { key: 'Esc', description: 'Return to MR pane' },
@@ -71,6 +73,7 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
         case 'jira':
           return [
             { key: 'j/k, ↑/↓', description: 'Navigate Jira issues' },
+            { key: 'h/l, ←/→', description: 'Cycle tabs' },
             { key: 'i, Enter', description: 'Open issue in browser' },
             { key: 'c', description: 'Copy issue URL' },
             { key: 'Esc', description: 'Return to MR pane' },
@@ -78,24 +81,28 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
         case 'pipeline':
           return [
             { key: 'j/k, ↑/↓', description: 'Navigate pipeline jobs' },
+            { key: 'h/l, ←/→', description: 'Cycle tabs' },
             { key: 'i', description: 'Download and open job log' },
             { key: 'Esc', description: 'Return to MR pane' },
           ];
         case 'activity':
           return [
             { key: 'j/k, ↑/↓', description: 'Navigate activity items' },
+            { key: 'h/l, ←/→', description: 'Cycle tabs' },
             { key: 'i, Enter', description: 'Open event (job log/URL)' },
             { key: 'c', description: 'Copy event URL' },
             { key: 'Esc', description: 'Return to MR pane' },
           ];
         default:
           return [
+            { key: 'h/l, ←/→', description: 'Cycle tabs' },
             { key: 'Esc', description: 'Return to MR pane' },
           ];
       }
     case ActivePane.UserSelection:
       return [
         { key: 'j/k, ↑/↓', description: 'Navigate list' },
+        { key: 'h/l, ←/→', description: 'Toggle MR/User panes' },
         { key: 'Space', description: 'Select entry and load MRs', action: actions.onSelectEntry },
         { key: 'Esc', description: 'Reset highlight', action: actions.onResetHighlight },
       ];
@@ -112,7 +119,6 @@ const buildGlobalKeys = (actions: HelpModalActions): KeyBinding[] => [
   { key: '?', description: 'Show this help' },
   { key: '~', description: 'Toggle console', action: actions.onToggleConsole },
   { key: 'o', description: 'Open event log', action: actions.onOpenEventLog },
-  { key: 'h/l, ←/→', description: 'Cycle panes', action: actions.onCyclePaneRight },
   { key: '[, ], Tab, d', description: 'Cycle info tabs', action: actions.onCycleInfoTab },
   { key: 'Ctrl+D/U', description: 'Scroll info pane', action: actions.onScrollInfoPaneDown },
   { key: 'Esc', description: 'Close modals/overlays' },
@@ -233,8 +239,6 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
     onCyclePaneRight: () => {
       setShowHelpModal(false);
       if (activePane === ActivePane.MergeRequests) {
-        setActivePane(ActivePane.InfoPane);
-      } else if (activePane === ActivePane.InfoPane) {
         setActivePane(ActivePane.UserSelection);
       } else {
         setActivePane(ActivePane.MergeRequests);
@@ -242,12 +246,10 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
     },
     onCyclePaneLeft: () => {
       setShowHelpModal(false);
-      if (activePane === ActivePane.UserSelection) {
-        setActivePane(ActivePane.InfoPane);
-      } else if (activePane === ActivePane.InfoPane) {
-        setActivePane(ActivePane.MergeRequests);
-      } else {
+      if (activePane === ActivePane.MergeRequests) {
         setActivePane(ActivePane.UserSelection);
+      } else {
+        setActivePane(ActivePane.MergeRequests);
       }
     },
 
