@@ -19,6 +19,10 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
 
     const createdAt =`${formatCompactTime(note.createdAt)} (${note?.createdAt?.toLocaleDateString()} ${note?.createdAt?.toLocaleTimeString()}):`;
 
+    const fileInfo = note.position?.filePath
+      ? ` ${note.position.filePath}:${note.position.newLine || note.position.oldLine || '?'}`
+      : '';
+
     return (
       <box
         key={note.id}
@@ -40,6 +44,14 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
           >
             {createdAt}
           </text>
+          {fileInfo && (
+            <text
+              style={{ fg: '#ffb86c', attributes: TextAttributes.DIM }}
+              wrap={true}
+            >
+              {fileInfo}
+            </text>
+          )}
         </box>
         <box
           style={{

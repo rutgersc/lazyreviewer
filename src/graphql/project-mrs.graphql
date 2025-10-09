@@ -56,6 +56,12 @@ query ProjectMRs($projectPath: ID!, $state: MergeRequestState, $first: Int!) {
                 createdAt
                 resolvable
                 resolved
+                position {
+                  filePath
+                  newLine
+                  oldLine
+                  oldPath
+                }
               }
             }
           }

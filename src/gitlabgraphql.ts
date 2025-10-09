@@ -24,6 +24,12 @@ export interface DiscussionNote {
   createdAt: Date;
   resolvable: boolean;
   resolved: boolean;
+  position: {
+    filePath: string | null;
+    newLine: number | null;
+    oldLine: number | null;
+    oldPath: string | null;
+  } | null;
 }
 
 export interface Discussion {
@@ -123,6 +129,12 @@ export const getGitlabMrs = async (usernames: string[], state: MergeRequestState
         createdAt: new Date(note?.createdAt || ''),
         resolvable: note?.resolvable || false,
         resolved: note?.resolved || false,
+        position: note?.position ? {
+          filePath: note.position.filePath || null,
+          newLine: note.position.newLine || null,
+          oldLine: note.position.oldLine || null,
+          oldPath: note.position.oldPath || null,
+        } : null,
       }))
     }));
 
@@ -243,6 +255,12 @@ export const getGitlabMrsByProject = async (projectPath: string, state: MergeReq
         createdAt: new Date(note?.createdAt || ''),
         resolvable: note?.resolvable || false,
         resolved: note?.resolved || false,
+        position: note?.position ? {
+          filePath: note.position.filePath || null,
+          newLine: note.position.newLine || null,
+          oldLine: note.position.oldLine || null,
+          oldPath: note.position.oldPath || null,
+        } : null,
       }))
     }));
 
