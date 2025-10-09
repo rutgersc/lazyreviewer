@@ -10,6 +10,7 @@ const arjen = { type: 'userId', id: 'arjenpost'  } satisfies UserId;
 const elabRepo = { type: 'repositoryId', id: 'elab/elab'  } satisfies RepositoryId;
 const blackLotusRepo = { type: 'repositoryId', id: 'elab/BlackLotus'  } satisfies RepositoryId;
 const dbSplitterRepo = { type: 'repositoryId', id: 'elab/db-splitter'  } satisfies RepositoryId;
+const bitbucketCoreIamRepo = { type: 'repositoryId', id: 'bitbucket:raftdev/core.iam'  } satisfies RepositoryId;
 export const users: UserSelection[] = [
   { type: 'user', id: rutger },
   { type: 'user', id: menno },
@@ -76,6 +77,10 @@ const userSelectionData = [
   {
     name: 'repo: db-splitter',
     selection: [ dbSplitterRepo ]
+  },
+  {
+    name: 'bitbucket: raftdev/core.iam',
+    selection: [ bitbucketCoreIamRepo ]
   },
 ];
 

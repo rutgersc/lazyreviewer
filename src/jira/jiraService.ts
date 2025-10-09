@@ -195,14 +195,23 @@ export const loadJiraTickets = async (ticketKeys: string[]) => {
     return [];
   }
 
-  const JIRA_API_TOKEN_BASE64 = process.env.JIRA_API_TOKEN_BASE64;
-  if (!JIRA_API_TOKEN_BASE64) {
-    throw new Error("Jira credentials not configured")
+  // Support both plain text (preferred) and pre-encoded base64 (legacy)
+  let authToken: string;
+
+  if (process.env.JIRA_EMAIL && process.env.JIRA_API_TOKEN) {
+    // Preferred: plain text credentials, we'll encode them
+    const credentials = `${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`;
+    authToken = Buffer.from(credentials).toString('base64');
+  } else if (process.env.JIRA_API_TOKEN_BASE64) {
+    // Legacy: pre-encoded base64
+    authToken = process.env.JIRA_API_TOKEN_BASE64;
+  } else {
+    throw new Error("Jira credentials not configured. Set JIRA_EMAIL and JIRA_API_TOKEN in .env");
   }
 
   const result = await searchIssues(
     'https://scisure.atlassian.net',
-    JIRA_API_TOKEN_BASE64,
+    authToken,
     `issuekey in (${ticketKeys.join(',')})`);
 
   // Process each issue to limit comments to last 10 and sort by creation date

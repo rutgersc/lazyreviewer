@@ -1,5 +1,7 @@
 import type { MergeRequest } from "../components/MergeRequestPane";
 import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline, type GitlabMergeRequest } from "../gitlab/gitlabgraphql";
+import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
+import { parseRepositoryId } from "../providers/repositoryParser";
 import { loadJiraTickets, type JiraIssue } from "../jira/jiraService";
 import { loadCache, saveCache } from "../system/diskCache";
 import { type MergeRequestState } from "../generated/gitlab-sdk";
@@ -58,7 +60,18 @@ export async function fetchMergeRequestsByProject(
   const mrCacheFile = getMrCacheFile(mrKey);
   const jiraCacheFile = getJiraCacheFile(mrKey);
 
-  const mrs = await getGitlabMrsByProject(projectPath, state);
+  // Parse the repository ID to determine provider
+  const parsed = parseRepositoryId(projectPath);
+  let mrs: GitlabMergeRequest[];
+
+  if (parsed.provider === 'bitbucket') {
+    console.log(`[MR] Fetching from BitBucket: ${parsed.workspace}/${parsed.repo}`);
+    mrs = await getBitbucketPrs(parsed.workspace, parsed.repo, state);
+  } else {
+    console.log(`[MR] Fetching from GitLab: ${projectPath}`);
+    mrs = await getGitlabMrsByProject(projectPath, state);
+  }
+
   const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
   const tickets = await loadJiraTickets(jiraKeys);
 
