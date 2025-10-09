@@ -79,6 +79,44 @@ bun install
    - Don't bundle up state into an interface unless all of it is within the scope of one file. Prefer tracking individual properties regardless.
 
 
+### State Update Crash Prevention
+
+**CRITICAL: Clear-Delay-Set Pattern for State Updates**
+
+When updating large state objects (especially `mergeRequests`), directly overwriting the data can cause crashes. To prevent this:
+
+**Always use the clear-delay-set pattern:**
+1. Clear the state to empty values (`[]`, `new Map()`, etc.)
+2. Add a 100ms delay (`await new Promise(resolve => setTimeout(resolve, 100))`)
+3. Set the new state values
+
+**Example implementation:**
+```typescript
+// ✅ CORRECT: Clear-delay-set pattern
+async switchUserSelection(entry: number) {
+  // 1. Clear state first
+  set({ mergeRequests: [], branchDifferences: new Map() });
+
+  // 2. Delay to prevent crashes
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // 3. Set new values
+  set({ selectedUserSelectionEntry: entry, selectedMergeRequest: 0 });
+  // ... load new data
+}
+```
+
+**When to use this pattern:**
+- Switching between user selections
+- Fetching/refreshing merge requests
+- Any operation that replaces large arrays or maps in the store
+- Any state update that previously caused intermittent crashes
+
+**Why this works:**
+- Gives the UI renderer time to process the empty state before new data arrives
+- Prevents race conditions between state updates and rendering
+- Avoids memory/rendering issues from rapid state replacements
+
 ### Plan-Driven Development for Complex Features
 
 **For significant new features, create implementation plans before coding:**

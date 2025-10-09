@@ -97,8 +97,10 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
 
 const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string }) => {
   const currentUser = useAppStore((state) => state.currentUser);
+  const seenMergeRequests = useAppStore((state) => state.seenMergeRequests);
   const isApprovedByMe = mr.approvedBy.some(approver => approver.username === currentUser);
   const isMyMr = mr.author === currentUser;
+  const isSeen = seenMergeRequests.has(mr.id);
   const projectColor = repoColor || Colors.SUCCESS;
 
   return (
@@ -128,12 +130,16 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { 
         <box>
           <text
             style={{
-              fg: mr.approvedBy.length > 0 ? Colors.SUCCESS : Colors.PRIMARY,
-              attributes: (isApprovedByMe || isMyMr) ? TextAttributes.BOLD : TextAttributes.DIM
+              fg: isSeen
+                ? '#8be9fd'
+                : mr.approvedBy.length > 0 ? Colors.SUCCESS : Colors.PRIMARY,
+              attributes: (isApprovedByMe || isMyMr || isSeen) ? TextAttributes.BOLD : TextAttributes.DIM
             }}
             wrap={false}
           >
-            {isMyMr
+            {isSeen
+              ? `❓ ${mr.approvedBy.length}`
+              : isMyMr
               ? `🟢 ${mr.approvedBy.length}`
               : isApprovedByMe
               ? `✅ ${mr.approvedBy.length}`
@@ -364,6 +370,7 @@ export default function MergeRequestPane({}: {}) {
   const showJiraModal = useAppStore((state) => state.showJiraModal);
   const setShowJiraModal = useAppStore((state) => state.setShowJiraModal);
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
+  const toggleSeenMergeRequest = useAppStore((state) => state.toggleSeenMergeRequest);
   const ignoredMergeRequests = useAppStore((state) => state.ignoredMergeRequests);
   const setActivePane = useAppStore((state) => state.setActivePane);
   const refetchSelectedMrPipeline = useAppStore((state) => state.refetchSelectedMrPipeline);
@@ -505,6 +512,11 @@ export default function MergeRequestPane({}: {}) {
             setCopyNotification('Pipeline refreshed!');
             setTimeout(() => setCopyNotification(null), 2000);
           });
+        }
+        break;
+      case 'a':
+        if (mergeRequests[selectedIndex]) {
+          toggleSeenMergeRequest(mergeRequests[selectedIndex].id);
         }
         break;
     }

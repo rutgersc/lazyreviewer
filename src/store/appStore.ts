@@ -28,10 +28,12 @@ interface AppStore {
   mergeRequests: MergeRequest[];
   branchDifferences: Map<string, BranchDifference>;
   ignoredMergeRequests: Set<string>;
+  seenMergeRequests: Set<string>;
   fetchMrs: () => Promise<void>
   loadMrs: () => Promise<void>
   setBranchDifferences: (differences: Map<string, BranchDifference>) => void
   toggleIgnoreMergeRequest: (mrId: string) => void;
+  toggleSeenMergeRequest: (mrId: string) => void;
   refetchSelectedMrPipeline: () => Promise<void>;
 
   // Selection states
@@ -64,6 +66,7 @@ interface AppStore {
   setSelectedDiscussionIndex: (index: number) => void;
   setSelectedActivityIndex: (index: number) => void;
   setSelectedUserSelectionEntry: (entry: number) => void;
+  switchUserSelection: (entry: number) => Promise<void>;
   setSelectedMergeRequest: (mergeRequest: number) => void;
   setMrState: (state: MergeRequestState) => void;
   setShowMrFilterModal: (show: boolean) => void;
@@ -115,6 +118,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
   mergeRequests: [],
   branchDifferences: new Map(),
   ignoredMergeRequests: new Set(loadSettings().ignoredMergeRequests),
+  seenMergeRequests: new Set(loadSettings().seenMergeRequests),
   selectedMergeRequest: 0,
 
   // Actions
@@ -138,8 +142,48 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
     saveSettings(settings);
   },
 
+  toggleSeenMergeRequest: (mrId) => {
+    const state = get();
+    const newSeen = new Set(state.seenMergeRequests);
+
+    if (newSeen.has(mrId)) {
+      newSeen.delete(mrId);
+    } else {
+      newSeen.add(mrId);
+    }
+
+    set({ seenMergeRequests: newSeen });
+
+    const settings = loadSettings();
+    settings.seenMergeRequests = Array.from(newSeen);
+    saveSettings(settings);
+  },
+
   setSelectedUserSelectionEntry: (entry) =>
     set({ selectedUserSelectionEntry: entry }),
+
+  switchUserSelection: async (entry) => {
+    // Clear state first to avoid crashes (same pattern as fetchMrs)
+    set({ mergeRequests: [], branchDifferences: new Map() });
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Now set the new selection and load cached MRs
+    set({ selectedUserSelectionEntry: entry, selectedMergeRequest: 0 });
+
+    const state = get();
+    const selectionEntry = state.userSelections[entry];
+    if (selectionEntry) {
+      const cachedMrs = getCachedMergeRequests(selectionEntry.name, state.mrState);
+      console.log(`[UserSelection] Loaded ${cachedMrs.length} cached MRs for ${selectionEntry.name}`);
+      set({ mergeRequests: cachedMrs });
+
+      setTimeout(() => {
+        fetchBranchDifferences(cachedMrs).then(differences => {
+          set({ branchDifferences: differences });
+        });
+      }, 1);
+    }
+  },
 
   setActivePane: (pane) =>
     set({ activePane: pane }),

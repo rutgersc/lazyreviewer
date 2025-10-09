@@ -7,12 +7,14 @@ export interface Settings {
   repositoryPaths: Record<string, string>;
   repositoryColors: Record<string, string>;
   ignoredMergeRequests: string[];
+  seenMergeRequests: string[];
 }
 
 const defaultSettings: Settings = {
   repositoryPaths: {},
   repositoryColors: {},
-  ignoredMergeRequests: []
+  ignoredMergeRequests: [],
+  seenMergeRequests: []
 };
 
 // Color palette for repository colors - Dracula-compatible colors

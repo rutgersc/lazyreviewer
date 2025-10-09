@@ -1,5 +1,5 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import { useKeyboard } from '@opentui/react';
 import JiraIssueInfo from './JiraIssueInfo';
 import MergeRequestInfo from './MergeRequestInfo';
@@ -14,6 +14,7 @@ import type { JiraIssue } from '../services/jiraService';
 import { openUrl } from '../utils/url';
 import { copyToClipboard } from '../utils/clipboard';
 import { loadJobLog } from '../pipelinejob-log';
+import { formatDiscussionsForClipboard } from '../utils/discussionFormatter';
 
 interface InfoPaneProps {
   // No props needed - everything comes from store!
@@ -29,6 +30,7 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
 export default function InfoPane({}: InfoPaneProps) {
   const { activePane, infoPaneScrollOffset, infoPaneTab, selectedJiraIndex, selectedJiraSubIndex, selectedPipelineJobIndex, selectedDiscussionIndex, selectedActivityIndex, setSelectedJiraIndex, setSelectedJiraSubIndex, setSelectedPipelineJobIndex, setSelectedDiscussionIndex, setSelectedActivityIndex } = useAppStore();
   const scrollBoxRef = useRef<any>(null);
+  const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const selectedUserSelectionEntry = useAppStore(state => state.userSelections[state.selectedUserSelectionEntry]);
@@ -83,20 +85,27 @@ export default function InfoPane({}: InfoPaneProps) {
         case 'up':
           setSelectedDiscussionIndex(Math.max(selectedDiscussionIndex - 1, 0));
           break;
-        case 'i':
-          // Open discussion in browser
-          const selectedDiscussion = unresolvedDiscussions[selectedDiscussionIndex];
-          if (selectedDiscussion && selectedMergeRequest?.webUrl) {
-            const discussionUrl = `${selectedMergeRequest.webUrl}#note_${selectedDiscussion.id}`;
-            openUrl(discussionUrl);
-          }
-          break;
         case 'c':
           // Copy discussion URL
           const discussion = unresolvedDiscussions[selectedDiscussionIndex];
           if (discussion && selectedMergeRequest?.webUrl) {
             const discussionUrl = `${selectedMergeRequest.webUrl}#note_${discussion.id}`;
             copyToClipboard(discussionUrl);
+          }
+          break;
+        case 'i':
+          // Copy all unresolved discussions formatted for LLM/human reading
+          if (selectedMergeRequest) {
+            const formattedDiscussions = formatDiscussionsForClipboard(selectedMergeRequest);
+            copyToClipboard(formattedDiscussions).then((success) => {
+              if (success) {
+                setCopyNotification('Copied discussions!');
+                setTimeout(() => setCopyNotification(null), 2000);
+              } else {
+                setCopyNotification('Copy failed!');
+                setTimeout(() => setCopyNotification(null), 2000);
+              }
+            });
           }
           break;
       }
@@ -496,6 +505,28 @@ export default function InfoPane({}: InfoPaneProps) {
       >
         {renderTabContent()}
       </scrollbox>
+
+      {copyNotification && (
+        <box
+          style={{
+            position: "absolute",
+            top: 3,
+            right: 3,
+            padding: 1,
+            border: true,
+            borderColor: Colors.SUCCESS,
+            backgroundColor: Colors.BACKGROUND,
+            zIndex: 1000,
+          }}
+        >
+          <text
+            style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }}
+            wrap={false}
+          >
+            {copyNotification}
+          </text>
+        </box>
+      )}
     </box>
   );
 }

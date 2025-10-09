@@ -15,11 +15,9 @@ interface LocalNavigationState {
 export default function UserSelectionPane({ }: UserSelectionPaneProps) {
   const {
     activePane,
-    setSelectedUserSelectionEntry,
     selectedUserSelectionEntry,
     userSelections,
-    fetchMrs,
-    loadMrs } = useAppStore();
+    switchUserSelection } = useAppStore();
 
   const isActive = activePane === ActivePane.UserSelection;
   const [navState, setNavState] = useState<LocalNavigationState>(() =>
@@ -45,8 +43,7 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
         setHighlightIndex(Math.max(highlightIndex - 1, 0));
         break;
       case 'space':
-        setSelectedUserSelectionEntry(highlightIndex);
-        loadMrs();
+        switchUserSelection(highlightIndex);
         break;
       case 'return': {
         // const highlightedItem = getItemByIndex(navState, highlightIndex);
