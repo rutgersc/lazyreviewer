@@ -48,7 +48,7 @@ export interface BitbucketPullRequest {
   author: BitbucketAccount;
   source: BitbucketSource;
   destination: BitbucketDestination;
-  participants: BitbucketParticipant[];
+  participants?: BitbucketParticipant[];
   reviewers?: BitbucketAccount[];
   created_on: string;
   updated_on: string;
@@ -157,13 +157,16 @@ export function mapBitbucketToGitlabMergeRequest(
   workspace: string,
   repoSlug: string
 ): GitlabMergeRequest {
+  // Participants are not included in list response, only in individual PR fetches
   const approvedBy = pr.participants
-    .filter(p => p.approved)
-    .map(p => ({
-      id: p.user.uuid || p.user.account_id || p.user.nickname || 'unknown',
-      name: p.user.display_name,
-      username: p.user.nickname || p.user.display_name
-    }));
+    ? pr.participants
+        .filter(p => p.approved)
+        .map(p => ({
+          id: p.user.uuid || p.user.account_id || p.user.nickname || 'unknown',
+          name: p.user.display_name,
+          username: p.user.nickname || p.user.display_name
+        }))
+    : [];
 
   return {
     id: `bitbucket-${workspace}-${repoSlug}-${pr.id}`,
@@ -174,7 +177,7 @@ export function mapBitbucketToGitlabMergeRequest(
     sourcebranch: pr.source.branch.name,
     targetbranch: pr.destination.branch.name,
     project: {
-      name: repoSlug,
+      name: pr.destination.repository.name || repoSlug,
       path: repoSlug,
       fullPath: `${workspace}/${repoSlug}`
     },

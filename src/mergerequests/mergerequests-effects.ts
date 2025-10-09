@@ -7,7 +7,11 @@ import { loadCache, saveCache } from "../system/diskCache";
 import { type MergeRequestState } from "../generated/gitlab-sdk";
 
 function buildCacheKeys(selectedUserSelectionEntry: string, state: MergeRequestState) {
-  const fixedEntry = selectedUserSelectionEntry.replace(' ', '-');
+  // Sanitize the entry name for use in filenames (replace invalid filename characters)
+  const fixedEntry = selectedUserSelectionEntry
+    .replace(/:/g, '_')
+    .replace(/\//g, '_')
+    .replace(/ /g, '-');
   return `mrs_${state}_${fixedEntry}`;
 }
 
