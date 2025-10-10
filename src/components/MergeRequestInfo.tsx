@@ -83,7 +83,7 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
     }
 
     return (
-      <box style={{ flexDirection: "column", gap: 1, width: "100%" }}>
+      <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
         <text
           style={{ fg: '#ff5555', attributes: TextAttributes.BOLD, marginBottom: 1 }}
           wrap={true}
@@ -98,7 +98,7 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
               style={{
                 flexDirection: "column",
                 marginLeft: 2,
-                marginBottom: 1,
+                marginBottom: 0,
                 width: "100%",
                 backgroundColor: isSelected ? Colors.SELECTED : '#1a1a1a',
                 padding: 1,
