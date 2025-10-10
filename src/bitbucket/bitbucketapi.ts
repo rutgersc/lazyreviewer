@@ -72,6 +72,120 @@ export interface BitbucketPullRequestsResponse {
   next?: string;
 }
 
+export interface BitbucketCommentResolution {
+  type: string;
+  user: BitbucketAccount;
+  created_on: string;
+}
+
+export interface BitbucketComment {
+  id: number;
+  created_on: string;
+  updated_on: string;
+  content: {
+    raw: string;
+    markup?: string;
+    html?: string;
+  };
+  user: BitbucketAccount;
+  deleted?: boolean;
+  parent?: {
+    id: number;
+  };
+  inline?: {
+    from?: number;
+    to?: number;
+    path: string;
+  };
+  links: {
+    self: {
+      href: string;
+    };
+    html: {
+      href: string;
+    };
+  };
+  pullrequest?: {
+    type: string;
+    id: number;
+  };
+  resolution?: BitbucketCommentResolution | null;
+}
+
+export interface BitbucketCommentsResponse {
+  values: BitbucketComment[];
+  page?: number;
+  pagelen?: number;
+  size?: number;
+  next?: string;
+}
+
+async function fetchBitbucketComments(
+  workspace: string,
+  repoSlug: string,
+  prId: number,
+  authToken: string
+): Promise<BitbucketComment[]> {
+  const url = `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/pullrequests/${prId}/comments`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Basic ${authToken}`,
+        'Accept': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      console.error(`[BitBucket] Failed to fetch comments for PR ${prId}: ${response.status} ${response.statusText}`);
+      return [];
+    }
+
+    const data = await response.json() as BitbucketCommentsResponse;
+    return data.values || [];
+  } catch (error) {
+    console.error(`[BitBucket] Error fetching comments for PR ${prId}:`, error);
+    return [];
+  }
+}
+
+function countCommentsByResolution(comments: BitbucketComment[]): {
+  total: number;
+  resolved: number;
+  unresolved: number;
+} {
+  const total = comments.length;
+  const resolved = comments.filter(c => c.resolution !== null && c.resolution !== undefined).length;
+  const unresolved = total - resolved;
+
+  return { total, resolved, unresolved };
+}
+
+async function fetchCommentsForAllPrs(
+  workspace: string,
+  repoSlug: string,
+  prs: BitbucketPullRequest[],
+  authToken: string
+): Promise<Map<number, { total: number; resolved: number; unresolved: number }>> {
+  console.log(`[BitBucket] Fetching comments for ${prs.length} PRs in parallel...`);
+
+  const commentPromises = prs.map(async (pr) => {
+    const comments = await fetchBitbucketComments(workspace, repoSlug, pr.id, authToken);
+    const counts = countCommentsByResolution(comments);
+    return { prId: pr.id, counts };
+  });
+
+  const results = await Promise.all(commentPromises);
+
+  const commentCountsMap = new Map<number, { total: number; resolved: number; unresolved: number }>();
+  results.forEach(({ prId, counts }) => {
+    commentCountsMap.set(prId, counts);
+  });
+
+  console.log(`[BitBucket] Fetched comments for ${commentCountsMap.size} PRs`);
+  return commentCountsMap;
+}
+
 export async function getBitbucketPrs(
   workspace: string,
   repoSlug: string,
@@ -113,7 +227,9 @@ export async function getBitbucketPrs(
     fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
     console.log(`BitBucket response written to: ${outputPath}`);
 
-    return data.values.map(pr => mapBitbucketToGitlabMergeRequest(pr, workspace, repoSlug));
+    const commentCountsMap = await fetchCommentsForAllPrs(workspace, repoSlug, data.values, authToken);
+
+    return data.values.map(pr => mapBitbucketToGitlabMergeRequest(pr, workspace, repoSlug, commentCountsMap.get(pr.id)));
   } catch (error) {
     console.error('[BitBucket] Failed to fetch pull requests:', error);
     throw error;
@@ -155,9 +271,9 @@ function mapBitbucketStateToGitlab(state: BitbucketPullRequest['state']): string
 export function mapBitbucketToGitlabMergeRequest(
   pr: BitbucketPullRequest,
   workspace: string,
-  repoSlug: string
+  repoSlug: string,
+  commentCounts?: { total: number; resolved: number; unresolved: number }
 ): GitlabMergeRequest {
-  // Participants are not included in list response, only in individual PR fetches
   const approvedBy = pr.participants
     ? pr.participants
         .filter(p => p.approved)
@@ -167,6 +283,11 @@ export function mapBitbucketToGitlabMergeRequest(
           username: p.user.nickname || p.user.display_name
         }))
     : [];
+
+  const resolvedDiscussions = commentCounts?.resolved || 0;
+  const unresolvedDiscussions = commentCounts?.unresolved || 0;
+  const totalDiscussions = commentCounts?.total || pr.comment_count || 0;
+  const resolvableDiscussions = totalDiscussions;
 
   return {
     id: `bitbucket-${workspace}-${repoSlug}-${pr.id}`,
@@ -187,10 +308,10 @@ export function mapBitbucketToGitlabMergeRequest(
     updatedAt: new Date(pr.updated_on),
     state: mapBitbucketStateToGitlab(pr.state),
     approvedBy,
-    resolvableDiscussions: 0,
-    resolvedDiscussions: 0,
-    unresolvedDiscussions: 0,
-    totalDiscussions: pr.comment_count || 0,
+    resolvableDiscussions,
+    resolvedDiscussions,
+    unresolvedDiscussions,
+    totalDiscussions,
     discussions: [],
     pipeline: {
       stage: []
