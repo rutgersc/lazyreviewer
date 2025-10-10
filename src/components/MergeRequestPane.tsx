@@ -13,6 +13,8 @@ import { useAutoScroll } from "../hooks/useAutoScroll";
 import { Colors } from "../colors";
 import { useRepositoryBranches } from "../hooks/useRepositoryBranches";
 import { loadSettings } from "../settings/settings";
+import MrStateTabs from "./MrStateTabs";
+import type { MergeRequestState } from "../generated/gitlab-sdk";
 
 const TimeColumnAuthorTitle = ({
   mr,
@@ -31,8 +33,8 @@ const TimeColumnAuthorTitle = ({
       </text>
     </box>
 
-    <box style={{ width: 15, backgroundColor: isMyMr ? Colors.INFO : "transparent" }}>
-      <text style={{ fg: isMyMr ? Colors.BACKGROUND : Colors.NEUTRAL }} wrap={false}>
+    <box style={{ width: 15 }}>
+      <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL }} wrap={false}>
         {mr.author}
       </text>
     </box>
@@ -255,8 +257,8 @@ const IgnoredMergeRequestRow = ({
           </text>
         </box>
 
-        <box style={{ width: 15, backgroundColor: isMyMr ? Colors.INFO : "transparent" }}>
-          <text style={{ fg: isMyMr ? Colors.BACKGROUND : Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
+        <box style={{ width: 15 }}>
+          <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
             {mr.author}
           </text>
         </box>
@@ -353,6 +355,8 @@ export type MergeRequest = GitlabMergeRequest & {
   jiraIssues: JiraIssue[];
 };
 
+const MR_STATES: MergeRequestState[] = ['opened', 'merged', 'closed', 'locked', 'all'];
+
 export default function MergeRequestPane({}: {}) {
   const setSelectedMergeRequest = useAppStore(
     (state) => state.setSelectedMergeRequest
@@ -362,6 +366,7 @@ export default function MergeRequestPane({}: {}) {
 
   const activePane = useAppStore((state) => state.activePane);
   const mrState = useAppStore((state) => state.mrState);
+  const setMrState = useAppStore((state) => state.setMrState);
   const showFilterModal = useAppStore((state) => state.showMrFilterModal);
   const setShowFilterModal = useAppStore((state) => state.setShowMrFilterModal);
   const setShowGitSwitchModal = useAppStore((state) => state.setShowGitSwitchModal);
@@ -459,6 +464,29 @@ export default function MergeRequestPane({}: {}) {
       case 'f':
         setShowFilterModal(true);
         break;
+      case 'h':
+      case 'left': {
+        break;
+      }
+      case 'l':
+      case 'right': {
+        break;
+      }
+      case '1':
+        setMrState('opened');
+        break;
+      case '2':
+        setMrState('merged');
+        break;
+      case '3':
+        setMrState('closed');
+        break;
+      case '4':
+        setMrState('locked');
+        break;
+      case '5':
+        setMrState('all');
+        break;
       case "j":
       case "down":
         if (mergeRequests.length > 0) {
@@ -555,38 +583,39 @@ export default function MergeRequestPane({}: {}) {
     return null;
   }, [mergeRequests, selectedIndex]);
 
+  const sharedTicketDisplay = selectedMrSharedTicket ? (
+    <box
+      style={{
+        backgroundColor: Colors.INFO,
+        flexDirection: "row",
+        gap: 1,
+        alignItems: "center"
+      }}
+    >
+      <text style={{ fg: Colors.BACKGROUND, attributes: TextAttributes.BOLD }} wrap={false}>
+        🔗 {selectedMrSharedTicket.key}:
+      </text>
+      <text style={{ fg: Colors.BACKGROUND }} wrap={false}>
+        {selectedMrSharedTicket.summary}
+      </text>
+    </box>
+  ) : (
+    <text wrap={false}>{""}</text>
+  );
+
   return (
     <box style={{ flexDirection: "column", height: "100%" }}>
-      <box style={{ flexDirection: "row", alignItems: "center", gap: 2, marginBottom: 1 }}>
-        <text
-          style={{
-            fg: Colors.PRIMARY,
-            attributes: TextAttributes.BOLD,
-          }}
-          wrap={false}
-        >
-          {`Merge Requests - ${
-            mrState.charAt(0).toUpperCase() + mrState.slice(1)
-          } (${mergeRequests.length})`}
-        </text>
+      <MrStateTabs
+        currentState={mrState}
+        onStateChange={(newState: MergeRequestState) => {
+            setMrState(newState);
 
-        {selectedMrSharedTicket && (
-          <box
-            style={{
-              backgroundColor: Colors.INFO,
-              flexDirection: "row",
-              gap: 1,
-              alignItems: "center"
-            }}
-          >
-            <text style={{ fg: Colors.BACKGROUND, attributes: TextAttributes.BOLD }} wrap={false}>
-              🔗 {selectedMrSharedTicket.key}:
-            </text>
-            <text style={{ fg: Colors.BACKGROUND }} wrap={false}>
-              {selectedMrSharedTicket.summary}
-            </text>
-          </box>
-        )}
+        }}
+        isActive={isActive}
+      />
+
+      <box style={{ flexDirection: "row", alignItems: "center", gap: 2, marginBottom: 1 }}>
+        {sharedTicketDisplay}
       </box>
 
       <scrollbox
