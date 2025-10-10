@@ -44,15 +44,17 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
           >
             {createdAt}
           </text>
-          {fileInfo && (
+        </box>
+        {fileInfo && (
+          <box>
             <text
               style={{ fg: '#ffb86c', attributes: TextAttributes.DIM }}
               wrap={true}
             >
               {fileInfo}
             </text>
-          )}
-        </box>
+          </box>
+        )}
         <box
           style={{
             marginLeft: marginLeft,
