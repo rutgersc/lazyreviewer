@@ -1,4 +1,4 @@
-import type { GitlabMergeRequest } from "../gitlab/gitlabgraphql";
+import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/gitlabgraphql";
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
 
 export interface BitbucketAccount {
@@ -161,29 +161,72 @@ function countCommentsByResolution(comments: BitbucketComment[]): {
   return { total, resolved, unresolved };
 }
 
+function mapBitbucketCommentsToDiscussions(comments: BitbucketComment[]): Discussion[] {
+  const topLevelComments = comments.filter(c => !c.parent && !c.deleted);
+  const commentReplies = comments.filter(c => c.parent && !c.deleted);
+
+  const repliesByParent = new Map<number, BitbucketComment[]>();
+  commentReplies.forEach(reply => {
+    const parentId = reply.parent!.id;
+    if (!repliesByParent.has(parentId)) {
+      repliesByParent.set(parentId, []);
+    }
+    repliesByParent.get(parentId)!.push(reply);
+  });
+
+  return topLevelComments.map(topComment => {
+    const replies = repliesByParent.get(topComment.id) || [];
+    const allCommentsInThread = [topComment, ...replies];
+
+    const isResolved = topComment.resolution !== null && topComment.resolution !== undefined;
+
+    const notes: DiscussionNote[] = allCommentsInThread.map(comment => ({
+      id: String(comment.id),
+      body: comment.content.raw,
+      author: comment.user.display_name,
+      createdAt: new Date(comment.created_on),
+      resolvable: true,
+      resolved: comment.resolution !== null && comment.resolution !== undefined,
+      position: comment.inline ? {
+        filePath: comment.inline.path,
+        newLine: comment.inline.to || null,
+        oldLine: comment.inline.from || null,
+        oldPath: null,
+      } : null,
+    }));
+
+    return {
+      id: `bitbucket-discussion-${topComment.id}`,
+      resolved: isResolved,
+      resolvable: true,
+      notes,
+    };
+  });
+}
+
 async function fetchCommentsForAllPrs(
   workspace: string,
   repoSlug: string,
   prs: BitbucketPullRequest[],
   authToken: string
-): Promise<Map<number, { total: number; resolved: number; unresolved: number }>> {
+): Promise<Map<number, { total: number; resolved: number; unresolved: number; comments: BitbucketComment[] }>> {
   console.log(`[BitBucket] Fetching comments for ${prs.length} PRs in parallel...`);
 
   const commentPromises = prs.map(async (pr) => {
     const comments = await fetchBitbucketComments(workspace, repoSlug, pr.id, authToken);
     const counts = countCommentsByResolution(comments);
-    return { prId: pr.id, counts };
+    return { prId: pr.id, counts, comments };
   });
 
   const results = await Promise.all(commentPromises);
 
-  const commentCountsMap = new Map<number, { total: number; resolved: number; unresolved: number }>();
-  results.forEach(({ prId, counts }) => {
-    commentCountsMap.set(prId, counts);
+  const commentDataMap = new Map<number, { total: number; resolved: number; unresolved: number; comments: BitbucketComment[] }>();
+  results.forEach(({ prId, counts, comments }) => {
+    commentDataMap.set(prId, { ...counts, comments });
   });
 
-  console.log(`[BitBucket] Fetched comments for ${commentCountsMap.size} PRs`);
-  return commentCountsMap;
+  console.log(`[BitBucket] Fetched comments for ${commentDataMap.size} PRs`);
+  return commentDataMap;
 }
 
 export async function getBitbucketPrs(
@@ -272,7 +315,7 @@ export function mapBitbucketToGitlabMergeRequest(
   pr: BitbucketPullRequest,
   workspace: string,
   repoSlug: string,
-  commentCounts?: { total: number; resolved: number; unresolved: number }
+  commentData?: { total: number; resolved: number; unresolved: number; comments: BitbucketComment[] }
 ): GitlabMergeRequest {
   const approvedBy = pr.participants
     ? pr.participants
@@ -284,10 +327,11 @@ export function mapBitbucketToGitlabMergeRequest(
         }))
     : [];
 
-  const resolvedDiscussions = commentCounts?.resolved || 0;
-  const unresolvedDiscussions = commentCounts?.unresolved || 0;
-  const totalDiscussions = commentCounts?.total || pr.comment_count || 0;
-  const resolvableDiscussions = totalDiscussions;
+  const discussions = commentData ? mapBitbucketCommentsToDiscussions(commentData.comments) : [];
+  const resolvedDiscussions = commentData?.resolved || 0;
+  const unresolvedDiscussions = commentData?.unresolved || 0;
+  const totalDiscussions = commentData?.total || pr.comment_count || 0;
+  const resolvableDiscussions = discussions.filter(d => d.resolvable).length;
 
   return {
     id: `bitbucket-${workspace}-${repoSlug}-${pr.id}`,
@@ -312,7 +356,7 @@ export function mapBitbucketToGitlabMergeRequest(
     resolvedDiscussions,
     unresolvedDiscussions,
     totalDiscussions,
-    discussions: [],
+    discussions,
     pipeline: {
       stage: []
     }
