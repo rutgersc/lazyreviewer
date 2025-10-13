@@ -4,6 +4,8 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import type { UserSelection, UserSelectionEntry } from '../userselection/userSelection';
 import { ActivePane } from '../userselection/userSelection';
 import { useAppStore } from '../store/appStore';
+import { useAutoScroll } from '../hooks/useAutoScroll';
+import { Colors } from '../colors';
 
 interface UserSelectionPaneProps {
 }
@@ -26,6 +28,10 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
     })
   );
   const [highlightIndex, setHighlightIndex] = useState(selectedUserSelectionEntry);
+  const { scrollBoxRef, scrollToItem } = useAutoScroll({
+    itemHeight: 1,
+    lookahead: 2,
+  });
 
   useKeyboard((key: ParsedKey) => {
     if (!isActive) {
@@ -34,13 +40,19 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
 
     switch (key.name) {
       case 'j':
-      case 'down':
-        setHighlightIndex(Math.min(highlightIndex + 1, userSelections.length - 1));
+      case 'down': {
+        const newIndex = Math.min(highlightIndex + 1, userSelections.length - 1);
+        setHighlightIndex(newIndex);
+        scrollToItem(newIndex);
         break;
+      }
       case 'k':
-      case 'up':
-        setHighlightIndex(Math.max(highlightIndex - 1, 0));
+      case 'up': {
+        const newIndex = Math.max(highlightIndex - 1, 0);
+        setHighlightIndex(newIndex);
+        scrollToItem(newIndex);
         break;
+      }
       case 'space':
         switchUserSelection(highlightIndex);
         break;
@@ -101,9 +113,29 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
         User Selection
       </text>
 
-      <box style={{ flexDirection: "column", gap: 0, flexGrow: 1 }}>
+      <scrollbox
+        ref={scrollBoxRef}
+        style={{
+          flexGrow: 1,
+          height: '70%',
+          contentOptions: {
+            backgroundColor: Colors.BACKGROUND,
+          },
+          viewportOptions: {
+            backgroundColor: Colors.BACKGROUND,
+          },
+          scrollbarOptions: {
+            width: 1,
+            trackOptions: {
+              foregroundColor: Colors.NEUTRAL,
+              backgroundColor: Colors.TRACK,
+            },
+          },
+        }}
+        focused={false}
+      >
         {userSelections.map((item, index) => renderItem(item, index))}
-      </box>
+      </scrollbox>
 
     </>
   );
