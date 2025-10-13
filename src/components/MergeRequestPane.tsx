@@ -16,6 +16,22 @@ import { loadSettings } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 
+const getJiraStatusColor = (statusName: string | undefined): string => {
+  if (!statusName) return Colors.PRIMARY;
+
+  const status = statusName.toLowerCase();
+
+  if (status.includes('merge requested') || status.includes('ready for merge')) {
+    return Colors.SUCCESS;
+  }
+
+  if (status.includes('test in progress') || status.includes('testing') || status.includes('qa')) {
+    return Colors.WARNING;
+  }
+
+  return Colors.PRIMARY;
+};
+
 const TimeColumnAuthorTitle = ({
   mr,
   isMyMr
@@ -135,14 +151,16 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { 
               fg: isSeen
                 ? '#8be9fd'
                 : mr.approvedBy.length > 0 ? Colors.SUCCESS : Colors.PRIMARY,
-              attributes: (isApprovedByMe || isMyMr || isSeen) ? TextAttributes.BOLD : TextAttributes.DIM
+              attributes: (isApprovedByMe || isMyMr || isSeen)
+                ? TextAttributes.BOLD
+                : mr.approvedBy.length > 0
+                ? undefined
+                : TextAttributes.DIM
             }}
             wrap={false}
           >
             {isSeen
               ? `❓ ${mr.approvedBy.length}`
-              : isMyMr
-              ? `🟢 ${mr.approvedBy.length}`
               : isApprovedByMe
               ? `✅ ${mr.approvedBy.length}`
               : `👍 ${mr.approvedBy.length}`}
@@ -168,13 +186,13 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { 
       <box>
         <text
           style={{
-            fg:
-              mr.jiraIssues.length > 0 &&
-              mr.jiraIssues[0]?.fields.status.name === "Merge Requested"
-                ? Colors.SUCCESS
-                : Colors.WARNING,
+            fg: mr.jiraIssues.length > 0
+              ? getJiraStatusColor(mr.jiraIssues[0]?.fields.status.name)
+              : Colors.PRIMARY,
             attributes:
-              mr.jiraIssues.length > 0 ? undefined : TextAttributes.DIM,
+              mr.jiraIssues.length > 0
+                ? (getJiraStatusColor(mr.jiraIssues[0]?.fields.status.name) === Colors.PRIMARY ? TextAttributes.DIM : undefined)
+                : TextAttributes.DIM,
           }}
           wrap={false}
         >
