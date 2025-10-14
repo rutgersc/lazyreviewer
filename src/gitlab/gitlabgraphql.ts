@@ -301,7 +301,7 @@ export const getGitlabMrsByProject = async (projectPath: string, state: MergeReq
   const data = await sdk.ProjectMRs({
     projectPath: projectPath,
     state: state,
-    first: 20
+    first: 25
   });
 
   const fs = require('fs');
