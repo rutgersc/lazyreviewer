@@ -25,8 +25,12 @@ const getJiraStatusColor = (statusName: string | undefined): string => {
     return Colors.SUCCESS;
   }
 
-  if (status.includes('test in progress') || status.includes('testing') || status.includes('qa')) {
+  if (status.includes('test in progress') || status.includes('testing')) {
     return Colors.WARNING;
+  }
+
+  if (status.includes('in code review')) {
+    return Colors.INFO;
   }
 
   return Colors.PRIMARY;
