@@ -15,6 +15,7 @@ import { useRepositoryBranches } from "../hooks/useRepositoryBranches";
 import { loadSettings } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
+import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -71,6 +72,13 @@ const TimeColumnAuthorTitle = ({
 );
 
 const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
+  const settings = loadSettings();
+  const filteredData = filterPipelineJobs(
+    mr.pipeline?.stage || [],
+    mr.project.fullPath,
+    settings.pipelineJobImportance
+  );
+
   const PipelineJobComponent = (props: { job: PipelineJob; key?: string | number }) => {
     const statusDisplay = getJobStatusDisplay(props.job.status);
     return (
@@ -96,23 +104,34 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
     </box>
   );
 
+  const pipelineTextColor = filteredData.highPriorityStatus === 'failed'
+    ? Colors.ERROR
+    : filteredData.highPriorityStatus === 'success'
+    ? Colors.SUCCESS
+    : Colors.NEUTRAL;
+
   return (
-    <box style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
-      {mr.pipeline && mr.pipeline.stage && mr.pipeline.stage.length > 0 ? (
-        mr.pipeline.stage.map((stage: PipelineStage, stageIndex: number) => (
-          <PipelineStageComponent key={stageIndex} stage={stage} />
-        ))
-      ) : (
-        <text
-          style={{
-            fg: Colors.NEUTRAL,
-            attributes: TextAttributes.DIM,
-          }}
-          wrap={false}
-        >
-          ○
-        </text>
-      )}
+    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+      <text style={{ fg: pipelineTextColor }} wrap={false}>
+        pipeline:
+      </text>
+      <box style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
+        {filteredData.stages.length > 0 ? (
+          filteredData.stages.map((stage: PipelineStage, stageIndex: number) => (
+            <PipelineStageComponent key={stageIndex} stage={stage} />
+          ))
+        ) : (
+          <text
+            style={{
+              fg: Colors.NEUTRAL,
+              attributes: TextAttributes.DIM,
+            }}
+            wrap={false}
+          >
+            ○
+          </text>
+        )}
+      </box>
     </box>
   );
 };
@@ -153,7 +172,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { 
           <text
             style={{
               fg: isSeen
-                ? '#8be9fd'
+                ? Colors.ERROR
                 : mr.approvedBy.length > 0 ? Colors.SUCCESS : Colors.PRIMARY,
               attributes: (isApprovedByMe || isMyMr || isSeen)
                 ? TextAttributes.BOLD
@@ -317,31 +336,6 @@ const IgnoredMergeRequestRow = ({
           </text>
         </box>
     </box>
-
-    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-      <box style={{ width: 19 }}></box>
-
-      <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {mr.targetbranch}
-        </text>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          ←
-        </text>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {mr.sourcebranch}
-        </text>
-      </box>
-    </box>
   </>
 );
 };
@@ -404,7 +398,7 @@ export default function MergeRequestPane({}: {}) {
   const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
-    itemHeight: 3,
+    itemHeight: 2,
     lookahead: 2,
   });
 
@@ -683,7 +677,6 @@ export default function MergeRequestPane({}: {}) {
                 <>
                   <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} />
                   <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} />
-                  <BranchInformation mr={mr} branchDifferenceMap={branchDifferences} />
                 </>
               )}
             </box>

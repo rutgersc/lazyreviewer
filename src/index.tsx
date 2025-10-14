@@ -1,4 +1,4 @@
 import { render } from "@opentui/react";
-import App from "./app";
+import App from "./App";
 
 render(<App />);

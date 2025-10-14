@@ -5,6 +5,7 @@ import { parseRepositoryId } from "../providers/repositoryParser";
 import { loadJiraTickets, type JiraIssue } from "../jira/jiraService";
 import { loadCache, saveCache } from "../system/diskCache";
 import { type MergeRequestState } from "../generated/gitlab-sdk";
+import { ensurePipelineJobsInSettings } from "../settings/settings";
 
 function buildCacheKeys(selectedUserSelectionEntry: string, state: MergeRequestState) {
   // Sanitize the entry name for use in filenames (replace invalid filename characters)
@@ -16,6 +17,8 @@ function buildCacheKeys(selectedUserSelectionEntry: string, state: MergeRequestS
 }
 
 function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
+  ensurePipelineJobsInSettings(mrs);
+
   return mrs
     .map((mr): MergeRequest => ({
       ...mr,

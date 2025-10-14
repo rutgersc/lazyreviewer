@@ -3,18 +3,22 @@ import { spawn } from 'child_process';
 
 const SETTINGS_FILE = 'lazygitlab-settings.json';
 
+export type JobImportance = 'ignore' | 'low' | 'high';
+
 export interface Settings {
   repositoryPaths: Record<string, string>;
   repositoryColors: Record<string, string>;
   ignoredMergeRequests: string[];
   seenMergeRequests: string[];
+  pipelineJobImportance: Record<string, Record<string, JobImportance>>;
 }
 
 const defaultSettings: Settings = {
   repositoryPaths: {},
   repositoryColors: {},
   ignoredMergeRequests: [],
-  seenMergeRequests: []
+  seenMergeRequests: [],
+  pipelineJobImportance: {}
 };
 
 // Color palette for repository colors - Dracula-compatible colors
@@ -88,6 +92,40 @@ export const ensureRepositoryColors = (repositoryPaths: string[]): Settings => {
       settings.repositoryColors[repoPath] = generateRepositoryColor(repoPath);
       settingsUpdated = true;
     }
+  });
+
+  if (settingsUpdated) {
+    saveSettings(settings);
+  }
+
+  return settings;
+};
+
+export const ensurePipelineJobsInSettings = (mergeRequests: Array<{
+  project: { fullPath: string };
+  pipeline: { stage: Array<{ jobs: Array<{ name: string }> }> }
+}>): Settings => {
+  const settings = loadSettings();
+  let settingsUpdated = false;
+
+  mergeRequests.forEach(mr => {
+    const repoPath = mr.project.fullPath;
+
+    if (!settings.pipelineJobImportance[repoPath]) {
+      settings.pipelineJobImportance[repoPath] = {};
+      settingsUpdated = true;
+    }
+
+    const repoJobs = settings.pipelineJobImportance[repoPath];
+
+    mr.pipeline.stage.forEach(stage => {
+      stage.jobs.forEach(job => {
+        if (!repoJobs[job.name]) {
+          repoJobs[job.name] = 'low';
+          settingsUpdated = true;
+        }
+      });
+    });
   });
 
   if (settingsUpdated) {
