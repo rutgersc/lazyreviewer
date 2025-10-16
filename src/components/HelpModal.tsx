@@ -32,6 +32,7 @@ export interface HelpModalActions {
   onOpenInBrowser?: () => void;
   onGitSwitch?: () => void;
   onShowJiraTickets?: () => void;
+  onRetargetMR?: () => void;
   onToggleIgnore?: () => void;
 
   // User Selection Pane actions
@@ -57,6 +58,7 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
         { key: 'x', description: 'Open MR in browser', action: actions.onOpenInBrowser },
         { key: 'g', description: 'Git switch to branch', action: actions.onGitSwitch },
         { key: 't', description: 'Show Jira tickets', action: actions.onShowJiraTickets },
+        { key: 'r', description: 'Retarget MR to branch', action: actions.onRetargetMR },
         { key: 'Backspace', description: 'Toggle ignore MR', action: actions.onToggleIgnore },
       ];
     case ActivePane.InfoPane:
@@ -192,6 +194,7 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
   const setShowFilterModal = useAppStore(state => state.setShowMrFilterModal);
   const setShowGitSwitchModal = useAppStore(state => state.setShowGitSwitchModal);
   const setShowJiraModal = useAppStore(state => state.setShowJiraModal);
+  const setShowRetargetModal = useAppStore(state => state.setShowRetargetModal);
   const setShowEventLogPane = useAppStore(state => state.setShowEventLogPane);
   const fetchMrs = useAppStore(state => state.fetchMrs);
   const loadMrs = useAppStore(state => state.loadMrs);
@@ -287,6 +290,10 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
     onShowJiraTickets: () => {
       setShowHelpModal(false);
       setShowJiraModal(true);
+    },
+    onRetargetMR: () => {
+      setShowHelpModal(false);
+      setShowRetargetModal(true);
     },
     onToggleIgnore: () => {
       setShowHelpModal(false);

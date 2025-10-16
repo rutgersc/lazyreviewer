@@ -51,8 +51,10 @@ interface AppStore {
   showGitSwitchModal: boolean;
   showHelpModal: boolean;
   showJiraModal: boolean;
+  showRetargetModal: boolean;
   showEventLogPane: boolean;
   infoPaneScrollOffset: number;
+  lastTargetBranch: string | null;
 
   // selectedUsernames: () => string[]
 
@@ -73,9 +75,11 @@ interface AppStore {
   setShowGitSwitchModal: (show: boolean) => void;
   setShowHelpModal: (show: boolean) => void;
   setShowJiraModal: (show: boolean) => void;
+  setShowRetargetModal: (show: boolean) => void;
   setShowEventLogPane: (show: boolean) => void;
   setInfoPaneScrollOffset: (offset: number) => void;
   scrollInfoPane: (direction: 'up' | 'down') => void;
+  setLastTargetBranch: (branch: string) => void;
 }
 
 const STORE_FILE = 'debug/store.json';
@@ -111,8 +115,10 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
   showGitSwitchModal: false,
   showHelpModal: false,
   showJiraModal: false,
+  showRetargetModal: false,
   showEventLogPane: false,
   infoPaneScrollOffset: 0,
+  lastTargetBranch: null,
   currentUser: 'r.schoorstra',
 
   mergeRequests: [],
@@ -227,8 +233,14 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
   setShowJiraModal: (show) =>
     set({ showJiraModal: show }),
 
+  setShowRetargetModal: (show) =>
+    set({ showRetargetModal: show }),
+
   setShowEventLogPane: (show) =>
     set({ showEventLogPane: show }),
+
+  setLastTargetBranch: (branch) =>
+    set({ lastTargetBranch: branch }),
 
   setInfoPaneScrollOffset: (offset) =>
     set({ infoPaneScrollOffset: Math.max(0, offset) }),
@@ -343,6 +355,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => ({
     selectedUserSelectionEntry: state.selectedUserSelectionEntry,
     mrState: state.mrState,
     currentUser: state.currentUser,
+    lastTargetBranch: state.lastTargetBranch,
   }),
 }));
 

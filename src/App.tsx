@@ -8,6 +8,7 @@ import MrStateFilterModal from "./components/MrStateFilterModal";
 import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal from "./components/HelpModal";
 import JiraModal from "./components/JiraModal";
+import RetargetModal from "./components/RetargetModal";
 import EventLogPane from "./components/EventLogPane";
 import { ActivePane } from "./userselection/userSelection";
 import { useAppStore } from "./store/appStore";
@@ -37,6 +38,8 @@ export default function App() {
   const setShowHelpModal = useAppStore(state => state.setShowHelpModal);
   const showJiraModal = useAppStore(state => state.showJiraModal);
   const setShowJiraModal = useAppStore(state => state.setShowJiraModal);
+  const showRetargetModal = useAppStore(state => state.showRetargetModal);
+  const setShowRetargetModal = useAppStore(state => state.setShowRetargetModal);
   const showEventLogPane = useAppStore(state => state.showEventLogPane);
   const setShowEventLogPane = useAppStore(state => state.setShowEventLogPane);
 
@@ -86,6 +89,10 @@ export default function App() {
       }
       if (showJiraModal) {
         setShowJiraModal(false);
+        return;
+      }
+      if (showRetargetModal) {
+        setShowRetargetModal(false);
         return;
       }
       if (showFilterModal) {
@@ -288,6 +295,17 @@ export default function App() {
         isVisible={showJiraModal}
         jiraIssues={mergeRequests[selectedIndex]?.jiraIssues || []}
         onClose={() => setShowJiraModal(false)}
+      />
+
+      {/* Retarget Modal - rendered at app level to cover entire screen */}
+      <RetargetModal
+        isVisible={showRetargetModal}
+        onClose={() => setShowRetargetModal(false)}
+        onSuccess={() => {
+          setCopyNotification('MR retargeted successfully!');
+          setTimeout(() => setCopyNotification(null), 2000);
+          fetchMrs();
+        }}
       />
 
       {/* Event Log Pane - fullscreen overlay */}

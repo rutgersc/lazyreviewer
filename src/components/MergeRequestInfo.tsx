@@ -118,6 +118,34 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
 
   return (
     <box style={{ flexDirection: "column", gap: 1, width: "100%" }}>
+      {/* Branch Information */}
+      <box style={{ flexDirection: "column", gap: 0.5, marginBottom: 1, width: "100%" }}>
+        <text
+          style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }}
+          wrap={false}
+        >
+          Branch Information
+        </text>
+
+        <box style={{ flexDirection: "row", gap: 1, marginLeft: 2 }}>
+          <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+            Source:
+          </text>
+          <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrap={false}>
+            {mergeRequest.sourcebranch}
+          </text>
+        </box>
+
+        <box style={{ flexDirection: "row", gap: 1, marginLeft: 2 }}>
+          <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+            Target:
+          </text>
+          <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD }} wrap={false}>
+            {mergeRequest.targetbranch}
+          </text>
+        </box>
+      </box>
+
       <box style={{ marginBottom: 1, width: "100%" }}>
         {renderUnresolvedDiscussions(mergeRequest.discussions || [])}
       </box>

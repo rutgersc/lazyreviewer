@@ -4,8 +4,9 @@ import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
 import { parseRepositoryId } from "../providers/repositoryParser";
 import { loadJiraTickets, type JiraIssue } from "../jira/jiraService";
 import { loadCache, saveCache } from "../system/diskCache";
-import { type MergeRequestState } from "../generated/gitlab-sdk";
+import { type MergeRequestState, getSdk } from "../generated/gitlab-sdk";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
+import { GraphQLClient } from "graphql-request";
 
 function buildCacheKeys(selectedUserSelectionEntry: string, state: MergeRequestState) {
   // Sanitize the entry name for use in filenames (replace invalid filename characters)
@@ -162,4 +163,60 @@ export async function refetchMrPipeline(
 
   saveCache(mrCacheFile, updatedMrs);
   console.log(`[Pipeline] Cache updated for MR ${iid}`);
+}
+
+export async function retargetMergeRequest(
+  selectedUserSelectionEntry: string,
+  mrId: string,
+  projectPath: string,
+  iid: string,
+  newTargetBranch: string,
+  state: MergeRequestState = 'opened'
+): Promise<{ success: boolean; error?: string }> {
+  console.log(`[Retarget] Updating MR ${iid} to target branch: ${newTargetBranch}`);
+
+  const endpoint = `https://git.elabnext.com/api/graphql`;
+  const token = process.env.GITLAB_TOKEN;
+  const client = new GraphQLClient(endpoint, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const sdk = getSdk(client);
+
+  try {
+    const result = await sdk.UpdateMRTargetBranch({
+      projectPath,
+      iid,
+      targetBranch: newTargetBranch
+    });
+
+    if (result.mergeRequestUpdate?.errors && result.mergeRequestUpdate.errors.length > 0) {
+      const errorMsg = result.mergeRequestUpdate.errors.join(', ');
+      console.error(`[Retarget] Failed to update MR ${iid}:`, errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
+    const mrCacheFile = getMrCacheFile(mrKey);
+
+    const cachedMrs = loadCache<GitlabMergeRequest[]>(mrCacheFile);
+    if (cachedMrs) {
+      const updatedMrs = cachedMrs.map(mr => {
+        if (mr.id === mrId) {
+          console.log(`[Retarget] Updated target branch for MR ${iid} to ${newTargetBranch}`);
+          return { ...mr, targetbranch: newTargetBranch };
+        }
+        return mr;
+      });
+
+      saveCache(mrCacheFile, updatedMrs);
+      console.log(`[Retarget] Cache updated for MR ${iid}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[Retarget] Exception while updating MR ${iid}:`, errorMsg);
+    return { success: false, error: errorMsg };
+  }
 }

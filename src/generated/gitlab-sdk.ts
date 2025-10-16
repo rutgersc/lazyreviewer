@@ -29756,6 +29756,15 @@ export type ProjectsQueryVariables = Exact<{
 
 export type ProjectsQuery = { projects: { count: number, nodes: Array<{ id: string, name: string, fullPath: string, mergeRequests: { nodes: Array<{ name: string | null, webPath: string } | null> | null } | null } | null> | null } | null };
 
+export type UpdateMrTargetBranchMutationVariables = Exact<{
+  projectPath: Scalars['ID']['input'];
+  iid: Scalars['String']['input'];
+  targetBranch: Scalars['String']['input'];
+}>;
+
+
+export type UpdateMrTargetBranchMutation = { mergeRequestUpdate: { errors: Array<string>, mergeRequest: { id: string, iid: string, targetBranch: string } | null } | null };
+
 
 export const JobStatusDocument = gql`
     query JobStatus {
@@ -30027,6 +30036,20 @@ export const ProjectsDocument = gql`
   }
 }
     `;
+export const UpdateMrTargetBranchDocument = gql`
+    mutation UpdateMRTargetBranch($projectPath: ID!, $iid: String!, $targetBranch: String!) {
+  mergeRequestUpdate(
+    input: {projectPath: $projectPath, iid: $iid, targetBranch: $targetBranch}
+  ) {
+    mergeRequest {
+      id
+      iid
+      targetBranch
+    }
+    errors
+  }
+}
+    `;
 
 export type SdkFunctionWrapper = <T>(action: (requestHeaders?:Record<string, string>) => Promise<T>, operationName: string, operationType?: string, variables?: any) => Promise<T>;
 
@@ -30055,6 +30078,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     Projects(variables?: ProjectsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProjectsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ProjectsQuery>({ document: ProjectsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Projects', 'query', variables);
+    },
+    UpdateMRTargetBranch(variables: UpdateMrTargetBranchMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<UpdateMrTargetBranchMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<UpdateMrTargetBranchMutation>({ document: UpdateMrTargetBranchDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'UpdateMRTargetBranch', 'mutation', variables);
     }
   };
 }

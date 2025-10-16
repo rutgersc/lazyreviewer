@@ -106,8 +106,6 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
 
   const pipelineTextColor = filteredData.highPriorityStatus === 'failed'
     ? Colors.ERROR
-    : filteredData.highPriorityStatus === 'success'
-    ? Colors.SUCCESS
     : Colors.NEUTRAL;
 
   return (
@@ -136,13 +134,14 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
   );
 };
 
-const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string }) => {
+const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }> }) => {
   const currentUser = useAppStore((state) => state.currentUser);
   const seenMergeRequests = useAppStore((state) => state.seenMergeRequests);
   const isApprovedByMe = mr.approvedBy.some(approver => approver.username === currentUser);
   const isMyMr = mr.author === currentUser;
   const isSeen = seenMergeRequests.has(mr.id);
   const projectColor = repoColor || Colors.SUCCESS;
+  const branchDifference = branchDifferenceMap.get(mr.id);
 
   return (
     <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
@@ -206,7 +205,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { 
         </text>
       </box>
 
-      <box>
+      <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
         <text
           style={{
             fg: mr.jiraIssues.length > 0
@@ -223,6 +222,30 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor }: { 
             ? mr.jiraIssues[0]?.fields.status.name
             : "<no jira ticket>"}
         </text>
+        {(() => {
+          if (mr.jiraIssues.length === 0) return null;
+
+          const statusName = mr.jiraIssues[0]?.fields.status.name;
+          const statusLower = statusName?.toLowerCase() || '';
+          const isMergeRequested = statusLower.includes('merge requested') || statusLower.includes('ready for merge');
+          const isBehind = branchDifference && branchDifference.behind > 0;
+
+          if (isMergeRequested && isBehind) {
+            return (
+              <text
+                style={{
+                  fg: Colors.ERROR,
+                  attributes: TextAttributes.BOLD,
+                }}
+                wrap={false}
+              >
+                (BEHIND)
+              </text>
+            );
+          }
+
+          return null;
+        })()}
       </box>
 
       <PipelineStagesWithJobStatuses mr={mr} />
@@ -389,6 +412,8 @@ export default function MergeRequestPane({}: {}) {
   const showHelpModal = useAppStore((state) => state.showHelpModal);
   const showJiraModal = useAppStore((state) => state.showJiraModal);
   const setShowJiraModal = useAppStore((state) => state.setShowJiraModal);
+  const showRetargetModal = useAppStore((state) => state.showRetargetModal);
+  const setShowRetargetModal = useAppStore((state) => state.setShowRetargetModal);
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
   const toggleSeenMergeRequest = useAppStore((state) => state.toggleSeenMergeRequest);
   const ignoredMergeRequests = useAppStore((state) => state.ignoredMergeRequests);
@@ -469,7 +494,7 @@ export default function MergeRequestPane({}: {}) {
     if (!isActive) return;
 
     // Don't handle keys when modals are open (handled globally)
-    if (showHelpModal || showJiraModal || showFilterModal) {
+    if (showHelpModal || showJiraModal || showFilterModal || showRetargetModal) {
       return;
     }
 
@@ -543,6 +568,9 @@ export default function MergeRequestPane({}: {}) {
         break;
       case 't':
         setShowJiraModal(true);
+        break;
+      case 'r':
+        setShowRetargetModal(true);
         break;
       case 'backspace':
         if (mergeRequests[selectedIndex]) {
@@ -676,7 +704,7 @@ export default function MergeRequestPane({}: {}) {
               ) : (
                 <>
                   <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} />
-                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} />
+                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} />
                 </>
               )}
             </box>
