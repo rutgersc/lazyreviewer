@@ -648,7 +648,7 @@ export default function MergeRequestPane({}: {}) {
   );
 
   return (
-    <box style={{ flexDirection: "column", height: "100%" }}>
+    <box style={{ flexDirection: "column", padding: 1, height: "100%" }}>
       <MrStateTabs
         currentState={mrState}
         onStateChange={(newState: MergeRequestState) => {
@@ -658,9 +658,9 @@ export default function MergeRequestPane({}: {}) {
         isActive={isActive}
       />
 
-      <box style={{ flexDirection: "row", alignItems: "center", gap: 2, marginBottom: 1 }}>
+      {/* <box style={{ flexDirection: "row", alignItems: "center", gap: 0, marginBottom: 0 }}>
         {sharedTicketDisplay}
-      </box>
+      </box> */}
 
       <scrollbox
         ref={scrollBoxRef}

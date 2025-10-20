@@ -18,39 +18,28 @@ const MR_STATES: Array<{ key: MergeRequestState; label: string; shortcut: string
 
 export default function MrStateTabs({ currentState, onStateChange, isActive }: MrStateTabsProps) {
   return (
-    <box style={{ flexDirection: "row", gap: 1, marginBottom: 1, alignItems: "center" }}>
-      {MR_STATES.map((state) => {
-        const isSelected = currentState === state.key;
-        const tabColor = isSelected
-          ? Colors.PRIMARY
-          : isActive
-            ? Colors.NEUTRAL
-            : Colors.SECONDARY;
+    <box style={{ flexDirection: "column", gap: 0, marginBottom: 1 }}>
+      <box style={{ flexDirection: "row", gap: 1 }}>
+        {MR_STATES.map((state, index) => {
+          const isSelected = currentState === state.key;
+          const tabColor = isSelected
+            ? Colors.PRIMARY
+            : Colors.NEUTRAL;
 
-        return (
-          <box
-            key={state.key}
-            style={{
-              backgroundColor: isSelected ? Colors.SELECTED : 'transparent',
-              padding: 0.5,
-              paddingLeft: 1,
-              paddingRight: 1,
-              border: isSelected,
-              borderColor: isSelected ? Colors.PRIMARY : undefined,
-            }}
-          >
+          return (
             <text
+              key={state.key}
               style={{
                 fg: tabColor,
                 attributes: isSelected ? TextAttributes.BOLD : undefined,
               }}
               wrap={false}
             >
-              {`${state.shortcut}:${state.label}`}
+              {index > 0 ? '| ' : ''}{`${state.shortcut}:${state.label}`}
             </text>
-          </box>
-        );
-      })}
+          );
+        })}
+      </box>
     </box>
   );
 }

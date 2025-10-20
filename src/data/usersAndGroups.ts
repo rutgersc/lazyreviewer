@@ -47,10 +47,6 @@ const userSelectionData = [
     selection: [ rutger ]
   },
   {
-    name: 'menno',
-    selection: [ menno ]
-  },
-  {
     name: 'florenceBE',
     selection: [ florenceBEId ]
   },

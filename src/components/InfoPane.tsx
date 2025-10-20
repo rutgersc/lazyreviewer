@@ -71,7 +71,7 @@ export default function InfoPane({}: InfoPaneProps) {
               key={tab}
               style={{
                 fg: tab === infoPaneTab ? Colors.PRIMARY : Colors.NEUTRAL,
-                attributes: tab === infoPaneTab ? TextAttributes.BOLD : TextAttributes.DIM
+                attributes: tab === infoPaneTab ? TextAttributes.BOLD : undefined
               }}
               wrap={false}
             >
@@ -126,7 +126,7 @@ export default function InfoPane({}: InfoPaneProps) {
   };
 
   return (
-    <box style={{ flexDirection: "column", padding: 2, flexGrow: 1, alignItems: "flex-start", height: "100%" }}>
+    <box style={{ flexDirection: "column", padding: 1, flexGrow: 1, alignItems: "flex-start", height: "100%" }}>
       {renderTabBar()}
 
       <scrollbox
