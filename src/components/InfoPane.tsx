@@ -64,13 +64,6 @@ export default function InfoPane({}: InfoPaneProps) {
 
     return (
       <box style={{ flexDirection: "column", gap: 0, marginBottom: 1 }}>
-        {/* MR Title */}
-        {selectedMergeRequest && (
-          <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrap={false}>
-            {selectedMergeRequest.title}
-          </text>
-        )}
-
         {/* Tabs */}
         <box style={{ flexDirection: "row", gap: 1 }}>
           {tabs.map((tab, index) => (

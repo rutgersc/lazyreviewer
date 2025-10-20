@@ -51,14 +51,6 @@ export default function MrStateTabs({ currentState, onStateChange, isActive }: M
           </box>
         );
       })}
-      {isActive && (
-        <text
-          style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          (h/l to navigate)
-        </text>
-      )}
     </box>
   );
 }
