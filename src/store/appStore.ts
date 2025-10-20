@@ -95,260 +95,256 @@ const fileStorage = createJSONStorage(() => ({
 
 const INFO_PANE_TABS: InfoPaneTab[] = ['overview', 'jira', 'pipeline', 'activity'];
 
-export const useAppStore = create<AppStore>()(persist((set, get) => ({
-  activePane: ActivePane.MergeRequests,
-  infoPaneTab: 'overview',
-  selectedJiraIndex: 0,
-  selectedJiraSubIndex: 0,
-  selectedPipelineJobIndex: 0,
-  selectedDiscussionIndex: 0,
-  selectedActivityIndex: 0,
+export const useAppStore = create<AppStore>()(persist((set, get) => {
 
-  groups: groups,
-  users: users,
-  userSelections: mockUserSelections,
-
-  // Initial state (rehydrated by persist middleware)
-  selectedUserSelectionEntry: 0,
-  mrState: 'opened',
-  showMrFilterModal: false,
-  showGitSwitchModal: false,
-  showHelpModal: false,
-  showJiraModal: false,
-  showRetargetModal: false,
-  showEventLogPane: false,
-  infoPaneScrollOffset: 0,
-  lastTargetBranch: null,
-  currentUser: 'r.schoorstra',
-
-  mergeRequests: [],
-  branchDifferences: new Map(),
-  ignoredMergeRequests: new Set(loadSettings().ignoredMergeRequests),
-  seenMergeRequests: new Set(loadSettings().seenMergeRequests),
-  selectedMergeRequest: 0,
-
-  // Actions
-  setSelectedMergeRequest: (mergeRequest) =>
-    set({ selectedMergeRequest: mergeRequest }),
-
-  toggleIgnoreMergeRequest: (mrId) => {
-    const state = get();
-    const newIgnored = new Set(state.ignoredMergeRequests);
-
-    if (newIgnored.has(mrId)) {
-      newIgnored.delete(mrId);
-    } else {
-      newIgnored.add(mrId);
-    }
-
-    set({ ignoredMergeRequests: newIgnored });
-
-    const settings = loadSettings();
-    settings.ignoredMergeRequests = Array.from(newIgnored);
-    saveSettings(settings);
-  },
-
-  toggleSeenMergeRequest: (mrId) => {
-    const state = get();
-    const newSeen = new Set(state.seenMergeRequests);
-
-    if (newSeen.has(mrId)) {
-      newSeen.delete(mrId);
-    } else {
-      newSeen.add(mrId);
-    }
-
-    set({ seenMergeRequests: newSeen });
-
-    const settings = loadSettings();
-    settings.seenMergeRequests = Array.from(newSeen);
-    saveSettings(settings);
-  },
-
-  setSelectedUserSelectionEntry: (entry) =>
-    set({ selectedUserSelectionEntry: entry }),
-
-  switchUserSelection: async (entry) => {
+  const refreshMrList = async (entry: number, mrState: MergeRequestState) => {
     // Clear state first to avoid crashes (same pattern as fetchMrs)
-    set({ mergeRequests: [], branchDifferences: new Map() });
-    await new Promise(resolve => setTimeout(resolve, 100));
+      set({
+        mergeRequests: [],
+        branchDifferences: new Map(),
+        selectedMergeRequest: 0,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Now set the new selection and load cached MRs
-    set({ selectedUserSelectionEntry: entry, selectedMergeRequest: 0 });
+      set({ selectedUserSelectionEntry: entry, selectedMergeRequest: 0 });
 
-    const state = get();
-    const selectionEntry = state.userSelections[entry];
-    if (selectionEntry) {
-      const cachedMrs = getCachedMergeRequests(selectionEntry.name, state.mrState);
-      console.log(`[UserSelection] Loaded ${cachedMrs.length} cached MRs for ${selectionEntry.name}`);
-      set({ mergeRequests: cachedMrs });
+      const state = get();
+      const selectionEntry = state.userSelections[entry];
+      if (selectionEntry) {
+        const cachedMrs = getCachedMergeRequests(
+          selectionEntry.name,
+          mrState
+        );
+        console.log(
+          `[UserSelection] Loaded ${cachedMrs.length} cached MRs for ${selectionEntry.name}`
+        );
+        set({ mergeRequests: cachedMrs, mrState: mrState });
+        const differences = await fetchBranchDifferences(cachedMrs);
+        set({ branchDifferences: differences });
+      }
+  };
 
-      const differences = await fetchBranchDifferences(cachedMrs);
-      set({ branchDifferences: differences });
-    }
-  },
+  return ({
+    activePane: ActivePane.MergeRequests,
+    infoPaneTab: 'overview',
+    selectedJiraIndex: 0,
+    selectedJiraSubIndex: 0,
+    selectedPipelineJobIndex: 0,
+    selectedDiscussionIndex: 0,
+    selectedActivityIndex: 0,
 
-  setActivePane: (pane) =>
-    set({ activePane: pane }),
+    groups: groups,
+    users: users,
+    userSelections: mockUserSelections,
 
-  setInfoPaneTab: (tab) =>
-    set({ infoPaneTab: tab }),
+    // Initial state (rehydrated by persist middleware)
+    selectedUserSelectionEntry: 0,
+    mrState: 'opened',
+    showMrFilterModal: false,
+    showGitSwitchModal: false,
+    showHelpModal: false,
+    showJiraModal: false,
+    showRetargetModal: false,
+    showEventLogPane: false,
+    infoPaneScrollOffset: 0,
+    lastTargetBranch: null,
+    currentUser: 'r.schoorstra',
 
-  cycleInfoPaneTab: (direction) => {
-    const state = get();
-    const currentIndex = INFO_PANE_TABS.indexOf(state.infoPaneTab);
-    const newIndex = direction === 'next'
-      ? (currentIndex + 1) % INFO_PANE_TABS.length
-      : (currentIndex - 1 + INFO_PANE_TABS.length) % INFO_PANE_TABS.length;
-    set({ infoPaneTab: INFO_PANE_TABS[newIndex] });
-  },
+    mergeRequests: [],
+    branchDifferences: new Map(),
+    ignoredMergeRequests: new Set(loadSettings().ignoredMergeRequests),
+    seenMergeRequests: new Set(loadSettings().seenMergeRequests),
+    selectedMergeRequest: 0,
 
-  setSelectedJiraIndex: (index) =>
-    set({ selectedJiraIndex: index, selectedJiraSubIndex: 0 }),
+    // Actions
+    setSelectedMergeRequest: (mergeRequest) => set({ selectedMergeRequest: mergeRequest }),
 
-  setSelectedJiraSubIndex: (index) =>
-    set({ selectedJiraSubIndex: index }),
+    toggleIgnoreMergeRequest: (mrId) => {
+      const state = get();
+      const newIgnored = new Set(state.ignoredMergeRequests);
 
-  setSelectedPipelineJobIndex: (index) =>
-    set({ selectedPipelineJobIndex: index }),
+      if (newIgnored.has(mrId)) {
+        newIgnored.delete(mrId);
+      } else {
+        newIgnored.add(mrId);
+      }
 
-  setSelectedDiscussionIndex: (index) =>
-    set({ selectedDiscussionIndex: index }),
+      set({ ignoredMergeRequests: newIgnored });
 
-  setSelectedActivityIndex: (index) =>
-    set({ selectedActivityIndex: index }),
+      const settings = loadSettings();
+      settings.ignoredMergeRequests = Array.from(newIgnored);
+      saveSettings(settings);
+    },
 
-  setMrState: (state) =>
-    set({ mrState: state }),
+    toggleSeenMergeRequest: (mrId) => {
+      const state = get();
+      const newSeen = new Set(state.seenMergeRequests);
 
-  setShowMrFilterModal: (show) =>
-    set({ showMrFilterModal: show }),
+      if (newSeen.has(mrId)) {
+        newSeen.delete(mrId);
+      } else {
+        newSeen.add(mrId);
+      }
 
-  setShowGitSwitchModal: (show) =>
-    set({ showGitSwitchModal: show }),
+      set({ seenMergeRequests: newSeen });
 
-  setShowHelpModal: (show) =>
-    set({ showHelpModal: show }),
+      const settings = loadSettings();
+      settings.seenMergeRequests = Array.from(newSeen);
+      saveSettings(settings);
+    },
 
-  setShowJiraModal: (show) =>
-    set({ showJiraModal: show }),
+    setSelectedUserSelectionEntry: (entry) => set({ selectedUserSelectionEntry: entry }),
 
-  setShowRetargetModal: (show) =>
-    set({ showRetargetModal: show }),
+    switchUserSelection: async (entry) => {
+      await refreshMrList(entry, get().mrState);
+    },
+    setMrState: async (state) => {
+      await refreshMrList(get().selectedUserSelectionEntry, state);
+    },
 
-  setShowEventLogPane: (show) =>
-    set({ showEventLogPane: show }),
+    setActivePane: (pane) => set({ activePane: pane }),
 
-  setLastTargetBranch: (branch) =>
-    set({ lastTargetBranch: branch }),
+    setInfoPaneTab: (tab) => set({ infoPaneTab: tab }),
 
-  setInfoPaneScrollOffset: (offset) =>
-    set({ infoPaneScrollOffset: Math.max(0, offset) }),
+    cycleInfoPaneTab: (direction) => {
+      const state = get();
+      const currentIndex = INFO_PANE_TABS.indexOf(state.infoPaneTab);
+      const newIndex = direction === 'next'
+        ? (currentIndex + 1) % INFO_PANE_TABS.length
+        : (currentIndex - 1 + INFO_PANE_TABS.length) % INFO_PANE_TABS.length;
+      set({ infoPaneTab: INFO_PANE_TABS[newIndex] });
+    },
 
-  scrollInfoPane: (direction) => {
-    const state = get();
-    const scrollAmount = 3; // Number of lines to scroll
-    const newOffset = direction === 'down'
-      ? state.infoPaneScrollOffset + scrollAmount
-      : Math.max(0, state.infoPaneScrollOffset - scrollAmount);
-    set({ infoPaneScrollOffset: newOffset });
-  },
+    setSelectedJiraIndex: (index) => set({ selectedJiraIndex: index, selectedJiraSubIndex: 0 }),
 
-  setBranchDifferences: (differences) =>
-    set({ branchDifferences: differences }),
+    setSelectedJiraSubIndex: (index) => set({ selectedJiraSubIndex: index }),
 
-  fetchMrs: async () => {
-    const state = get();
-    const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
+    setSelectedPipelineJobIndex: (index) => set({ selectedPipelineJobIndex: index }),
 
-    console.log(`Fetching MRs: ${selectionEntry?.name}`);
+    setSelectedDiscussionIndex: (index) => set({ selectedDiscussionIndex: index }),
 
-    if (!selectionEntry) return;
+    setSelectedActivityIndex: (index) => set({ selectedActivityIndex: index }),
 
-    const previouslySelectedMrId = state.mergeRequests[state.selectedMergeRequest]?.id;
+    setShowMrFilterModal: (show) => set({ showMrFilterModal: show }),
 
-    const { usernames, repositories } = extractSelectionData(
-      state.selectedUserSelectionEntry,
-      state.userSelections,
-      users,
-      groups
-    );
+    setShowGitSwitchModal: (show) => set({ showGitSwitchModal: show }),
 
-    let mrs: MergeRequest[];
+    setShowHelpModal: (show) => set({ showHelpModal: show }),
 
-    if (repositories.length > 0 && repositories[0]) {
-      mrs = await fetchMergeRequestsByProject(selectionEntry.name, repositories[0], state.mrState);
-    } else if (usernames.length > 0) {
-      mrs = await fetchMergeRequests(selectionEntry.name, usernames, state.mrState);
-    } else {
-      mrs = [];
-    }
+    setShowJiraModal: (show) => set({ showJiraModal: show }),
 
-    set({ mergeRequests: [], branchDifferences: new Map() });
-    await new Promise(resolve => setTimeout(resolve, 100));
+    setShowRetargetModal: (show) => set({ showRetargetModal: show }),
 
-    const newSelectedIndex = previouslySelectedMrId
-      ? mrs.findIndex(mr => mr.id === previouslySelectedMrId)
-      : -1;
+    setShowEventLogPane: (show) => set({ showEventLogPane: show }),
 
-    set({
-      mergeRequests: mrs,
-      selectedMergeRequest: newSelectedIndex >= 0 ? newSelectedIndex : 0
-    });
+    setLastTargetBranch: (branch) => set({ lastTargetBranch: branch }),
 
-    fetchBranchDifferences(mrs).then(differences => {
-      set({ branchDifferences: differences });
-    });
-  },
+    setInfoPaneScrollOffset: (offset) => set({ infoPaneScrollOffset: Math.max(0, offset) }),
 
-  loadMrs: async () => {
-    const state = get();
-    const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
-    if (selectionEntry) {
-      const cachedMrs = getCachedMergeRequests(selectionEntry.name, state.mrState);
-      console.log(`[MR] Loaded ${cachedMrs.length} cached MRs immediately`);
-      set({ mergeRequests: cachedMrs });
+    scrollInfoPane: (direction) => {
+      const state = get();
+      const scrollAmount = 3; // Number of lines to scroll
+      const newOffset = direction === 'down'
+        ? state.infoPaneScrollOffset + scrollAmount
+        : Math.max(0, state.infoPaneScrollOffset - scrollAmount);
+      set({ infoPaneScrollOffset: newOffset });
+    },
 
-      setTimeout(() => {
-        fetchBranchDifferences(cachedMrs).then(differences => {
-          set({ branchDifferences: differences });
-        });
-      }, 1);
-    }
+    setBranchDifferences: (differences) => set({ branchDifferences: differences }),
 
-    return;
-  },
+    fetchMrs: async () => {
+      const state = get();
+      const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
 
-  refetchSelectedMrPipeline: async () => {
-    const state = get();
-    const selectedMr = state.mergeRequests[state.selectedMergeRequest];
-    if (!selectedMr) {
-      console.log('[Pipeline] No MR selected');
+      console.log(`Fetching MRs: ${selectionEntry?.name}`);
+
+      if (!selectionEntry) return;
+
+      const previouslySelectedMrId = state.mergeRequests[state.selectedMergeRequest]?.id;
+
+      const { usernames, repositories } = extractSelectionData(
+        state.selectedUserSelectionEntry,
+        state.userSelections,
+        users,
+        groups
+      );
+
+      let mrs: MergeRequest[];
+
+      if (repositories.length > 0 && repositories[0]) {
+        mrs = await fetchMergeRequestsByProject(selectionEntry.name, repositories[0], state.mrState);
+      } else if (usernames.length > 0) {
+        mrs = await fetchMergeRequests(selectionEntry.name, usernames, state.mrState);
+      } else {
+        mrs = [];
+      }
+
+      set({ mergeRequests: [], branchDifferences: new Map() });
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const newSelectedIndex = previouslySelectedMrId
+        ? mrs.findIndex(mr => mr.id === previouslySelectedMrId)
+        : -1;
+
+      set({
+        mergeRequests: mrs,
+        selectedMergeRequest: newSelectedIndex >= 0 ? newSelectedIndex : 0
+      });
+
+      fetchBranchDifferences(mrs).then(differences => {
+        set({ branchDifferences: differences });
+      });
+    },
+
+    loadMrs: async () => {
+      const state = get();
+      const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
+      if (selectionEntry) {
+        const cachedMrs = getCachedMergeRequests(selectionEntry.name, state.mrState);
+        console.log(`[MR] Loaded ${cachedMrs.length} cached MRs immediately`);
+        set({ mergeRequests: cachedMrs });
+
+        setTimeout(() => {
+          fetchBranchDifferences(cachedMrs).then(differences => {
+            set({ branchDifferences: differences });
+          });
+        }, 1);
+      }
+
       return;
-    }
+    },
 
-    const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
-    if (!selectionEntry) {
-      console.log('[Pipeline] No selection entry found');
-      return;
-    }
+    refetchSelectedMrPipeline: async () => {
+      const state = get();
+      const selectedMr = state.mergeRequests[state.selectedMergeRequest];
+      if (!selectedMr) {
+        console.log('[Pipeline] No MR selected');
+        return;
+      }
 
-    console.log(`[Pipeline] Refetching pipeline for MR !${selectedMr.iid}`);
+      const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
+      if (!selectionEntry) {
+        console.log('[Pipeline] No selection entry found');
+        return;
+      }
 
-    await refetchMrPipeline(
-      selectionEntry.name,
-      selectedMr.id,
-      selectedMr.project.fullPath,
-      selectedMr.iid,
-      state.mrState
-    );
+      console.log(`[Pipeline] Refetching pipeline for MR !${selectedMr.iid}`);
 
-    const updatedMrs = getCachedMergeRequests(selectionEntry.name, state.mrState);
-    set({ mergeRequests: updatedMrs });
+      await refetchMrPipeline(
+        selectionEntry.name,
+        selectedMr.id,
+        selectedMr.project.fullPath,
+        selectedMr.iid,
+        state.mrState
+      );
 
-    console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid}`);
-  },
-}), {
+      const updatedMrs = getCachedMergeRequests(selectionEntry.name, state.mrState);
+      set({ mergeRequests: updatedMrs });
+
+      console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid}`);
+    },
+  });
+}, {
   name: 'lazygitlab-store',
   storage: fileStorage,
   partialize: (state) => ({

@@ -69,11 +69,7 @@ export default function App() {
   }, []);
 
   const handleStateSelect = async (newState: MergeRequestState) => {
-    if (newState !== mrState) {
-      setMrState(newState);
-      // Automatically refresh data when state changes
-      await fetchMrs();
-    }
+    setMrState(newState);
   };
 
   useKeyboard((key: ParsedKey) => {
@@ -283,7 +279,6 @@ export default function App() {
         onSuccess={() => {
           setCopyNotification('Branch switched!');
           setTimeout(() => setCopyNotification(null), 2000);
-          fetchMrs();
         }}
       />
 
@@ -304,7 +299,6 @@ export default function App() {
         onSuccess={() => {
           setCopyNotification('MR retargeted successfully!');
           setTimeout(() => setCopyNotification(null), 2000);
-          fetchMrs();
         }}
       />
 
