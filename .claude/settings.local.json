@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run:*)",
+      "Bash(tsc:*)",
+      "Bash(bunx tsc:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.gitlab.com)",
+      "WebFetch(domain:forum.gitlab.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
