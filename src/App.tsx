@@ -18,6 +18,8 @@ import { type MergeRequestState } from "./generated/gitlab-sdk";
 import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
+import { useAtom } from '@effect-atom/atom-react';
+import { filterMrStateAtom } from './store/appAtoms';
 
 export default function App() {
   const renderer = useRenderer();
@@ -25,25 +27,27 @@ export default function App() {
   const setActivePane = useAppStore(state => state.setActivePane);
   const activeModal = useAppStore(state => state.activeModal);
   const setActiveModal = useAppStore(state => state.setActiveModal);
-  const loadMrs = useAppStore(state => state.loadMrs);
   const cycleInfoPaneTab = useAppStore(state => state.cycleInfoPaneTab);
+
+  const loadMrs = useAppStore(state => state.loadMrs);
+
   const mrState = useAppStore(state => state.mrState);
   const setMrState = useAppStore(state => state.setMrState);
   const fetchMrs = useAppStore(state => state.fetchMrs);
   const mergeRequests = useAppStore(state => state.mergeRequests);
   const selectedIndex = useAppStore(state => state.selectedMergeRequest);
-  const jobHistoryData = useAppStore(state => state.jobHistoryData);
-  const jobHistoryLoading = useAppStore(state => state.jobHistoryLoading);
-  const selectedJobForHistory = useAppStore(state => state.selectedJobForHistory);
 
   const repositoryBranches = useRepositoryBranches(mergeRequests);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
+
+  const [getFilterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
 
   useEffect(() => {
     loadMrs();
   }, []);
 
   const handleStateSelect = async (newState: MergeRequestState) => {
+    setFilterMrState(newState);
     setMrState(newState);
   };
 
@@ -252,9 +256,6 @@ export default function App() {
       {/* Job History Modal - rendered at app level to cover entire screen */}
       <JobHistoryModal
         isVisible={activeModal === 'jobHistory'}
-        jobName={selectedJobForHistory || ''}
-        jobHistory={jobHistoryData}
-        isLoading={jobHistoryLoading}
         onClose={() => setActiveModal('none')}
       />
 

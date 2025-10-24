@@ -16,6 +16,8 @@ import { loadSettings } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
+import { useAtom } from "@effect-atom/atom-react";
+import { filterMrStateAtom, selectedMrIndexAtom } from "../store/appAtoms";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -394,20 +396,21 @@ export type MergeRequest = GitlabMergeRequest & {
   jiraIssues: JiraIssue[];
 };
 
-const MR_STATES: MergeRequestState[] = ['opened', 'merged', 'closed', 'locked', 'all'];
-
 export default function MergeRequestPane({}: {}) {
   const setSelectedMergeRequest = useAppStore(
     (state) => state.setSelectedMergeRequest
   );
   const selectedIndex = useAppStore((state) => state.selectedMergeRequest);
   const mergeRequests = useAppStore((state) => state.mergeRequests);
+  const [getSelectedMRIndex, setSelectedMRIndex] = useAtom(selectedMrIndexAtom);
 
   const activePane = useAppStore((state) => state.activePane);
   const activeModal = useAppStore((state) => state.activeModal);
   const setActiveModal = useAppStore((state) => state.setActiveModal);
   const mrState = useAppStore((state) => state.mrState);
   const setMrState = useAppStore((state) => state.setMrState);
+  const [getfilterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
+
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
   const toggleSeenMergeRequest = useAppStore((state) => state.toggleSeenMergeRequest);
   const ignoredMergeRequests = useAppStore((state) => state.ignoredMergeRequests);
@@ -509,24 +512,30 @@ export default function MergeRequestPane({}: {}) {
       }
       case '1':
         setMrState('opened');
+        setfilterMrState('opened');
         break;
       case '2':
         setMrState('merged');
+        setfilterMrState('merged');
         break;
       case '3':
         setMrState('closed');
+        setfilterMrState('closed');
         break;
       case '4':
         setMrState('locked');
+        setfilterMrState('locked');
         break;
       case '5':
         setMrState('all');
+        setfilterMrState('all');
         break;
       case "j":
       case "down":
         if (mergeRequests.length > 0) {
           const newIndex = selectedIndex < mergeRequests.length - 1 ? selectedIndex + 1 : 0;
           setSelectedMergeRequest(newIndex);
+          setSelectedMRIndex(newIndex);
           scrollToItem(newIndex);
         }
         break;
@@ -535,6 +544,7 @@ export default function MergeRequestPane({}: {}) {
         if (mergeRequests.length > 0) {
           const newIndex = selectedIndex > 0 ? selectedIndex - 1 : mergeRequests.length - 1;
           setSelectedMergeRequest(newIndex);
+          setSelectedMRIndex(newIndex);
           scrollToItem(newIndex);
         }
         break;
@@ -646,6 +656,7 @@ export default function MergeRequestPane({}: {}) {
       <MrStateTabs
         currentState={mrState}
         onStateChange={(newState: MergeRequestState) => {
+
             setMrState(newState);
 
         }}

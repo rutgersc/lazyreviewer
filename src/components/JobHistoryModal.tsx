@@ -1,15 +1,12 @@
 import React from 'react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import type { JobHistoryEntry } from '../gitlab/gitlabgraphql';
 import { getJobStatusDisplay } from '../gitlab/jobStatus';
 import { Colors } from '../colors';
+import { useAppStore } from '../store/appStore';
 
 interface JobHistoryModalProps {
   isVisible: boolean;
-  jobName: string;
-  jobHistory: JobHistoryEntry[];
-  isLoading: boolean;
   onClose: () => void;
 }
 
@@ -30,12 +27,13 @@ function formatRelativeTime(isoString: string): string {
 
 export default function JobHistoryModal({
   isVisible,
-  jobName,
-  jobHistory,
-  isLoading,
   onClose
 }: JobHistoryModalProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
+
+  const jobName = useAppStore(state => state.selectedJobForHistory);
+  const jobHistory = useAppStore(state => state.jobHistoryData);
+  const isLoading = useAppStore(state => state.jobHistoryLoading);
 
   useKeyboard((key: ParsedKey) => {
     if (!isVisible) return;

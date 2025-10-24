@@ -198,6 +198,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
       await refreshMrList(entry, get().mrState);
     },
     setMrState: async (state) => {
+
       await refreshMrList(get().selectedUserSelectionEntry, state);
     },
 
@@ -249,7 +250,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
         const history = await fetchJobHistory(
           selectedMr.project.fullPath,
           selectedJob.name,
-          50
+          15
         );
         set({ jobHistoryData: history, jobHistoryLoading: false });
       } catch (error) {
@@ -273,7 +274,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
       const { usernames, repositories } = extractSelectionData(
         state.selectedUserSelectionEntry,
         state.userSelections,
-        users,
         groups
       );
 
@@ -366,7 +366,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 export const extractSelectionData = (
   userSelectionEntry: number,
   userSelections: UserSelectionEntry[],
-  users: UserSelection[],
   groups: UserGroup[]
 ): { usernames: string[]; repositories: string[] } => {
   const entry = userSelections[userSelectionEntry];

@@ -20,9 +20,11 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@effect-atom/atom-react": "^0.3.4",
     "@opentui/core": "^0.1.30",
     "@opentui/react": "^0.1.30",
     "dotenv": "^17.2.3",
+    "effect": "^3.18.4",
     "react": "^19.0.0",
     "superjson": "^2.2.2",
     "zustand": "^5.0.8"
