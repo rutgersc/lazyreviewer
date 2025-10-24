@@ -191,7 +191,7 @@ export default function App() {
               backgroundColor: '#282a36'
             }}
           >
-            <InfoPane />
+            <InfoPane activePane={activePane} />
           </box>
 
           {/* Console Pane */}

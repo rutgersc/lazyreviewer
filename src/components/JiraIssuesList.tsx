@@ -9,6 +9,7 @@ import { openUrl } from '../system/url-effect';
 import { copyToClipboard } from '../system/clipboard-effect';
 
 interface JiraIssuesListProps {
+  activePane: ActivePane;
   jiraIssues: JiraIssue[];
   selectedJiraIndex: number;
   selectedJiraSubIndex: number;
@@ -21,8 +22,7 @@ type JiraListItem = {
   subIndex: number;
 };
 
-export default function JiraIssuesList({ jiraIssues, selectedJiraIndex, selectedJiraSubIndex }: JiraIssuesListProps) {
-  const activePane = useAppStore(state => state.activePane);
+export default function JiraIssuesList({ activePane, jiraIssues, selectedJiraIndex, selectedJiraSubIndex }: JiraIssuesListProps) {
   const activeModal = useAppStore(state => state.activeModal);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setSelectedJiraIndex = useAppStore(state => state.setSelectedJiraIndex);

@@ -38,6 +38,7 @@ export interface Event {
 type ColumnType = 'time' | 'repo' | 'mrTitle' | 'eventType' | 'eventDetails';
 
 interface ActivityLogProps {
+  activePane: ActivePane;
   mergeRequest: MergeRequest;
   columns: ColumnType[];
   selectedActivityIndex?: number;
@@ -232,8 +233,7 @@ const formatEventDetails = (event: Event): string => {
   }
 };
 
-export default function ActivityLog({ mergeRequest, columns, selectedActivityIndex = -1 }: ActivityLogProps) {
-  const activePane = useAppStore(state => state.activePane);
+export default function ActivityLog({ activePane, mergeRequest, columns, selectedActivityIndex = -1 }: ActivityLogProps) {
   const activeModal = useAppStore(state => state.activeModal);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setSelectedActivityIndex = useAppStore(state => state.setSelectedActivityIndex);

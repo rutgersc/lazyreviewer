@@ -8,12 +8,12 @@ import { ActivePane } from '../userselection/userSelection';
 import { loadJobLog } from '../gitlab/pipelinejob-log';
 
 interface PipelineJobsListProps {
+  activePane: ActivePane;
   pipelineJobs: Array<{ stage: PipelineStage; job: PipelineJob }>;
   selectedPipelineJobIndex: number;
 }
 
-export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobIndex }: PipelineJobsListProps) {
-  const activePane = useAppStore(state => state.activePane);
+export default function PipelineJobsList({ activePane, pipelineJobs, selectedPipelineJobIndex }: PipelineJobsListProps) {
   const activeModal = useAppStore(state => state.activeModal);
   const setActiveModal = useAppStore(state => state.setActiveModal);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);

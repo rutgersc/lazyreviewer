@@ -11,7 +11,7 @@ import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 
 interface InfoPaneProps {
-  // No props needed - everything comes from store!
+  activePane: ActivePane;
 }
 
 const TAB_LABELS: Record<InfoPaneTab, string> = {
@@ -21,8 +21,7 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
   activity: 'Activity'
 };
 
-export default function InfoPane({}: InfoPaneProps) {
-  const activePane = useAppStore(state => state.activePane);
+export default function InfoPane({ activePane }: InfoPaneProps) {
   const infoPaneScrollOffset = useAppStore(state => state.infoPaneScrollOffset);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const selectedJiraIndex = useAppStore(state => state.selectedJiraIndex);
@@ -97,6 +96,7 @@ export default function InfoPane({}: InfoPaneProps) {
 
       case 'jira':
         return <JiraIssuesList
+          activePane={activePane}
           jiraIssues={jiraIssues}
           selectedJiraIndex={selectedJiraIndex}
           selectedJiraSubIndex={selectedJiraSubIndex}
@@ -104,6 +104,7 @@ export default function InfoPane({}: InfoPaneProps) {
 
       case 'pipeline':
         return <PipelineJobsList
+          activePane={activePane}
           pipelineJobs={pipelineJobs}
           selectedPipelineJobIndex={selectedPipelineJobIndex}
         />;
@@ -120,6 +121,7 @@ export default function InfoPane({}: InfoPaneProps) {
         }
 
         return <ActivityLog
+          activePane={activePane}
           mergeRequest={selectedMergeRequest}
           columns={['time', 'eventType', 'eventDetails']}
           selectedActivityIndex={selectedActivityIndex} />;
