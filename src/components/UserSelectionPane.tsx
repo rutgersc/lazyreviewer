@@ -1,17 +1,13 @@
 import { useState } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
-import type { UserSelection, UserSelectionEntry } from '../userselection/userSelection';
+import type { UserSelectionEntry } from '../userselection/userSelection';
 import { ActivePane } from '../userselection/userSelection';
 import { useAppStore } from '../store/appStore';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { Colors } from '../colors';
 
 interface UserSelectionPaneProps {
-}
-
-interface LocalNavigationState {
-  currentItems: UserSelection[];
 }
 
 export default function UserSelectionPane({ }: UserSelectionPaneProps) {
@@ -21,12 +17,6 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
   const switchUserSelection = useAppStore(state => state.switchUserSelection);
 
   const isActive = activePane === ActivePane.UserSelection;
-  const [navState, setNavState] = useState<LocalNavigationState>(() =>
-  ({
-    breadcrumb: [],
-    currentItems: []
-    })
-  );
   const [highlightIndex, setHighlightIndex] = useState(selectedUserSelectionEntry);
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
     itemHeight: 1,

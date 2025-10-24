@@ -23,14 +23,14 @@ type JiraListItem = {
 
 export default function JiraIssuesList({ jiraIssues, selectedJiraIndex, selectedJiraSubIndex }: JiraIssuesListProps) {
   const activePane = useAppStore(state => state.activePane);
+  const activeModal = useAppStore(state => state.activeModal);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setSelectedJiraIndex = useAppStore(state => state.setSelectedJiraIndex);
   const setSelectedJiraSubIndex = useAppStore(state => state.setSelectedJiraSubIndex);
-  const showJobHistoryModal = useAppStore(state => state.showJobHistoryModal);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'jira') return;
-    if (showJobHistoryModal) return;
+    if (activeModal !== 'none') return;
     if (jiraIssues.length === 0) return;
 
     const selectedIssue = jiraIssues[selectedJiraIndex];

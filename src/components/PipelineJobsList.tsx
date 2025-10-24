@@ -14,16 +14,16 @@ interface PipelineJobsListProps {
 
 export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobIndex }: PipelineJobsListProps) {
   const activePane = useAppStore(state => state.activePane);
+  const activeModal = useAppStore(state => state.activeModal);
+  const setActiveModal = useAppStore(state => state.setActiveModal);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setSelectedPipelineJobIndex = useAppStore(state => state.setSelectedPipelineJobIndex);
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const fetchJobHistoryForSelectedJob = useAppStore(state => state.fetchJobHistoryForSelectedJob);
-  const setShowJobHistoryModal = useAppStore(state => state.setShowJobHistoryModal);
-  const showJobHistoryModal = useAppStore(state => state.showJobHistoryModal);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
-    if (showJobHistoryModal) return;
+    if (activeModal !== 'none') return;
     if (pipelineJobs.length === 0) return;
 
     switch (key.name) {
@@ -44,7 +44,7 @@ export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobInde
       case 'y':
         if (pipelineJobs[selectedPipelineJobIndex]) {
           fetchJobHistoryForSelectedJob().then(() => {
-            setShowJobHistoryModal(true);
+            setActiveModal('jobHistory');
           });
         }
         break;

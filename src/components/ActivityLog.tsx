@@ -234,15 +234,15 @@ const formatEventDetails = (event: Event): string => {
 
 export default function ActivityLog({ mergeRequest, columns, selectedActivityIndex = -1 }: ActivityLogProps) {
   const activePane = useAppStore(state => state.activePane);
+  const activeModal = useAppStore(state => state.activeModal);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setSelectedActivityIndex = useAppStore(state => state.setSelectedActivityIndex);
-  const showJobHistoryModal = useAppStore(state => state.showJobHistoryModal);
 
   const events = extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'activity') return;
-    if (showJobHistoryModal) return;
+    if (activeModal !== 'none') return;
     if (events.length === 0) return;
 
     switch (key.name) {

@@ -14,7 +14,6 @@ import EventLogPane from "./components/EventLogPane";
 import { ActivePane } from "./userselection/userSelection";
 import { useAppStore } from "./store/appStore";
 import { useEffect, useState } from 'react';
-import { startJobMonitoring, stopJobMonitoring } from "./services/jobMonitor";
 import { type MergeRequestState } from "./generated/gitlab-sdk";
 import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
@@ -23,55 +22,25 @@ export default function App() {
   const renderer = useRenderer();
   const activePane = useAppStore(state => state.activePane);
   const setActivePane = useAppStore(state => state.setActivePane);
+  const activeModal = useAppStore(state => state.activeModal);
+  const setActiveModal = useAppStore(state => state.setActiveModal);
   const loadMrs = useAppStore(state => state.loadMrs);
   const scrollInfoPane = useAppStore(state => state.scrollInfoPane);
   const cycleInfoPaneTab = useAppStore(state => state.cycleInfoPaneTab);
-  const showFilterModal = useAppStore(state => state.showMrFilterModal);
-  const setShowFilterModal = useAppStore(state => state.setShowMrFilterModal);
-  const showGitSwitchModal = useAppStore(state => state.showGitSwitchModal);
-  const setShowGitSwitchModal = useAppStore(state => state.setShowGitSwitchModal);
   const mrState = useAppStore(state => state.mrState);
   const setMrState = useAppStore(state => state.setMrState);
   const fetchMrs = useAppStore(state => state.fetchMrs);
   const mergeRequests = useAppStore(state => state.mergeRequests);
   const selectedIndex = useAppStore(state => state.selectedMergeRequest);
-  const showHelpModal = useAppStore(state => state.showHelpModal);
-  const setShowHelpModal = useAppStore(state => state.setShowHelpModal);
-  const showJiraModal = useAppStore(state => state.showJiraModal);
-  const setShowJiraModal = useAppStore(state => state.setShowJiraModal);
-  const showRetargetModal = useAppStore(state => state.showRetargetModal);
-  const setShowRetargetModal = useAppStore(state => state.setShowRetargetModal);
-  const showJobHistoryModal = useAppStore(state => state.showJobHistoryModal);
-  const setShowJobHistoryModal = useAppStore(state => state.setShowJobHistoryModal);
   const jobHistoryData = useAppStore(state => state.jobHistoryData);
   const jobHistoryLoading = useAppStore(state => state.jobHistoryLoading);
   const selectedJobForHistory = useAppStore(state => state.selectedJobForHistory);
-  const showEventLogPane = useAppStore(state => state.showEventLogPane);
-  const setShowEventLogPane = useAppStore(state => state.setShowEventLogPane);
 
   const repositoryBranches = useRepositoryBranches(mergeRequests);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
   useEffect(() => {
-    // On app start, load MRs using the persisted selection entry
     loadMrs();
-
-    // Start job monitoring service
-    const monitoringInterval = startJobMonitoring();
-
-    // Setup global error handlers to show console on fatal errors
-    const errorHandler = (error: Error) => {
-      renderer.console.show();
-    };
-    process.on('uncaughtException', errorHandler);
-    process.on('unhandledRejection', errorHandler);
-
-    // Cleanup on app exit
-    return () => {
-      stopJobMonitoring(monitoringInterval);
-      process.off('uncaughtException', errorHandler);
-      process.off('unhandledRejection', errorHandler);
-    };
   }, []);
 
   const handleStateSelect = async (newState: MergeRequestState) => {
@@ -79,42 +48,18 @@ export default function App() {
   };
 
   useKeyboard((key: ParsedKey) => {
-    // Handle escape - priority order: event log, modals, then pane-level
+    // Handle escape - close any active modal
     if (key.name === 'escape') {
-      if (showEventLogPane) {
-        setShowEventLogPane(false);
-        return;
-      }
-      if (showHelpModal) {
-        setShowHelpModal(false);
-        return;
-      }
-      if (showJiraModal) {
-        setShowJiraModal(false);
-        return;
-      }
-      if (showRetargetModal) {
-        setShowRetargetModal(false);
-        return;
-      }
-      if (showJobHistoryModal) {
-        setShowJobHistoryModal(false);
-        return;
-      }
-      if (showFilterModal) {
-        setShowFilterModal(false);
-        return;
-      }
-      if (showGitSwitchModal) {
-        setShowGitSwitchModal(false);
+      if (activeModal !== 'none') {
+        setActiveModal('none');
         return;
       }
       // If no modals open, let pane-level handlers process escape
       return;
     }
 
-    // Don't handle other keys when event log is open
-    if (showEventLogPane) {
+    // Don't handle other keys when a modal is open
+    if (activeModal !== 'none') {
       return;
     }
 
@@ -128,19 +73,18 @@ export default function App() {
         break;
       case 'o':
         if (mergeRequests.length > 0) {
-          setShowEventLogPane(true);
+          setActiveModal('eventLog');
         }
         break;
       case 's':
         if (key.ctrl) {
           openSettingsFile();
         } else {
-          // Global refresh
           fetchMrs();
         }
         break;
       case '?':
-        setShowHelpModal(true);
+        setActiveModal('help');
         break;
       case '[':
         cycleInfoPaneTab('prev');
@@ -194,13 +138,6 @@ export default function App() {
 
   return (
     <box style={{ flexDirection: "column", height: "100%", backgroundColor: '#282a36' }}>
-      {/* Header */}
-      {/* <box style={{ padding: 0, border: true, borderColor: "#6272a4", backgroundColor: '#44475a' }}>
-        <text style={{ fg: '#f8f8f2' }}>
-          🚀 LazyGitLab - Merge Requests
-        </text>
-      </box> */}
-
       {/* Main content area - horizontal layout */}
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
         {/* Left panel - two stacked panes */}
@@ -274,18 +211,18 @@ export default function App() {
 
       {/* MR State Filter Modal - rendered at app level to cover entire screen */}
       <MrStateFilterModal
-        isVisible={showFilterModal}
+        isVisible={activeModal === 'mrFilter'}
         currentState={mrState}
         onStateSelect={handleStateSelect}
-        onClose={() => setShowFilterModal(false)}
+        onClose={() => setActiveModal('none')}
       />
 
       {/* Git Switch Modal - rendered at app level to cover entire screen */}
       <GitSwitchModal
-        isVisible={showGitSwitchModal}
+        isVisible={activeModal === 'gitSwitch'}
         branchName={mergeRequests[selectedIndex]?.sourcebranch || ""}
         repoPath={repositoryBranches.find(r => r.projectPath === mergeRequests[selectedIndex]?.project.fullPath)?.localPath || null}
-        onClose={() => setShowGitSwitchModal(false)}
+        onClose={() => setActiveModal('none')}
         onSuccess={() => {
           setCopyNotification('Branch switched!');
           setTimeout(() => setCopyNotification(null), 2000);
@@ -293,19 +230,19 @@ export default function App() {
       />
 
       {/* Help Modal - rendered at app level to cover entire screen */}
-      <HelpModal isVisible={showHelpModal} setCopyNotification={setCopyNotification} />
+      <HelpModal isVisible={activeModal === 'help'} setCopyNotification={setCopyNotification} />
 
       {/* Jira Modal - rendered at app level to cover entire screen */}
       <JiraModal
-        isVisible={showJiraModal}
+        isVisible={activeModal === 'jira'}
         jiraIssues={mergeRequests[selectedIndex]?.jiraIssues || []}
-        onClose={() => setShowJiraModal(false)}
+        onClose={() => setActiveModal('none')}
       />
 
       {/* Retarget Modal - rendered at app level to cover entire screen */}
       <RetargetModal
-        isVisible={showRetargetModal}
-        onClose={() => setShowRetargetModal(false)}
+        isVisible={activeModal === 'retarget'}
+        onClose={() => setActiveModal('none')}
         onSuccess={() => {
           setCopyNotification('MR retargeted successfully!');
           setTimeout(() => setCopyNotification(null), 2000);
@@ -314,18 +251,18 @@ export default function App() {
 
       {/* Job History Modal - rendered at app level to cover entire screen */}
       <JobHistoryModal
-        isVisible={showJobHistoryModal}
+        isVisible={activeModal === 'jobHistory'}
         jobName={selectedJobForHistory || ''}
         jobHistory={jobHistoryData}
         isLoading={jobHistoryLoading}
-        onClose={() => setShowJobHistoryModal(false)}
+        onClose={() => setActiveModal('none')}
       />
 
       {/* Event Log Pane - fullscreen overlay */}
-      {showEventLogPane && (
+      {activeModal === 'eventLog' && (
         <EventLogPane
           mergeRequests={mergeRequests}
-          onClose={() => setShowEventLogPane(false)}
+          onClose={() => setActiveModal('none')}
         />
       )}
 

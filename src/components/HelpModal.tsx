@@ -189,14 +189,9 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
   const activePane = useAppStore(state => state.activePane);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setActivePane = useAppStore(state => state.setActivePane);
+  const setActiveModal = useAppStore(state => state.setActiveModal);
   const cycleInfoPaneTab = useAppStore(state => state.cycleInfoPaneTab);
   const scrollInfoPane = useAppStore(state => state.scrollInfoPane);
-  const setShowHelpModal = useAppStore(state => state.setShowHelpModal);
-  const setShowFilterModal = useAppStore(state => state.setShowMrFilterModal);
-  const setShowGitSwitchModal = useAppStore(state => state.setShowGitSwitchModal);
-  const setShowJiraModal = useAppStore(state => state.setShowJiraModal);
-  const setShowRetargetModal = useAppStore(state => state.setShowRetargetModal);
-  const setShowEventLogPane = useAppStore(state => state.setShowEventLogPane);
   const fetchMrs = useAppStore(state => state.fetchMrs);
   const loadMrs = useAppStore(state => state.loadMrs);
   const mergeRequests = useAppStore(state => state.mergeRequests);
@@ -207,41 +202,40 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
   const actions: HelpModalActions = {
     // Global actions
     onRefresh: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       fetchMrs();
     },
     onOpenSettings: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       openSettingsFile();
     },
     onToggleConsole: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       renderer.console.toggle();
     },
     onOpenEventLog: () => {
-      setShowHelpModal(false);
       if (mergeRequests.length > 0) {
-        setShowEventLogPane(true);
+        setActiveModal('eventLog');
       }
     },
     onCycleInfoTab: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       cycleInfoPaneTab('next');
     },
     onScrollInfoPaneDown: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
         scrollInfoPane('down');
       }
     },
     onScrollInfoPaneUp: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
         scrollInfoPane('up');
       }
     },
     onCyclePaneRight: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       if (activePane === ActivePane.MergeRequests) {
         setActivePane(ActivePane.UserSelection);
       } else {
@@ -249,7 +243,7 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
       }
     },
     onCyclePaneLeft: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       if (activePane === ActivePane.MergeRequests) {
         setActivePane(ActivePane.UserSelection);
       } else {
@@ -259,15 +253,14 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
 
     // MR Pane actions
     onFocusInfoPane: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       setActivePane(ActivePane.InfoPane);
     },
     onFilterMRs: () => {
-      setShowHelpModal(false);
-      setShowFilterModal(true);
+      setActiveModal('mrFilter');
     },
     onCopyBranch: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       if (mergeRequests[selectedMrIndex]) {
         const sourceBranch = mergeRequests[selectedMrIndex].sourcebranch;
         copyToClipboard(sourceBranch).then((success) => {
@@ -279,25 +272,22 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
       }
     },
     onOpenInBrowser: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       if (mergeRequests[selectedMrIndex]) {
         openUrl(mergeRequests[selectedMrIndex].webUrl);
       }
     },
     onGitSwitch: () => {
-      setShowHelpModal(false);
-      setShowGitSwitchModal(true);
+      setActiveModal('gitSwitch');
     },
     onShowJiraTickets: () => {
-      setShowHelpModal(false);
-      setShowJiraModal(true);
+      setActiveModal('jira');
     },
     onRetargetMR: () => {
-      setShowHelpModal(false);
-      setShowRetargetModal(true);
+      setActiveModal('retarget');
     },
     onToggleIgnore: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       if (mergeRequests[selectedMrIndex]) {
         toggleIgnoreMergeRequest(mergeRequests[selectedMrIndex].id);
       }
@@ -305,11 +295,11 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
 
     // User Selection Pane actions
     onSelectEntry: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       loadMrs();
     },
     onResetHighlight: () => {
-      setShowHelpModal(false);
+      setActiveModal('none');
       // This would need to be implemented via store if needed
     },
   };

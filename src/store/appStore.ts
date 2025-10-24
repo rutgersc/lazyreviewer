@@ -16,6 +16,16 @@ import { fetchJobHistory, type JobHistoryEntry } from '../gitlab/gitlabgraphql';
 
 export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
 
+export type ActiveModal =
+  | 'none'
+  | 'mrFilter'
+  | 'gitSwitch'
+  | 'help'
+  | 'jira'
+  | 'retarget'
+  | 'jobHistory'
+  | 'eventLog';
+
 interface AppStore {
   groups: UserGroup[]
   users: UserSelection[]
@@ -42,19 +52,13 @@ interface AppStore {
 
   // UI state
   activePane: ActivePane;
+  activeModal: ActiveModal;
   infoPaneTab: InfoPaneTab;
   selectedJiraIndex: number;
   selectedJiraSubIndex: number;
   selectedPipelineJobIndex: number;
   selectedDiscussionIndex: number;
   selectedActivityIndex: number;
-  showMrFilterModal: boolean;
-  showGitSwitchModal: boolean;
-  showHelpModal: boolean;
-  showJiraModal: boolean;
-  showRetargetModal: boolean;
-  showJobHistoryModal: boolean;
-  showEventLogPane: boolean;
   infoPaneScrollOffset: number;
   lastTargetBranch: string | null;
   jobHistoryData: JobHistoryEntry[];
@@ -65,6 +69,7 @@ interface AppStore {
 
   // Actions
   setActivePane: (pane: ActivePane) => void;
+  setActiveModal: (modal: ActiveModal) => void;
   setInfoPaneTab: (tab: InfoPaneTab) => void;
   cycleInfoPaneTab: (direction: 'next' | 'prev') => void;
   setSelectedJiraIndex: (index: number) => void;
@@ -76,13 +81,6 @@ interface AppStore {
   switchUserSelection: (entry: number) => Promise<void>;
   setSelectedMergeRequest: (mergeRequest: number) => void;
   setMrState: (state: MergeRequestState) => void;
-  setShowMrFilterModal: (show: boolean) => void;
-  setShowGitSwitchModal: (show: boolean) => void;
-  setShowHelpModal: (show: boolean) => void;
-  setShowJiraModal: (show: boolean) => void;
-  setShowRetargetModal: (show: boolean) => void;
-  setShowJobHistoryModal: (show: boolean) => void;
-  setShowEventLogPane: (show: boolean) => void;
   setInfoPaneScrollOffset: (offset: number) => void;
   scrollInfoPane: (direction: 'up' | 'down') => void;
   setLastTargetBranch: (branch: string) => void;
@@ -133,6 +131,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 
   return ({
     activePane: ActivePane.MergeRequests,
+    activeModal: 'none',
     infoPaneTab: 'overview',
     selectedJiraIndex: 0,
     selectedJiraSubIndex: 0,
@@ -147,13 +146,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     // Initial state (rehydrated by persist middleware)
     selectedUserSelectionEntry: 0,
     mrState: 'opened',
-    showMrFilterModal: false,
-    showGitSwitchModal: false,
-    showHelpModal: false,
-    showJiraModal: false,
-    showRetargetModal: false,
-    showJobHistoryModal: false,
-    showEventLogPane: false,
     infoPaneScrollOffset: 0,
     lastTargetBranch: null,
     currentUser: 'r.schoorstra',
@@ -215,6 +207,8 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 
     setActivePane: (pane) => set({ activePane: pane }),
 
+    setActiveModal: (modal) => set({ activeModal: modal }),
+
     setInfoPaneTab: (tab) => set({ infoPaneTab: tab }),
 
     cycleInfoPaneTab: (direction) => {
@@ -235,20 +229,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     setSelectedDiscussionIndex: (index) => set({ selectedDiscussionIndex: index }),
 
     setSelectedActivityIndex: (index) => set({ selectedActivityIndex: index }),
-
-    setShowMrFilterModal: (show) => set({ showMrFilterModal: show }),
-
-    setShowGitSwitchModal: (show) => set({ showGitSwitchModal: show }),
-
-    setShowHelpModal: (show) => set({ showHelpModal: show }),
-
-    setShowJiraModal: (show) => set({ showJiraModal: show }),
-
-    setShowRetargetModal: (show) => set({ showRetargetModal: show }),
-
-    setShowJobHistoryModal: (show) => set({ showJobHistoryModal: show }),
-
-    setShowEventLogPane: (show) => set({ showEventLogPane: show }),
 
     setLastTargetBranch: (branch) => set({ lastTargetBranch: branch }),
 

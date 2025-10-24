@@ -404,16 +404,10 @@ export default function MergeRequestPane({}: {}) {
   const mergeRequests = useAppStore((state) => state.mergeRequests);
 
   const activePane = useAppStore((state) => state.activePane);
+  const activeModal = useAppStore((state) => state.activeModal);
+  const setActiveModal = useAppStore((state) => state.setActiveModal);
   const mrState = useAppStore((state) => state.mrState);
   const setMrState = useAppStore((state) => state.setMrState);
-  const showFilterModal = useAppStore((state) => state.showMrFilterModal);
-  const setShowFilterModal = useAppStore((state) => state.setShowMrFilterModal);
-  const setShowGitSwitchModal = useAppStore((state) => state.setShowGitSwitchModal);
-  const showHelpModal = useAppStore((state) => state.showHelpModal);
-  const showJiraModal = useAppStore((state) => state.showJiraModal);
-  const setShowJiraModal = useAppStore((state) => state.setShowJiraModal);
-  const showRetargetModal = useAppStore((state) => state.showRetargetModal);
-  const setShowRetargetModal = useAppStore((state) => state.setShowRetargetModal);
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
   const toggleSeenMergeRequest = useAppStore((state) => state.toggleSeenMergeRequest);
   const ignoredMergeRequests = useAppStore((state) => state.ignoredMergeRequests);
@@ -494,7 +488,7 @@ export default function MergeRequestPane({}: {}) {
     if (!isActive) return;
 
     // Don't handle keys when modals are open (handled globally)
-    if (showHelpModal || showJiraModal || showFilterModal || showRetargetModal) {
+    if (activeModal !== 'none') {
       return;
     }
 
@@ -503,7 +497,7 @@ export default function MergeRequestPane({}: {}) {
         setActivePane(ActivePane.InfoPane);
         break;
       case 'f':
-        setShowFilterModal(true);
+        setActiveModal('mrFilter');
         break;
       case 'h':
       case 'left': {
@@ -564,13 +558,13 @@ export default function MergeRequestPane({}: {}) {
         }
         break;
       case 'g':
-        setShowGitSwitchModal(true);
+        setActiveModal('gitSwitch');
         break;
       case 't':
-        setShowJiraModal(true);
+        setActiveModal('jira');
         break;
       case 'r':
-        setShowRetargetModal(true);
+        setActiveModal('retarget');
         break;
       case 'backspace':
         if (mergeRequests[selectedIndex]) {

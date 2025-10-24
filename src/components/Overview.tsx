@@ -25,15 +25,15 @@ export default function Overview({
   selectedDiscussionIndex
 }: OverviewProps) {
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
+  const activeModal = useAppStore(state => state.activeModal);
   const setSelectedDiscussionIndex = useAppStore(state => state.setSelectedDiscussionIndex);
-  const showJobHistoryModal = useAppStore(state => state.showJobHistoryModal);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
   const unresolvedDiscussions = selectedMergeRequest?.discussions.filter(d => d.resolvable && !d.resolved) || [];
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'overview') return;
-    if (showJobHistoryModal) return;
+    if (activeModal !== 'none') return;
     if (unresolvedDiscussions.length === 0) return;
 
     switch (key.name) {
