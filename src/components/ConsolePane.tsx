@@ -69,7 +69,7 @@ export default function ConsolePane({ isActive }: { isActive: boolean }) {
 
   return (
     <box style={{ flexDirection: "column", height: "100%", paddingLeft: 1 }}>
-      <text style={{ fg: '#f8f8f2', marginBottom: 1, attributes: TextAttributes.BOLD }} wrap={false}>
+      <text style={{ fg: '#f8f8f2', marginBottom: 1, attributes: TextAttributes.BOLD }} wrapMode='none'>
         Console Output (~)
       </text>
 
@@ -93,19 +93,19 @@ export default function ConsolePane({ isActive }: { isActive: boolean }) {
         focused={isActive}
       >
         {logs.length === 0 ? (
-          <text style={{ fg: '#bd93f9', padding: 1 }} wrap={false}>
+          <text style={{ fg: '#bd93f9', padding: 1 }} wrapMode='none'>
             No console output yet...
           </text>
         ) : (
           logs.map((log, index) => (
             <box key={index} style={{ flexDirection: "row", gap: 1, paddingLeft: 1, paddingRight: 1 }}>
-              <text style={{ fg: '#bd93f9' }} wrap={false}>
+              <text style={{ fg: '#bd93f9' }} wrapMode='none'>
                 {`[${log.timestamp}]`}
               </text>
-              <text style={{ fg: getLogColor(log.level), attributes: TextAttributes.BOLD }} wrap={false}>
+              <text style={{ fg: getLogColor(log.level), attributes: TextAttributes.BOLD }} wrapMode='none'>
                 {`[${log.level.toUpperCase()}]`}
               </text>
-              <text style={{ fg: '#f8f8f2' }} wrap={false}>
+              <text style={{ fg: '#f8f8f2' }} wrapMode='none'>
                 {log.message}
               </text>
             </box>

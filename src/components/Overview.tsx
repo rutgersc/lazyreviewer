@@ -80,7 +80,7 @@ export default function Overview({
 
     return (
       <box style={{ flexDirection: "column", gap: 1, justifyContent: "flex-start", alignItems: "flex-start", flexGrow: 1 }}>
-        <text style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }} wrap={false}>
+        <text style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }} wrapMode='none'>
           No selection
         </text>
       </box>
@@ -105,7 +105,7 @@ export default function Overview({
         >
           <text
             style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }}
-            wrap={false}
+            wrapMode='none'
           >
             {copyNotification}
           </text>

@@ -74,7 +74,7 @@ export default function JiraIssuesList({ jiraIssues, selectedJiraIndex, selected
   if (jiraIssues.length === 0) {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
-        <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
+        <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
           No Jira tickets
         </text>
       </box>
@@ -141,32 +141,32 @@ export default function JiraIssuesList({ jiraIssues, selectedJiraIndex, selected
               {item.isParent && (
                 <text
                   style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
-                  wrap={false}
+                  wrapMode='none'
                 >
                   ↳
                 </text>
               )}
               <text
                 style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }}
-                wrap={false}
+                wrapMode='none'
               >
                 {item.issue.key}
               </text>
               <text
                 style={{ fg: Colors.WARNING, attributes: TextAttributes.DIM }}
-                wrap={false}
+                wrapMode='none'
               >
                 {item.issue.fields.status.name}
               </text>
               <text
                 style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
-                wrap={false}
+                wrapMode='none'
               >
                 {item.issue.fields.issuetype.name}
               </text>
               <text
                 style={{ fg: Colors.PRIMARY }}
-                wrap={false}
+                wrapMode='none'
               >
                 {item.issue.fields.summary}
               </text>
@@ -175,7 +175,7 @@ export default function JiraIssuesList({ jiraIssues, selectedJiraIndex, selected
         })}
       </box>
 
-      <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+      <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
         ─────────────────────────────────────
       </text>
 

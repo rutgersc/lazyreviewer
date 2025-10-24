@@ -345,7 +345,7 @@ export default function App() {
         >
           <text
             style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD }}
-            wrap={false}
+            wrapMode='none'
           >
             {copyNotification}
           </text>

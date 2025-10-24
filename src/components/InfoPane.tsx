@@ -75,7 +75,7 @@ export default function InfoPane({}: InfoPaneProps) {
                 fg: tab === infoPaneTab ? Colors.PRIMARY : Colors.NEUTRAL,
                 attributes: tab === infoPaneTab ? TextAttributes.BOLD : undefined
               }}
-              wrap={false}
+              wrapMode='none'
             >
               {index > 0 ? '| ' : ''}{TAB_LABELS[tab]}
             </text>
@@ -112,7 +112,7 @@ export default function InfoPane({}: InfoPaneProps) {
         if (!selectedMergeRequest) {
           return (
             <box style={{ flexDirection: "column", gap: 1, justifyContent: "flex-start", alignItems: "flex-start", flexGrow: 1 }}>
-              <text style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }} wrap={false}>
+              <text style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }} wrapMode='none'>
                 No selection
               </text>
             </box>

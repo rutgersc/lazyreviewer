@@ -53,7 +53,7 @@ export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobInde
   if (pipelineJobs.length === 0) {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
-        <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
+        <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
           No pipeline data
         </text>
       </box>
@@ -77,19 +77,19 @@ export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobInde
           >
             <text
               style={{ fg: getJobStatusDisplay(job.status).color, attributes: TextAttributes.DIM }}
-              wrap={false}
+              wrapMode='none'
             >
               {getJobStatusDisplay(job.status).symbol}
             </text>
             <text
               style={{ fg: Colors.NEUTRAL }}
-              wrap={false}
+              wrapMode='none'
             >
               {`${stage.name}: `}
             </text>
             <text
               style={{ fg: Colors.PRIMARY }}
-              wrap={false}
+              wrapMode='none'
             >
               {job.name}
             </text>
@@ -97,37 +97,37 @@ export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobInde
         ))}
       </box>
 
-      <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+      <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
         ─────────────────────────────────────
       </text>
 
       {selectedPipelineJob && (
         <box style={{ flexDirection: "column", gap: 1 }}>
-          <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrap={false}>
+          <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
             {selectedPipelineJob.job.name}
           </text>
           <box style={{ flexDirection: "row", gap: 2 }}>
-            <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+            <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
               Status:
             </text>
-            <text style={{ fg: getJobStatusDisplay(selectedPipelineJob.job.status).color }} wrap={false}>
+            <text style={{ fg: getJobStatusDisplay(selectedPipelineJob.job.status).color }} wrapMode='none'>
               {selectedPipelineJob.job.status}
             </text>
           </box>
           <box style={{ flexDirection: "row", gap: 2 }}>
-            <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+            <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
               Stage:
             </text>
-            <text style={{ fg: Colors.PRIMARY }} wrap={false}>
+            <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
               {selectedPipelineJob.stage.name}
             </text>
           </box>
           {selectedPipelineJob.job.webPath && (
             <box style={{ flexDirection: "row", gap: 2 }}>
-              <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+              <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
                 Path:
               </text>
-              <text style={{ fg: Colors.INFO }} wrap={false}>
+              <text style={{ fg: Colors.INFO }} wrapMode='none'>
                 {selectedPipelineJob.job.webPath}
               </text>
             </box>

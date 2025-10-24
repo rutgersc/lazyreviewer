@@ -33,7 +33,7 @@ export default function MrStateTabs({ currentState, onStateChange, isActive }: M
                 fg: tabColor,
                 attributes: isSelected ? TextAttributes.BOLD : undefined,
               }}
-              wrap={false}
+              wrapMode='none'
             >
               {index > 0 ? '| ' : ''}{`${state.shortcut}:${state.label}`}
             </text>

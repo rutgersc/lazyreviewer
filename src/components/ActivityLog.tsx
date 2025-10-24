@@ -297,30 +297,30 @@ export default function ActivityLog({ mergeRequest, columns, selectedActivityInd
             {/* Time column - fixed width */}
             <text
               style={{ fg: event.mrColor }}
-              wrap={false}
+              wrapMode='none'
             >
               {time}
             </text>
 
             {/* Separator */}
-            <text style={{ fg: Colors.NEUTRAL }} wrap={false}> | </text>
+            <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'> | </text>
 
             {/* Event type column - fixed width */}
             <text
               style={{ fg: eventTypeColor }}
-              wrap={false}
+              wrapMode='none'
             >
               {typeLabel}
             </text>
 
             {/* Separator */}
-            <text style={{ fg: Colors.NEUTRAL }} wrap={false}> | </text>
+            <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'> | </text>
 
             {/* Event details - takes remaining space */}
             <text
 
               style={{ fg: Colors.PRIMARY, width: "80%" }}
-              wrap={false}
+              wrapMode='none'
             >
               {details}
             </text>

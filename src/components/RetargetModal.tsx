@@ -127,7 +127,7 @@ export default function RetargetModal({
             fg: Colors.INFO,
             attributes: TextAttributes.BOLD,
           }}
-          wrap={false}
+          wrapMode='none'
         >
           Retarget Merge Request
         </text>
@@ -140,7 +140,7 @@ export default function RetargetModal({
 
             <text
               style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
-              wrap={false}
+              wrapMode='none'
             >
               Current target: {selectedMr.targetbranch}
             </text>

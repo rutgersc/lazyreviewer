@@ -90,7 +90,7 @@ export default function JobHistoryModal({
       >
         {/* Header */}
         <box style={{ padding: 1, border: true, borderColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK }}>
-          <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrap={false}>
+          <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
             {`📋 Job History: ${jobName} (${totalRuns} runs across all branches)`}
           </text>
         </box>
@@ -98,11 +98,11 @@ export default function JobHistoryModal({
         {/* Content */}
         <box style={{ flexDirection: 'column', padding: 1, flexGrow: 1, overflow: 'scroll' }}>
           {isLoading ? (
-            <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
+            <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
               Loading job history...
             </text>
           ) : jobHistory.length === 0 ? (
-            <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
+            <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
               No history found for this job.
             </text>
           ) : (
@@ -125,20 +125,20 @@ export default function JobHistoryModal({
                     {/* Main row */}
                     <box style={{ flexDirection: 'row', gap: 1, alignItems: 'center' }}>
                       {/* Time */}
-                      <text style={{ fg: Colors.SUPPORTING, width: 8 }} wrap={false}>
+                      <text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>
                         {formatRelativeTime(entry.pipelineCreatedAt)}
                       </text>
 
                       {/* Pipeline IID */}
-                      <text style={{ fg: Colors.SUPPORTING, width: 8 }} wrap={false}>
+                      <text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>
                         {`#${entry.pipelineIid}`}
                       </text>
 
                       {/* Status */}
-                      <text style={{ fg: statusDisplay.color, attributes: TextAttributes.BOLD }} wrap={false}>
+                      <text style={{ fg: statusDisplay.color, attributes: TextAttributes.BOLD }} wrapMode='none'>
                         {statusDisplay.symbol}
                       </text>
-                      <text style={{ fg: statusDisplay.color, width: 10 }} wrap={false}>
+                      <text style={{ fg: statusDisplay.color, width: 10 }} wrapMode='none'>
                         {statusDisplay.description.toUpperCase()}
                       </text>
 
@@ -148,7 +148,7 @@ export default function JobHistoryModal({
                           fg: entry.isDevelopBranch ? Colors.SECONDARY : Colors.SUPPORTING,
                           attributes: entry.isDevelopBranch ? TextAttributes.BOLD : TextAttributes.NONE
                         }}
-                        wrap={false}
+                        wrapMode='none'
                       >
                         {developIndicator}
                       </text>
@@ -159,7 +159,7 @@ export default function JobHistoryModal({
                           fg: entry.isDevelopBranch ? Colors.SECONDARY : Colors.INFO,
                           attributes: TextAttributes.BOLD
                         }}
-                        wrap={false}
+                        wrapMode='none'
                       >
                         {entry.pipelineRef}
                       </text>
@@ -167,14 +167,14 @@ export default function JobHistoryModal({
                       {/* MR Title and Author (if available) */}
                       {entry.mergeRequestTitle && (
                         <>
-                          <text style={{ fg: Colors.SUPPORTING }} wrap={false}>
+                          <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
                             {'·'}
                           </text>
-                          <text style={{ fg: Colors.PRIMARY }} wrap={false}>
+                          <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
                             {`!${entry.mergeRequestIid} ${entry.mergeRequestTitle}`}
                           </text>
                           {entry.mergeRequestAuthor && (
-                            <text style={{ fg: Colors.SUPPORTING }} wrap={false}>
+                            <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
                               {` (@${entry.mergeRequestAuthor})`}
                             </text>
                           )}
@@ -185,7 +185,7 @@ export default function JobHistoryModal({
                     {/* Failure message (if any) */}
                     {entry.failureMessage && (
                       <box style={{ marginLeft: 4 }}>
-                        <text style={{ fg: Colors.ERROR, attributes: TextAttributes.DIM }} wrap={false}>
+                        <text style={{ fg: Colors.ERROR, attributes: TextAttributes.DIM }} wrapMode='none'>
                           {entry.failureMessage.substring(0, 100)}
                         </text>
                       </box>
@@ -206,10 +206,10 @@ export default function JobHistoryModal({
           flexDirection: 'column',
           gap: 0
         }}>
-          <text style={{ fg: Colors.PRIMARY }} wrap={false}>
+          <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
             {`${totalRuns} total runs · ${developRuns} on develop · ${failedRuns} failures`}
           </text>
-          <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
+          <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
             j/k: navigate • enter: open • esc: close
           </text>
         </box>

@@ -48,14 +48,14 @@ const TimeColumnAuthorTitle = ({
     <box style={{ width: 3 }}>
       <text
         style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
-        wrap={false}
+        wrapMode='none'
       >
         {formatCompactTime(mr.updatedAt)}
       </text>
     </box>
 
     <box style={{ width: 15 }}>
-      <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL }} wrap={false}>
+      <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL }} wrapMode='none'>
         {mr.author}
       </text>
     </box>
@@ -63,7 +63,7 @@ const TimeColumnAuthorTitle = ({
     <box style={{ flexGrow: 1 }}>
       <text
         style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }}
-        wrap={false}
+        wrapMode='none'
       >
         {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
       </text>
@@ -87,7 +87,7 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
           fg: statusDisplay.color,
           attributes: TextAttributes.DIM,
         }}
-        wrap={false}
+        wrapMode='none'
       >
         {statusDisplay.symbol}
       </text>
@@ -110,7 +110,7 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
 
   return (
     <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-      <text style={{ fg: pipelineTextColor }} wrap={false}>
+      <text style={{ fg: pipelineTextColor }} wrapMode='none'>
         pipeline:
       </text>
       <box style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
@@ -124,7 +124,7 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
               fg: Colors.NEUTRAL,
               attributes: TextAttributes.DIM,
             }}
-            wrap={false}
+            wrapMode='none'
           >
             ○
           </text>
@@ -148,7 +148,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
       <box style={{ width: 3 }}>
         <text
           style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
+          wrapMode='none'
         >
           {formatCompactTime(createdAt)}
         </text>
@@ -160,7 +160,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
             fg: isActiveInLocalRepo ? Colors.BACKGROUND : projectColor,
             attributes: TextAttributes.DIM
           }}
-          wrap={false}
+          wrapMode='none'
         >
          {mr.project.name}
         </text>
@@ -179,7 +179,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
                 ? undefined
                 : TextAttributes.DIM
             }}
-            wrap={false}
+            wrapMode='none'
           >
             {isSeen
               ? `❓ ${mr.approvedBy.length}`
@@ -199,7 +199,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
               : Colors.PRIMARY,
             attributes: mr.unresolvedDiscussions > 0 ? TextAttributes.BOLD : mr.resolvableDiscussions > 0 ? undefined : TextAttributes.DIM,
           }}
-          wrap={false}
+          wrapMode='none'
         >
           {`💬 ${mr.resolvedDiscussions}/${mr.resolvableDiscussions}`}
         </text>
@@ -216,7 +216,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
                 ? (getJiraStatusColor(mr.jiraIssues[0]?.fields.status.name) === Colors.PRIMARY ? TextAttributes.DIM : undefined)
                 : TextAttributes.DIM,
           }}
-          wrap={false}
+          wrapMode='none'
         >
           {mr.jiraIssues.length > 0
             ? mr.jiraIssues[0]?.fields.status.name
@@ -237,7 +237,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
                   fg: Colors.ERROR,
                   attributes: TextAttributes.BOLD,
                 }}
-                wrap={false}
+                wrapMode='none'
               >
                 (BEHIND)
               </text>
@@ -264,19 +264,19 @@ const BranchInformation = ({ mr, branchDifferenceMap }: { mr: MergeRequest; bran
       <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
         <text
           style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
+          wrapMode='none'
         >
           {mr.targetbranch}
         </text>
         <text
           style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
+          wrapMode='none'
         >
           ←
         </text>
         <text
           style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
+          wrapMode='none'
         >
           {mr.sourcebranch}
         </text>
@@ -286,7 +286,7 @@ const BranchInformation = ({ mr, branchDifferenceMap }: { mr: MergeRequest; bran
               fg: difference.behind > 0 ? Colors.WARNING : Colors.SUCCESS,
               attributes: TextAttributes.DIM
             }}
-            wrap={false}
+            wrapMode='none'
           >
             {difference.behind > 0 ? ` (-${difference.behind})` : ` (up to date)`}
           </text>
@@ -315,14 +315,14 @@ const IgnoredMergeRequestRow = ({
         <box style={{ width: 3 }}>
           <text
             style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
-            wrap={false}
+            wrapMode='none'
           >
             {formatCompactTime(mr.updatedAt)}
           </text>
         </box>
 
         <box style={{ width: 15 }}>
-          <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
+          <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
             {mr.author}
           </text>
         </box>
@@ -330,7 +330,7 @@ const IgnoredMergeRequestRow = ({
         <box style={{ flexGrow: 1 }}>
           <text
             style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-            wrap={false}
+            wrapMode='none'
           >
             {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
           </text>
@@ -341,7 +341,7 @@ const IgnoredMergeRequestRow = ({
         <box style={{ width: 3 }}>
           <text
             style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-            wrap={false}
+            wrapMode='none'
           >
             {formatCompactTime(mr.createdAt)}
           </text>
@@ -353,7 +353,7 @@ const IgnoredMergeRequestRow = ({
               fg: isActiveInLocalRepo ? Colors.BACKGROUND : projectColor,
               attributes: TextAttributes.DIM
             }}
-            wrap={false}
+            wrapMode='none'
           >
             {mr.project.name}
           </text>
@@ -383,7 +383,7 @@ const CopyNotificationPopup = ({
     >
       <text
         style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }}
-        wrap={false}
+        wrapMode='none'
       >
         {notification}
       </text>
@@ -636,15 +636,15 @@ export default function MergeRequestPane({}: {}) {
         alignItems: "center"
       }}
     >
-      <text style={{ fg: Colors.BACKGROUND, attributes: TextAttributes.BOLD }} wrap={false}>
+      <text style={{ fg: Colors.BACKGROUND, attributes: TextAttributes.BOLD }} wrapMode='none'>
         🔗 {selectedMrSharedTicket.key}:
       </text>
-      <text style={{ fg: Colors.BACKGROUND }} wrap={false}>
+      <text style={{ fg: Colors.BACKGROUND }} wrapMode='none'>
         {selectedMrSharedTicket.summary}
       </text>
     </box>
   ) : (
-    <text wrap={false}>{""}</text>
+    <text wrapMode='none'>{""}</text>
   );
 
   return (
@@ -726,7 +726,7 @@ export default function MergeRequestPane({}: {}) {
                   fg: repo.localPath ? (repo.currentBranch ? Colors.INFO : Colors.NEUTRAL) : Colors.WARNING,
                   attributes: TextAttributes.DIM,
                 }}
-                wrap={false}
+                wrapMode='none'
               >
                 {repo.projectName}:{repo.localPath ? (repo.currentBranch || "?") : "<no path set> (press ctrl+s to configure)"}
               </text>

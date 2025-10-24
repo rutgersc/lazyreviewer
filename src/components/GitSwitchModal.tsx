@@ -83,7 +83,7 @@ export default function GitSwitchModal({
             fg: Colors.PRIMARY,
             attributes: TextAttributes.BOLD,
           }}
-          wrap={false}
+          wrapMode='none'
         >
           Git Switch Branch
         </text>

@@ -122,25 +122,25 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
       <box style={{ flexDirection: "column", gap: 0.5, marginBottom: 1, width: "100%" }}>
         <text
           style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }}
-          wrap={false}
+          wrapMode='none'
         >
           Branch Information
         </text>
 
         <box style={{ flexDirection: "row", gap: 1, marginLeft: 2 }}>
-          <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+          <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
             Source:
           </text>
-          <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrap={false}>
+          <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrapMode='none'>
             {mergeRequest.sourcebranch}
           </text>
         </box>
 
         <box style={{ flexDirection: "row", gap: 1, marginLeft: 2 }}>
-          <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+          <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
             Target:
           </text>
-          <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD }} wrap={false}>
+          <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD }} wrapMode='none'>
             {mergeRequest.targetbranch}
           </text>
         </box>

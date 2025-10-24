@@ -75,7 +75,7 @@ export default function MrStateFilterModal({
       >
         <text
           style={{ fg: '#50fa7b', marginBottom: 1, attributes: TextAttributes.BOLD }}
-          wrap={false}
+          wrapMode='none'
         >
           🔍 Filter Merge Requests by State
         </text>
@@ -94,7 +94,7 @@ export default function MrStateFilterModal({
               <box style={{ width: 3 }}>
                 <text
                   style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD }}
-                  wrap={false}
+                  wrapMode='none'
                 >
                   {currentState === state.key ? "●" : " "}
                 </text>
@@ -105,7 +105,7 @@ export default function MrStateFilterModal({
                     fg: index === selectedIndex ? '#f8f8f2' : '#bd93f9',
                     attributes: index === selectedIndex ? TextAttributes.BOLD : undefined
                   }}
-                  wrap={false}
+                  wrapMode='none'
                 >
                   {state.label}
                 </text>
@@ -113,7 +113,7 @@ export default function MrStateFilterModal({
               <box style={{ flexGrow: 1 }}>
                 <text
                   style={{ fg: '#bd93f9', attributes: TextAttributes.DIM }}
-                  wrap={false}
+                  wrapMode='none'
                 >
                   {state.description}
                 </text>
@@ -124,7 +124,7 @@ export default function MrStateFilterModal({
 
         <text
           style={{ fg: '#bd93f9', marginTop: 1, attributes: TextAttributes.DIM }}
-          wrap={false}
+          wrapMode='none'
         >
           Use j/k to navigate, Return to select, Esc to cancel
         </text>

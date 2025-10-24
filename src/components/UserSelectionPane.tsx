@@ -96,7 +96,7 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
       >
         <text
           style={{ fg: '#8be9fd' }}
-          wrap={false}
+          wrapMode='none'
         >
           {`${prefix}${icon} ${item.name}`}
         </text>
@@ -108,7 +108,7 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
     <>
       <text
         style={{ fg: '#f8f8f2', marginBottom: 1, attributes: TextAttributes.BOLD }}
-        wrap={false}
+        wrapMode='none'
       >
         User Selection
       </text>

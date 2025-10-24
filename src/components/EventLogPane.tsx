@@ -261,7 +261,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
     >
       {/* Header */}
       <box style={{ padding: 1, border: true, borderColor: Colors.INFO }}>
-        <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrap={false}>
+        <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
           Event Log - All Merge Requests
         </text>
       </box>
@@ -303,7 +303,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
                 style={{
                   fg: event.mrColor,
                 }}
-                wrap={false}
+                wrapMode='none'
               >
                 {formatted.prefix}
               </text>
@@ -313,7 +313,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
                   fg: eventTypeColor,
                   width: 15,
                 }}
-                wrap={false}
+                wrapMode='none'
               >
                 {` ${formatted.typeLabel}`}
               </text>
@@ -323,7 +323,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
                   fg: eventTypeColor,
                   attributes: isComment ? TextAttributes.BOLD : undefined,
                 }}
-                wrap={false}
+                wrapMode='none'
               >
                 {formatted.suffix}
               </text>
@@ -334,7 +334,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
 
       {/* Footer */}
       <box style={{ padding: 1, border: true, borderColor: Colors.TRACK }}>
-        <text style={{ fg: Colors.PRIMARY }} wrap={false}>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
           Press ESC to close • {events.length} events
         </text>
       </box>

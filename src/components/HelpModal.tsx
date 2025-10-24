@@ -150,7 +150,7 @@ const KeyRow = ({
           fg: Colors.WARNING,
           attributes: isSelected ? TextAttributes.BOLD : undefined
         }}
-        wrap={false}
+        wrapMode='none'
       >
         {binding.key}
       </text>
@@ -160,7 +160,7 @@ const KeyRow = ({
         fg: Colors.PRIMARY,
         attributes: isSelected ? TextAttributes.BOLD : undefined
       }}
-      wrap={false}
+      wrapMode='none'
     >
       {binding.description}
     </text>
@@ -372,14 +372,14 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
           flexDirection: "column"
         }}
       >
-        <text style={{ fg: Colors.SUCCESS, marginBottom: 1, attributes: TextAttributes.BOLD }} wrap={false}>
+        <text style={{ fg: Colors.SUCCESS, marginBottom: 1, attributes: TextAttributes.BOLD }} wrapMode='none'>
           🚀 LazyGitLab - Keyboard Shortcuts
         </text>
 
         {/* Pane-specific keys */}
         {paneKeys.length > 0 && (
           <>
-            <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD, marginTop: 0.5 }} wrap={false}>
+            <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD, marginTop: 0.5 }} wrapMode='none'>
               {getPaneTitle(activePane, infoPaneTab)}
             </text>
             <box style={{ flexDirection: "column", gap: 0.3, marginBottom: 1 }}>
@@ -389,14 +389,14 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
             </box>
 
             {/* Separator */}
-            <text style={{ fg: Colors.NEUTRAL, marginBottom: 0.5 }} wrap={false}>
+            <text style={{ fg: Colors.NEUTRAL, marginBottom: 0.5 }} wrapMode='none'>
               {'─'.repeat(60)}
             </text>
           </>
         )}
 
         {/* Global keys */}
-        <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrap={false}>
+        <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
           Global Keys
         </text>
         <box style={{ flexDirection: "column", gap: 0.3 }}>
@@ -409,7 +409,7 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
           ))}
         </box>
 
-        <text style={{ fg: Colors.NEUTRAL, marginTop: 1, attributes: TextAttributes.DIM }} wrap={false}>
+        <text style={{ fg: Colors.NEUTRAL, marginTop: 1, attributes: TextAttributes.DIM }} wrapMode='none'>
           j/k: Navigate • Enter: Execute • Esc: Close
         </text>
       </box>
