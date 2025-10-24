@@ -30,6 +30,7 @@ export default function InfoPane({}: InfoPaneProps) {
   const selectedPipelineJobIndex = useAppStore(state => state.selectedPipelineJobIndex);
   const selectedDiscussionIndex = useAppStore(state => state.selectedDiscussionIndex);
   const selectedActivityIndex = useAppStore(state => state.selectedActivityIndex);
+  const showJobHistoryModal = useAppStore(state => state.showJobHistoryModal);
   const scrollBoxRef = useRef<ScrollBoxRenderable>(null);
 
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
@@ -52,6 +53,7 @@ export default function InfoPane({}: InfoPaneProps) {
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane) return;
+    if (showJobHistoryModal) return;
 
     if (key.name === 'escape') {
       useAppStore.getState().setActivePane(ActivePane.MergeRequests);

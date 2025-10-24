@@ -19,9 +19,11 @@ export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobInde
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const fetchJobHistoryForSelectedJob = useAppStore(state => state.fetchJobHistoryForSelectedJob);
   const setShowJobHistoryModal = useAppStore(state => state.setShowJobHistoryModal);
+  const showJobHistoryModal = useAppStore(state => state.showJobHistoryModal);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
+    if (showJobHistoryModal) return;
     if (pipelineJobs.length === 0) return;
 
     switch (key.name) {
