@@ -85,6 +85,7 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
             { key: 'j/k, ↑/↓', description: 'Navigate pipeline jobs' },
             { key: 'h/l, ←/→', description: 'Cycle tabs' },
             { key: 'i', description: 'Download and open job log' },
+            { key: 'y', description: 'View job history (all branches)' },
             { key: 'Esc', description: 'Return to MR pane' },
           ];
         case 'activity':

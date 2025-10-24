@@ -29742,6 +29742,15 @@ export type ProjectMRsQueryVariables = Exact<{
 
 export type ProjectMRsQuery = { project: { id: string, name: string, path: string, fullPath: string, mergeRequests: { count: number, pageInfo: { hasNextPage: boolean }, nodes: Array<{ id: string, iid: string, title: string, webUrl: string | null, sourceBranch: string, targetBranch: string, createdAt: string, updatedAt: string, state: MergeRequestState, project: { name: string, path: string, fullPath: string }, author: { name: string, username: string, avatarUrl: string | null } | null, approvedBy: { nodes: Array<{ id: any, name: string, username: string } | null> | null } | null, discussions: { nodes: Array<{ resolved: boolean, resolvable: boolean, id: any, notes: { nodes: Array<{ __typename: 'Note', id: any, body: string, createdAt: string, resolvable: boolean, resolved: boolean, author: { name: string } | null, position: { filePath: string, newLine: number | null, oldLine: number | null, oldPath: string | null } | null } | null> | null } } | null> | null }, headPipeline: { active: boolean, iid: string, stages: { __typename: 'CiStageConnection', nodes: Array<{ id: string, name: string | null, status: string | null, jobs: { nodes: Array<{ id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null } | null> | null } | null } | null> | null } | null } | null } | null> | null } | null } | null };
 
+export type ProjectPipelinesJobHistoryQueryVariables = Exact<{
+  projectPath: Scalars['ID']['input'];
+  jobName: Scalars['String']['input'];
+  first: Scalars['Int']['input'];
+}>;
+
+
+export type ProjectPipelinesJobHistoryQuery = { project: { id: string, pipelines: { nodes: Array<{ id: string, iid: string, ref: string | null, createdAt: string, status: PipelineStatusEnum, source: string | null, mergeRequest: { iid: string, title: string, author: { username: string } | null } | null, job: { id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null } | null } | null> | null } | null } | null };
+
 export type ProjectQueryVariables = Exact<{
   fullPath: Scalars['ID']['input'];
 }>;
@@ -30006,6 +30015,38 @@ export const ProjectMRsDocument = gql`
   }
 }
     `;
+export const ProjectPipelinesJobHistoryDocument = gql`
+    query ProjectPipelinesJobHistory($projectPath: ID!, $jobName: String!, $first: Int!) {
+  project(fullPath: $projectPath) {
+    id
+    pipelines(first: $first) {
+      nodes {
+        id
+        iid
+        ref
+        createdAt
+        status
+        source
+        mergeRequest {
+          iid
+          title
+          author {
+            username
+          }
+        }
+        job(name: $jobName) {
+          id
+          webPath
+          name
+          status
+          failureMessage
+          startedAt
+        }
+      }
+    }
+  }
+}
+    `;
 export const ProjectDocument = gql`
     query Project($fullPath: ID!) {
   project(fullPath: $fullPath) {
@@ -30072,6 +30113,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     ProjectMRs(variables: ProjectMRsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProjectMRsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ProjectMRsQuery>({ document: ProjectMRsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProjectMRs', 'query', variables);
+    },
+    ProjectPipelinesJobHistory(variables: ProjectPipelinesJobHistoryQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProjectPipelinesJobHistoryQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ProjectPipelinesJobHistoryQuery>({ document: ProjectPipelinesJobHistoryDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'ProjectPipelinesJobHistory', 'query', variables);
     },
     Project(variables: ProjectQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProjectQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ProjectQuery>({ document: ProjectDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Project', 'query', variables);

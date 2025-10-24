@@ -9,6 +9,7 @@ import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal from "./components/HelpModal";
 import JiraModal from "./components/JiraModal";
 import RetargetModal from "./components/RetargetModal";
+import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
 import { ActivePane } from "./userselection/userSelection";
 import { useAppStore } from "./store/appStore";
@@ -40,6 +41,11 @@ export default function App() {
   const setShowJiraModal = useAppStore(state => state.setShowJiraModal);
   const showRetargetModal = useAppStore(state => state.showRetargetModal);
   const setShowRetargetModal = useAppStore(state => state.setShowRetargetModal);
+  const showJobHistoryModal = useAppStore(state => state.showJobHistoryModal);
+  const setShowJobHistoryModal = useAppStore(state => state.setShowJobHistoryModal);
+  const jobHistoryData = useAppStore(state => state.jobHistoryData);
+  const jobHistoryLoading = useAppStore(state => state.jobHistoryLoading);
+  const selectedJobForHistory = useAppStore(state => state.selectedJobForHistory);
   const showEventLogPane = useAppStore(state => state.showEventLogPane);
   const setShowEventLogPane = useAppStore(state => state.setShowEventLogPane);
 
@@ -89,6 +95,10 @@ export default function App() {
       }
       if (showRetargetModal) {
         setShowRetargetModal(false);
+        return;
+      }
+      if (showJobHistoryModal) {
+        setShowJobHistoryModal(false);
         return;
       }
       if (showFilterModal) {
@@ -300,6 +310,15 @@ export default function App() {
           setCopyNotification('MR retargeted successfully!');
           setTimeout(() => setCopyNotification(null), 2000);
         }}
+      />
+
+      {/* Job History Modal - rendered at app level to cover entire screen */}
+      <JobHistoryModal
+        isVisible={showJobHistoryModal}
+        jobName={selectedJobForHistory || ''}
+        jobHistory={jobHistoryData}
+        isLoading={jobHistoryLoading}
+        onClose={() => setShowJobHistoryModal(false)}
       />
 
       {/* Event Log Pane - fullscreen overlay */}

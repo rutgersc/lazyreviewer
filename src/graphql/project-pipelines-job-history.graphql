@@ -1,0 +1,30 @@
+query ProjectPipelinesJobHistory($projectPath: ID!, $jobName: String!, $first: Int!) {
+  project(fullPath: $projectPath) {
+    id
+    pipelines(first: $first) {
+      nodes {
+        id
+        iid
+        ref
+        createdAt
+        status
+        source
+        mergeRequest {
+          iid
+          title
+          author {
+            username
+          }
+        }
+        job(name: $jobName) {
+          id
+          webPath
+          name
+          status
+          failureMessage
+          startedAt
+        }
+      }
+    }
+  }
+}

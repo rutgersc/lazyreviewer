@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "bun run build.ts && bun run dist/",
-    "codegen": "graphql-codegen --config codegen.yml",
+    "codegen": "graphql-codegen --config codegen.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -22,7 +22,7 @@
   "dependencies": {
     "@opentui/core": "^0.1.27",
     "@opentui/react": "^0.1.27",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "react": "^19.0.0",
     "superjson": "^2.2.2",
     "zustand": "^5.0.8"

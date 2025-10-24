@@ -17,6 +17,8 @@ export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobInde
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setSelectedPipelineJobIndex = useAppStore(state => state.setSelectedPipelineJobIndex);
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
+  const fetchJobHistoryForSelectedJob = useAppStore(state => state.fetchJobHistoryForSelectedJob);
+  const setShowJobHistoryModal = useAppStore(state => state.setShowJobHistoryModal);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
@@ -35,6 +37,13 @@ export default function PipelineJobsList({ pipelineJobs, selectedPipelineJobInde
         const selectedJob = pipelineJobs[selectedPipelineJobIndex];
         if (selectedJob && selectedMergeRequest) {
           loadJobLog(selectedMergeRequest, selectedJob.job);
+        }
+        break;
+      case 'y':
+        if (pipelineJobs[selectedPipelineJobIndex]) {
+          fetchJobHistoryForSelectedJob().then(() => {
+            setShowJobHistoryModal(true);
+          });
         }
         break;
     }

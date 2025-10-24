@@ -39,6 +39,24 @@ export interface Discussion {
   notes: DiscussionNote[];
 }
 
+export interface JobHistoryEntry {
+  jobId: string;
+  jobName: string;
+  jobStatus: CiJobStatus;
+  failureMessage: string | null;
+  startedAt: string;
+  pipelineId: string;
+  pipelineIid: number;
+  pipelineRef: string;
+  pipelineCreatedAt: string;
+  pipelineSource: string;
+  webPath: string | null;
+  isDevelopBranch: boolean;
+  mergeRequestIid: string | null;
+  mergeRequestTitle: string | null;
+  mergeRequestAuthor: string | null;
+}
+
 export interface GitlabMergeRequest {
   id: string
   iid: string
@@ -386,6 +404,59 @@ export const getMrPipeline = async (projectPath: string, iid: string): Promise<{
   } catch (error) {
     console.error(`[Pipeline] Failed to fetch pipeline for MR ${iid}:`, error);
     return null;
+  }
+}
+
+export const fetchJobHistory = async (
+  projectPath: string,
+  jobName: string,
+  limit: number = 50
+): Promise<JobHistoryEntry[]> => {
+  const endpoint = `https://git.elabnext.com/api/graphql`;
+  const token = process.env.GITLAB_TOKEN;
+  const client = new GraphQLClient(endpoint, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const sdk = getSdk(client);
+
+  try {
+    const data = await sdk.ProjectPipelinesJobHistory({
+      projectPath,
+      jobName,
+      first: limit
+    });
+
+    const pipelines = data.project?.pipelines?.nodes || [];
+
+    const history: JobHistoryEntry[] = pipelines
+      .filter(pipeline => pipeline?.job !== null)
+      .map(pipeline => {
+        const job = pipeline!.job!;
+        return {
+          jobId: job.id || '',
+          jobName: job.name || '',
+          jobStatus: job.status || 'CREATED',
+          failureMessage: job.failureMessage || null,
+          startedAt: job.startedAt || '',
+          pipelineId: pipeline!.id,
+          pipelineIid: parseInt(pipeline!.iid),
+          pipelineRef: pipeline!.ref || '',
+          pipelineCreatedAt: pipeline!.createdAt || '',
+          pipelineSource: pipeline!.source || '',
+          webPath: job.webPath || null,
+          isDevelopBranch: pipeline!.ref === 'develop',
+          mergeRequestIid: pipeline!.mergeRequest?.iid || null,
+          mergeRequestTitle: pipeline!.mergeRequest?.title || null,
+          mergeRequestAuthor: pipeline!.mergeRequest?.author?.username || null
+        } satisfies JobHistoryEntry;
+      });
+
+    console.log(`[JobHistory] Fetched ${history.length} job history entries for "${jobName}" in ${projectPath}`);
+    return history;
+  } catch (error) {
+    console.error(`[JobHistory] Failed to fetch job history for "${jobName}":`, error);
+    return [];
   }
 }
 

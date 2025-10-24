@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from '
 import { dirname } from 'path';
 import { type MergeRequestState } from '../generated/gitlab-sdk';
 import { loadSettings, saveSettings } from '../settings/settings';
+import { fetchJobHistory, type JobHistoryEntry } from '../gitlab/gitlabgraphql';
 
 export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
 
@@ -52,9 +53,13 @@ interface AppStore {
   showHelpModal: boolean;
   showJiraModal: boolean;
   showRetargetModal: boolean;
+  showJobHistoryModal: boolean;
   showEventLogPane: boolean;
   infoPaneScrollOffset: number;
   lastTargetBranch: string | null;
+  jobHistoryData: JobHistoryEntry[];
+  jobHistoryLoading: boolean;
+  selectedJobForHistory: string | null;
 
   // selectedUsernames: () => string[]
 
@@ -76,10 +81,12 @@ interface AppStore {
   setShowHelpModal: (show: boolean) => void;
   setShowJiraModal: (show: boolean) => void;
   setShowRetargetModal: (show: boolean) => void;
+  setShowJobHistoryModal: (show: boolean) => void;
   setShowEventLogPane: (show: boolean) => void;
   setInfoPaneScrollOffset: (offset: number) => void;
   scrollInfoPane: (direction: 'up' | 'down') => void;
   setLastTargetBranch: (branch: string) => void;
+  fetchJobHistoryForSelectedJob: () => Promise<void>;
 }
 
 const STORE_FILE = 'debug/store.json';
@@ -145,10 +152,14 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     showHelpModal: false,
     showJiraModal: false,
     showRetargetModal: false,
+    showJobHistoryModal: false,
     showEventLogPane: false,
     infoPaneScrollOffset: 0,
     lastTargetBranch: null,
     currentUser: 'r.schoorstra',
+    jobHistoryData: [],
+    jobHistoryLoading: false,
+    selectedJobForHistory: null,
 
     mergeRequests: [],
     branchDifferences: new Map(),
@@ -235,9 +246,41 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 
     setShowRetargetModal: (show) => set({ showRetargetModal: show }),
 
+    setShowJobHistoryModal: (show) => set({ showJobHistoryModal: show }),
+
     setShowEventLogPane: (show) => set({ showEventLogPane: show }),
 
     setLastTargetBranch: (branch) => set({ lastTargetBranch: branch }),
+
+    fetchJobHistoryForSelectedJob: async () => {
+      const state = get();
+      const selectedMr = state.mergeRequests[state.selectedMergeRequest];
+      if (!selectedMr) {
+        console.log('[JobHistory] No MR selected');
+        return;
+      }
+
+      const jobs = selectedMr.pipeline.stage.flatMap(stage => stage.jobs);
+      const selectedJob = jobs[state.selectedPipelineJobIndex];
+      if (!selectedJob) {
+        console.log('[JobHistory] No job selected');
+        return;
+      }
+
+      set({ jobHistoryLoading: true, selectedJobForHistory: selectedJob.name });
+
+      try {
+        const history = await fetchJobHistory(
+          selectedMr.project.fullPath,
+          selectedJob.name,
+          50
+        );
+        set({ jobHistoryData: history, jobHistoryLoading: false });
+      } catch (error) {
+        console.error('[JobHistory] Failed to fetch job history:', error);
+        set({ jobHistoryData: [], jobHistoryLoading: false });
+      }
+    },
 
     setInfoPaneScrollOffset: (offset) => set({ infoPaneScrollOffset: Math.max(0, offset) }),
 
