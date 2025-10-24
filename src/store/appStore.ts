@@ -59,7 +59,6 @@ interface AppStore {
   selectedPipelineJobIndex: number;
   selectedDiscussionIndex: number;
   selectedActivityIndex: number;
-  infoPaneScrollOffset: number;
   lastTargetBranch: string | null;
   jobHistoryData: JobHistoryEntry[];
   jobHistoryLoading: boolean;
@@ -81,8 +80,6 @@ interface AppStore {
   switchUserSelection: (entry: number) => Promise<void>;
   setSelectedMergeRequest: (mergeRequest: number) => void;
   setMrState: (state: MergeRequestState) => void;
-  setInfoPaneScrollOffset: (offset: number) => void;
-  scrollInfoPane: (direction: 'up' | 'down') => void;
   setLastTargetBranch: (branch: string) => void;
   fetchJobHistoryForSelectedJob: () => Promise<void>;
 }
@@ -146,7 +143,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     // Initial state (rehydrated by persist middleware)
     selectedUserSelectionEntry: 0,
     mrState: 'opened',
-    infoPaneScrollOffset: 0,
     lastTargetBranch: null,
     currentUser: 'r.schoorstra',
     jobHistoryData: [],
@@ -260,17 +256,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
         console.error('[JobHistory] Failed to fetch job history:', error);
         set({ jobHistoryData: [], jobHistoryLoading: false });
       }
-    },
-
-    setInfoPaneScrollOffset: (offset) => set({ infoPaneScrollOffset: Math.max(0, offset) }),
-
-    scrollInfoPane: (direction) => {
-      const state = get();
-      const scrollAmount = 3; // Number of lines to scroll
-      const newOffset = direction === 'down'
-        ? state.infoPaneScrollOffset + scrollAmount
-        : Math.max(0, state.infoPaneScrollOffset - scrollAmount);
-      set({ infoPaneScrollOffset: newOffset });
     },
 
     setBranchDifferences: (differences) => set({ branchDifferences: differences }),

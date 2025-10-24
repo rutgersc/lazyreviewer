@@ -1,5 +1,4 @@
-import { ScrollBoxRenderable, TextAttributes, type ParsedKey } from '@opentui/core';
-import { useRef, useEffect } from 'react';
+import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import Overview from './Overview';
 import ActivityLog from './ActivityLog';
@@ -9,6 +8,7 @@ import { useAppStore, type InfoPaneTab } from '../store/appStore';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
+import { useScrollBox } from '../hooks/useScrollBox';
 
 interface InfoPaneProps {
   activePane: ActivePane;
@@ -22,25 +22,17 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
 };
 
 export default function InfoPane({ activePane }: InfoPaneProps) {
-  const infoPaneScrollOffset = useAppStore(state => state.infoPaneScrollOffset);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const selectedJiraIndex = useAppStore(state => state.selectedJiraIndex);
   const selectedJiraSubIndex = useAppStore(state => state.selectedJiraSubIndex);
-  const selectedPipelineJobIndex = useAppStore(state => state.selectedPipelineJobIndex);
   const selectedDiscussionIndex = useAppStore(state => state.selectedDiscussionIndex);
   const selectedActivityIndex = useAppStore(state => state.selectedActivityIndex);
   const activeModal = useAppStore(state => state.activeModal);
-  const scrollBoxRef = useRef<ScrollBoxRenderable>(null);
 
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const selectedUserSelectionEntry = useAppStore(state => state.userSelections[state.selectedUserSelectionEntry]);
 
-  // Sync scroll position when offset changes
-  useEffect(() => {
-    if (scrollBoxRef.current && typeof scrollBoxRef.current.scrollTo === 'function') {
-      scrollBoxRef.current.scrollTo(infoPaneScrollOffset);
-    }
-  }, [infoPaneScrollOffset]);
+  const scrollBoxRef = useScrollBox('infoPane', { scrollAmount: 3 });
 
   const pipelineJobs = !selectedMergeRequest?.pipeline?.stage
     ? []
@@ -106,7 +98,6 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
         return <PipelineJobsList
           activePane={activePane}
           pipelineJobs={pipelineJobs}
-          selectedPipelineJobIndex={selectedPipelineJobIndex}
         />;
 
       case 'activity':

@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { type MergeRequestState } from "./generated/gitlab-sdk";
 import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
+import { getScroller } from "./hooks/useScrollBox";
 
 export default function App() {
   const renderer = useRenderer();
@@ -25,7 +26,6 @@ export default function App() {
   const activeModal = useAppStore(state => state.activeModal);
   const setActiveModal = useAppStore(state => state.setActiveModal);
   const loadMrs = useAppStore(state => state.loadMrs);
-  const scrollInfoPane = useAppStore(state => state.scrollInfoPane);
   const cycleInfoPaneTab = useAppStore(state => state.cycleInfoPaneTab);
   const mrState = useAppStore(state => state.mrState);
   const setMrState = useAppStore(state => state.setMrState);
@@ -98,7 +98,7 @@ export default function App() {
         if (key.ctrl && key.name === 'd') {
           // Ctrl+D for scrolling (works when MR or Info pane is active)
           if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
-            scrollInfoPane('down');
+            getScroller('infoPane')?.('down');
           }
         } else if (key.name === 'tab' || key.name === 'd' || key.name === ';') {
           // Tab or ; for cycling tabs
@@ -109,7 +109,7 @@ export default function App() {
         if (key.ctrl) {
           // Ctrl+U for scrolling (works when MR or Info pane is active)
           if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
-            scrollInfoPane('up');
+            getScroller('infoPane')?.('up');
           }
         }
         break;

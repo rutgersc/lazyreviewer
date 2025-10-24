@@ -7,6 +7,7 @@ import { type InfoPaneTab, useAppStore } from '../store/appStore';
 import { openSettingsFile } from '../settings/settings';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { openUrl } from '../system/url-effect';
+import { getScroller } from '../hooks/useScrollBox';
 
 interface HelpModalProps {
   isVisible: boolean;
@@ -191,7 +192,6 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
   const setActivePane = useAppStore(state => state.setActivePane);
   const setActiveModal = useAppStore(state => state.setActiveModal);
   const cycleInfoPaneTab = useAppStore(state => state.cycleInfoPaneTab);
-  const scrollInfoPane = useAppStore(state => state.scrollInfoPane);
   const fetchMrs = useAppStore(state => state.fetchMrs);
   const loadMrs = useAppStore(state => state.loadMrs);
   const mergeRequests = useAppStore(state => state.mergeRequests);
@@ -225,13 +225,13 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
     onScrollInfoPaneDown: () => {
       setActiveModal('none');
       if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
-        scrollInfoPane('down');
+        getScroller('infoPane')?.('down');
       }
     },
     onScrollInfoPaneUp: () => {
       setActiveModal('none');
       if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
-        scrollInfoPane('up');
+        getScroller('infoPane')?.('up');
       }
     },
     onCyclePaneRight: () => {

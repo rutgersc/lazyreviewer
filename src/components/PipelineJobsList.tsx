@@ -10,16 +10,16 @@ import { loadJobLog } from '../gitlab/pipelinejob-log';
 interface PipelineJobsListProps {
   activePane: ActivePane;
   pipelineJobs: Array<{ stage: PipelineStage; job: PipelineJob }>;
-  selectedPipelineJobIndex: number;
 }
 
-export default function PipelineJobsList({ activePane, pipelineJobs, selectedPipelineJobIndex }: PipelineJobsListProps) {
+export default function PipelineJobsList({ activePane, pipelineJobs }: PipelineJobsListProps) {
   const activeModal = useAppStore(state => state.activeModal);
   const setActiveModal = useAppStore(state => state.setActiveModal);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setSelectedPipelineJobIndex = useAppStore(state => state.setSelectedPipelineJobIndex);
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const fetchJobHistoryForSelectedJob = useAppStore(state => state.fetchJobHistoryForSelectedJob);
+  const selectedPipelineJobIndex = useAppStore(state => state.selectedPipelineJobIndex);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
