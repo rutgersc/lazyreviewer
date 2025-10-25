@@ -33,13 +33,13 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
         <box style={{ flexDirection: "row", gap: 0, width: "100%" }}>
           <text
             style={{ fg: authorColor, attributes: TextAttributes.BOLD }}
-            wrap={true}
+            wrapMode='word'
           >
             {marginLeftrrow}{note.author}
           </text>
           <text
             style={{ fg: authorColor, attributes: TextAttributes.DIM }}
-            wrap={true}
+            wrapMode='word'
           >
             {createdAt}
           </text>
@@ -48,7 +48,7 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
           <box>
             <text
               style={{ fg: '#ffb86c', attributes: TextAttributes.DIM }}
-              wrap={true}
+              wrapMode='word'
             >
               {fileInfo}
             </text>
@@ -60,7 +60,7 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
           }}>
           <text
             style={{ fg: textColor }}
-            wrap={true}
+            wrapMode='word'
           >
             {note.body}
           </text>
@@ -76,7 +76,7 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
       return (
         <text
           style={{ fg: '#50fa7b', attributes: TextAttributes.DIM }}
-          wrap={true}
+          wrapMode='word'
         >
           All discussions resolved ✓
         </text>
@@ -87,7 +87,7 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
       <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
         <text
           style={{ fg: '#ff5555', attributes: TextAttributes.BOLD, marginBottom: 1 }}
-          wrap={true}
+          wrapMode='word'
         >
           {`Unresolved Discussions (${unresolvedDiscussions.length})`}
         </text>

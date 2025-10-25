@@ -14,6 +14,8 @@ import { type MergeRequestState } from '../generated/gitlab-sdk';
 import { loadSettings, saveSettings } from '../settings/settings';
 import { fetchJobHistory, type JobHistoryEntry } from '../gitlab/gitlabgraphql';
 import type * as AtomRegistry from '@effect-atom/atom/Registry';
+import type { CacheKey } from './mrCacheAtoms';
+import { MRCacheKey, ProjectMRCacheKey } from './mrCacheAtoms';
 
 export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
 
@@ -288,37 +290,37 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 
       const previouslySelectedMrId = state.mergeRequests[state.selectedMergeRequest]?.id;
 
-      const { usernames, repositories } = extractSelectionData(
-        state.selectedUserSelectionEntry,
-        state.userSelections,
-        groups
-      );
+      // const { usernames, repositories } = extractSelectionData(
+      //   state.selectedUserSelectionEntry,
+      //   state.userSelections,
+      //   groups
+      // );
 
-      let mrs: MergeRequest[];
+      // let mrs: MergeRequest[];
 
-      if (repositories.length > 0 && repositories[0]) {
-        mrs = await fetchMergeRequestsByProject(selectionEntry.name, repositories[0], state.mrState);
-      } else if (usernames.length > 0) {
-        mrs = await fetchMergeRequests(selectionEntry.name, usernames, state.mrState);
-      } else {
-        mrs = [];
-      }
+      // if (repositories.length > 0 && repositories[0]) {
+      //   mrs = await fetchMergeRequestsByProject(selectionEntry.name, repositories[0], state.mrState);
+      // } else if (usernames.length > 0) {
+      //   mrs = await fetchMergeRequests(selectionEntry.name, usernames, state.mrState);
+      // } else {
+      //   mrs = [];
+      // }
 
-      set({ mergeRequests: [], branchDifferences: new Map() });
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // set({ mergeRequests: [], branchDifferences: new Map() });
+      // await new Promise(resolve => setTimeout(resolve, 100));
 
-      const newSelectedIndex = previouslySelectedMrId
-        ? mrs.findIndex(mr => mr.id === previouslySelectedMrId)
-        : -1;
+      // const newSelectedIndex = previouslySelectedMrId
+      //   ? mrs.findIndex(mr => mr.id === previouslySelectedMrId)
+      //   : -1;
 
-      set({
-        mergeRequests: mrs,
-        selectedMergeRequest: newSelectedIndex >= 0 ? newSelectedIndex : 0
-      });
+      // set({
+      //   mergeRequests: mrs,
+      //   selectedMergeRequest: newSelectedIndex >= 0 ? newSelectedIndex : 0
+      // });
 
-      fetchBranchDifferences(mrs).then(differences => {
-        set({ branchDifferences: differences });
-      });
+      // fetchBranchDifferences(mrs).then(differences => {
+      //   set({ branchDifferences: differences });
+      // });
     },
 
     loadMrs: async () => {
@@ -377,12 +379,11 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 }));
 
 export const extractSelectionData = (
-  userSelectionEntry: number,
-  userSelections: UserSelectionEntry[],
-  groups: UserGroup[]
-): { usernames: string[]; repositories: string[] } => {
-  const entry = userSelections[userSelectionEntry];
-  if (!entry) return { usernames: [], repositories: [] };
+  entry: UserSelectionEntry | undefined,
+  groups: UserGroup[],
+  state: MergeRequestState
+): CacheKey | undefined => {
+  if (!entry) return undefined;
 
   const usernames = new Set<string>();
   const repositories = new Set<string>();
@@ -401,35 +402,24 @@ export const extractSelectionData = (
   };
 
   entry.selection.forEach(processId);
-  return {
-    usernames: Array.from(usernames),
-    repositories: Array.from(repositories)
-  };
+
+  const repositoriesArray = Array.from(repositories);
+  const usernamesArray = Array.from(usernames);
+
+  if (repositoriesArray.length > 0 && repositoriesArray[0]) {
+    return new ProjectMRCacheKey({
+      selectionEntry: entry.name,
+      projectPath: repositoriesArray[0],
+      state
+    });
+  } else if (usernamesArray.length > 0) {
+    return new MRCacheKey({
+      selectionEntry: entry.name,
+      usernames: usernamesArray,
+      state
+    });
+  }
+
+  return undefined;
 };
 
-export const extractUsernamesFromUserSelectionEntry = (
-  userSelectionEntry: number,
-  userSelections: UserSelectionEntry[],
-  users: UserSelection[],
-  groups: UserGroup[]
-): string[] => {
-  return extractSelectionData(userSelectionEntry, userSelections, groups).usernames;
-};
-
-
-// Source: https://github.com/pmndrs/zustand/issues/108#issuecomment-2197556875
-export function computed<
-  const TDeps extends readonly unknown[] = unknown[],
-  TResult = unknown,
->(depsFn: () => TDeps, computeFn: (...deps: TDeps) => TResult): () => TResult {
-  let prevDeps: TDeps;
-  let cachedResult: TResult;
-  return () => {
-    const deps = depsFn();
-    if (prevDeps === undefined || !shallow(prevDeps, deps)) {
-      prevDeps = deps;
-      cachedResult = computeFn(...deps);
-    }
-    return cachedResult;
-  };
-}

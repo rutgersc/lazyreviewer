@@ -14,7 +14,7 @@ export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
       return (
         <text
           style={{ fg: '#bd93f9', attributes: TextAttributes.DIM }}
-          wrap={true}
+          wrapMode='word'
         >
           No comments
         </text>
@@ -25,7 +25,7 @@ export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
       <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
         <text
           style={{ fg: '#bd93f9', attributes: TextAttributes.BOLD, marginBottom: 1 }}
-          wrap={true}
+          wrapMode='word'
         >
           {`Comments (${comments.length})`}
         </text>
@@ -37,13 +37,13 @@ export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
               <box style={{ flexDirection: "row", gap: 0, width: "100%" }}>
                 <text
                   style={{ fg: '#8be9fd', attributes: TextAttributes.BOLD }}
-                  wrap={true}
+                  wrapMode='word'
                 >
                   {comment.author.displayName}
                 </text>
                 <text
                   style={{ fg: '#bd93f9', attributes: TextAttributes.DIM }}
-                  wrap={true}
+                  wrapMode='word'
                 >
                   {` ${formatCompactTime(new Date(comment.created))} (${new Date(comment.created).toLocaleDateString()} ${new Date(comment.created).toLocaleTimeString()}):`}
                 </text>
@@ -51,7 +51,7 @@ export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
               <box style={{ marginLeft: 4 }}>
                 <text
                   style={{ fg: '#f1fa8c' }}
-                  wrap={true}
+                  wrapMode='word'
                 >
                   {commentText}
                 </text>
@@ -69,7 +69,7 @@ export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
         {issue.fields.assignee && (
           <text
             style={{ fg: '#8be9fd', marginBottom: 1 }}
-            wrap={true}
+            wrapMode='word'
           >
             {`Assignee: ${issue.fields.assignee.displayName}`}
           </text>

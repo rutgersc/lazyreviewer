@@ -90,7 +90,7 @@ export default function GitSwitchModal({
 
         {!repoPath ? (
           <>
-            <text style={{ fg: Colors.ERROR }} wrap={true}>
+            <text style={{ fg: Colors.ERROR }} wrapMode='word'>
               No local repository path configured. Press Ctrl+S to configure settings.
             </text>
             <box style={{ marginTop: 1 }}>
@@ -101,10 +101,10 @@ export default function GitSwitchModal({
           </>
         ) : (
           <>
-            <text style={{ fg: Colors.NEUTRAL }} wrap={true}>
+            <text style={{ fg: Colors.NEUTRAL }} wrapMode='word'>
               Switch to branch: {branchName}
             </text>
-            <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={true}>
+            <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='word'>
               Repository: {repoPath}
             </text>
 

@@ -6,7 +6,21 @@ export const PipelineJobSchema = Schema.Struct({
   id: Schema.String,
   localId: Schema.Number,
   name: Schema.String,
-  status: Schema.String,
+  status: Schema.Literal(
+    'CANCELED',
+    'CANCELING',
+    'CREATED',
+    'FAILED',
+    'MANUAL',
+    'PENDING',
+    'PREPARING',
+    'RUNNING',
+    'SCHEDULED',
+    'SKIPPED',
+    'SUCCESS',
+    'WAITING_FOR_CALLBACK',
+    'WAITING_FOR_RESOURCE'
+  ),
   failureMessage: Schema.NullOr(Schema.String),
   webPath: Schema.NullOr(Schema.String),
   startedAt: Schema.String

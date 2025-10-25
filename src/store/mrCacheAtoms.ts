@@ -7,7 +7,7 @@ import * as KeyValueStore from "@effect/platform/KeyValueStore"
 import * as FileSystem from "@effect/platform-node/NodeFileSystem"
 import * as Path from "@effect/platform-node/NodePath"
 
-export class MRCacheKey extends Data.Class<{
+export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
   selectionEntry: string
   usernames: readonly string[]
   state: MergeRequestState
@@ -21,7 +21,7 @@ export class MRCacheKey extends Data.Class<{
   }
 }
 
-export class ProjectMRCacheKey extends Data.Class<{
+export class ProjectMRCacheKey extends Data.TaggedClass("ProjectMRs")<{
   selectionEntry: string
   projectPath: string
   state: MergeRequestState
@@ -37,6 +37,8 @@ export class ProjectMRCacheKey extends Data.Class<{
     return `mrs_${this.state}_${fixedEntry}_${fixedProject}_gitlab`
   }
 }
+
+export type CacheKey = MRCacheKey | ProjectMRCacheKey
 
 // Create the cache runtime with KeyValueStore layer
 const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)

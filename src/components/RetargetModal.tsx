@@ -134,7 +134,7 @@ export default function RetargetModal({
 
         {selectedMr ? (
           <>
-            <text style={{ fg: Colors.NEUTRAL }} wrap={true}>
+            <text style={{ fg: Colors.NEUTRAL }} wrapMode='word'>
               MR !{selectedMr.iid}: {selectedMr.title}
             </text>
 
@@ -145,12 +145,12 @@ export default function RetargetModal({
               Current target: {selectedMr.targetbranch}
             </text>
 
-            <text style={{ fg: Colors.NEUTRAL, marginTop: 1 }} wrap={true}>
+            <text style={{ fg: Colors.NEUTRAL, marginTop: 1 }} wrapMode='word'>
               [TODO: Add input functionality]
             </text>
           </>
         ) : (
-          <text style={{ fg: Colors.ERROR }} wrap={true}>
+          <text style={{ fg: Colors.ERROR }} wrapMode='word'>
             No merge request selected
           </text>
         )}
