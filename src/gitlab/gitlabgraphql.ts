@@ -30,102 +30,102 @@ export interface JobHistoryEntry {
 }
 
 
+export const mapMrFromQuery = (
+  username: string,
+  mr: NonNullable<
+      NonNullable<
+        NonNullable<
+          NonNullable<
+            NonNullable<MRsQuery['users']>['nodes']
+          >[number]
+        >['authoredMergeRequests']
+      >['nodes']
+    >[number])
+  : GitlabMergeRequest => {
+
+  if (!mr) {
+    throw Error("mr null");
+  }
+
+  const pipeline = {
+    stage: mr.headPipeline?.stages?.nodes
+      ?.map(stage => ({
+        name: stage?.name || '',
+        jobs: stage?.jobs?.nodes
+          ?.map(job => ({
+            id: job?.id || '',
+            localId: Number(job?.id.split('/').pop()),
+            name: job?.name || '',
+            status: job?.status || 'CREATED',
+            failureMessage: job?.failureMessage || null,
+            webPath: job?.webPath || null,
+            startedAt: job?.startedAt || ''
+          } satisfies PipelineJob))
+          .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
+          || []
+      })) || []
+  };
+
+  const rawDiscussions = mr.discussions?.nodes || [];
+  const discussions: Discussion[] = rawDiscussions.map(d => ({
+    id: d?.id || '',
+    resolved: d?.resolved || false,
+    resolvable: d?.resolvable || false,
+    notes: (d?.notes?.nodes || []).map(note => ({
+      id: note?.id || '',
+      body: note?.body || '',
+      author: note?.author?.name || '',
+      createdAt: new Date(note?.createdAt || ''),
+      resolvable: note?.resolvable || false,
+      resolved: note?.resolved || false,
+      position: note?.position ? {
+        filePath: note.position.filePath || null,
+        newLine: note.position.newLine || null,
+        oldLine: note.position.oldLine || null,
+        oldPath: note.position.oldPath || null,
+      } : null,
+    }))
+  }));
+
+  const totalDiscussions = discussions.length;
+  const resolvableDiscussions = discussions.filter(d => d.resolvable).length;
+  const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved === true).length;
+  const unresolvedDiscussions = resolvableDiscussions - resolvedDiscussions;
+
+  return {
+    id: mr.id,
+    iid: mr.iid,
+    title: mr.name!,
+    jiraIssueKeys: extractElabTicketsFromTitle(mr.name!),
+    webUrl: mr.webUrl!,
+    sourcebranch: mr.sourceBranch,
+    targetbranch: mr.targetBranch,
+    project: {
+      name: mr.project.name,
+      path: mr.project.path,
+      fullPath: mr.project.fullPath
+    },
+    author: username,
+    avatarUrl: mr.author?.avatarUrl || null,
+    createdAt: new Date(mr.createdAt),
+    updatedAt: new Date(mr.updatedAt),
+    state: mr.state,
+    approvedBy: mr!.approvedBy!.nodes!.map(n => ({ id: n!.id || n!.name, name: n!.name, username: n!.username })),
+    resolvableDiscussions,
+    resolvedDiscussions,
+    unresolvedDiscussions,
+    totalDiscussions,
+    discussions,
+    pipeline: pipeline
+  } satisfies GitlabMergeRequest;
+}
+
 export const getGitlabMrs = async (usernames: string[], state: MergeRequestState = 'opened'): Promise<GitlabMergeRequest[]> => {
   const endpoint = `https://git.elabnext.com/api/graphql`
   const token = process.env.GITLAB_TOKEN;
   const client = new GraphQLClient(endpoint, {
     headers: { Authorization: `Bearer ${token}` }
   })
-
-  const mapMr = (
-    username: string,
-    mr: NonNullable<
-        NonNullable<
-          NonNullable<
-            NonNullable<
-              NonNullable<MRsQuery['users']>['nodes']
-            >[number]
-          >['authoredMergeRequests']
-        >['nodes']
-      >[number])
-    : GitlabMergeRequest => {
-
-    if (!mr) {
-      throw Error("mr null");
-    }
-
-    const pipeline = {
-      stage: mr.headPipeline?.stages?.nodes
-        ?.map(stage => ({
-          name: stage?.name || '',
-          jobs: stage?.jobs?.nodes
-            ?.map(job => ({
-              id: job?.id || '',
-              localId: job?.id.split('/').pop(),
-              name: job?.name || '',
-              status: job?.status || 'CREATED',
-              failureMessage: job?.failureMessage || null,
-              webPath: job?.webPath || null,
-              startedAt: job?.startedAt || ''
-            } satisfies PipelineJob))
-            .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
-            || []
-        })) || []
-    };
-
-    const rawDiscussions = mr.discussions?.nodes || [];
-    const discussions: Discussion[] = rawDiscussions.map(d => ({
-      id: d?.id || '',
-      resolved: d?.resolved || false,
-      resolvable: d?.resolvable || false,
-      notes: (d?.notes?.nodes || []).map(note => ({
-        id: note?.id || '',
-        body: note?.body || '',
-        author: note?.author?.name || '',
-        createdAt: new Date(note?.createdAt || ''),
-        resolvable: note?.resolvable || false,
-        resolved: note?.resolved || false,
-        position: note?.position ? {
-          filePath: note.position.filePath || null,
-          newLine: note.position.newLine || null,
-          oldLine: note.position.oldLine || null,
-          oldPath: note.position.oldPath || null,
-        } : null,
-      }))
-    }));
-
-    const totalDiscussions = discussions.length;
-    const resolvableDiscussions = discussions.filter(d => d.resolvable).length;
-    const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved === true).length;
-    const unresolvedDiscussions = resolvableDiscussions - resolvedDiscussions;
-
-    return {
-      id: mr.id,
-      iid: mr.iid,
-      title: mr.name!,
-      jiraIssueKeys: extractElabTicketsFromTitle(mr.name!),
-      webUrl: mr.webUrl!,
-      sourcebranch: mr.sourceBranch,
-      targetbranch: mr.targetBranch,
-      project: {
-        name: mr.project.name,
-        path: mr.project.path,
-        fullPath: mr.project.fullPath
-      },
-      author: username,
-      avatarUrl: mr.author?.avatarUrl || null,
-      createdAt: new Date(mr.createdAt),
-      updatedAt: new Date(mr.updatedAt),
-      state: mr.state,
-      approvedBy: mr!.approvedBy!.nodes!.map(n => ({ id: n!.id || n!.name, name: n!.name, username: n!.username })),
-      resolvableDiscussions,
-      resolvedDiscussions,
-      unresolvedDiscussions,
-      totalDiscussions,
-      discussions,
-      pipeline: pipeline
-    } satisfies GitlabMergeRequest;
-  }
 
   const sdk = getSdk(client)
   const data = await sdk.MRs({
@@ -146,7 +146,7 @@ export const getGitlabMrs = async (usernames: string[], state: MergeRequestState
       .authoredMergeRequests!
       .nodes!
       .slice(0, 15)
-      .map(mr => mapMr(user!.username, mr));
+      .map(mr => mapMrFromQuery(user!.username, mr));
 
     if (user!.authoredMergeRequests!.nodes!.length > mappedMrs.length) {
       console.error(`Fetched more MRs than needed ${user!.authoredMergeRequests!.nodes!.length} > ${mappedMrs.length}`)
@@ -187,7 +187,7 @@ export const getGitlabMrsByProject = async (projectPath: string, state: MergeReq
           jobs: stage?.jobs?.nodes
             ?.map(job => ({
               id: job?.id || '',
-              localId: job?.id.split('/').pop(),
+              localId: Number(job?.id.split('/').pop()),
               name: job?.name || '',
               status: job?.status || 'CREATED',
               failureMessage: job?.failureMessage || null,
@@ -325,7 +325,7 @@ export const getMrPipeline = async (projectPath: string, iid: string): Promise<{
           jobs: stage?.jobs?.nodes
             ?.map(job => ({
               id: job?.id || '',
-              localId: job?.id.split('/').pop(),
+              localId: Number(job?.id.split('/').pop()),
               name: job?.name || '',
               status: job?.status || 'CREATED',
               failureMessage: job?.failureMessage || null,

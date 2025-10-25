@@ -326,13 +326,13 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
       const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
       if (selectionEntry) {
         console.log(`[MR] MR loading now handled by atoms`);
-        set({ mergeRequests: [] });
+        // set({ mergeRequests: [] });
 
-        setTimeout(() => {
-          fetchBranchDifferences([]).then(differences => {
-            set({ branchDifferences: differences });
-          });
-        }, 1);
+        // setTimeout(() => {
+          // fetchBranchDifferences([]).then(differences => {
+          //   set({ branchDifferences: differences });
+          // });
+        // }, 1);
       }
 
       return;

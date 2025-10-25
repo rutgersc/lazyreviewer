@@ -73,7 +73,7 @@ export const GitlabMergeRequestSchema = Schema.Struct({
 }).annotations({ identifier: "GitlabMergeRequest" })
 
 const JiraCommentContentTextSchema = Schema.Struct({
-  text: Schema.String,
+  text: Schema.optional(Schema.String),
   type: Schema.String
 })
 

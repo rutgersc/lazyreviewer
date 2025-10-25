@@ -30,12 +30,12 @@ export const fetchMergeRequestsEffect = (key: MRCacheKey) =>
 
 export async function fetchMergeRequests(
   selectedUserSelectionEntry: string,
-  selectedUsernames: string[],
+  selectedUsernames: readonly string[],
   state: MergeRequestState = 'opened'
 ): Promise<MergeRequest[]> {
   if (selectedUsernames.length === 0) return [];
 
-  const mrs = await getGitlabMrs(selectedUsernames, state);
+  const mrs = await getGitlabMrs(selectedUsernames as string[], state);
   const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
   const tickets = await loadJiraTickets(jiraKeys);
 

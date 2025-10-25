@@ -52,6 +52,8 @@ export default function App() {
   const [getFilterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
 
   useEffect(() => {
+
+        renderer.console.toggle();
     loadMrs();
   }, []);
 
@@ -217,7 +219,7 @@ export default function App() {
               backgroundColor: '#282a36'
             }}
           >
-            <ConsolePane isActive={activePane === ActivePane.Console} />
+            {/* <ConsolePane isActive={activePane === ActivePane.Console} /> */}
           </box>
         </box>
       </box>

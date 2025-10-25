@@ -17,7 +17,7 @@ export interface JiraComment {
   body: {
     content: Array<{
       content: Array<{
-        text: string;
+        text?: string;
         type: string;
       }>;
       type: string;

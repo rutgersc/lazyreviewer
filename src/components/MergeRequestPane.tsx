@@ -399,7 +399,27 @@ export default function MergeRequestPane({}: {}) {
     (state) => state.setSelectedMergeRequest
   );
   const selectedIndex = useAppStore((state) => state.selectedMergeRequest);
-  const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
+
+  console.log("[MergeRequestPane] About to call useAtomValue");
+  const mergeRequestsRes = useAtomValue(mergeRequestsAtom);
+
+  const mergeRequests = Result.match(mergeRequestsRes, {
+            onInitial: () => {
+                console.log("[unwrappedMergeRequestsAtom] State: Initial");
+                return [];
+            },
+            onFailure: (cause) => {
+                console.error('[unwrappedMergeRequestsAtom] State: Failure', cause);
+                return [];
+            },
+            onSuccess: (mrs) =>  {
+                console.log("[unwrappedMergeRequestsAtom] State: Success, MRs:", mrs.value.length);
+                return mrs.value;
+            }
+        });
+
+
+  console.log("[MergeRequestPane] useAtomValue returned:", mergeRequests.length, "MRs");
 
   const [getSelectedMRIndex, setSelectedMRIndex] = useAtom(selectedMrIndexAtom);
 

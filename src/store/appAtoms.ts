@@ -8,6 +8,7 @@ import { mrsByUserAtomFamily, mrsByProjectAtomFamily, MRCacheKey, ProjectMRCache
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import type { PlatformError } from "@effect/platform/Error";
 import type { ParseError } from "effect/ParseResult";
+import { fetchMergeRequestsEffect } from "../mergerequests/mergerequests-effects";
 
 // Writable atoms - start with values from Zustand store
 const initialState = useAppStore.getState();
@@ -81,31 +82,41 @@ export const mergeRequestsKeyAtom = Atom.make((get): MRCacheKey | ProjectMRCache
 
 export const mergeRequestsAtom = Atom.make((get): Result.Result<readonly MergeRequest[], PlatformError | ParseError | Error>  => {
     const cacheKey = get(mergeRequestsKeyAtom);
-    console.log("MR atom")
+    console.log("[mergeRequestsAtom] Evaluating, cacheKey:", cacheKey);
 
     if (cacheKey instanceof ProjectMRCacheKey) {
         const v = mrsByProjectAtomFamily(cacheKey);
-        return get(v);
+        const result = get(v);
+        console.log("[mergeRequestsAtom] ProjectMR Result:", result._tag === 'Success' ? result.value.length : []);
+        return result;
     }
     else if (cacheKey instanceof MRCacheKey) {
-        return get(mrsByUserAtomFamily(cacheKey));
+        const result = get(mrsByUserAtomFamily(cacheKey));
+        console.log("[mergeRequestsAtom] UserMR Result:", result._tag === 'Success' ? result.value.length : []);
+        return result;
     }
 
+    console.log("[mergeRequestsAtom] No cacheKey, returning empty array");
     return Result.success([]);
 })
 
-export const unwrappedMergeRequestsAtom = Atom.map(
-    mergeRequestsAtom,
-    (result): readonly MergeRequest[] => Result.match(result, {
-        onInitial: () => [],
-        onFailure: (cause) => {
-            console.error('[MergeRequestPane] Failed to load MRs:', cause);
-            return [];
-        },
-        onSuccess: (mrs) =>  {
-            console.log("success mergerequests things");
-            return mrs.value;
-        }
-    })
-)
+// export const unwrappedMergeRequestsAtom = Atom.map(
+//     mergeRequestsAtom,
+//     (result): readonly MergeRequest[] => {
+//         return Result.match(result, {
+//             onInitial: () => {
+//                 console.log("[unwrappedMergeRequestsAtom] State: Initial");
+//                 return [];
+//             },
+//             onFailure: (cause) => {
+//                 console.error('[unwrappedMergeRequestsAtom] State: Failure', cause);
+//                 return [];
+//             },
+//             onSuccess: (mrs) =>  {
+//                 console.log("[unwrappedMergeRequestsAtom] State: Success, MRs:", mrs.value.length);
+//                 return mrs.value;
+//             }
+//         })
+//     }
+// )
 
