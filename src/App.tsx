@@ -18,10 +18,19 @@ import { type MergeRequestState } from "./generated/gitlab-sdk";
 import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
-import { useAtom } from '@effect-atom/atom-react';
+import { useAtom, RegistryContext } from '@effect-atom/atom-react';
 import { filterMrStateAtom } from './store/appAtoms';
+import { setAtomRegistry } from './store/appStore';
+import { useContext } from 'react';
 
 export default function App() {
+  const registry = useContext(RegistryContext);
+
+  // Initialize the atom registry so Zustand can update atoms
+  useEffect(() => {
+    setAtomRegistry(registry);
+  }, [registry]);
+
   const renderer = useRenderer();
   const activePane = useAppStore(state => state.activePane);
   const setActivePane = useAppStore(state => state.setActivePane);

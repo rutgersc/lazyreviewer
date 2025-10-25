@@ -3,15 +3,17 @@ import type { MergeRequest } from "../schemas/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { groups, mockUserSelections } from "../data/usersAndGroups";
 import { Effect } from "effect";
-import { extractSelectionData } from "./appStore";
+import { extractSelectionData, useAppStore } from "./appStore";
 import { mrsByUserAtomFamily, mrsByProjectAtomFamily, MRCacheKey, ProjectMRCacheKey } from "./mrCacheAtoms";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 
+// Writable atoms - start with values from Zustand store
+const initialState = useAppStore.getState();
 
-export const filterMrStateAtom = Atom.make<MergeRequestState>("opened");
+export const filterMrStateAtom = Atom.make<MergeRequestState>(initialState.mrState);
 
-// export const mergeRequestsAtom = Atom.make<MergeRequest[]>([]);
-export const selectedMrIndexAtom = Atom.make<number>(0);
+export const selectedMrIndexAtom = Atom.make<number>(initialState.selectedMergeRequest);
+
 export const selectedMrAtom = Atom.make(get =>  {
     const selectedMrIndex = get(selectedMrIndexAtom);
     const mergeRequestsResult = get(mergeRequestsAtom);
@@ -27,9 +29,10 @@ export const selectedMrAtom = Atom.make(get =>  {
     return undefined;
 })
 
+export const userSelectionsAtom = Atom.make<UserSelectionEntry[]>(initialState.userSelections);
 
-export const userSelectionsAtom = Atom.make<UserSelectionEntry[]>(mockUserSelections);
-export const selectedUserSelectionEntryAtom = Atom.make<number>(0);
+export const selectedUserSelectionEntryAtom = Atom.make<number>(initialState.selectedUserSelectionEntry);
+
 export const expandedSelectedUserSelectionAtom = Atom.make(get => {
     const selectedUserSelectionEntry = get(selectedUserSelectionEntryAtom);
     const userSelections = get(userSelectionsAtom);
@@ -41,13 +44,14 @@ export const expandedSelectedUserSelectionAtom = Atom.make(get => {
     );
     return { usernames, repositories };
 });
+
 export const selectedUserSelectionAtom = Atom.make(get =>  {
     const userSelections = get(userSelectionsAtom);
     const index = get(selectedUserSelectionEntryAtom);
     return userSelections[index];
 })
 
-const mergeRequestsAtom = Atom.make((get) => {
+export const mergeRequestsAtom = Atom.make((get) => {
     const selectionEntry = get(selectedUserSelectionAtom);
     if (!selectionEntry) {
         return Effect.succeed([]);

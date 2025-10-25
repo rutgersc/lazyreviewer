@@ -15,8 +15,9 @@ import { loadSettings } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
-import { useAtom } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom } from "../store/appAtoms";
+import { useAtom, useAtomValue } from "@effect-atom/atom-react";
+import { Result } from "@effect-atom/atom-react";
+import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom } from "../store/appAtoms";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -398,7 +399,19 @@ export default function MergeRequestPane({}: {}) {
     (state) => state.setSelectedMergeRequest
   );
   const selectedIndex = useAppStore((state) => state.selectedMergeRequest);
-  const mergeRequests = useAppStore((state) => state.mergeRequests);
+  const getMergeRequestsResult = useAtomValue(mergeRequestsAtom);
+
+  const mergeRequests: MergeRequest[] = Result.isResult(getMergeRequestsResult)
+    ? Result.match(getMergeRequestsResult, {
+        onInitial: () => [] as MergeRequest[],
+        onSuccess: (success) => success.value as MergeRequest[],
+        onFailure: (failure) => {
+          console.error('[MergeRequestPane] Failed to load MRs:', failure);
+          return [] as MergeRequest[];
+        }
+      })
+    : [] as MergeRequest[];
+
   const [getSelectedMRIndex, setSelectedMRIndex] = useAtom(selectedMrIndexAtom);
 
   const activePane = useAppStore((state) => state.activePane);

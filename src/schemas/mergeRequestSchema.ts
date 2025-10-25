@@ -1,4 +1,6 @@
-import * as Schema from "@effect/schema/Schema"
+// import * as Schema from "@effect/schema/Schema"
+import { KeyValueStore } from "@effect/platform";
+import { Effect , Schema} from "effect";
 
 export const PipelineJobSchema = Schema.Struct({
   id: Schema.String,
@@ -8,7 +10,34 @@ export const PipelineJobSchema = Schema.Struct({
   failureMessage: Schema.NullOr(Schema.String),
   webPath: Schema.NullOr(Schema.String),
   startedAt: Schema.String
-}).annotations({ identifier: "PipelineJob" })
+}); //.annotations({ identifier: "PipelineJob" })
+
+
+
+// const program = Effect.gen(function* () {
+
+//   // Create a typed store based on the schema
+
+//   // const kv = (yield* KeyValueStore.KeyValueStore).forSchema(Person)
+//   const kvs = (yield* KeyValueStore.KeyValueStore).forSchema(PipelineJobSchema)
+
+
+//   // Store a typed value
+
+//   const value = { name: "Alice", age: 30 }
+
+//   yield* kv.set("user1", value)
+
+//   console.log(yield* kv.size)
+
+
+//   // Retrieve the value
+
+//   console.log(yield* kv.get("user1"))
+
+// })
+
+
 
 export const PipelineStageSchema = Schema.Struct({
   name: Schema.String,

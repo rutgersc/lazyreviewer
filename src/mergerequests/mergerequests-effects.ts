@@ -6,6 +6,7 @@ import { loadJiraTickets } from "../jira/jiraService";
 import { type MergeRequestState, getSdk } from "../generated/gitlab-sdk";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
+import { Effect } from "effect";
 
 function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
   ensurePipelineJobsInSettings(mrs);
@@ -33,6 +34,11 @@ export async function fetchMergeRequests(
 
   return processMrsWithJira(mrs, tickets);
 }
+
+  // export const fetchMergeRequestsByProjectEffect =  Effect.tryPromise({
+  //   try: () => fetchMergeRequestsByProject(key.selectionEntry, key.projectPath, key.state),
+  //   catch: (error) => new Error(`Failed to fetch project MRs: ${error}`)
+  // })
 
 export async function fetchMergeRequestsByProject(
   selectedUserSelectionEntry: string,

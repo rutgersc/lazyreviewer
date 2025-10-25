@@ -13,6 +13,7 @@ import { dirname } from 'path';
 import { type MergeRequestState } from '../generated/gitlab-sdk';
 import { loadSettings, saveSettings } from '../settings/settings';
 import { fetchJobHistory, type JobHistoryEntry } from '../gitlab/gitlabgraphql';
+import type * as AtomRegistry from '@effect-atom/atom/Registry';
 
 export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
 
@@ -97,6 +98,23 @@ const fileStorage = createJSONStorage(() => ({
 
 const INFO_PANE_TABS: InfoPaneTab[] = ['overview', 'jira', 'pipeline', 'activity'];
 
+// Helper to sync atom state with store changes
+let atomRegistry: AtomRegistry.Registry | null = null;
+
+export function setAtomRegistry(registry: AtomRegistry.Registry) {
+  atomRegistry = registry;
+}
+
+function updateAtoms(entry?: number, mrState?: MergeRequestState) {
+  if (!atomRegistry) return;
+
+  // Import atoms dynamically to avoid circular dependency
+  import('./appAtoms').then(({ selectedUserSelectionEntryAtom, filterMrStateAtom }) => {
+    if (entry !== undefined) atomRegistry!.set(selectedUserSelectionEntryAtom, entry);
+    if (mrState !== undefined) atomRegistry!.set(filterMrStateAtom, mrState);
+  });
+}
+
 export const useAppStore = create<AppStore>()(persist((set, get) => {
 
   const refreshMrList = async (entry: number, mrState: MergeRequestState) => {
@@ -108,7 +126,10 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
       });
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      set({ selectedUserSelectionEntry: entry, selectedMergeRequest: 0 });
+      set({ selectedUserSelectionEntry: entry, selectedMergeRequest: 0, mrState: mrState });
+
+      // Update atoms to trigger reactivity
+      updateAtoms(entry, mrState);
 
       const state = get();
       const selectionEntry = state.userSelections[entry];
