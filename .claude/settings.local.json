@@ -6,7 +6,8 @@
       "Bash(bunx tsc:*)",
       "WebSearch",
       "WebFetch(domain:docs.gitlab.com)",
-      "WebFetch(domain:forum.gitlab.com)"
+      "WebFetch(domain:forum.gitlab.com)",
+      "Read(//f/GitRepos/effect-atom/**)"
     ],
     "deny": [],
     "ask": []
