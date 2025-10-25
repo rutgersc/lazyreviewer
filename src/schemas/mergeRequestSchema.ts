@@ -12,33 +12,6 @@ export const PipelineJobSchema = Schema.Struct({
   startedAt: Schema.String
 }); //.annotations({ identifier: "PipelineJob" })
 
-
-
-// const program = Effect.gen(function* () {
-
-//   // Create a typed store based on the schema
-
-//   // const kv = (yield* KeyValueStore.KeyValueStore).forSchema(Person)
-//   const kvs = (yield* KeyValueStore.KeyValueStore).forSchema(PipelineJobSchema)
-
-
-//   // Store a typed value
-
-//   const value = { name: "Alice", age: 30 }
-
-//   yield* kv.set("user1", value)
-
-//   console.log(yield* kv.size)
-
-
-//   // Retrieve the value
-
-//   console.log(yield* kv.get("user1"))
-
-// })
-
-
-
 export const PipelineStageSchema = Schema.Struct({
   name: Schema.String,
   jobs: Schema.mutable(Schema.Array(PipelineJobSchema))

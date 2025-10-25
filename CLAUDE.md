@@ -37,12 +37,14 @@ bun install
 ## Development Notes
 
 !IMPORTANT!: UI RENDERER SOURCE AVAILABLE AT (windows=F:\GitRepos\opentui, osx=/Users/rutgerschoorstra/Gitrepos/opentui)
+!IMPORTANT!: effect-atom SOURCECODE AVAILABLE AT /Users/rutgerschoorstra/Gitrepos/effect-atom
 
 ### Type-Driven Development Approach
 
 **ALWAYS start with types before making code changes:**
 **AVOID typing anything in typescript with `any`. Any shuts off typing, so don't ever use `any` at all. Absolutely never use any as a type to fix type errors.**
 **REPEAT: Avoid typing with `any`. any is NOT recommended**
+**NEVER use type assertions (`as TypeName`) to satisfy the compiler - it disables type checking and masks real type errors. Always fix the underlying type issue instead.**
 
 1. **Examine existing types first**: Before modifying any code, read and understand the type definitions involved:
    - Check interface definitions (e.g., `JiraIssue`, `GitlabMergeRequest`)

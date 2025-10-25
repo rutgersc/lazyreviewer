@@ -15,7 +15,7 @@ export interface BranchDifference {
   ahead: number;
 }
 
-export const useRepositoryBranches = (mergeRequests: MergeRequest[]): RepositoryBranch[] => {
+export const useRepositoryBranches = (mergeRequests: readonly MergeRequest[]): RepositoryBranch[] => {
   return useMemo(() => {
     const settings = loadSettings();
     const projectPaths = new Set(mergeRequests.map(mr => mr.project.fullPath));

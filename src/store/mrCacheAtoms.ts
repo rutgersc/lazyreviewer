@@ -57,20 +57,24 @@ export const mrsByUserAtomFamily = Atom.family((key: MRCacheKey) => {
     const cached = yield* schemaStore.get(cacheKey);
     if (cached._tag === "Some") {
       console.log(`[Cache] Hit: ${cacheKey}`)
-      return cached.value
+      return cached.value satisfies Readonly<MergeRequest[]>
     }
 
     console.log(`[Cache] Miss: ${cacheKey}`)
-    const fresh = yield* fetch
+    const fresh = (yield* fetch) satisfies Readonly<MergeRequest[]>
 
+    console.log(`[Cache] Writing ${fresh.length} MRs to cache key: ${cacheKey}`)
     yield* schemaStore.set(cacheKey, fresh)
+    console.log(`[Cache] Successfully wrote to: ${cacheKey}`)
 
     return fresh
   })
 
-  return cacheRuntime.atom(fetchWithCache).pipe(
-    Atom.setIdleTTL(ttl)
-  )
+  return cacheRuntime.atom(fetchWithCache);
+  // .pipe(
+  //   // Atom.setIdleTTL(ttl) // TODO: Re-enable after fixing cache writes
+  //   Atom.keepAlive // Keep atoms alive to ensure cache writes complete
+  // )
 })
 
 export const mrsByProjectAtomFamily = Atom.family((key: ProjectMRCacheKey) => {
@@ -96,7 +100,9 @@ export const mrsByProjectAtomFamily = Atom.family((key: ProjectMRCacheKey) => {
     return fresh
   })
 
-  return cacheRuntime.atom(fetchWithCache).pipe(
-    Atom.setIdleTTL(ttl)
-  )
+  return cacheRuntime.atom(fetchWithCache)
+  // .pipe(
+  //   // Atom.setIdleTTL(ttl) // TODO: Re-enable after fixing cache writes
+  //   Atom.keepAlive // Keep atoms alive to ensure cache writes complete
+  // )
 })

@@ -6,6 +6,8 @@ import { Effect } from "effect";
 import { extractSelectionData, useAppStore } from "./appStore";
 import { mrsByUserAtomFamily, mrsByProjectAtomFamily, MRCacheKey, ProjectMRCacheKey } from "./mrCacheAtoms";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
+import type { PlatformError } from "@effect/platform/Error";
+import type { ParseError } from "effect/ParseResult";
 
 // Writable atoms - start with values from Zustand store
 const initialState = useAppStore.getState();
@@ -30,7 +32,6 @@ export const selectedMrAtom = Atom.make(get =>  {
 })
 
 export const userSelectionsAtom = Atom.make<UserSelectionEntry[]>(initialState.userSelections);
-
 export const selectedUserSelectionEntryAtom = Atom.make<number>(initialState.selectedUserSelectionEntry);
 
 export const expandedSelectedUserSelectionAtom = Atom.make(get => {
@@ -45,20 +46,21 @@ export const expandedSelectedUserSelectionAtom = Atom.make(get => {
     return { usernames, repositories };
 });
 
-export const selectedUserSelectionAtom = Atom.make(get =>  {
+export const mergeRequestsKeyAtom = Atom.make((get): MRCacheKey | ProjectMRCacheKey | undefined  => {
     const userSelections = get(userSelectionsAtom);
-    const index = get(selectedUserSelectionEntryAtom);
-    return userSelections[index];
-})
-
-export const mergeRequestsAtom = Atom.make((get) => {
-    const selectionEntry = get(selectedUserSelectionAtom);
+    const userSelectionIndex = get(selectedUserSelectionEntryAtom);
+    const selectionEntry = userSelections[userSelectionIndex];
     if (!selectionEntry) {
-        return Effect.succeed([]);
+        return;
     }
 
+    const { usernames, repositories } = extractSelectionData(
+        userSelectionIndex,
+        userSelections,
+        groups
+    );
+
     const filterMrState = get(filterMrStateAtom);
-    const { repositories, usernames } = get(expandedSelectedUserSelectionAtom);
 
     if (repositories.length > 0 && repositories[0]) {
         const cacheKey = new ProjectMRCacheKey({
@@ -66,16 +68,44 @@ export const mergeRequestsAtom = Atom.make((get) => {
             projectPath: repositories[0],
             state: filterMrState
         });
-        return get(mrsByProjectAtomFamily(cacheKey));
+        return cacheKey;
     } else if (usernames.length > 0) {
         const cacheKey = new MRCacheKey({
             selectionEntry: selectionEntry.name,
             usernames,
             state: filterMrState
         });
-        return get(mrsByUserAtomFamily(cacheKey));
-    } else {
-        return Effect.succeed([]);
+        return cacheKey;
     }
 })
+
+export const mergeRequestsAtom = Atom.make((get): Result.Result<readonly MergeRequest[], PlatformError | ParseError | Error>  => {
+    const cacheKey = get(mergeRequestsKeyAtom);
+    console.log("MR atom")
+
+    if (cacheKey instanceof ProjectMRCacheKey) {
+        const v = mrsByProjectAtomFamily(cacheKey);
+        return get(v);
+    }
+    else if (cacheKey instanceof MRCacheKey) {
+        return get(mrsByUserAtomFamily(cacheKey));
+    }
+
+    return Result.success([]);
+})
+
+export const unwrappedMergeRequestsAtom = Atom.map(
+    mergeRequestsAtom,
+    (result): readonly MergeRequest[] => Result.match(result, {
+        onInitial: () => [],
+        onFailure: (cause) => {
+            console.error('[MergeRequestPane] Failed to load MRs:', cause);
+            return [];
+        },
+        onSuccess: (mrs) =>  {
+            console.log("success mergerequests things");
+            return mrs.value;
+        }
+    })
+)
 
