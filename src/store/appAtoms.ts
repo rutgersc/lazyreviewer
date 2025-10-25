@@ -14,15 +14,17 @@ export const filterMrStateAtom = Atom.make<MergeRequestState>("opened");
 export const selectedMrIndexAtom = Atom.make<number>(0);
 export const selectedMrAtom = Atom.make(get =>  {
     const selectedMrIndex = get(selectedMrIndexAtom);
-    const mergeRequests = get(mergeRequestsAtom);
+    const mergeRequestsResult = get(mergeRequestsAtom);
 
-    const res = Result.match(mergeRequests, {
-        onInitial: () => undefined,
-        onSuccess: (success) => success.value[selectedMrIndex],
-        onFailure: (failure) => undefined
-    });
+    if (Result.isResult(mergeRequestsResult)) {
+        return Result.match(mergeRequestsResult, {
+            onInitial: () => undefined,
+            onSuccess: (success) => (success.value as MergeRequest[])[selectedMrIndex],
+            onFailure: (failure) => undefined
+        });
+    }
 
-    return res;
+    return undefined;
 })
 
 

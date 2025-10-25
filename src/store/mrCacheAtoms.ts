@@ -38,9 +38,10 @@ export class ProjectMRCacheKey extends Data.Class<{
 }
 
 export const mrsByUserAtomFamily = Atom.family((key: MRCacheKey) => {
-  const fetchEffect = Effect.tryPromise(() =>
-    fetchMergeRequests(key.selectionEntry, key.usernames as string[], key.state)
-  )
+  const fetchEffect = Effect.tryPromise({
+    try: () => fetchMergeRequests(key.selectionEntry, key.usernames as string[], key.state),
+    catch: (error) => new Error(`Failed to fetch MRs: ${error}`)
+  })
 
   return cachedAtom(
     key.toCacheKey(),
@@ -51,9 +52,10 @@ export const mrsByUserAtomFamily = Atom.family((key: MRCacheKey) => {
 })
 
 export const mrsByProjectAtomFamily = Atom.family((key: ProjectMRCacheKey) => {
-  const fetchEffect = Effect.tryPromise(() =>
-    fetchMergeRequestsByProject(key.selectionEntry, key.projectPath, key.state)
-  )
+  const fetchEffect = Effect.tryPromise({
+    try: () => fetchMergeRequestsByProject(key.selectionEntry, key.projectPath, key.state),
+    catch: (error) => new Error(`Failed to fetch project MRs: ${error}`)
+  })
 
   return cachedAtom(
     key.toCacheKey(),

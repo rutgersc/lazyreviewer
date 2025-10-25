@@ -6,7 +6,7 @@ import { ActivePane } from '../userselection/userSelection';
 import type { BranchDifference } from '../hooks/useRepositoryBranches';
 import { groups, mockUserSelections, users } from '../data/usersAndGroups';
 import { shallow } from "zustand/shallow";
-import { getCachedMergeRequests, fetchMergeRequests, fetchMergeRequestsByProject, refetchMrPipeline } from '../mergerequests/mergerequests-effects';
+import { fetchMergeRequests, fetchMergeRequestsByProject, refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 import { fetchBranchDifferences } from '../mergerequests/branch-difference-effects';
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
@@ -113,15 +113,11 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
       const state = get();
       const selectionEntry = state.userSelections[entry];
       if (selectionEntry) {
-        const cachedMrs = getCachedMergeRequests(
-          selectionEntry.name,
-          mrState
-        );
         console.log(
-          `[UserSelection] Loaded ${cachedMrs.length} cached MRs for ${selectionEntry.name}`
+          `[UserSelection] Loading MRs for ${selectionEntry.name} (now handled by atoms)`
         );
-        set({ mergeRequests: cachedMrs, mrState: mrState });
-        const differences = await fetchBranchDifferences(cachedMrs);
+        set({ mergeRequests: [], mrState: mrState });
+        const differences = await fetchBranchDifferences([]);
         set({ branchDifferences: differences });
       }
   };
@@ -308,12 +304,11 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
       const state = get();
       const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
       if (selectionEntry) {
-        const cachedMrs = getCachedMergeRequests(selectionEntry.name, state.mrState);
-        console.log(`[MR] Loaded ${cachedMrs.length} cached MRs immediately`);
-        set({ mergeRequests: cachedMrs });
+        console.log(`[MR] MR loading now handled by atoms`);
+        set({ mergeRequests: [] });
 
         setTimeout(() => {
-          fetchBranchDifferences(cachedMrs).then(differences => {
+          fetchBranchDifferences([]).then(differences => {
             set({ branchDifferences: differences });
           });
         }, 1);
@@ -346,10 +341,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
         state.mrState
       );
 
-      const updatedMrs = getCachedMergeRequests(selectionEntry.name, state.mrState);
-      set({ mergeRequests: updatedMrs });
-
-      console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid}`);
+      console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid} (cache updates now handled by atoms)`);
     },
   });
 }, {
@@ -400,7 +392,7 @@ export const extractUsernamesFromUserSelectionEntry = (
   users: UserSelection[],
   groups: UserGroup[]
 ): string[] => {
-  return extractSelectionData(userSelectionEntry, userSelections, users, groups).usernames;
+  return extractSelectionData(userSelectionEntry, userSelections, groups).usernames;
 };
 
 

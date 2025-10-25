@@ -8,12 +8,12 @@ export const PipelineJobSchema = Schema.Struct({
   failureMessage: Schema.NullOr(Schema.String),
   webPath: Schema.NullOr(Schema.String),
   startedAt: Schema.String
-})
+}).annotations({ identifier: "PipelineJob" })
 
 export const PipelineStageSchema = Schema.Struct({
   name: Schema.String,
-  jobs: Schema.Array(PipelineJobSchema)
-})
+  jobs: Schema.mutable(Schema.Array(PipelineJobSchema))
+}).annotations({ identifier: "PipelineStage" })
 
 export const DiscussionNoteSchema = Schema.Struct({
   id: Schema.String,
@@ -28,20 +28,20 @@ export const DiscussionNoteSchema = Schema.Struct({
     oldLine: Schema.NullOr(Schema.Number),
     oldPath: Schema.NullOr(Schema.String)
   }))
-})
+}).annotations({ identifier: "DiscussionNote" })
 
 export const DiscussionSchema = Schema.Struct({
   id: Schema.String,
   resolved: Schema.Boolean,
   resolvable: Schema.Boolean,
-  notes: Schema.Array(DiscussionNoteSchema)
-})
+  notes: Schema.mutable(Schema.Array(DiscussionNoteSchema))
+}).annotations({ identifier: "Discussion" })
 
 export const GitlabMergeRequestSchema = Schema.Struct({
   id: Schema.String,
   iid: Schema.String,
   title: Schema.String,
-  jiraIssueKeys: Schema.Array(Schema.String),
+  jiraIssueKeys: Schema.mutable(Schema.Array(Schema.String)),
   webUrl: Schema.String,
   sourcebranch: Schema.String,
   targetbranch: Schema.String,
@@ -55,20 +55,20 @@ export const GitlabMergeRequestSchema = Schema.Struct({
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
   state: Schema.String,
-  approvedBy: Schema.Array(Schema.Struct({
+  approvedBy: Schema.mutable(Schema.Array(Schema.Struct({
     id: Schema.String,
     name: Schema.String,
     username: Schema.String
-  })),
+  }))),
   resolvableDiscussions: Schema.Number,
   resolvedDiscussions: Schema.Number,
   unresolvedDiscussions: Schema.Number,
   totalDiscussions: Schema.Number,
-  discussions: Schema.Array(DiscussionSchema),
+  discussions: Schema.mutable(Schema.Array(DiscussionSchema)),
   pipeline: Schema.Struct({
-    stage: Schema.Array(PipelineStageSchema)
+    stage: Schema.mutable(Schema.Array(PipelineStageSchema))
   })
-})
+}).annotations({ identifier: "GitlabMergeRequest" })
 
 const JiraCommentContentTextSchema = Schema.Struct({
   text: Schema.String,
@@ -76,12 +76,12 @@ const JiraCommentContentTextSchema = Schema.Struct({
 })
 
 const JiraCommentContentBlockSchema = Schema.Struct({
-  content: Schema.Array(JiraCommentContentTextSchema),
+  content: Schema.mutable(Schema.Array(JiraCommentContentTextSchema)),
   type: Schema.String
 })
 
 const JiraCommentBodySchema = Schema.Struct({
-  content: Schema.Array(JiraCommentContentBlockSchema),
+  content: Schema.mutable(Schema.Array(JiraCommentContentBlockSchema)),
   type: Schema.String
 })
 
@@ -117,10 +117,10 @@ export const JiraIssueSchema = Schema.Struct({
         name: Schema.String
       })
     }),
-    assignee: Schema.NullOr(Schema.Struct({
+    assignee: Schema.optional(Schema.NullOr(Schema.Struct({
       displayName: Schema.String,
       emailAddress: Schema.String
-    })),
+    }))),
     priority: Schema.Struct({
       name: Schema.String
     }),
@@ -131,15 +131,15 @@ export const JiraIssueSchema = Schema.Struct({
     updated: Schema.String,
     comment: Schema.Struct({
       total: Schema.Number,
-      comments: Schema.Array(JiraCommentSchema)
+      comments: Schema.mutable(Schema.Array(JiraCommentSchema))
     })
   })
-})
+}).annotations({ identifier: "JiraIssue" })
 
 export const MergeRequestSchema = Schema.Struct({
   ...GitlabMergeRequestSchema.fields,
-  jiraIssues: Schema.Array(JiraIssueSchema)
-})
+  jiraIssues: Schema.mutable(Schema.Array(JiraIssueSchema))
+}).annotations({ identifier: "MergeRequest" })
 
 export type PipelineJob = Schema.Schema.Type<typeof PipelineJobSchema>
 export type PipelineStage = Schema.Schema.Type<typeof PipelineStageSchema>

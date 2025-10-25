@@ -1,8 +1,9 @@
 import { Atom } from "@effect-atom/atom"
-import { Effect, Duration, Layer } from "effect"
+import { Effect, Duration } from "effect"
 import * as KeyValueStore from "@effect/platform/KeyValueStore"
 import * as FileSystem from "@effect/platform-node/NodeFileSystem"
-import type * as Schema from "@effect/schema/Schema"
+import * as Schema from "@effect/schema/Schema"
+import { Layer } from "effect"
 
 /**
  * Creates a cached atom with filesystem persistence using Effect schemas
@@ -15,37 +16,37 @@ import type * as Schema from "@effect/schema/Schema"
 export function cachedAtom<A, I, R>(
   cacheKey: string,
   schema: Schema.Schema<A, I, R>,
-  fetch: Effect.Effect<A, unknown, never>,
+  fetch: Effect.Effect<A, any, any>,
   ttl: Duration.DurationInput = Duration.seconds(60)
 ) {
-  const layer = Layer.provide(
-    KeyValueStore.layerFileSystem("debug"),
-    FileSystem.layer
-  )
-
-  const runtime = Atom.runtime(layer)
-
   const fetchWithCache = Effect.gen(function* () {
-    const store = yield* KeyValueStore.KeyValueStore
+    const layer = KeyValueStore.layerFileSystem("debug").pipe(
+      Layer.provide(FileSystem.layer)
+    )
 
-    const schemaStore = store.forSchema(schema)
+    const runnable = Effect.gen(function* () {
+      const store = yield* KeyValueStore.KeyValueStore
+      const schemaStore = store.forSchema(schema as any)
 
-    const cached = yield* Effect.option(schemaStore.get(cacheKey))
+      const cached = yield* Effect.option(schemaStore.get(cacheKey))
 
-    if (cached._tag === "Some") {
-      console.log(`[Cache] Hit: ${cacheKey}`)
-      return cached.value
-    }
+      if (cached._tag === "Some") {
+        console.log(`[Cache] Hit: ${cacheKey}`)
+        return cached.value
+      }
 
-    console.log(`[Cache] Miss: ${cacheKey}`)
-    const fresh = yield* fetch
+      console.log(`[Cache] Miss: ${cacheKey}`)
+      const fresh = yield* fetch
 
-    yield* schemaStore.set(cacheKey, fresh)
+      yield* schemaStore.set(cacheKey, fresh)
 
-    return fresh
+      return fresh
+    })
+
+    return yield* Effect.provide(runnable, layer)
   })
 
-  return runtime.atom(fetchWithCache).pipe(
+  return Atom.make(fetchWithCache).pipe(
     Atom.setIdleTTL(ttl)
   )
 }

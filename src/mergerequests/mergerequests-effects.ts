@@ -3,19 +3,9 @@ import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline } from "../gitlab/gi
 import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
 import { parseRepositoryId } from "../providers/repositoryParser";
 import { loadJiraTickets } from "../jira/jiraService";
-import { loadCache, saveCache } from "../system/diskCache";
 import { type MergeRequestState, getSdk } from "../generated/gitlab-sdk";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
-
-function buildCacheKeys(selectedUserSelectionEntry: string, state: MergeRequestState) {
-  // Sanitize the entry name for use in filenames (replace invalid filename characters)
-  const fixedEntry = selectedUserSelectionEntry
-    .replace(/:/g, '_')
-    .replace(/\//g, '_')
-    .replace(/ /g, '-');
-  return `mrs_${state}_${fixedEntry}`;
-}
 
 function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
   ensurePipelineJobsInSettings(mrs);
@@ -28,14 +18,6 @@ function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): Me
       ),
     }))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-}
-
-function getMrCacheFile(key: string) {
-  return `debug/${key}_gitlab.json`;
-}
-
-function getJiraCacheFile(key: string) {
-  return `debug/${key}_jira.json`;
 }
 
 export async function fetchMergeRequests(
@@ -75,46 +57,6 @@ export async function fetchMergeRequestsByProject(
   return processMrsWithJira(mrs, tickets);
 }
 
-export async function loadMergeRequests(
-  selectedUserSelectionEntry: string,
-  state: MergeRequestState = 'opened'
-): Promise<MergeRequest[]> {
-  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-  const mrCacheFile = getMrCacheFile(mrKey);
-  const jiraCacheFile = getJiraCacheFile(mrKey);
-
-  const mrs = loadCache<GitlabMergeRequest[]>(mrCacheFile) ?? [];
-  const tickets = loadCache<JiraIssue[]>(jiraCacheFile) ?? [];
-
-  return processMrsWithJira(mrs, tickets);
-}
-
-export function getCachedMergeRequests(
-  selectedUserSelectionEntry: string,
-  state: MergeRequestState = 'opened'
-): MergeRequest[] {
-
-  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-  const mrCacheFile = getMrCacheFile(mrKey);
-
-  const cachedMrs = loadCache<GitlabMergeRequest[]>(mrCacheFile);
-  if (!cachedMrs) {
-    console.log(`[MR] No cache found for key: ${mrKey}`);
-    return [];
-  }
-
-  const jiraKeys = Array.from(new Set(cachedMrs.flatMap((mr) => mr.jiraIssueKeys)));
-  let cachedTickets: JiraIssue[] = [];
-  if (jiraKeys.length > 0) {
-    const jiraCacheFile = getJiraCacheFile(mrKey);
-    cachedTickets = loadCache<JiraIssue[]>(jiraCacheFile) ?? [];
-  }
-
-  const result = processMrsWithJira(cachedMrs, cachedTickets);
-  console.log(`[MR] Loaded ${result.length} MRs from cache for key: ${mrKey}`);
-  return result;
-}
-
 export async function refetchMrPipeline(
   selectedUserSelectionEntry: string,
   mrId: string,
@@ -130,25 +72,7 @@ export async function refetchMrPipeline(
     return;
   }
 
-  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-  const mrCacheFile = getMrCacheFile(mrKey);
-
-  const cachedMrs = loadCache<GitlabMergeRequest[]>(mrCacheFile);
-  if (!cachedMrs) {
-    console.log(`[Pipeline] No cache found, cannot update pipeline`);
-    return;
-  }
-
-  const updatedMrs = cachedMrs.map(mr => {
-    if (mr.id === mrId) {
-      console.log(`[Pipeline] Updated pipeline for MR ${iid}`);
-      return { ...mr, pipeline };
-    }
-    return mr;
-  });
-
-  saveCache(mrCacheFile, updatedMrs);
-  console.log(`[Pipeline] Cache updated for MR ${iid}`);
+  console.log(`[Pipeline] Pipeline fetched for MR ${iid}`);
 }
 
 export async function retargetMergeRequest(
@@ -182,23 +106,7 @@ export async function retargetMergeRequest(
       return { success: false, error: errorMsg };
     }
 
-    const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-    const mrCacheFile = getMrCacheFile(mrKey);
-
-    const cachedMrs = loadCache<GitlabMergeRequest[]>(mrCacheFile);
-    if (cachedMrs) {
-      const updatedMrs = cachedMrs.map(mr => {
-        if (mr.id === mrId) {
-          console.log(`[Retarget] Updated target branch for MR ${iid} to ${newTargetBranch}`);
-          return { ...mr, targetbranch: newTargetBranch };
-        }
-        return mr;
-      });
-
-      saveCache(mrCacheFile, updatedMrs);
-      console.log(`[Retarget] Cache updated for MR ${iid}`);
-    }
-
+    console.log(`[Retarget] Successfully updated target branch for MR ${iid} to ${newTargetBranch}`);
     return { success: true };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
