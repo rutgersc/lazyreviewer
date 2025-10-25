@@ -1,5 +1,5 @@
 import { TextAttributes } from "@opentui/core";
-import { type MergeRequest } from "./MergeRequestPane";
+import { type MergeRequest } from "../schemas/mergeRequestSchema";
 import { Colors } from "../colors";
 import { formatCompactTime } from "../utils/formatting";
 import { extractTextFromJiraComment } from "../jira/jiraService";

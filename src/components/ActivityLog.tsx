@@ -1,6 +1,6 @@
 import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { useKeyboard } from '@opentui/react';
-import { type MergeRequest } from "./MergeRequestPane";
+import { type MergeRequest } from "../schemas/mergeRequestSchema";
 import { Colors } from "../colors";
 import { formatCompactTime } from "../utils/formatting";
 import { extractTextFromJiraComment } from "../jira/jiraService";

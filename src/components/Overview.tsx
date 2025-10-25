@@ -5,7 +5,7 @@ import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
-import type { MergeRequest } from './MergeRequestPane';
+import type { MergeRequest } from '../schemas/mergeRequestSchema';
 import type { UserSelectionEntry } from '../userselection/userSelection';
 import { useAppStore } from '../store/appStore';
 import { copyToClipboard } from '../system/clipboard-effect';

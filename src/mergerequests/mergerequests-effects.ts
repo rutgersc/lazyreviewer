@@ -1,8 +1,8 @@
-import type { MergeRequest } from "../components/MergeRequestPane";
-import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline, type GitlabMergeRequest } from "../gitlab/gitlabgraphql";
+import type { MergeRequest, GitlabMergeRequest, JiraIssue } from "../schemas/mergeRequestSchema";
+import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline } from "../gitlab/gitlabgraphql";
 import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
 import { parseRepositoryId } from "../providers/repositoryParser";
-import { loadJiraTickets, type JiraIssue } from "../jira/jiraService";
+import { loadJiraTickets } from "../jira/jiraService";
 import { loadCache, saveCache } from "../system/diskCache";
 import { type MergeRequestState, getSdk } from "../generated/gitlab-sdk";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
@@ -45,16 +45,9 @@ export async function fetchMergeRequests(
 ): Promise<MergeRequest[]> {
   if (selectedUsernames.length === 0) return [];
 
-  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-  const mrCacheFile = getMrCacheFile(mrKey);
-  const jiraCacheFile = getJiraCacheFile(mrKey);
-
   const mrs = await getGitlabMrs(selectedUsernames, state);
   const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
   const tickets = await loadJiraTickets(jiraKeys);
-
-  saveCache(mrCacheFile, mrs);
-  saveCache(jiraCacheFile, tickets);
 
   return processMrsWithJira(mrs, tickets);
 }
@@ -64,10 +57,6 @@ export async function fetchMergeRequestsByProject(
   projectPath: string,
   state: MergeRequestState = 'opened'
 ): Promise<MergeRequest[]> {
-  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-  const mrCacheFile = getMrCacheFile(mrKey);
-  const jiraCacheFile = getJiraCacheFile(mrKey);
-
   // Parse the repository ID to determine provider
   const parsed = parseRepositoryId(projectPath);
   let mrs: GitlabMergeRequest[];
@@ -82,9 +71,6 @@ export async function fetchMergeRequestsByProject(
 
   const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
   const tickets = await loadJiraTickets(jiraKeys);
-
-  saveCache(mrCacheFile, mrs);
-  saveCache(jiraCacheFile, tickets);
 
   return processMrsWithJira(mrs, tickets);
 }

@@ -1,5 +1,5 @@
-import type { MergeRequest } from "../components/MergeRequestPane";
-import { getJobTrace, type PipelineJob } from "./gitlabgraphql";
+import type { MergeRequest, PipelineJob } from "../schemas/mergeRequestSchema";
+import { getJobTrace } from "./gitlabgraphql";
 import { existsSync, writeFileSync, mkdirSync } from "fs"
  import { join } from "path"
   import { execSync } from "child_process"

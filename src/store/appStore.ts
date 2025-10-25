@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { MergeRequest } from '../components/MergeRequestPane';
+import type { MergeRequest } from '../schemas/mergeRequestSchema';
 import type { UserGroup, UserOrGroupId, UserSelection, UserSelectionEntry } from '../userselection/userSelection';
 import { ActivePane } from '../userselection/userSelection';
 import type { BranchDifference } from '../hooks/useRepositoryBranches';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { TextAttributes } from '@opentui/core';
-import type { JiraIssue, JiraComment } from '../jira/jiraService';
-import { extractTextFromJiraComment } from '../jira/jiraService';
+import type { JiraIssue } from '../schemas/mergeRequestSchema';
+import { extractTextFromJiraComment, type JiraComment } from '../jira/jiraService';
 import { formatCompactTime } from '../utils/formatting';
 
 interface JiraIssueInfoProps {

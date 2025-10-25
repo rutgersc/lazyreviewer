@@ -2,7 +2,7 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import JiraIssueInfo from './JiraIssueInfo';
 import { Colors } from '../colors';
-import type { JiraIssue } from '../jira/jiraService';
+import type { JiraIssue } from '../schemas/mergeRequestSchema';
 import { useAppStore } from '../store/appStore';
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/url-effect';

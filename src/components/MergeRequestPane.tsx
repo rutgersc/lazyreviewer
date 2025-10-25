@@ -1,8 +1,7 @@
 import { useState, useMemo } from "react";
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
-import { type JiraIssue } from "../jira/jiraService";
-import { type GitlabMergeRequest, type PipelineStage, type PipelineJob } from "../gitlab/gitlabgraphql";
+import { type JiraIssue, type GitlabMergeRequest, type PipelineStage, type PipelineJob } from "../schemas/mergeRequestSchema";
 import { formatCompactTime } from "../utils/formatting";
 import { copyToClipboard } from "../system/clipboard-effect";
 import { openUrl } from "../system/url-effect";
@@ -392,9 +391,7 @@ const CopyNotificationPopup = ({
     </box>
   ) : null;
 
-export type MergeRequest = GitlabMergeRequest & {
-  jiraIssues: JiraIssue[];
-};
+export type { MergeRequest } from "../schemas/mergeRequestSchema"
 
 export default function MergeRequestPane({}: {}) {
   const setSelectedMergeRequest = useAppStore(

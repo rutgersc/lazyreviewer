@@ -1,5 +1,4 @@
-import type { Discussion, DiscussionNote } from './gitlabgraphql';
-import type { MergeRequest } from '../components/MergeRequestPane';
+import type { Discussion, DiscussionNote, MergeRequest } from '../schemas/mergeRequestSchema';
 
 const formatTimestamp = (date: Date): string => {
   return date.toISOString().replace('T', ' ').substring(0, 19);

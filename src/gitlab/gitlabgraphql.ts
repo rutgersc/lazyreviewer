@@ -1,43 +1,15 @@
 import { GraphQLClient } from "graphql-request"
 import { getSdk, type MRsQuery, type ProjectMRsQuery, type CiJobStatus, type MergeRequestState } from "../generated/gitlab-sdk";
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
+import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest } from "../schemas/mergeRequestSchema";
 
-export interface PipelineJob {
-  id: string;
-  localId: number; // derived state
-  name: string;
-  status: CiJobStatus;
-  failureMessage: string | null;
-  webPath: string | null;
-  startedAt: string
-}
-
-export interface PipelineStage {
-  name: string,
-  jobs: PipelineJob[]
-}
-
-export interface DiscussionNote {
-  id: string;
-  body: string;
-  author: string;
-  createdAt: Date;
-  resolvable: boolean;
-  resolved: boolean;
-  position: {
-    filePath: string | null;
-    newLine: number | null;
-    oldLine: number | null;
-    oldPath: string | null;
-  } | null;
-}
-
-export interface Discussion {
-  id: string;
-  resolved: boolean;
-  resolvable: boolean;
-  notes: DiscussionNote[];
-}
+export type {
+  PipelineJob,
+  PipelineStage,
+  DiscussionNote,
+  Discussion,
+  GitlabMergeRequest
+} from "../schemas/mergeRequestSchema"
 
 export interface JobHistoryEntry {
   jobId: string;
@@ -57,40 +29,6 @@ export interface JobHistoryEntry {
   mergeRequestAuthor: string | null;
 }
 
-export interface GitlabMergeRequest {
-  id: string
-  iid: string
-
-  title: string, // name
-  jiraIssueKeys: string[],
-  webUrl: string
-
-  sourcebranch: string
-  targetbranch: string
-  project: {
-    name: string
-    path: string
-    fullPath: string
-  },
-
-  author: string,
-  avatarUrl: string | null,
-  createdAt: Date,
-  updatedAt: Date,
-
-  state: string,
-  approvedBy: Array<{ id: string; name: string; username: string }>,
-
-  resolvableDiscussions: number,
-  resolvedDiscussions: number,
-  unresolvedDiscussions: number,
-  totalDiscussions: number,
-  discussions: Discussion[],
-
-  pipeline: {
-    stage: PipelineStage[]
-  }
-}
 
 export const getGitlabMrs = async (usernames: string[], state: MergeRequestState = 'opened'): Promise<GitlabMergeRequest[]> => {
   const endpoint = `https://git.elabnext.com/api/graphql`

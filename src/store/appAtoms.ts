@@ -1,10 +1,10 @@
 import { Atom, Registry, Result } from "@effect-atom/atom-react";
-import type { MergeRequest } from "../components/MergeRequestPane";
+import type { MergeRequest } from "../schemas/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { groups, mockUserSelections } from "../data/usersAndGroups";
 import { Effect } from "effect";
 import { extractSelectionData } from "./appStore";
-import { fetchMergeRequests, fetchMergeRequestsByProject } from "../mergerequests/mergerequests-effects";
+import { mrsByUserAtomFamily, mrsByProjectAtomFamily, MRCacheKey, ProjectMRCacheKey } from "./mrCacheAtoms";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 
 
@@ -45,30 +45,31 @@ export const selectedUserSelectionAtom = Atom.make(get =>  {
     return userSelections[index];
 })
 
-const mergeRequestsAtom = Atom.make((get) =>
-  Effect.gen(function* () {
+const mergeRequestsAtom = Atom.make((get) => {
     const selectionEntry = get(selectedUserSelectionAtom);
     if (!selectionEntry) {
-        return [];
+        return Effect.succeed([]);
     }
 
     const filterMrState = get(filterMrStateAtom);
     const { repositories, usernames } = get(expandedSelectedUserSelectionAtom);
 
     if (repositories.length > 0 && repositories[0]) {
-        const repo = repositories[0];
-        const mrs = yield* Effect.tryPromise(
-            () => fetchMergeRequestsByProject(selectionEntry.name, repo, filterMrState));
-        return mrs;
-
+        const cacheKey = new ProjectMRCacheKey({
+            selectionEntry: selectionEntry.name,
+            projectPath: repositories[0],
+            state: filterMrState
+        });
+        return get(mrsByProjectAtomFamily(cacheKey));
     } else if (usernames.length > 0) {
-        const mrs = yield* Effect.tryPromise(
-            () => fetchMergeRequests(selectionEntry.name, usernames, filterMrState));
-
-        return mrs;
+        const cacheKey = new MRCacheKey({
+            selectionEntry: selectionEntry.name,
+            usernames,
+            state: filterMrState
+        });
+        return get(mrsByUserAtomFamily(cacheKey));
     } else {
-        return [];
+        return Effect.succeed([]);
     }
-  })
-)
+})
 

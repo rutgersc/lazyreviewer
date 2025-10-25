@@ -21,6 +21,9 @@
   },
   "dependencies": {
     "@effect-atom/atom-react": "^0.3.4",
+    "@effect/platform": "^0.92.1",
+    "@effect/platform-node": "^0.98.4",
+    "@effect/schema": "^0.75.5",
     "@opentui/core": "^0.1.30",
     "@opentui/react": "^0.1.30",
     "dotenv": "^17.2.3",
