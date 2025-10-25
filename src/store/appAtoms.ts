@@ -21,7 +21,7 @@ export const selectedMrAtom = Atom.make(get =>  {
     if (Result.isResult(mergeRequestsResult)) {
         return Result.match(mergeRequestsResult, {
             onInitial: () => undefined,
-            onSuccess: (success) => (success.value as MergeRequest[])[selectedMrIndex],
+            onSuccess: (success) => success.value[selectedMrIndex],
             onFailure: (failure) => undefined
         });
     }

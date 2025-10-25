@@ -403,8 +403,8 @@ export default function MergeRequestPane({}: {}) {
 
   const mergeRequests: MergeRequest[] = Result.isResult(getMergeRequestsResult)
     ? Result.match(getMergeRequestsResult, {
-        onInitial: () => [] as MergeRequest[],
-        onSuccess: (success) => success.value as MergeRequest[],
+        onInitial: () => [] satisfies MergeRequest[],
+        onSuccess: (success) => success.value satisfies MergeRequest[],
         onFailure: (failure) => {
           console.error('[MergeRequestPane] Failed to load MRs:', failure);
           return [] as MergeRequest[];

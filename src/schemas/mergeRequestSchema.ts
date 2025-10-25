@@ -170,10 +170,11 @@ export const MergeRequestSchema = Schema.Struct({
   jiraIssues: Schema.mutable(Schema.Array(JiraIssueSchema))
 }).annotations({ identifier: "MergeRequest" })
 
+export interface MergeRequest extends Schema.Schema.Type<typeof MergeRequestSchema> {}
+
 export type PipelineJob = Schema.Schema.Type<typeof PipelineJobSchema>
 export type PipelineStage = Schema.Schema.Type<typeof PipelineStageSchema>
 export type DiscussionNote = Schema.Schema.Type<typeof DiscussionNoteSchema>
 export type Discussion = Schema.Schema.Type<typeof DiscussionSchema>
 export type GitlabMergeRequest = Schema.Schema.Type<typeof GitlabMergeRequestSchema>
 export type JiraIssue = Schema.Schema.Type<typeof JiraIssueSchema>
-export type MergeRequest = Schema.Schema.Type<typeof MergeRequestSchema>

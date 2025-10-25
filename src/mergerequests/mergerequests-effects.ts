@@ -7,6 +7,7 @@ import { type MergeRequestState, getSdk } from "../generated/gitlab-sdk";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
 import { Effect } from "effect";
+import type { MRCacheKey, ProjectMRCacheKey } from "../store/mrCacheAtoms";
 
 function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
   ensurePipelineJobsInSettings(mrs);
@@ -20,6 +21,12 @@ function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): Me
     }))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 }
+
+export const fetchMergeRequestsEffect = (key: MRCacheKey) =>
+  Effect.tryPromise({
+    try: () => fetchMergeRequests(key.selectionEntry, key.usernames as string[], key.state),
+    catch: (error) => new Error(`Failed to fetch MRs: ${error}`)
+  });
 
 export async function fetchMergeRequests(
   selectedUserSelectionEntry: string,
@@ -35,10 +42,11 @@ export async function fetchMergeRequests(
   return processMrsWithJira(mrs, tickets);
 }
 
-  // export const fetchMergeRequestsByProjectEffect =  Effect.tryPromise({
-  //   try: () => fetchMergeRequestsByProject(key.selectionEntry, key.projectPath, key.state),
-  //   catch: (error) => new Error(`Failed to fetch project MRs: ${error}`)
-  // })
+export const fetchMergeRequestsByProjectEffect = (key: ProjectMRCacheKey) =>
+  Effect.tryPromise({
+    try: () => fetchMergeRequestsByProject(key.selectionEntry, key.projectPath, key.state),
+    catch: (error) => new Error(`Failed to fetch project MRs: ${error}`)
+  });
 
 export async function fetchMergeRequestsByProject(
   selectedUserSelectionEntry: string,

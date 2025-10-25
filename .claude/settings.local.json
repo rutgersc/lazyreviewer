@@ -7,7 +7,10 @@
       "WebSearch",
       "WebFetch(domain:docs.gitlab.com)",
       "WebFetch(domain:forum.gitlab.com)",
-      "Read(//f/GitRepos/effect-atom/**)"
+      "Read(//f/GitRepos/effect-atom/**)",
+      "Bash(bun add:*)",
+      "Bash(bun remove:*)",
+      "WebFetch(domain:effect.website)"
     ],
     "deny": [],
     "ask": []
