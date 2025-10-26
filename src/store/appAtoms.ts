@@ -10,6 +10,7 @@ import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
+import { LogStorage, type LogEntry } from "../services/logStorage";
 
 
 // const STORE_FILE = 'debug/store.json';
@@ -266,7 +267,13 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, atomContext) =>
   })
 )
 
+// Phase 9: Console Logs
+export const consoleLogsAtom = appAtomRuntime.subscriptionRef(
+  Effect.map(LogStorage, service => service.logsRef)
+)
 
+// Re-export LogEntry type for consumers
+export type { LogEntry }
 
 
 

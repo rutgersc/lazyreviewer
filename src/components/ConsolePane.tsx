@@ -1,61 +1,16 @@
-import { useState, useEffect } from 'react';
 import { TextAttributes } from '@opentui/core';
-
-interface LogEntry {
-  timestamp: string;
-  level: 'info' | 'warn' | 'error' | 'debug';
-  message: string;
-}
+import { useAtomValue } from '@effect-atom/atom-react';
+import { Result } from '@effect-atom/atom-react';
+import { consoleLogsAtom, type LogEntry } from '../store/appAtoms';
 
 export default function ConsolePane({ isActive }: { isActive: boolean }) {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const logsResult = useAtomValue(consoleLogsAtom);
 
-  useEffect(() => {
-    // Capture console.log, console.warn, console.error
-    const originalLog = console.log;
-    const originalWarn = console.warn;
-    const originalError = console.error;
-
-    const addLog = (level: LogEntry['level'], args: any[]) => {
-      const message = args.map(arg =>
-        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-      ).join(' ');
-
-      const logEntry: LogEntry = {
-        timestamp: new Date().toLocaleTimeString(),
-        level,
-        message
-      };
-
-      setLogs(prevLogs => {
-        const newLogs = [...prevLogs, logEntry];
-        // Keep only last 100 log entries
-        return newLogs.slice(-100);
-      });
-    };
-
-    console.log = (...args) => {
-      originalLog(...args);
-      addLog('info', args);
-    };
-
-    console.warn = (...args) => {
-      originalWarn(...args);
-      addLog('warn', args);
-    };
-
-    console.error = (...args) => {
-      originalError(...args);
-      addLog('error', args);
-    };
-
-    // Cleanup on unmount
-    return () => {
-      console.log = originalLog;
-      console.warn = originalWarn;
-      console.error = originalError;
-    };
-  }, []);
+  const logs = Result.match(logsResult, {
+    onInitial: () => [],
+    onSuccess: (success) => success.value,
+    onFailure: () => []
+  });
 
   const getLogColor = (level: LogEntry['level']) => {
     switch (level) {
