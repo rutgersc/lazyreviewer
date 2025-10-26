@@ -16,7 +16,9 @@ const mergeRequestStorageLayer = MergeRequestStorage.Default.pipe(
   Layer.provide(cacheLayer)
 )
 
-const logStorageLayer = LogStorage.Default
+const logStorageLayer = LogStorage.Default.pipe(
+  Layer.provide(fileSystemLayer)
+)
 
 const consoleLoggedLayer = ConsoleLogged.pipe(
   Layer.provide(logStorageLayer),
