@@ -69,10 +69,10 @@ git commit -m "[Migration Phase X.Y] Description"
 
 ### **Phase 3: Static/Simple Data** (0 dependencies)
 **Group: User Configuration**
-- [ ] 3.1: `groups` → `groupsAtom` (static)
-- [ ] 3.2: `users` → `usersAtom` (static)
-- [ ] 3.3: `currentUser` → `currentUserAtom` with Atom.kvs persistence
-- [ ] 3.4: Remove migrated state from Zustand store
+- [x] 3.1: `groups` → `groupsAtom` (static)
+- [x] 3.2: `users` → `usersAtom` (static)
+- [x] 3.3: `currentUser` → `currentUserAtom` with Atom.kvs persistence
+- [x] 3.4: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/store/appStore.ts` (extractSelectionData uses groups)
@@ -212,6 +212,6 @@ Phase 9 (Cleanup)           → Requires: All phases 1-8 complete
 
 ## Progress Tracking
 
-**Completed Phases:** 2/9 (Phase 1 & 2 complete)
+**Completed Phases:** 3/9 (Phase 1, 2 & 3 complete)
 
 Last Updated: 2025-01-26
