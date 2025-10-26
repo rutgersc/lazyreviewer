@@ -9,8 +9,8 @@ import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 import { useScrollBox } from '../hooks/useScrollBox';
-import { useAtomSet } from '@effect-atom/atom-react';
-import { activePaneAtom } from '../store/appAtoms';
+import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { activePaneAtom, activeModalAtom } from '../store/appAtoms';
 
 interface InfoPaneProps {
   activePane: ActivePane;
@@ -25,12 +25,12 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
 
 export default function InfoPane({ activePane }: InfoPaneProps) {
   const setActivePane = useAtomSet(activePaneAtom);
+  const activeModal = useAtomValue(activeModalAtom);
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const selectedJiraIndex = useAppStore(state => state.selectedJiraIndex);
   const selectedJiraSubIndex = useAppStore(state => state.selectedJiraSubIndex);
   const selectedDiscussionIndex = useAppStore(state => state.selectedDiscussionIndex);
   const selectedActivityIndex = useAppStore(state => state.selectedActivityIndex);
-  const activeModal = useAppStore(state => state.activeModal);
 
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const selectedUserSelectionEntry = useAppStore(state => state.userSelections[state.selectedUserSelectionEntry]);

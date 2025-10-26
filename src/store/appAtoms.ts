@@ -3,7 +3,7 @@ import type { MergeRequest } from "../schemas/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane } from "../userselection/userSelection";
 import { groups, mockUserSelections } from "../data/usersAndGroups";
-import { extractSelectionData } from "./appStore";
+import { extractSelectionData, type ActiveModal } from "./appStore";
 import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { Effect } from "effect";
@@ -33,6 +33,7 @@ export const filterMrStateAtom = Atom.make<MergeRequestState>('opened');
 
 // Phase 1: UI Navigation State
 export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);
+export const activeModalAtom = Atom.make<ActiveModal>('none');
 
 export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
     const userSelections = get(userSelectionsAtom);
