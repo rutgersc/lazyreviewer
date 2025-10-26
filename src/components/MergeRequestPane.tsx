@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { type MergeRequest, type JiraIssue, type GitlabMergeRequest, type PipelineStage, type PipelineJob } from "../schemas/mergeRequestSchema";
@@ -17,7 +17,7 @@ import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom } from "../store/appAtoms";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -394,6 +394,24 @@ const CopyNotificationPopup = ({
 
 export type { MergeRequest } from "../schemas/mergeRequestSchema"
 
+const Spinner = () => {
+  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrameIndex((prev) => (prev + 1) % frames.length);
+    }, 80);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }}>
+      {frames[frameIndex]}
+    </text>
+  );
+};
+
 export default function MergeRequestPane({}: {}) {
   const setSelectedMergeRequest = useAppStore(
     (state) => state.setSelectedMergeRequest
@@ -401,6 +419,8 @@ export default function MergeRequestPane({}: {}) {
   const selectedIndex = useAppStore((state) => state.selectedMergeRequest);
 
   const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
+  const refreshResult = useAtomValue(refreshMergeRequestsAtom);
+  const isRefreshing = Result.isWaiting(refreshResult);
 
   const [getSelectedMRIndex, setSelectedMRIndex] = useAtom(selectedMrIndexAtom);
 
@@ -653,6 +673,15 @@ export default function MergeRequestPane({}: {}) {
         }}
         isActive={isActive}
       />
+
+      {isRefreshing && (
+        <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+          <Spinner />
+          <text style={{ fg: Colors.INFO }}>
+            Refreshing merge requests...
+          </text>
+        </box>
+      )}
 
       {/* <box style={{ flexDirection: "row", alignItems: "center", gap: 0, marginBottom: 0 }}>
         {sharedTicketDisplay}

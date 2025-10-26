@@ -2,7 +2,7 @@ import { describe, test, expect } from "bun:test";
 import { Effect, Layer, Schema } from "effect";
 import { MergeRequestSchema } from "../schemas/mergeRequestSchema";
 import { fetchMergeRequestsEffect } from "../mergerequests/mergerequests-effects";
-import { MRCacheKey } from "../store/mrCacheAtoms";
+import { MRCacheKey } from "../mergerequests/mergerequests-caching-effects";
 import * as KeyValueStore from "@effect/platform/KeyValueStore";
 import * as FileSystem from "@effect/platform-node/NodeFileSystem";
 import * as Path from "@effect/platform-node/NodePath";

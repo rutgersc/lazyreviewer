@@ -14,8 +14,8 @@ import { type MergeRequestState } from '../generated/gitlab-sdk';
 import { loadSettings, saveSettings } from '../settings/settings';
 import { fetchJobHistory, type JobHistoryEntry } from '../gitlab/gitlabgraphql';
 import type * as AtomRegistry from '@effect-atom/atom/Registry';
-import type { CacheKey } from './mrCacheAtoms';
-import { MRCacheKey, ProjectMRCacheKey } from './mrCacheAtoms';
+import type { CacheKey } from '../mergerequests/mergerequests-caching-effects';
+import { MRCacheKey, ProjectMRCacheKey } from '../mergerequests/mergerequests-caching-effects';
 
 export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
 

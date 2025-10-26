@@ -1,13 +1,12 @@
-import { Atom, Registry, Result } from "@effect-atom/atom-react";
+import { Atom, Result } from "@effect-atom/atom-react";
 import type { MergeRequest } from "../schemas/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { groups, mockUserSelections } from "../data/usersAndGroups";
 import { extractSelectionData } from "./appStore";
-import { mrsByUserAtomFamily, mrsByProjectAtomFamily, MRCacheKey, ProjectMRCacheKey, type CacheKey, invalidateUserMRsCache, invalidateProjectMRsCache, atomRuntime } from "./mrCacheAtoms";
+import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
-import type { PlatformError } from "@effect/platform/Error";
-import type { ParseError } from "effect/ParseResult";
-import { Console, Effect, Layer } from "effect";
+import { Effect } from "effect";
+import { appAtomRuntime } from "./appLayerRuntime";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -40,7 +39,18 @@ export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
     return extractSelectionData(selectionEntry, groups, filterMrState);
 })
 
+const mrsByUserAtomFamily = Atom.family((key: MRCacheKey) => {
+    const atom = appAtomRuntime.atom(fetchUserMRsWithCache(key));
+    return atom.pipe(Atom.setLazy(false), Atom.keepAlive);
+});
+
+const mrsByProjectAtomFamily = Atom.family((key: ProjectMRCacheKey) => {
+    const atom = appAtomRuntime.atom(fetchProjectMRsWithCache(key));
+    return atom.pipe(Atom.setLazy(false), Atom.keepAlive);
+})
+
 export const mergeRequestsAtom = Atom.make((get): Result.Result<readonly MergeRequest[], unknown>  => {
+
     const cacheKey = get(mergeRequestsKeyAtom);
     switch (cacheKey?._tag) {
         case undefined:
@@ -63,20 +73,26 @@ export const unwrappedMergeRequestsAtom = Atom.map(
     }
 )
 
-export const refreshMergeRequestsAtom = atomRuntime.fn((cacheKey: CacheKey | undefined, atomContext) =>
+export const refreshMergeRequestsAtom = appAtomRuntime.fn((cacheKey: CacheKey | undefined, atomContext) =>
   Effect.gen(function* () {
     if (!cacheKey) return
 
+    // Force refresh fetches new data and updates cache WITHOUT clearing it first
+    // This keeps old data visible while new data loads
     switch (cacheKey._tag) {
       case "ProjectMRs":
-        yield* invalidateProjectMRsCache(cacheKey)
+        yield* forceRefreshProjectMRsCache(cacheKey)
         break
       case "UserMRs":
-        yield* invalidateUserMRsCache(cacheKey)
+        yield* forceRefreshUserMRsCache(cacheKey)
         break
     }
 
+    // Refresh the atom to read the newly updated cache
     atomContext.refresh(mergeRequestsKeyAtom)
   })
 )
+
+
+
 

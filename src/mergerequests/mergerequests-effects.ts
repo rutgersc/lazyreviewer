@@ -7,7 +7,7 @@ import { type MergeRequestState, getSdk } from "../generated/gitlab-sdk";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
 import { Effect } from "effect";
-import type { MRCacheKey, ProjectMRCacheKey } from "../store/mrCacheAtoms";
+import type { MRCacheKey, ProjectMRCacheKey } from "./mergerequests-caching-effects";
 
 function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
   ensurePipelineJobsInSettings(mrs);
