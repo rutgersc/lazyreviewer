@@ -6,7 +6,6 @@ import { formatCompactTime } from "../utils/formatting";
 import { copyToClipboard } from "../system/clipboard-effect";
 import { openUrl } from "../system/url-effect";
 import { getJobStatusDisplay } from "../gitlab/jobStatus";
-import { useAppStore } from "../store/appStore";
 import { ActivePane } from "../userselection/userSelection";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { Colors } from "../colors";

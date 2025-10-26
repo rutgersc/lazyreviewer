@@ -3,7 +3,6 @@ import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import type { UserSelectionEntry } from '../userselection/userSelection';
 import { ActivePane } from '../userselection/userSelection';
-import { useAppStore } from '../store/appStore';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { Colors } from '../colors';
 import { selectedUserSelectionEntryAtom, activePaneAtom, userSelectionsAtom } from '../store/appAtoms';

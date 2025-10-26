@@ -1,17 +1,40 @@
 import { Atom, Result } from "@effect-atom/atom-react";
 import type { MergeRequest } from "../schemas/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
-import { ActivePane } from "../userselection/userSelection";
+import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { extractSelectionData, type ActiveModal, type InfoPaneTab } from "./appStore";
 import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { Effect } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
-import { fetchJobHistory } from '../gitlab/gitlabgraphql';
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
+
+
+// const STORE_FILE = 'debug/store.json';
+// const fileStorage = createJSONStorage(() => ({
+//   getItem: () => (existsSync(STORE_FILE) ? readFileSync(STORE_FILE, 'utf8') : null),
+//   setItem: (_name, value) => {
+//     const dir = dirname(STORE_FILE);
+//     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+//     writeFileSync(STORE_FILE, value, 'utf8');
+//   },
+//   removeItem: () => { try { unlinkSync(STORE_FILE); } catch { /* noop */ } },
+// }));
+
+
+export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
+
+export type ActiveModal =
+  | 'none'
+  | 'mrFilter'
+  | 'gitSwitch'
+  | 'help'
+  | 'jira'
+  | 'retarget'
+  | 'jobHistory'
+  | 'eventLog';
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -215,9 +238,13 @@ export const unwrappedMergeRequestsAtom = Atom.map(
     }
 )
 
-export const refreshMergeRequestsAtom = appAtomRuntime.fn((cacheKey: CacheKey | undefined, atomContext) =>
+export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, atomContext) =>
   Effect.gen(function* () {
-    if (!cacheKey) return
+
+    const cacheKey = atomContext(mergeRequestsKeyAtom);
+    if (!cacheKey) {
+      return;
+    }
 
     // Force refresh fetches new data and updates cache WITHOUT clearing it first
     // This keeps old data visible while new data loads
@@ -230,6 +257,10 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((cacheKey: CacheKey | 
         break
     }
 
+    // fetchBranchDifferences(mrs).then(differences => {
+    //   set({ branchDifferences: differences });
+    // });
+
     // Refresh the atom to read the newly updated cache
     atomContext.refresh(mergeRequestsKeyAtom)
   })
@@ -238,3 +269,32 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((cacheKey: CacheKey | 
 
 
 
+
+
+const fetchJobHistoryForSelectedJob = async (selectedPipelineJobIndex: number) => {
+    //   const state = get();
+    //   const selectedMr = state.mergeRequests[state.selectedMergeRequest];
+    //   if (!selectedMr) {
+    //     console.log('[JobHistory] No MR selected');
+    //     return;
+    //   }
+
+    //   const jobs = selectedMr.pipeline.stage.flatMap(stage => stage.jobs);
+    //   const selectedJob = jobs[selectedPipelineJobIndex];
+    //   if (!selectedJob) {
+    //     console.log('[JobHistory] No job selected');
+    //     return;
+    //   }
+
+    //   try {
+    //     const history = await fetchJobHistory(
+    //       selectedMr.project.fullPath,
+    //       selectedJob.name,
+    //       15
+    //     );
+    //     console.log('[JobHistory] Fetched history:', history);
+    //   } catch (error) {
+    //     console.error('[JobHistory] Failed to fetch job history:', error);
+    //   }
+
+    };

@@ -12,35 +12,21 @@ import RetargetModal from "./components/RetargetModal";
 import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
 import { ActivePane } from "./userselection/userSelection";
-import { useAppStore } from "./store/appStore";
 import { useEffect, useState } from 'react';
 import { type MergeRequestState } from "./generated/gitlab-sdk";
 import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
-import { useAtom, useAtomValue, useAtomSet, RegistryContext } from '@effect-atom/atom-react';
-import { filterMrStateAtom, mergeRequestsKeyAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom } from './store/appAtoms';
-import { setAtomRegistry } from './store/appStore';
-import { useContext } from 'react';
-import { Exit } from 'effect';
+import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { filterMrStateAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom } from './store/appAtoms';
 
 export default function App() {
-  const registry = useContext(RegistryContext);
-
-  // Initialize the atom registry so Zustand can update atoms
-  useEffect(() => {
-    setAtomRegistry(registry);
-  }, [registry]);
-
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
-  const mergeRequestsKey = useAtomValue(mergeRequestsKeyAtom);
 
   const renderer = useRenderer();
   const [activePane, setActivePane] = useAtom(activePaneAtom);
   const [activeModal, setActiveModal] = useAtom(activeModalAtom);
   const cycleInfoPaneTab = useAtomSet(cycleInfoPaneTabAtom);
-
-  const loadMrs = useAppStore(state => state.loadMrs);
 
   const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
   const [selectedIndex] = useAtom(selectedMrIndexAtom);
@@ -51,9 +37,7 @@ export default function App() {
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
 
   useEffect(() => {
-
-        renderer.console.toggle();
-    loadMrs();
+      renderer.console.toggle();
   }, []);
 
   const handleStateSelect = async (newState: MergeRequestState) => {
@@ -93,7 +77,7 @@ export default function App() {
         if (key.ctrl) {
           openSettingsFile();
         } else {
-          const mr = await refreshMergeRequests(mergeRequestsKey);
+          const mr = await refreshMergeRequests();
           console.log(mr)
         }
         break;

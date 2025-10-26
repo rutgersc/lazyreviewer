@@ -3,7 +3,6 @@ import { useKeyboard } from '@opentui/react';
 import { Colors } from '../colors';
 import { getJobStatusDisplay } from '../gitlab/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
-import { useAppStore } from '../store/appStore';
 import { ActivePane } from '../userselection/userSelection';
 import { loadJobLog } from '../gitlab/pipelinejob-log';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
@@ -21,7 +20,6 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const [, setSelectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
   const selectedMergeRequest = useAtomValue(selectedMrAtom);
-  const fetchJobHistoryForSelectedJob = useAppStore(state => state.fetchJobHistoryForSelectedJob);
   const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
   const setJobHistoryLoading = useAtomSet(jobHistoryLoadingAtom);
   const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
@@ -48,9 +46,10 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
         break;
       case 'y':
         if (pipelineJobs[selectedPipelineJobIndex]) {
-          fetchJobHistoryForSelectedJob(selectedPipelineJobIndex).then(() => {
-            setActiveModal('jobHistory');
-          });
+          throw new Error("reimplement with atoms")
+          // fetchJobHistoryForSelectedJob(selectedPipelineJobIndex).then(() => {
+          //   setActiveModal('jobHistory');
+          // });
         }
         break;
     }

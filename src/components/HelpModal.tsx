@@ -3,12 +3,11 @@ import { useKeyboard, useRenderer } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
-import { type InfoPaneTab, useAppStore } from '../store/appStore';
 import { openSettingsFile } from '../settings/settings';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { openUrl } from '../system/url-effect';
 import { getScroller } from '../hooks/useScrollBox';
-import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, toggleIgnoreMergeRequestAtom } from '../store/appAtoms';
+import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, toggleIgnoreMergeRequestAtom, type InfoPaneTab, refetchSelectedMrPipelineAtom, refreshMergeRequestsAtom } from '../store/appAtoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 
 interface HelpModalProps {
@@ -195,18 +194,19 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
   const setActiveModal = useAtomSet(activeModalAtom);
   const cycleInfoPaneTab = useAtomSet(cycleInfoPaneTabAtom);
 
-  const fetchMrs = useAppStore(state => state.fetchMrs);
-  const loadMrs = useAppStore(state => state.loadMrs);
   const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
   const selectedMrIndex = useAtomValue(selectedMrIndexAtom);
   const toggleIgnoreMergeRequest = useAtomSet(toggleIgnoreMergeRequestAtom);
 
+  const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' })
+
   // Build help modal actions
   const actions: HelpModalActions = {
     // Global actions
-    onRefresh: () => {
+    onRefresh: async () => {
       setActiveModal('none');
-      fetchMrs();
+      const mr = await refreshMergeRequests();
+      console.log(mr)
     },
     onOpenSettings: () => {
       setActiveModal('none');
@@ -299,7 +299,6 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
     // User Selection Pane actions
     onSelectEntry: () => {
       setActiveModal('none');
-      loadMrs();
     },
     onResetHighlight: () => {
       setActiveModal('none');
