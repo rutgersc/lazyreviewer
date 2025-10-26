@@ -154,8 +154,8 @@ git commit -m "[Migration Phase X.Y] Description"
 
 ### **Phase 8: Git State** (0 dependencies)
 **Group: Git Branch State**
-- [ ] 8.1: `lastTargetBranch` → `lastTargetBranchAtom` with Atom.kvs persistence
-- [ ] 8.2: Remove migrated state from Zustand store
+- [x] 8.1: `lastTargetBranch` → `lastTargetBranchAtom` with Atom.kvs persistence
+- [x] 8.2: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/components/RetargetModal.tsx`
@@ -212,6 +212,6 @@ Phase 9 (Cleanup)           → Requires: All phases 1-8 complete
 
 ## Progress Tracking
 
-**Completed Phases:** 7/9 (Phase 1, 2, 3, 4, 5, 6 & 7 complete)
+**Completed Phases:** 8/9 (Phase 1, 2, 3, 4, 5, 6, 7 & 8 complete)
 
 Last Updated: 2025-01-26
