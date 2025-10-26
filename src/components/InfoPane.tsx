@@ -10,7 +10,7 @@ import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 import { useScrollBox } from '../hooks/useScrollBox';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
-import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../store/appAtoms';
+import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, selectedDiscussionIndexAtom, selectedActivityIndexAtom, selectedPipelineJobIndexAtom } from '../store/appAtoms';
 
 interface InfoPaneProps {
   activePane: ActivePane;
@@ -27,8 +27,9 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
   const setActivePane = useAtomSet(activePaneAtom);
   const activeModal = useAtomValue(activeModalAtom);
   const [infoPaneTab, setInfoPaneTab] = useAtom(infoPaneTabAtom);
-  const selectedDiscussionIndex = useAppStore(state => state.selectedDiscussionIndex);
-  const selectedActivityIndex = useAppStore(state => state.selectedActivityIndex);
+  const [selectedDiscussionIndex] = useAtom(selectedDiscussionIndexAtom);
+  const [selectedActivityIndex] = useAtom(selectedActivityIndexAtom);
+  const [selectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
 
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const selectedUserSelectionEntry = useAppStore(state => state.userSelections[state.selectedUserSelectionEntry]);
@@ -84,7 +85,6 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
           activePane={activePane}
           selectedMergeRequest={selectedMergeRequest}
           selectedUserSelectionEntry={selectedUserSelectionEntry}
-          selectedDiscussionIndex={selectedDiscussionIndex}
         />;
 
       case 'jira':
@@ -97,6 +97,7 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
         return <PipelineJobsList
           activePane={activePane}
           pipelineJobs={pipelineJobs}
+          selectedPipelineJobIndex={selectedPipelineJobIndex}
         />;
 
       case 'activity':
@@ -113,8 +114,7 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
         return <ActivityLog
           activePane={activePane}
           mergeRequest={selectedMergeRequest}
-          columns={['time', 'eventType', 'eventDetails']}
-          selectedActivityIndex={selectedActivityIndex} />;
+          columns={['time', 'eventType', 'eventDetails']} />;
 
     }
   };

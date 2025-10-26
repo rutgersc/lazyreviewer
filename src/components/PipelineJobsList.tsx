@@ -6,22 +6,22 @@ import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 import { useAppStore } from '../store/appStore';
 import { ActivePane } from '../userselection/userSelection';
 import { loadJobLog } from '../gitlab/pipelinejob-log';
-import { useAtomValue } from '@effect-atom/atom-react';
-import { infoPaneTabAtom } from '../store/appAtoms';
+import { useAtom, useAtomValue } from '@effect-atom/atom-react';
+import { infoPaneTabAtom, selectedPipelineJobIndexAtom } from '../store/appAtoms';
 
 interface PipelineJobsListProps {
   activePane: ActivePane;
   pipelineJobs: Array<{ stage: PipelineStage; job: PipelineJob }>;
+  selectedPipelineJobIndex: number;
 }
 
-export default function PipelineJobsList({ activePane, pipelineJobs }: PipelineJobsListProps) {
+export default function PipelineJobsList({ activePane, pipelineJobs, selectedPipelineJobIndex }: PipelineJobsListProps) {
   const activeModal = useAppStore(state => state.activeModal);
   const setActiveModal = useAppStore(state => state.setActiveModal);
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
-  const setSelectedPipelineJobIndex = useAppStore(state => state.setSelectedPipelineJobIndex);
+  const [, setSelectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const fetchJobHistoryForSelectedJob = useAppStore(state => state.fetchJobHistoryForSelectedJob);
-  const selectedPipelineJobIndex = useAppStore(state => state.selectedPipelineJobIndex);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;

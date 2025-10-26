@@ -10,25 +10,23 @@ import type { UserSelectionEntry } from '../userselection/userSelection';
 import { useAppStore } from '../store/appStore';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { formatDiscussionsForClipboard } from '../gitlab/gitlabDiscussionFormatter';
-import { useAtomValue } from '@effect-atom/atom-react';
-import { infoPaneTabAtom } from '../store/appAtoms';
+import { useAtom, useAtomValue } from '@effect-atom/atom-react';
+import { infoPaneTabAtom, selectedDiscussionIndexAtom } from '../store/appAtoms';
 
 interface OverviewProps {
   activePane: ActivePane;
   selectedMergeRequest: MergeRequest | undefined;
   selectedUserSelectionEntry: UserSelectionEntry | undefined;
-  selectedDiscussionIndex: number;
 }
 
 export default function Overview({
   activePane,
   selectedMergeRequest,
-  selectedUserSelectionEntry,
-  selectedDiscussionIndex
+  selectedUserSelectionEntry
 }: OverviewProps) {
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const activeModal = useAppStore(state => state.activeModal);
-  const setSelectedDiscussionIndex = useAppStore(state => state.setSelectedDiscussionIndex);
+  const [selectedDiscussionIndex, setSelectedDiscussionIndex] = useAtom(selectedDiscussionIndexAtom);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
   const unresolvedDiscussions = selectedMergeRequest?.discussions.filter(d => d.resolvable && !d.resolved) || [];

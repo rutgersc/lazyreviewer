@@ -10,8 +10,8 @@ import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/url-effect';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { loadJobLog } from '../gitlab/pipelinejob-log';
-import { useAtomValue } from "@effect-atom/atom-react";
-import { infoPaneTabAtom } from "../store/appAtoms";
+import { useAtom, useAtomValue } from "@effect-atom/atom-react";
+import { infoPaneTabAtom, selectedActivityIndexAtom } from "../store/appAtoms";
 
 type EventType =
   | 'mr_created'
@@ -43,7 +43,6 @@ interface ActivityLogProps {
   activePane: ActivePane;
   mergeRequest: MergeRequest;
   columns: ColumnType[];
-  selectedActivityIndex?: number;
 }
 
 const getMrColor = (mrId: string): string => {
@@ -235,10 +234,10 @@ const formatEventDetails = (event: Event): string => {
   }
 };
 
-export default function ActivityLog({ activePane, mergeRequest, columns, selectedActivityIndex = -1 }: ActivityLogProps) {
+export default function ActivityLog({ activePane, mergeRequest, columns }: ActivityLogProps) {
   const activeModal = useAppStore(state => state.activeModal);
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
-  const setSelectedActivityIndex = useAppStore(state => state.setSelectedActivityIndex);
+  const [selectedActivityIndex, setSelectedActivityIndex] = useAtom(selectedActivityIndexAtom);
 
   const events = extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
