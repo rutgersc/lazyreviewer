@@ -8,6 +8,8 @@ import { openSettingsFile } from '../settings/settings';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { openUrl } from '../system/url-effect';
 import { getScroller } from '../hooks/useScrollBox';
+import { cycleInfoPaneTabAtom } from '../store/appAtoms';
+import { useAtomSet } from '@effect-atom/atom-react';
 
 interface HelpModalProps {
   isVisible: boolean;
@@ -191,7 +193,8 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
   const infoPaneTab = useAppStore(state => state.infoPaneTab);
   const setActivePane = useAppStore(state => state.setActivePane);
   const setActiveModal = useAppStore(state => state.setActiveModal);
-  const cycleInfoPaneTab = useAppStore(state => state.cycleInfoPaneTab);
+  const cycleInfoPaneTab = useAtomSet(cycleInfoPaneTabAtom);
+
   const fetchMrs = useAppStore(state => state.fetchMrs);
   const loadMrs = useAppStore(state => state.loadMrs);
   const mergeRequests = useAppStore(state => state.mergeRequests);
