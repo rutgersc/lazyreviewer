@@ -60,9 +60,9 @@ git commit -m "[Migration Phase X.Y] Description"
 **Group: Detail Pane Selections**
 - [x] 2.1: `selectedJiraIndex` → `selectedJiraIndexAtom`
 - [x] 2.2: `selectedJiraSubIndex` → `selectedJiraSubIndexAtom`
-- [ ] 2.3: `selectedDiscussionIndex` → `selectedDiscussionIndexAtom`
-- [ ] 2.4: `selectedActivityIndex` → `selectedActivityIndexAtom`
-- [ ] 2.5: `selectedPipelineJobIndex` → `selectedPipelineJobIndexAtom`
+- [x] 2.3: `selectedDiscussionIndex` → `selectedDiscussionIndexAtom`
+- [x] 2.4: `selectedActivityIndex` → `selectedActivityIndexAtom`
+- [x] 2.5: `selectedPipelineJobIndex` → `selectedPipelineJobIndexAtom`
 
 **Files to Update:**
 - `src/components/InfoPane.tsx` (all selection indices)
@@ -211,6 +211,6 @@ Phase 9 (Cleanup)           → Requires: All phases 1-8 complete
 
 ## Progress Tracking
 
-**Completed Phases:** 0/9
+**Completed Phases:** 1/9 (Phase 2 complete)
 
 Last Updated: 2025-01-26
