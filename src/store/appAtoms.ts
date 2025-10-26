@@ -1,6 +1,7 @@
 import { Atom, Result } from "@effect-atom/atom-react";
 import type { MergeRequest } from "../schemas/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
+import { ActivePane } from "../userselection/userSelection";
 import { groups, mockUserSelections } from "../data/usersAndGroups";
 import { extractSelectionData } from "./appStore";
 import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
@@ -29,6 +30,9 @@ export const userSelectionsAtom = Atom.make<UserSelectionEntry[]>(mockUserSelect
 export const selectedUserSelectionEntryAtom = Atom.make<number>(0);
 
 export const filterMrStateAtom = Atom.make<MergeRequestState>('opened');
+
+// Phase 1: UI Navigation State
+export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);
 
 export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
     const userSelections = get(userSelectionsAtom);

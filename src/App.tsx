@@ -19,7 +19,7 @@ import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet, RegistryContext } from '@effect-atom/atom-react';
-import { filterMrStateAtom, mergeRequestsKeyAtom, refreshMergeRequestsAtom } from './store/appAtoms';
+import { filterMrStateAtom, mergeRequestsKeyAtom, refreshMergeRequestsAtom, activePaneAtom } from './store/appAtoms';
 import { setAtomRegistry } from './store/appStore';
 import { useContext } from 'react';
 import { Exit } from 'effect';
@@ -36,8 +36,7 @@ export default function App() {
   const mergeRequestsKey = useAtomValue(mergeRequestsKeyAtom);
 
   const renderer = useRenderer();
-  const activePane = useAppStore(state => state.activePane);
-  const setActivePane = useAppStore(state => state.setActivePane);
+  const [activePane, setActivePane] = useAtom(activePaneAtom);
   const activeModal = useAppStore(state => state.activeModal);
   const setActiveModal = useAppStore(state => state.setActiveModal);
   const cycleInfoPaneTab = useAppStore(state => state.cycleInfoPaneTab);

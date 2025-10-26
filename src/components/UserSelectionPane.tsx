@@ -6,14 +6,14 @@ import { ActivePane } from '../userselection/userSelection';
 import { useAppStore } from '../store/appStore';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { Colors } from '../colors';
-import { selectedUserSelectionEntryAtom } from '../store/appAtoms';
-import { useAtomSet } from '@effect-atom/atom-react';
+import { selectedUserSelectionEntryAtom, activePaneAtom } from '../store/appAtoms';
+import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 
 interface UserSelectionPaneProps {
 }
 
 export default function UserSelectionPane({ }: UserSelectionPaneProps) {
-  const activePane = useAppStore(state => state.activePane);
+  const activePane = useAtomValue(activePaneAtom);
   const selectedUserSelectionEntry = useAppStore(state => state.selectedUserSelectionEntry);
   const userSelections = useAppStore(state => state.userSelections);
 

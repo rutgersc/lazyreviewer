@@ -17,7 +17,7 @@ import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom } from "../store/appAtoms";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -424,7 +424,7 @@ export default function MergeRequestPane({}: {}) {
 
   const [getSelectedMRIndex, setSelectedMRIndex] = useAtom(selectedMrIndexAtom);
 
-  const activePane = useAppStore((state) => state.activePane);
+  const [activePane, setActivePane] = useAtom(activePaneAtom);
   const activeModal = useAppStore((state) => state.activeModal);
   const setActiveModal = useAppStore((state) => state.setActiveModal);
   const [filterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
@@ -432,7 +432,6 @@ export default function MergeRequestPane({}: {}) {
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
   const toggleSeenMergeRequest = useAppStore((state) => state.toggleSeenMergeRequest);
   const ignoredMergeRequests = useAppStore((state) => state.ignoredMergeRequests);
-  const setActivePane = useAppStore((state) => state.setActivePane);
   const refetchSelectedMrPipeline = useAppStore((state) => state.refetchSelectedMrPipeline);
 
   const isActive = activePane === ActivePane.MergeRequests;

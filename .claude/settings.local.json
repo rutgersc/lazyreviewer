@@ -11,7 +11,9 @@
       "Bash(bun add:*)",
       "Bash(bun remove:*)",
       "WebFetch(domain:effect.website)",
-      "WebFetch(domain:effect-ts.github.io)"
+      "WebFetch(domain:effect-ts.github.io)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
