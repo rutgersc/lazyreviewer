@@ -139,9 +139,9 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
 const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }> }) => {
   const currentUser = useAtomValue(currentUserAtom);
   const seenMergeRequestsResult = useAtomValue(seenMergeRequestsAtom);
-  const seenMergeRequests = Result.match(seenMergeRequestsResult, {
+  const seenMergeRequests: Set<string> = Result.match(seenMergeRequestsResult, {
     onInitial: () => new Set<string>(),
-    onSuccess: (success) => success.value,
+    onSuccess: (success) => success.value as Set<string>,
     onFailure: () => new Set<string>()
   });
   const isApprovedByMe = mr.approvedBy.some(approver => approver.username === currentUser);
@@ -434,9 +434,9 @@ export default function MergeRequestPane({}: {}) {
   const toggleIgnoreMergeRequest = useAtomSet(toggleIgnoreMergeRequestAtom);
   const toggleSeenMergeRequest = useAtomSet(toggleSeenMergeRequestAtom);
   const ignoredMergeRequestsResult = useAtomValue(ignoredMergeRequestsAtom);
-  const ignoredMergeRequests = Result.match(ignoredMergeRequestsResult, {
+  const ignoredMergeRequests: Set<string> = Result.match(ignoredMergeRequestsResult, {
     onInitial: () => new Set<string>(),
-    onSuccess: (success) => success.value,
+    onSuccess: (success) => success.value as Set<string>,
     onFailure: () => new Set<string>()
   });
   const refetchSelectedMrPipeline = useAppStore((state) => state.refetchSelectedMrPipeline);

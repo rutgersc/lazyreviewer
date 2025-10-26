@@ -8,7 +8,7 @@ import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, M
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { Effect } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
-import { SettingsService } from "../services/settingsService";
+import { loadSettings, saveSettings } from "../settings/settings";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -37,17 +37,11 @@ export const currentUserAtom = Atom.make<string>('r.schoorstra');
 
 // Phase 4: Persisted Sets with Settings Integration
 export const ignoredMergeRequestsAtom = appAtomRuntime.atom(
-  Effect.gen(function* () {
-    const settings = yield* SettingsService.load;
-    return new Set(settings.ignoredMergeRequests);
-  })
+  Effect.sync(() => new Set<string>(loadSettings().ignoredMergeRequests))
 );
 
 export const seenMergeRequestsAtom = appAtomRuntime.atom(
-  Effect.gen(function* () {
-    const settings = yield* SettingsService.load;
-    return new Set(settings.seenMergeRequests);
-  })
+  Effect.sync(() => new Set<string>(loadSettings().seenMergeRequests))
 );
 
 export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
@@ -58,16 +52,20 @@ export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get
       onSuccess: (success) => success.value,
       onFailure: () => new Set<string>()
     });
-    
+
     const newIgnored = new Set(currentIgnored);
-    
+
     if (newIgnored.has(mrId)) {
       newIgnored.delete(mrId);
     } else {
       newIgnored.add(mrId);
     }
-    
-    yield* SettingsService.updateIgnoredMergeRequests(Array.from(newIgnored));
+
+    yield* Effect.sync(() => {
+      const settings = loadSettings();
+      settings.ignoredMergeRequests = Array.from(newIgnored);
+      saveSettings(settings);
+    });
   })
 );
 
@@ -79,16 +77,20 @@ export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) 
       onSuccess: (success) => success.value,
       onFailure: () => new Set<string>()
     });
-    
+
     const newSeen = new Set(currentSeen);
-    
+
     if (newSeen.has(mrId)) {
       newSeen.delete(mrId);
     } else {
       newSeen.add(mrId);
     }
-    
-    yield* SettingsService.updateSeenMergeRequests(Array.from(newSeen));
+
+    yield* Effect.sync(() => {
+      const settings = loadSettings();
+      settings.seenMergeRequests = Array.from(newSeen);
+      saveSettings(settings);
+    });
   })
 );
 

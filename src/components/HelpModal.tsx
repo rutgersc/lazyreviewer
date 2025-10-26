@@ -292,7 +292,7 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
     onToggleIgnore: () => {
       setActiveModal('none');
       if (mergeRequests[selectedMrIndex]) {
-        toggleIgnoreMergeRequest(mergeRequests[selectedMrIndex].id);
+        toggleIgnoreMergeRequest(mergeRequests[selectedMrIndex].id as string);
       }
     },
 
