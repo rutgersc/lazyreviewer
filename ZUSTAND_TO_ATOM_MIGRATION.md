@@ -36,11 +36,11 @@ git commit -m "[Migration Phase X.Y] Description"
 
 ### **Phase 1: Simple UI Navigation State** (0 dependencies)
 **Group: UI Navigation**
-- [ ] 1.1: `activePane` → `activePaneAtom`
-- [ ] 1.2: `activeModal` → `activeModalAtom`
-- [ ] 1.3: `infoPaneTab` → `infoPaneTabAtom`
-- [ ] 1.4: `cycleInfoPaneTab` action → writable atom with custom setter
-- [ ] 1.5: Remove migrated state from Zustand store
+- [x] 1.1: `activePane` → `activePaneAtom`
+- [x] 1.2: `activeModal` → `activeModalAtom`
+- [x] 1.3: `infoPaneTab` → `infoPaneTabAtom`
+- [x] 1.4: `cycleInfoPaneTab` action → writable atom with custom setter
+- [x] 1.5: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/App.tsx` (activePane, activeModal, cycleInfoPaneTab)
@@ -212,6 +212,6 @@ Phase 9 (Cleanup)           → Requires: All phases 1-8 complete
 
 ## Progress Tracking
 
-**Completed Phases:** 1/9 (Phase 2 complete)
+**Completed Phases:** 2/9 (Phase 1 & 2 complete)
 
 Last Updated: 2025-01-26
