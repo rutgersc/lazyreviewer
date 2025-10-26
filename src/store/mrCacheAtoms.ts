@@ -1,5 +1,5 @@
 import { Atom } from "@effect-atom/atom"
-import { Effect, Data, Schema, Layer } from "effect"
+import { Effect, Data, Schema, Layer, Console } from "effect"
 import { MergeRequestSchema, type MergeRequest } from "../schemas/mergeRequestSchema"
 import { fetchMergeRequestsByProjectEffect, fetchMergeRequestsEffect } from "../mergerequests/mergerequests-effects"
 import type { MergeRequestState } from "../generated/gitlab-sdk"
@@ -44,6 +44,38 @@ export class MergeRequestStorage extends Effect.Service<MergeRequestStorage>()("
   })
 }) {}
 
+export const MergeRequestStorageLogged = Layer.effect(
+  MergeRequestStorage,
+  Effect.gen(function* () {
+    const storage = yield* MergeRequestStorage
+    const console = yield* Console.Console
+
+    const get = (key: string) =>
+      Effect.gen(function* () {
+        yield* console.log(`[MRStorage] get: ${key}`);
+        return yield* storage.get(key);
+      });
+
+    const set = (key: string, value: readonly MergeRequest[]) =>
+      Effect.gen(function* () {
+        yield* console.log(`[MRStorage] set: ${key}`);
+        return yield* storage.set(key, value);
+      });
+
+    const invalidate = (key: string) =>
+      Effect.gen(function* () {
+        yield* console.log(`[MRStorage] invalidate: ${key}`);
+        return yield* storage.invalidate(key);
+      });
+
+    return new MergeRequestStorage({
+      get: get,
+      set: set,
+      invalidate: invalidate,
+    })
+  })
+)
+
 const fetchUserMRsWithCache = (key: MRCacheKey) => Effect.gen(function* () {
   const cacheKey = toCacheKeyString(key)
   const storage = yield* MergeRequestStorage
@@ -63,12 +95,18 @@ const fetchUserMRsWithCache = (key: MRCacheKey) => Effect.gen(function* () {
 
 const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
 const cacheLayer = KeyValueStore.layerFileSystem("debug").pipe(
+  Layer.provide(fileSystemLayer),
   Layer.provide(fileSystemLayer)
 )
 
-const appLayer = MergeRequestStorage.Default.pipe(
+const mrLayer = MergeRequestStorage.Default.pipe(
   Layer.provide(cacheLayer)
 )
+const appLayer2 = MergeRequestStorageLogged.pipe(
+  Layer.provide(mrLayer),
+  // TODO: apply default Console layer
+)
+
 export const cacheRuntime = Atom.runtime(appLayer)
 
 
