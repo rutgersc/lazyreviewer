@@ -19,7 +19,7 @@ import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, RegistryContext } from '@effect-atom/atom-react';
-import { filterMrStateAtom } from './store/appAtoms';
+import { filterMrStateAtom, mergeRequestsKeyAtom, forceRefreshMergeRequests } from './store/appAtoms';
 import { setAtomRegistry } from './store/appStore';
 import { useContext } from 'react';
 
@@ -40,8 +40,6 @@ export default function App() {
 
   const loadMrs = useAppStore(state => state.loadMrs);
 
-  const mrState = useAppStore(state => state.mrState);
-  const setMrState = useAppStore(state => state.setMrState);
   const fetchMrs = useAppStore(state => state.fetchMrs);
   const mergeRequests = useAppStore(state => state.mergeRequests);
   const selectedIndex = useAppStore(state => state.selectedMergeRequest);
@@ -49,7 +47,7 @@ export default function App() {
   const repositoryBranches = useRepositoryBranches(mergeRequests);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
-  const [getFilterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
+  const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
 
   useEffect(() => {
 
@@ -59,7 +57,6 @@ export default function App() {
 
   const handleStateSelect = async (newState: MergeRequestState) => {
     setFilterMrState(newState);
-    setMrState(newState);
   };
 
   useKeyboard((key: ParsedKey) => {
@@ -95,7 +92,7 @@ export default function App() {
         if (key.ctrl) {
           openSettingsFile();
         } else {
-          fetchMrs();
+          forceRefreshMergeRequests(registry, registry.get(mergeRequestsKeyAtom));
         }
         break;
       case '?':
@@ -227,7 +224,7 @@ export default function App() {
       {/* MR State Filter Modal - rendered at app level to cover entire screen */}
       <MrStateFilterModal
         isVisible={activeModal === 'mrFilter'}
-        currentState={mrState}
+        currentState={filterMrState}
         onStateSelect={handleStateSelect}
         onClose={() => setActiveModal('none')}
       />

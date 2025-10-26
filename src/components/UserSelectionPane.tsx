@@ -6,6 +6,8 @@ import { ActivePane } from '../userselection/userSelection';
 import { useAppStore } from '../store/appStore';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { Colors } from '../colors';
+import { selectedUserSelectionEntryAtom } from '../store/appAtoms';
+import { useAtomSet } from '@effect-atom/atom-react';
 
 interface UserSelectionPaneProps {
 }
@@ -14,7 +16,6 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
   const activePane = useAppStore(state => state.activePane);
   const selectedUserSelectionEntry = useAppStore(state => state.selectedUserSelectionEntry);
   const userSelections = useAppStore(state => state.userSelections);
-  const switchUserSelection = useAppStore(state => state.switchUserSelection);
 
   const isActive = activePane === ActivePane.UserSelection;
   const [highlightIndex, setHighlightIndex] = useState(selectedUserSelectionEntry);
@@ -22,6 +23,8 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
     itemHeight: 1,
     lookahead: 2,
   });
+
+  const setSelectedUserSelectionEntry = useAtomSet(selectedUserSelectionEntryAtom)
 
   useKeyboard((key: ParsedKey) => {
     if (!isActive) {
@@ -44,8 +47,9 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
         break;
       }
       case 'space':
-        switchUserSelection(highlightIndex);
+        setSelectedUserSelectionEntry(highlightIndex)
         break;
+
       case 'return': {
         // const highlightedItem = getItemByIndex(navState, highlightIndex);
         // if (highlightedItem && highlightedItem.type === 'group') {

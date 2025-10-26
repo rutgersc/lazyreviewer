@@ -1,55 +1,30 @@
 import { Atom } from "@effect-atom/atom"
-import { Effect, Duration, Data, Layer, Schema } from "effect"
+import { Effect, Data, Schema } from "effect"
 import { MergeRequestSchema, type MergeRequest } from "../schemas/mergeRequestSchema"
-import { fetchMergeRequests, fetchMergeRequestsByProject, fetchMergeRequestsByProjectEffect, fetchMergeRequestsEffect } from "../mergerequests/mergerequests-effects"
+import { fetchMergeRequestsByProjectEffect, fetchMergeRequestsEffect } from "../mergerequests/mergerequests-effects"
 import type { MergeRequestState } from "../generated/gitlab-sdk"
 import * as KeyValueStore from "@effect/platform/KeyValueStore"
-import * as FileSystem from "@effect/platform-node/NodeFileSystem"
-import * as Path from "@effect/platform-node/NodePath"
+import { cacheRuntime } from "./appAtoms"
 
 export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
-  selectionEntry: string
-  usernames: readonly string[]
-  state: MergeRequestState
-}> {
-  toCacheKey(): string {
-    const fixedEntry = this.selectionEntry
-      .replace(/:/g, '_')
-      .replace(/\//g, '_')
-      .replace(/ /g, '-')
-    return `mrs_${this.state}_${fixedEntry}_gitlab`
-  }
-}
+  readonly usernames: readonly string[]
+  readonly state: MergeRequestState
+}> {}
 
 export class ProjectMRCacheKey extends Data.TaggedClass("ProjectMRs")<{
-  selectionEntry: string
-  projectPath: string
-  state: MergeRequestState
-}> {
-  toCacheKey(): string {
-    const fixedEntry = this.selectionEntry
-      .replace(/:/g, '_')
-      .replace(/\//g, '_')
-      .replace(/ /g, '-')
-    const fixedProject = this.projectPath
-      .replace(/:/g, '_')
-      .replace(/\//g, '_')
-    return `mrs_${this.state}_${fixedEntry}_${fixedProject}_gitlab`
-  }
-}
+  readonly projectPath: string
+  readonly state: MergeRequestState
+}> {}
 
 export type CacheKey = MRCacheKey | ProjectMRCacheKey
 
-// Create the cache runtime with KeyValueStore layer
-const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
-const cacheLayer = KeyValueStore.layerFileSystem("debug").pipe(
-  Layer.provide(fileSystemLayer)
-)
-const cacheRuntime = Atom.runtime(cacheLayer)
+const toCacheKeyString = (key: MRCacheKey): string => {
+  const usernamesStr = key.usernames.join('_')
+  return `mrs_${key.state}_${usernamesStr}_gitlab`
+}
 
-
-const fetchWithCache = (key: MRCacheKey) => Effect.gen(function* () {
-  const cacheKey = key.toCacheKey()
+const fetchUserMRsWithCache = (key: MRCacheKey) => Effect.gen(function* () {
+  const cacheKey = toCacheKeyString(key)
   const schemaStore = (yield* KeyValueStore.KeyValueStore).forSchema(Schema.Array(MergeRequestSchema))
 
   const cached = yield* schemaStore.get(cacheKey);
@@ -66,39 +41,55 @@ const fetchWithCache = (key: MRCacheKey) => Effect.gen(function* () {
 })
 
 export const mrsByUserAtomFamily = Atom.family((key: MRCacheKey) => {
-  console.log("[mrsByUserAtomFamily] Creating atom for key:", key.toCacheKey());
-  return cacheRuntime.atom(fetchWithCache(key)).pipe(
+  console.log("[mrsByUserAtomFamily] Creating atom for key:", toCacheKeyString(key));
+  return cacheRuntime.atom(fetchUserMRsWithCache(key)).pipe(
     Atom.setLazy(false),
     Atom.keepAlive
   )
 })
 
+const toProjectCacheKeyString = (key: ProjectMRCacheKey): string => {
+  const fixedProject = key.projectPath
+    .replace(/:/g, '_')
+    .replace(/\//g, '_')
+  return `mrs_${key.state}_${fixedProject}_gitlab`
+}
+
+const fetchProjectMRsWithCache = (key: ProjectMRCacheKey) => Effect.gen(function* () {
+  const cacheKey = toProjectCacheKeyString(key)
+  const schemaStore = (yield* KeyValueStore.KeyValueStore).forSchema(Schema.Array(MergeRequestSchema))
+
+  const cached = yield* schemaStore.get(cacheKey);
+  if (cached._tag === "Some") {
+    console.log(`[Cache] Hit: ${cacheKey}`)
+    return cached.value
+  }
+
+  console.log(`[Cache] Miss: ${cacheKey}`)
+  const fresh = yield* fetchMergeRequestsByProjectEffect(key)
+
+  yield* schemaStore.set(cacheKey, fresh)
+
+  return fresh
+})
+
 export const mrsByProjectAtomFamily = Atom.family((key: ProjectMRCacheKey) => {
-  const cacheKey = key.toCacheKey()
-  const schema = Schema.Array(MergeRequestSchema)
-  const fetch = fetchMergeRequestsByProjectEffect(key)
-  const ttl = Duration.seconds(60)
-
-  const fetchWithCache = Effect.gen(function* () {
-    const schemaStore = (yield* KeyValueStore.KeyValueStore).forSchema(schema)
-
-
-    const cached = yield* schemaStore.get(cacheKey);
-    if (cached._tag === "Some") {
-      console.log(`[Cache] Hit: ${cacheKey}`)
-      return cached.value
-    }
-
-    console.log(`[Cache] Miss: ${cacheKey}`)
-    const fresh = yield* fetch
-
-    yield* schemaStore.set(cacheKey, fresh)
-
-    return fresh
-  })
-
-  return cacheRuntime.atom(fetchWithCache).pipe(
+  return cacheRuntime.atom(fetchProjectMRsWithCache(key)).pipe(
     Atom.setLazy(false),
-    Atom.keepAlive // Keep atoms alive to ensure cache writes complete
+    Atom.keepAlive
   )
+})
+
+export const invalidateUserMRsCache = (key: MRCacheKey) => Effect.gen(function* () {
+  const cacheKey = toCacheKeyString(key)
+  const schemaStore = (yield* KeyValueStore.KeyValueStore).forSchema(Schema.Array(MergeRequestSchema))
+  yield* schemaStore.remove(cacheKey)
+  console.log(`[Cache] Invalidated: ${cacheKey}`)
+})
+
+export const invalidateProjectMRsCache = (key: ProjectMRCacheKey) => Effect.gen(function* () {
+  const cacheKey = toProjectCacheKeyString(key)
+  const schemaStore = (yield* KeyValueStore.KeyValueStore).forSchema(Schema.Array(MergeRequestSchema))
+  yield* schemaStore.remove(cacheKey)
+  console.log(`[Cache] Invalidated: ${cacheKey}`)
 })

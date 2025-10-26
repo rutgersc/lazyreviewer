@@ -15,12 +15,11 @@ describe("GitLab MR Cache Persistence", () => {
     );
 
     const key = new MRCacheKey({
-      selectionEntry: "test",
       usernames: ["r.schoorstra"],
       state: "opened"
     });
 
-    const cacheKey = key.toCacheKey();
+    const cacheKey = "mrs_opened_r.schoorstra_gitlab";
     console.log(`[Test] Cache key: ${cacheKey}`);
 
     const testEffect = Effect.gen(function* () {

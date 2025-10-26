@@ -36,9 +36,6 @@ interface AppStore {
   selectedUserSelectionEntry: number;
   currentUser: string;
 
-  // MR filtering state
-  mrState: MergeRequestState;
-
   mergeRequests: MergeRequest[];
   branchDifferences: Map<string, BranchDifference>;
   ignoredMergeRequests: Set<string>;
@@ -80,9 +77,7 @@ interface AppStore {
   setSelectedDiscussionIndex: (index: number) => void;
   setSelectedActivityIndex: (index: number) => void;
   setSelectedUserSelectionEntry: (entry: number) => void;
-  switchUserSelection: (entry: number) => Promise<void>;
   setSelectedMergeRequest: (mergeRequest: number) => void;
-  setMrState: (state: MergeRequestState) => void;
   setLastTargetBranch: (branch: string) => void;
   fetchJobHistoryForSelectedJob: () => Promise<void>;
 }
@@ -107,43 +102,7 @@ export function setAtomRegistry(registry: AtomRegistry.Registry) {
   atomRegistry = registry;
 }
 
-function updateAtoms(entry?: number, mrState?: MergeRequestState) {
-  if (!atomRegistry) return;
-
-  // Import atoms dynamically to avoid circular dependency
-  import('./appAtoms').then(({ selectedUserSelectionEntryAtom, filterMrStateAtom }) => {
-    if (entry !== undefined) atomRegistry!.set(selectedUserSelectionEntryAtom, entry);
-    if (mrState !== undefined) atomRegistry!.set(filterMrStateAtom, mrState);
-  });
-}
-
 export const useAppStore = create<AppStore>()(persist((set, get) => {
-
-  const refreshMrList = async (entry: number, mrState: MergeRequestState) => {
-    // Clear state first to avoid crashes (same pattern as fetchMrs)
-      set({
-        mergeRequests: [],
-        branchDifferences: new Map(),
-        selectedMergeRequest: 0,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      set({ selectedUserSelectionEntry: entry, selectedMergeRequest: 0, mrState: mrState });
-
-      // Update atoms to trigger reactivity
-      updateAtoms(entry, mrState);
-
-      const state = get();
-      const selectionEntry = state.userSelections[entry];
-      if (selectionEntry) {
-        console.log(
-          `[UserSelection] Loading MRs for ${selectionEntry.name} (now handled by atoms)`
-        );
-        set({ mergeRequests: [], mrState: mrState });
-        const differences = await fetchBranchDifferences([]);
-        set({ branchDifferences: differences });
-      }
-  };
 
   return ({
     activePane: ActivePane.MergeRequests,
@@ -161,7 +120,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 
     // Initial state (rehydrated by persist middleware)
     selectedUserSelectionEntry: 0,
-    mrState: 'opened',
     lastTargetBranch: null,
     currentUser: 'r.schoorstra',
     jobHistoryData: [],
@@ -212,14 +170,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     },
 
     setSelectedUserSelectionEntry: (entry) => set({ selectedUserSelectionEntry: entry }),
-
-    switchUserSelection: async (entry) => {
-      await refreshMrList(entry, get().mrState);
-    },
-    setMrState: async (state) => {
-
-      await refreshMrList(get().selectedUserSelectionEntry, state);
-    },
 
     setActivePane: (pane) => set({ activePane: pane }),
 
@@ -361,7 +311,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
         selectedMr.id,
         selectedMr.project.fullPath,
         selectedMr.iid,
-        state.mrState
+        'opened'
       );
 
       console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid} (cache updates now handled by atoms)`);
@@ -372,7 +322,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
   storage: fileStorage,
   partialize: (state) => ({
     selectedUserSelectionEntry: state.selectedUserSelectionEntry,
-    mrState: state.mrState,
+    mrState: 'opened',
     currentUser: state.currentUser,
     lastTargetBranch: state.lastTargetBranch,
   }),
@@ -408,13 +358,11 @@ export const extractSelectionData = (
 
   if (repositoriesArray.length > 0 && repositoriesArray[0]) {
     return new ProjectMRCacheKey({
-      selectionEntry: entry.name,
       projectPath: repositoriesArray[0],
       state
     });
   } else if (usernamesArray.length > 0) {
     return new MRCacheKey({
-      selectionEntry: entry.name,
       usernames: usernamesArray,
       state
     });

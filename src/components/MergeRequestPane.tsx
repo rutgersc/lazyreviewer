@@ -15,7 +15,7 @@ import { loadSettings } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
-import { useAtom, useAtomValue } from "@effect-atom/atom-react";
+import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
 import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom } from "../store/appAtoms";
 
@@ -407,9 +407,7 @@ export default function MergeRequestPane({}: {}) {
   const activePane = useAppStore((state) => state.activePane);
   const activeModal = useAppStore((state) => state.activeModal);
   const setActiveModal = useAppStore((state) => state.setActiveModal);
-  const mrState = useAppStore((state) => state.mrState);
-  const setMrState = useAppStore((state) => state.setMrState);
-  const [getfilterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
+  const [filterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
 
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
   const toggleSeenMergeRequest = useAppStore((state) => state.toggleSeenMergeRequest);
@@ -511,23 +509,18 @@ export default function MergeRequestPane({}: {}) {
         break;
       }
       case '1':
-        setMrState('opened');
         setfilterMrState('opened');
         break;
       case '2':
-        setMrState('merged');
         setfilterMrState('merged');
         break;
       case '3':
-        setMrState('closed');
         setfilterMrState('closed');
         break;
       case '4':
-        setMrState('locked');
         setfilterMrState('locked');
         break;
       case '5':
-        setMrState('all');
         setfilterMrState('all');
         break;
       case "j":
@@ -654,11 +647,9 @@ export default function MergeRequestPane({}: {}) {
   return (
     <box style={{ flexDirection: "column", padding: 1, height: "100%" }}>
       <MrStateTabs
-        currentState={mrState}
+        currentState={filterMrState}
         onStateChange={(newState: MergeRequestState) => {
-
-            setMrState(newState);
-
+          setfilterMrState(newState);
         }}
         isActive={isActive}
       />
