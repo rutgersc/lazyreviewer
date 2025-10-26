@@ -8,7 +8,7 @@ import { openSettingsFile } from '../settings/settings';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { openUrl } from '../system/url-effect';
 import { getScroller } from '../hooks/useScrollBox';
-import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom } from '../store/appAtoms';
+import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, toggleIgnoreMergeRequestAtom } from '../store/appAtoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 
 interface HelpModalProps {
@@ -199,7 +199,7 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
   const loadMrs = useAppStore(state => state.loadMrs);
   const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
   const selectedMrIndex = useAtomValue(selectedMrIndexAtom);
-  const toggleIgnoreMergeRequest = useAppStore(state => state.toggleIgnoreMergeRequest);
+  const toggleIgnoreMergeRequest = useAtomSet(toggleIgnoreMergeRequestAtom);
 
   // Build help modal actions
   const actions: HelpModalActions = {

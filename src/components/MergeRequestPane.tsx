@@ -17,7 +17,7 @@ import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom } from "../store/appAtoms";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -138,7 +138,12 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
 
 const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }> }) => {
   const currentUser = useAtomValue(currentUserAtom);
-  const seenMergeRequests = useAppStore((state) => state.seenMergeRequests);
+  const seenMergeRequestsResult = useAtomValue(seenMergeRequestsAtom);
+  const seenMergeRequests = Result.match(seenMergeRequestsResult, {
+    onInitial: () => new Set<string>(),
+    onSuccess: (success) => success.value,
+    onFailure: () => new Set<string>()
+  });
   const isApprovedByMe = mr.approvedBy.some(approver => approver.username === currentUser);
   const isMyMr = mr.author === currentUser;
   const isSeen = seenMergeRequests.has(mr.id);
@@ -426,9 +431,14 @@ export default function MergeRequestPane({}: {}) {
   const [filterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
   const currentUser = useAtomValue(currentUserAtom);
 
-  const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
-  const toggleSeenMergeRequest = useAppStore((state) => state.toggleSeenMergeRequest);
-  const ignoredMergeRequests = useAppStore((state) => state.ignoredMergeRequests);
+  const toggleIgnoreMergeRequest = useAtomSet(toggleIgnoreMergeRequestAtom);
+  const toggleSeenMergeRequest = useAtomSet(toggleSeenMergeRequestAtom);
+  const ignoredMergeRequestsResult = useAtomValue(ignoredMergeRequestsAtom);
+  const ignoredMergeRequests = Result.match(ignoredMergeRequestsResult, {
+    onInitial: () => new Set<string>(),
+    onSuccess: (success) => success.value,
+    onFailure: () => new Set<string>()
+  });
   const refetchSelectedMrPipeline = useAppStore((state) => state.refetchSelectedMrPipeline);
 
   const isActive = activePane === ActivePane.MergeRequests;

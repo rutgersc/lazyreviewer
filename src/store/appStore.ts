@@ -35,13 +35,9 @@ interface AppStore {
 
   mergeRequests: MergeRequest[];
   branchDifferences: Map<string, BranchDifference>;
-  ignoredMergeRequests: Set<string>;
-  seenMergeRequests: Set<string>;
   fetchMrs: () => Promise<void>
   loadMrs: () => Promise<void>
   setBranchDifferences: (differences: Map<string, BranchDifference>) => void
-  toggleIgnoreMergeRequest: (mrId: string) => void;
-  toggleSeenMergeRequest: (mrId: string) => void;
   refetchSelectedMrPipeline: () => Promise<void>;
 
   // Selection states
@@ -98,46 +94,10 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 
     mergeRequests: [],
     branchDifferences: new Map(),
-    ignoredMergeRequests: new Set(loadSettings().ignoredMergeRequests),
-    seenMergeRequests: new Set(loadSettings().seenMergeRequests),
     selectedMergeRequest: 0,
 
     // Actions
     setSelectedMergeRequest: (mergeRequest) => set({ selectedMergeRequest: mergeRequest }),
-
-    toggleIgnoreMergeRequest: (mrId) => {
-      const state = get();
-      const newIgnored = new Set(state.ignoredMergeRequests);
-
-      if (newIgnored.has(mrId)) {
-        newIgnored.delete(mrId);
-      } else {
-        newIgnored.add(mrId);
-      }
-
-      set({ ignoredMergeRequests: newIgnored });
-
-      const settings = loadSettings();
-      settings.ignoredMergeRequests = Array.from(newIgnored);
-      saveSettings(settings);
-    },
-
-    toggleSeenMergeRequest: (mrId) => {
-      const state = get();
-      const newSeen = new Set(state.seenMergeRequests);
-
-      if (newSeen.has(mrId)) {
-        newSeen.delete(mrId);
-      } else {
-        newSeen.add(mrId);
-      }
-
-      set({ seenMergeRequests: newSeen });
-
-      const settings = loadSettings();
-      settings.seenMergeRequests = Array.from(newSeen);
-      saveSettings(settings);
-    },
 
     setSelectedUserSelectionEntry: (entry) => set({ selectedUserSelectionEntry: entry }),
 

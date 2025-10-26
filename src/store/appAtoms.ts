@@ -8,6 +8,7 @@ import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, M
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { Effect } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
+import { SettingsService } from "../services/settingsService";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -33,6 +34,63 @@ export const selectedUserSelectionEntryAtom = Atom.make<number>(0);
 export const groupsAtom = Atom.make(groups);
 export const usersAtom = Atom.make(users);
 export const currentUserAtom = Atom.make<string>('r.schoorstra');
+
+// Phase 4: Persisted Sets with Settings Integration
+export const ignoredMergeRequestsAtom = appAtomRuntime.atom(
+  Effect.gen(function* () {
+    const settings = yield* SettingsService.load;
+    return new Set(settings.ignoredMergeRequests);
+  })
+);
+
+export const seenMergeRequestsAtom = appAtomRuntime.atom(
+  Effect.gen(function* () {
+    const settings = yield* SettingsService.load;
+    return new Set(settings.seenMergeRequests);
+  })
+);
+
+export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
+  Effect.gen(function* () {
+    const currentIgnoredResult = get(ignoredMergeRequestsAtom);
+    const currentIgnored = Result.match(currentIgnoredResult, {
+      onInitial: () => new Set<string>(),
+      onSuccess: (success) => success.value,
+      onFailure: () => new Set<string>()
+    });
+    
+    const newIgnored = new Set(currentIgnored);
+    
+    if (newIgnored.has(mrId)) {
+      newIgnored.delete(mrId);
+    } else {
+      newIgnored.add(mrId);
+    }
+    
+    yield* SettingsService.updateIgnoredMergeRequests(Array.from(newIgnored));
+  })
+);
+
+export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
+  Effect.gen(function* () {
+    const currentSeenResult = get(seenMergeRequestsAtom);
+    const currentSeen = Result.match(currentSeenResult, {
+      onInitial: () => new Set<string>(),
+      onSuccess: (success) => success.value,
+      onFailure: () => new Set<string>()
+    });
+    
+    const newSeen = new Set(currentSeen);
+    
+    if (newSeen.has(mrId)) {
+      newSeen.delete(mrId);
+    } else {
+      newSeen.add(mrId);
+    }
+    
+    yield* SettingsService.updateSeenMergeRequests(Array.from(newSeen));
+  })
+);
 
 export const filterMrStateAtom = Atom.make<MergeRequestState>('opened');
 
