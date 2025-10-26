@@ -2,8 +2,8 @@ import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { Colors } from "../colors";
 import { useAppStore } from "../store/appStore";
-import { useAtomValue } from '@effect-atom/atom-react';
-import { selectedMrIndexAtom, unwrappedMergeRequestsAtom } from '../store/appAtoms';
+import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { selectedMrIndexAtom, unwrappedMergeRequestsAtom, lastTargetBranchAtom } from '../store/appAtoms';
 
 interface RetargetModalProps {
   isVisible: boolean;
@@ -24,8 +24,8 @@ export default function RetargetModal({
   // const mrState = useAppStore(state => state.mrState);
   // const userSelections = useAppStore(state => state.userSelections);
   // const selectedUserSelectionEntry = useAppStore(state => state.selectedUserSelectionEntry);
-  // const lastTargetBranch = useAppStore(state => state.lastTargetBranch);
-  // const setLastTargetBranch = useAppStore(state => state.setLastTargetBranch);
+  const lastTargetBranch = useAtomValue(lastTargetBranchAtom);
+  const setLastTargetBranch = useAtomSet(lastTargetBranchAtom);
   // const selectionEntry = userSelections[selectedUserSelectionEntry];
 
   // const [inputValue, setInputValue] = useState("");

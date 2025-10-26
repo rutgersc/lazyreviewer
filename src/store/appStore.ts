@@ -41,15 +41,11 @@ interface AppStore {
   // Selection states
   selectedMergeRequest: number;
 
-  // UI state
-  lastTargetBranch: string | null;
-
   // selectedUsernames: () => string[]
 
   // Actions
   setSelectedUserSelectionEntry: (entry: number) => void;
   setSelectedMergeRequest: (mergeRequest: number) => void;
-  setLastTargetBranch: (branch: string) => void;
 }
 
 const STORE_FILE = 'debug/store.json';
@@ -81,7 +77,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 
     // Initial state (rehydrated by persist middleware)
     selectedUserSelectionEntry: 0,
-    lastTargetBranch: null,
 
     mergeRequests: [],
     selectedMergeRequest: 0,
@@ -90,8 +85,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     setSelectedMergeRequest: (mergeRequest) => set({ selectedMergeRequest: mergeRequest }),
 
     setSelectedUserSelectionEntry: (entry) => set({ selectedUserSelectionEntry: entry }),
-
-    setLastTargetBranch: (branch) => set({ lastTargetBranch: branch }),
 
     fetchJobHistoryForSelectedJob: async (selectedPipelineJobIndex: number) => {
       const state = get();
@@ -186,7 +179,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
   partialize: (state) => ({
     selectedUserSelectionEntry: state.selectedUserSelectionEntry,
     mrState: 'opened',
-    lastTargetBranch: state.lastTargetBranch,
   }),
 }));
 

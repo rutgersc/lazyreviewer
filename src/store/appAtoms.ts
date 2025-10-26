@@ -89,6 +89,9 @@ export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
   })
 );
 
+// Phase 8: Git State
+export const lastTargetBranchAtom = Atom.make<string | null>(null);
+
 export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
   Effect.gen(function* () {
     const currentIgnoredResult = get(ignoredMergeRequestsAtom);
