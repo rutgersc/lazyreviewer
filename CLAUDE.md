@@ -39,6 +39,7 @@ bun install
 !IMPORTANT!: UI RENDERER SOURCE AVAILABLE AT (windows=F:\GitRepos\opentui, osx=/Users/rutgerschoorstra/Gitrepos/opentui)
 !IMPORTANT!: effect-atom SOURCECODE AVAILABLE AT /Users/rutgerschoorstra/Gitrepos/effect-atom
 !IMPORTANT!: effect-atom SOURCE AVAILABLE AT F:\GitRepos\effect-atom\packages
+!IMPORTANT!: effect-ts examples AVAILABLE AT /Users/rutgerschoorstra/Gitrepos/effect-examples/examples
 
 ### Type-Driven Development Approach
 
