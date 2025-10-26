@@ -2,6 +2,8 @@ import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { Colors } from "../colors";
 import { useAppStore } from "../store/appStore";
+import { useAtomValue } from '@effect-atom/atom-react';
+import { selectedMrIndexAtom, unwrappedMergeRequestsAtom } from '../store/appAtoms';
 
 interface RetargetModalProps {
   isVisible: boolean;
@@ -14,8 +16,8 @@ export default function RetargetModal({
   onClose,
   onSuccess
 }: RetargetModalProps) {
-  const mergeRequests = useAppStore(state => state.mergeRequests);
-  const selectedMrIndex = useAppStore(state => state.selectedMergeRequest);
+  const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
+  const selectedMrIndex = useAtomValue(selectedMrIndexAtom);
 
   const selectedMr = mergeRequests[selectedMrIndex];
 

@@ -8,7 +8,7 @@ import { openSettingsFile } from '../settings/settings';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { openUrl } from '../system/url-effect';
 import { getScroller } from '../hooks/useScrollBox';
-import { cycleInfoPaneTabAtom, infoPaneTabAtom } from '../store/appAtoms';
+import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom } from '../store/appAtoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 
 interface HelpModalProps {
@@ -189,16 +189,16 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
   const renderer = useRenderer();
 
   // Store selectors
-  const activePane = useAppStore(state => state.activePane);
+  const activePane = useAtomValue(activePaneAtom);
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
-  const setActivePane = useAppStore(state => state.setActivePane);
-  const setActiveModal = useAppStore(state => state.setActiveModal);
+  const setActivePane = useAtomSet(activePaneAtom);
+  const setActiveModal = useAtomSet(activeModalAtom);
   const cycleInfoPaneTab = useAtomSet(cycleInfoPaneTabAtom);
 
   const fetchMrs = useAppStore(state => state.fetchMrs);
   const loadMrs = useAppStore(state => state.loadMrs);
-  const mergeRequests = useAppStore(state => state.mergeRequests);
-  const selectedMrIndex = useAppStore(state => state.selectedMergeRequest);
+  const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
+  const selectedMrIndex = useAtomValue(selectedMrIndexAtom);
   const toggleIgnoreMergeRequest = useAppStore(state => state.toggleIgnoreMergeRequest);
 
   // Build help modal actions

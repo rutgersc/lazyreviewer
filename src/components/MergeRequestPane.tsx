@@ -413,16 +413,13 @@ const Spinner = () => {
 };
 
 export default function MergeRequestPane({}: {}) {
-  const setSelectedMergeRequest = useAppStore(
-    (state) => state.setSelectedMergeRequest
-  );
-  const selectedIndex = useAppStore((state) => state.selectedMergeRequest);
+  const [getSelectedMRIndex, setSelectedMRIndex] = useAtom(selectedMrIndexAtom);
+  const setSelectedMergeRequest = setSelectedMRIndex;
+  const selectedIndex = getSelectedMRIndex;
 
   const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
   const refreshResult = useAtomValue(refreshMergeRequestsAtom);
   const isRefreshing = Result.isWaiting(refreshResult);
-
-  const [getSelectedMRIndex, setSelectedMRIndex] = useAtom(selectedMrIndexAtom);
 
   const [activePane, setActivePane] = useAtom(activePaneAtom);
   const [activeModal, setActiveModal] = useAtom(activeModalAtom);

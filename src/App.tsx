@@ -19,7 +19,7 @@ import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet, RegistryContext } from '@effect-atom/atom-react';
-import { filterMrStateAtom, mergeRequestsKeyAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './store/appAtoms';
+import { filterMrStateAtom, mergeRequestsKeyAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom } from './store/appAtoms';
 import { setAtomRegistry } from './store/appStore';
 import { useContext } from 'react';
 import { Exit } from 'effect';
@@ -42,10 +42,10 @@ export default function App() {
 
   const loadMrs = useAppStore(state => state.loadMrs);
 
-  const mergeRequests = useAppStore(state => state.mergeRequests);
-  const selectedIndex = useAppStore(state => state.selectedMergeRequest);
+  const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
+  const [selectedIndex] = useAtom(selectedMrIndexAtom);
 
-  const repositoryBranches = useRepositoryBranches(mergeRequests);
+  const repositoryBranches = useRepositoryBranches([...mergeRequests]);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
@@ -272,7 +272,7 @@ export default function App() {
       {/* Event Log Pane - fullscreen overlay */}
       {activeModal === 'eventLog' && (
         <EventLogPane
-          mergeRequests={mergeRequests}
+          mergeRequests={[...mergeRequests]}
           onClose={() => setActiveModal('none')}
         />
       )}
