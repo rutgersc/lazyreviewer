@@ -62,7 +62,7 @@ export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
     const selectedMrIndex = get(selectedMrIndexAtom);
     const userSelections = get(userSelectionsAtom);
     const selectedUserSelectionEntry = get(selectedUserSelectionEntryAtom);
-    
+
     const selectedMr = mergeRequests[selectedMrIndex];
     if (!selectedMr) {
       console.log('[Pipeline] No MR selected');

@@ -3,7 +3,6 @@ import { useKeyboard } from '@opentui/react';
 import JiraIssueInfo from './JiraIssueInfo';
 import { Colors } from '../colors';
 import type { JiraIssue } from '../schemas/mergeRequestSchema';
-import { useAppStore } from '../store/appStore';
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/url-effect';
 import { copyToClipboard } from '../system/clipboard-effect';

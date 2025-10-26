@@ -1,7 +1,6 @@
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { Colors } from "../colors";
-import { useAppStore } from "../store/appStore";
 import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { selectedMrIndexAtom, unwrappedMergeRequestsAtom, lastTargetBranchAtom } from '../store/appAtoms';
 

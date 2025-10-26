@@ -7,7 +7,6 @@ import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { MergeRequest } from '../schemas/mergeRequestSchema';
 import type { UserSelectionEntry } from '../userselection/userSelection';
-import { useAppStore } from '../store/appStore';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { formatDiscussionsForClipboard } from '../gitlab/gitlabDiscussionFormatter';
 import { useAtom, useAtomValue } from '@effect-atom/atom-react';

@@ -5,7 +5,6 @@ import { Colors } from "../colors";
 import { formatCompactTime } from "../utils/formatting";
 import { extractTextFromJiraComment } from "../jira/jiraService";
 import type { PipelineJob } from "../gitlab/gitlabgraphql";
-import { useAppStore } from '../store/appStore';
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/url-effect';
 import { copyToClipboard } from '../system/clipboard-effect';
