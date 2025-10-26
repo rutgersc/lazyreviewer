@@ -10,6 +10,7 @@ import { Effect } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
+import { fetchJobHistory } from '../gitlab/gitlabgraphql';
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -47,6 +48,11 @@ export const seenMergeRequestsAtom = appAtomRuntime.atom(
 
 // Phase 5: Branch Differences
 export const branchDifferencesAtom = Atom.make<Map<string, BranchDifference>>(new Map());
+
+// Phase 6: Job History
+export const jobHistoryDataAtom = Atom.make<any[]>([]);
+export const jobHistoryLoadingAtom = Atom.make<boolean>(false);
+export const selectedJobForHistoryAtom = Atom.make<string | null>(null);
 
 export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
   Effect.gen(function* () {

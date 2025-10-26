@@ -37,15 +37,13 @@ interface AppStore {
   fetchMrs: () => Promise<void>
   loadMrs: () => Promise<void>
   refetchSelectedMrPipeline: () => Promise<void>;
+  fetchJobHistoryForSelectedJob: (selectedPipelineJobIndex: number) => Promise<void>;
 
   // Selection states
   selectedMergeRequest: number;
 
   // UI state
   lastTargetBranch: string | null;
-  jobHistoryData: JobHistoryEntry[];
-  jobHistoryLoading: boolean;
-  selectedJobForHistory: string | null;
 
   // selectedUsernames: () => string[]
 
@@ -53,7 +51,6 @@ interface AppStore {
   setSelectedUserSelectionEntry: (entry: number) => void;
   setSelectedMergeRequest: (mergeRequest: number) => void;
   setLastTargetBranch: (branch: string) => void;
-  fetchJobHistoryForSelectedJob: (selectedPipelineJobIndex: number) => Promise<void>;
 }
 
 const STORE_FILE = 'debug/store.json';
@@ -86,9 +83,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     // Initial state (rehydrated by persist middleware)
     selectedUserSelectionEntry: 0,
     lastTargetBranch: null,
-    jobHistoryData: [],
-    jobHistoryLoading: false,
-    selectedJobForHistory: null,
 
     mergeRequests: [],
     selectedMergeRequest: 0,
@@ -115,18 +109,15 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
         return;
       }
 
-      set({ jobHistoryLoading: true, selectedJobForHistory: selectedJob.name });
-
       try {
         const history = await fetchJobHistory(
           selectedMr.project.fullPath,
           selectedJob.name,
           15
         );
-        set({ jobHistoryData: history, jobHistoryLoading: false });
+        console.log('[JobHistory] Fetched history:', history);
       } catch (error) {
         console.error('[JobHistory] Failed to fetch job history:', error);
-        set({ jobHistoryData: [], jobHistoryLoading: false });
       }
     },
 

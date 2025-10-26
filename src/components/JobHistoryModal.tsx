@@ -3,7 +3,8 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { getJobStatusDisplay } from '../gitlab/jobStatus';
 import { Colors } from '../colors';
-import { useAppStore } from '../store/appStore';
+import { jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom } from '../store/appAtoms';
+import { useAtomValue } from '@effect-atom/atom-react';
 
 interface JobHistoryModalProps {
   isVisible: boolean;
@@ -31,9 +32,9 @@ export default function JobHistoryModal({
 }: JobHistoryModalProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
-  const jobName = useAppStore(state => state.selectedJobForHistory);
-  const jobHistory = useAppStore(state => state.jobHistoryData);
-  const isLoading = useAppStore(state => state.jobHistoryLoading);
+  const jobName = useAtomValue(selectedJobForHistoryAtom);
+  const jobHistory = useAtomValue(jobHistoryDataAtom);
+  const isLoading = useAtomValue(jobHistoryLoadingAtom);
 
   useKeyboard((key: ParsedKey) => {
     if (!isVisible) return;

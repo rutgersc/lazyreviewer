@@ -7,7 +7,7 @@ import { useAppStore } from '../store/appStore';
 import { ActivePane } from '../userselection/userSelection';
 import { loadJobLog } from '../gitlab/pipelinejob-log';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom } from '../store/appAtoms';
+import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom } from '../store/appAtoms';
 
 interface PipelineJobsListProps {
   activePane: ActivePane;
@@ -22,6 +22,9 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
   const [, setSelectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
   const selectedMergeRequest = useAtomValue(selectedMrAtom);
   const fetchJobHistoryForSelectedJob = useAppStore(state => state.fetchJobHistoryForSelectedJob);
+  const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
+  const setJobHistoryLoading = useAtomSet(jobHistoryLoadingAtom);
+  const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
