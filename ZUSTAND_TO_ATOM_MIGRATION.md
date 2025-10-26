@@ -86,12 +86,12 @@ git commit -m "[Migration Phase X.Y] Description"
 
 ### **Phase 4: Persisted Sets with Settings Integration** (depends on settings.ts)
 **Group: MR Filtering**
-- [ ] 4.1: Create Settings Effect service
-- [ ] 4.2: `ignoredMergeRequests` → `ignoredMergeRequestsAtom` with settings sync
-- [ ] 4.3: `toggleIgnoreMergeRequest` → `toggleIgnoreMergeRequestAtom` function atom
-- [ ] 4.4: `seenMergeRequests` → `seenMergeRequestsAtom` with settings sync
-- [ ] 4.5: `toggleSeenMergeRequest` → `toggleSeenMergeRequestAtom` function atom
-- [ ] 4.6: Remove migrated state from Zustand store
+- [x] 4.1: Create Settings Effect service
+- [x] 4.2: `ignoredMergeRequests` → `ignoredMergeRequestsAtom` with settings sync
+- [x] 4.3: `toggleIgnoreMergeRequest` → `toggleIgnoreMergeRequestAtom` function atom
+- [x] 4.4: `seenMergeRequests` → `seenMergeRequestsAtom` with settings sync
+- [x] 4.5: `toggleSeenMergeRequest` → `toggleSeenMergeRequestAtom` function atom
+- [x] 4.6: Remove migrated state from Zustand store
 
 **Files to Update:**
 - Create `src/services/settingsService.ts` (Effect service)
@@ -212,6 +212,6 @@ Phase 9 (Cleanup)           → Requires: All phases 1-8 complete
 
 ## Progress Tracking
 
-**Completed Phases:** 3/9 (Phase 1, 2 & 3 complete)
+**Completed Phases:** 4/9 (Phase 1, 2, 3 & 4 complete)
 
 Last Updated: 2025-01-26
