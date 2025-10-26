@@ -45,7 +45,7 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
         break;
       case 'y':
         if (pipelineJobs[selectedPipelineJobIndex]) {
-          fetchJobHistoryForSelectedJob().then(() => {
+          fetchJobHistoryForSelectedJob(selectedPipelineJobIndex).then(() => {
             setActiveModal('jobHistory');
           });
         }

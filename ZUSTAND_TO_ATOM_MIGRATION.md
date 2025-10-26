@@ -6,7 +6,8 @@
 1. ✅ **Commit after each logical change** - Keep commits atomic and focused
 2. ✅ **Type checking MUST pass** - Run `bun run typecheck` before every commit
 3. ✅ **NO type workarounds** - NEVER use `any` or `as` type assertions to fix errors
-4. ✅ **Commit naming**: `[Migration Phase X.Y] Brief description`
+4. ✅ **Remove migrated state from Zustand** - After migrating to atoms, remove the old state from appStore.ts
+5. ✅ **Commit naming**: `[Migration Phase X.Y] Brief description`
    - Example: `[Migration Phase 1.1] Migrate activePane to activePaneAtom`
    - Example: `[Migration Phase 2.3] Migrate selectedDiscussionIndex to atom`
 
@@ -29,14 +30,6 @@ git commit -m "[Migration Phase X.Y] Description"
 - ✅ userSelections (via userSelectionsAtom)
 - ✅ selectedUserSelectionEntry (via selectedUserSelectionEntryAtom)
 
-**Still in Zustand (31 items):**
-- 8 simple UI state values
-- 3 static data values
-- 2 persisted sets with settings integration
-- 2 branch/git state values
-- 5 job history related items
-- 11 action functions
-
 ---
 
 ## Migration Phases (Ordered by Independence)
@@ -47,6 +40,7 @@ git commit -m "[Migration Phase X.Y] Description"
 - [ ] 1.2: `activeModal` → `activeModalAtom`
 - [ ] 1.3: `infoPaneTab` → `infoPaneTabAtom`
 - [ ] 1.4: `cycleInfoPaneTab` action → writable atom with custom setter
+- [ ] 1.5: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/App.tsx` (activePane, activeModal, cycleInfoPaneTab)
@@ -63,6 +57,7 @@ git commit -m "[Migration Phase X.Y] Description"
 - [x] 2.3: `selectedDiscussionIndex` → `selectedDiscussionIndexAtom`
 - [x] 2.4: `selectedActivityIndex` → `selectedActivityIndexAtom`
 - [x] 2.5: `selectedPipelineJobIndex` → `selectedPipelineJobIndexAtom`
+- [x] 2.6: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/components/InfoPane.tsx` (all selection indices)
@@ -77,6 +72,7 @@ git commit -m "[Migration Phase X.Y] Description"
 - [ ] 3.1: `groups` → `groupsAtom` (static)
 - [ ] 3.2: `users` → `usersAtom` (static)
 - [ ] 3.3: `currentUser` → `currentUserAtom` with Atom.kvs persistence
+- [ ] 3.4: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/store/appStore.ts` (extractSelectionData uses groups)
@@ -95,6 +91,7 @@ git commit -m "[Migration Phase X.Y] Description"
 - [ ] 4.3: `toggleIgnoreMergeRequest` → `toggleIgnoreMergeRequestAtom` function atom
 - [ ] 4.4: `seenMergeRequests` → `seenMergeRequestsAtom` with settings sync
 - [ ] 4.5: `toggleSeenMergeRequest` → `toggleSeenMergeRequestAtom` function atom
+- [ ] 4.6: Remove migrated state from Zustand store
 
 **Files to Update:**
 - Create `src/services/settingsService.ts` (Effect service)
@@ -111,6 +108,7 @@ git commit -m "[Migration Phase X.Y] Description"
 **Group: Git Branch State**
 - [ ] 5.1: Create `branchDifferencesAtom` as derived atom
 - [ ] 5.2: Update components to use atom
+- [ ] 5.3: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/components/MergeRequestPane.tsx` (branchDifferences)
@@ -127,6 +125,7 @@ git commit -m "[Migration Phase X.Y] Description"
 - [ ] 6.1: `jobHistoryData` → `fetchJobHistoryAtom` function atom
 - [ ] 6.2: Remove `jobHistoryLoading` - use `Result.isWaiting()` instead
 - [ ] 6.3: Update JobHistoryModal to use new atom
+- [ ] 6.4: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/components/JobHistoryModal.tsx`
@@ -142,6 +141,7 @@ git commit -m "[Migration Phase X.Y] Description"
 ### **Phase 7: Pipeline Refetch** (depends on existing atoms ✅)
 **Group: Pipeline Actions**
 - [ ] 7.1: `refetchSelectedMrPipeline` → `refetchSelectedMrPipelineAtom` function atom
+- [ ] 7.2: Remove migrated state from Zustand store
 
 **Files to Update:**
 - Components that trigger pipeline refetch
@@ -155,6 +155,7 @@ git commit -m "[Migration Phase X.Y] Description"
 ### **Phase 8: Git State** (0 dependencies)
 **Group: Git Branch State**
 - [ ] 8.1: `lastTargetBranch` → `lastTargetBranchAtom` with Atom.kvs persistence
+- [ ] 8.2: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/components/RetargetModal.tsx`

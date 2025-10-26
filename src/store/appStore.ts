@@ -53,9 +53,6 @@ interface AppStore {
   // UI state
   activePane: ActivePane;
   activeModal: ActiveModal;
-  selectedPipelineJobIndex: number;
-  selectedDiscussionIndex: number;
-  selectedActivityIndex: number;
   lastTargetBranch: string | null;
   jobHistoryData: JobHistoryEntry[];
   jobHistoryLoading: boolean;
@@ -66,13 +63,10 @@ interface AppStore {
   // Actions
   setActivePane: (pane: ActivePane) => void;
   setActiveModal: (modal: ActiveModal) => void;
-  setSelectedPipelineJobIndex: (index: number) => void;
-  setSelectedDiscussionIndex: (index: number) => void;
-  setSelectedActivityIndex: (index: number) => void;
   setSelectedUserSelectionEntry: (entry: number) => void;
   setSelectedMergeRequest: (mergeRequest: number) => void;
   setLastTargetBranch: (branch: string) => void;
-  fetchJobHistoryForSelectedJob: () => Promise<void>;
+  fetchJobHistoryForSelectedJob: (selectedPipelineJobIndex: number) => Promise<void>;
 }
 
 const STORE_FILE = 'debug/store.json';
@@ -101,9 +95,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     activePane: ActivePane.MergeRequests,
     activeModal: 'none',
     infoPaneTab: 'overview',
-    selectedPipelineJobIndex: 0,
-    selectedDiscussionIndex: 0,
-    selectedActivityIndex: 0,
 
     groups: groups,
     users: users,
@@ -166,15 +157,9 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
 
     setActiveModal: (modal) => set({ activeModal: modal }),
 
-    setSelectedPipelineJobIndex: (index) => set({ selectedPipelineJobIndex: index }),
-
-    setSelectedDiscussionIndex: (index) => set({ selectedDiscussionIndex: index }),
-
-    setSelectedActivityIndex: (index) => set({ selectedActivityIndex: index }),
-
     setLastTargetBranch: (branch) => set({ lastTargetBranch: branch }),
 
-    fetchJobHistoryForSelectedJob: async () => {
+    fetchJobHistoryForSelectedJob: async (selectedPipelineJobIndex: number) => {
       const state = get();
       const selectedMr = state.mergeRequests[state.selectedMergeRequest];
       if (!selectedMr) {
@@ -183,7 +168,7 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
       }
 
       const jobs = selectedMr.pipeline.stage.flatMap(stage => stage.jobs);
-      const selectedJob = jobs[state.selectedPipelineJobIndex];
+      const selectedJob = jobs[selectedPipelineJobIndex];
       if (!selectedJob) {
         console.log('[JobHistory] No job selected');
         return;
