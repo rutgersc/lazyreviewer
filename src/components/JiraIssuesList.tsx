@@ -7,12 +7,12 @@ import { useAppStore } from '../store/appStore';
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/url-effect';
 import { copyToClipboard } from '../system/clipboard-effect';
+import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../store/appAtoms';
 
 interface JiraIssuesListProps {
   activePane: ActivePane;
   jiraIssues: JiraIssue[];
-  selectedJiraIndex: number;
-  selectedJiraSubIndex: number;
 }
 
 type JiraListItem = {
@@ -22,11 +22,11 @@ type JiraListItem = {
   subIndex: number;
 };
 
-export default function JiraIssuesList({ activePane, jiraIssues, selectedJiraIndex, selectedJiraSubIndex }: JiraIssuesListProps) {
+export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesListProps) {
   const activeModal = useAppStore(state => state.activeModal);
-  const infoPaneTab = useAppStore(state => state.infoPaneTab);
-  const setSelectedJiraIndex = useAppStore(state => state.setSelectedJiraIndex);
-  const setSelectedJiraSubIndex = useAppStore(state => state.setSelectedJiraSubIndex);
+  const infoPaneTab = useAtomValue(infoPaneTabAtom);
+  const [selectedJiraIndex, setSelectedJiraIndex] = useAtom(selectedJiraIndexAtom);
+  const [selectedJiraSubIndex, setSelectedJiraSubIndex] = useAtom(selectedJiraSubIndexAtom);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'jira') return;

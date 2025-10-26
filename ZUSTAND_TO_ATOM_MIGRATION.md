@@ -58,8 +58,8 @@ git commit -m "[Migration Phase X.Y] Description"
 
 ### **Phase 2: Selection Index State** (0 dependencies)
 **Group: Detail Pane Selections**
-- [ ] 2.1: `selectedJiraIndex` → `selectedJiraIndexAtom`
-- [ ] 2.2: `selectedJiraSubIndex` → `selectedJiraSubIndexAtom`
+- [x] 2.1: `selectedJiraIndex` → `selectedJiraIndexAtom`
+- [x] 2.2: `selectedJiraSubIndex` → `selectedJiraSubIndexAtom`
 - [ ] 2.3: `selectedDiscussionIndex` → `selectedDiscussionIndexAtom`
 - [ ] 2.4: `selectedActivityIndex` → `selectedActivityIndexAtom`
 - [ ] 2.5: `selectedPipelineJobIndex` → `selectedPipelineJobIndexAtom`

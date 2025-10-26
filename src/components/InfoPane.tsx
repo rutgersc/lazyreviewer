@@ -10,7 +10,7 @@ import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 import { useScrollBox } from '../hooks/useScrollBox';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
-import { activePaneAtom, activeModalAtom, infoPaneTabAtom } from '../store/appAtoms';
+import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../store/appAtoms';
 
 interface InfoPaneProps {
   activePane: ActivePane;
@@ -27,8 +27,6 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
   const setActivePane = useAtomSet(activePaneAtom);
   const activeModal = useAtomValue(activeModalAtom);
   const [infoPaneTab, setInfoPaneTab] = useAtom(infoPaneTabAtom);
-  const selectedJiraIndex = useAppStore(state => state.selectedJiraIndex);
-  const selectedJiraSubIndex = useAppStore(state => state.selectedJiraSubIndex);
   const selectedDiscussionIndex = useAppStore(state => state.selectedDiscussionIndex);
   const selectedActivityIndex = useAppStore(state => state.selectedActivityIndex);
 
@@ -93,8 +91,6 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
         return <JiraIssuesList
           activePane={activePane}
           jiraIssues={jiraIssues}
-          selectedJiraIndex={selectedJiraIndex}
-          selectedJiraSubIndex={selectedJiraSubIndex}
         />;
 
       case 'pipeline':

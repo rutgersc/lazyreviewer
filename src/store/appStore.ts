@@ -53,9 +53,6 @@ interface AppStore {
   // UI state
   activePane: ActivePane;
   activeModal: ActiveModal;
-  infoPaneTab: InfoPaneTab;
-  selectedJiraIndex: number;
-  selectedJiraSubIndex: number;
   selectedPipelineJobIndex: number;
   selectedDiscussionIndex: number;
   selectedActivityIndex: number;
@@ -69,10 +66,6 @@ interface AppStore {
   // Actions
   setActivePane: (pane: ActivePane) => void;
   setActiveModal: (modal: ActiveModal) => void;
-  setInfoPaneTab: (tab: InfoPaneTab) => void;
-  cycleInfoPaneTab: (direction: 'next' | 'prev') => void;
-  setSelectedJiraIndex: (index: number) => void;
-  setSelectedJiraSubIndex: (index: number) => void;
   setSelectedPipelineJobIndex: (index: number) => void;
   setSelectedDiscussionIndex: (index: number) => void;
   setSelectedActivityIndex: (index: number) => void;
@@ -108,8 +101,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     activePane: ActivePane.MergeRequests,
     activeModal: 'none',
     infoPaneTab: 'overview',
-    selectedJiraIndex: 0,
-    selectedJiraSubIndex: 0,
     selectedPipelineJobIndex: 0,
     selectedDiscussionIndex: 0,
     selectedActivityIndex: 0,
@@ -174,21 +165,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     setActivePane: (pane) => set({ activePane: pane }),
 
     setActiveModal: (modal) => set({ activeModal: modal }),
-
-    setInfoPaneTab: (tab) => set({ infoPaneTab: tab }),
-
-    cycleInfoPaneTab: (direction) => {
-      const state = get();
-      const currentIndex = INFO_PANE_TABS.indexOf(state.infoPaneTab);
-      const newIndex = direction === 'next'
-        ? (currentIndex + 1) % INFO_PANE_TABS.length
-        : (currentIndex - 1 + INFO_PANE_TABS.length) % INFO_PANE_TABS.length;
-      set({ infoPaneTab: INFO_PANE_TABS[newIndex] });
-    },
-
-    setSelectedJiraIndex: (index) => set({ selectedJiraIndex: index, selectedJiraSubIndex: 0 }),
-
-    setSelectedJiraSubIndex: (index) => set({ selectedJiraSubIndex: index }),
 
     setSelectedPipelineJobIndex: (index) => set({ selectedPipelineJobIndex: index }),
 

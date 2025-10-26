@@ -6,6 +6,8 @@ import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 import { useAppStore } from '../store/appStore';
 import { ActivePane } from '../userselection/userSelection';
 import { loadJobLog } from '../gitlab/pipelinejob-log';
+import { useAtomValue } from '@effect-atom/atom-react';
+import { infoPaneTabAtom } from '../store/appAtoms';
 
 interface PipelineJobsListProps {
   activePane: ActivePane;
@@ -15,7 +17,7 @@ interface PipelineJobsListProps {
 export default function PipelineJobsList({ activePane, pipelineJobs }: PipelineJobsListProps) {
   const activeModal = useAppStore(state => state.activeModal);
   const setActiveModal = useAppStore(state => state.setActiveModal);
-  const infoPaneTab = useAppStore(state => state.infoPaneTab);
+  const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const setSelectedPipelineJobIndex = useAppStore(state => state.setSelectedPipelineJobIndex);
   const selectedMergeRequest = useAppStore(state => state.mergeRequests[state.selectedMergeRequest]);
   const fetchJobHistoryForSelectedJob = useAppStore(state => state.fetchJobHistoryForSelectedJob);

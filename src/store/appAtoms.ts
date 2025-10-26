@@ -51,6 +51,10 @@ export const cycleInfoPaneTabAtom = Atom.writable(
   }
 );
 
+// Phase 2: Selection Index State
+export const selectedJiraIndexAtom = Atom.make<number>(0);
+export const selectedJiraSubIndexAtom = Atom.make<number>(0);
+
 export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
     const userSelections = get(userSelectionsAtom);
     const userSelectionIndex = get(selectedUserSelectionEntryAtom);
