@@ -3,10 +3,11 @@ import type { MergeRequest } from "../schemas/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { groups, mockUserSelections } from "../data/usersAndGroups";
 import { extractSelectionData } from "./appStore";
-import { mrsByUserAtomFamily, mrsByProjectAtomFamily, MRCacheKey, ProjectMRCacheKey, type CacheKey, invalidateUserMRsCache, invalidateProjectMRsCache, MergeRequestStorage } from "./mrCacheAtoms";
+import { mrsByUserAtomFamily, mrsByProjectAtomFamily, MRCacheKey, ProjectMRCacheKey, type CacheKey, invalidateUserMRsCache, invalidateProjectMRsCache, atomRuntime } from "./mrCacheAtoms";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import type { PlatformError } from "@effect/platform/Error";
 import type { ParseError } from "effect/ParseResult";
+import { Effect, Layer } from "effect";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -39,7 +40,7 @@ export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
     return extractSelectionData(selectionEntry, groups, filterMrState);
 })
 
-export const mergeRequestsAtom = Atom.make((get): Result.Result<readonly MergeRequest[], PlatformError | ParseError | Error>  => {
+export const mergeRequestsAtom = Atom.make((get): Result.Result<readonly MergeRequest[], unknown>  => {
     const cacheKey = get(mergeRequestsKeyAtom);
     switch (cacheKey?._tag) {
         case undefined:
@@ -62,28 +63,20 @@ export const unwrappedMergeRequestsAtom = Atom.map(
     }
 )
 
-export const forceRefreshMergeRequests = (registry: Registry.Registry, cacheKey: CacheKey | undefined) => {
-  if (!cacheKey) return
+export const refreshMergeRequestsAtom = atomRuntime.fn((cacheKey: CacheKey | undefined) =>
+  Effect.gen(function* () {
+    if (!cacheKey) return
 
-  // const invalidateAndRefresh = (invalidateEffect: Effect.Effect<void, PlatformError, MergeRequestStorage>, atom: Atom.Atom<any>) => {
-  //   const runtimeResult = registry.get(cacheRuntime)
-  //   if (!Result.isSuccess(runtimeResult)) return
-
-  //   const runtime = runtimeResult.value
-  //   Effect.runPromise(Effect.provide(invalidateEffect, runtime.context)).then(() => {
-  //     registry.refresh(atom)
-  //   }).catch(err => {
-  //     console.error('[Cache] Failed to invalidate:', err)
-  //   })
-  // }
-
-  // switch (cacheKey._tag) {
-  //   case "ProjectMRs":
-  //     invalidateAndRefresh(invalidateProjectMRsCache(cacheKey), mrsByProjectAtomFamily(cacheKey))
-  //     break
-  //   case "UserMRs":
-  //     invalidateAndRefresh(invalidateUserMRsCache(cacheKey), mrsByUserAtomFamily(cacheKey))
-  //     break
-  // }
-}
+    switch (cacheKey._tag) {
+      case "ProjectMRs":
+        yield* invalidateProjectMRsCache(cacheKey)
+        yield* Atom.refresh(mergeRequestsKeyAtom)
+        break
+      case "UserMRs":
+        yield* invalidateUserMRsCache(cacheKey)
+        yield* Atom.refresh(mergeRequestsKeyAtom)
+        break
+    }
+  })
+)
 

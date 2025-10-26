@@ -1,5 +1,5 @@
-import { Atom } from "@effect-atom/atom"
-import { Effect, Data, Schema, Layer, Console } from "effect"
+import { Atom, Registry } from "@effect-atom/atom"
+import { Effect, Data, Schema, Layer, Console, DefaultServices } from "effect"
 import { MergeRequestSchema, type MergeRequest } from "../schemas/mergeRequestSchema"
 import { fetchMergeRequestsByProjectEffect, fetchMergeRequestsEffect } from "../mergerequests/mergerequests-effects"
 import type { MergeRequestState } from "../generated/gitlab-sdk"
@@ -96,23 +96,28 @@ const fetchUserMRsWithCache = (key: MRCacheKey) => Effect.gen(function* () {
 const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
 const cacheLayer = KeyValueStore.layerFileSystem("debug").pipe(
   Layer.provide(fileSystemLayer),
-  Layer.provide(fileSystemLayer)
 )
 
-const mrLayer = MergeRequestStorage.Default.pipe(
+const mergeRequestStorageLayer = MergeRequestStorage.Default.pipe(
   Layer.provide(cacheLayer)
 )
-const appLayer2 = MergeRequestStorageLogged.pipe(
-  Layer.provide(mrLayer),
-  // TODO: apply default Console layer
+
+const mergeRequestWithLoggingLayer = MergeRequestStorageLogged.pipe(
+  Layer.provide(mergeRequestStorageLayer),
+  Layer.provide(Layer.succeedContext(DefaultServices.liveServices))
 )
 
-export const cacheRuntime = Atom.runtime(appLayer)
+export const appLayer =
+  Layer.merge(
+    mergeRequestWithLoggingLayer,
+    Registry.layer);
+
+export const atomRuntime = Atom.runtime(appLayer)
 
 
 export const mrsByUserAtomFamily = Atom.family((key: MRCacheKey) => {
   console.log("[mrsByUserAtomFamily] Creating atom for key:", toCacheKeyString(key));
-  return cacheRuntime.atom(fetchUserMRsWithCache(key)).pipe(
+  return atomRuntime.atom(fetchUserMRsWithCache(key)).pipe(
     Atom.setLazy(false),
     Atom.keepAlive
   )
@@ -137,7 +142,8 @@ const fetchProjectMRsWithCache = (key: ProjectMRCacheKey) => Effect.gen(function
 })
 
 export const mrsByProjectAtomFamily = Atom.family((key: ProjectMRCacheKey) => {
-  return cacheRuntime.atom(fetchProjectMRsWithCache(key)).pipe(
+  const atom = atomRuntime.atom(fetchProjectMRsWithCache(key));
+  return atom.pipe(
     Atom.setLazy(false),
     Atom.keepAlive
   )

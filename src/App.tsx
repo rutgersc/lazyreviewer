@@ -18,10 +18,11 @@ import { type MergeRequestState } from "./generated/gitlab-sdk";
 import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
-import { useAtom, RegistryContext } from '@effect-atom/atom-react';
-import { filterMrStateAtom, mergeRequestsKeyAtom, forceRefreshMergeRequests } from './store/appAtoms';
+import { useAtom, useAtomValue, useAtomSet, RegistryContext } from '@effect-atom/atom-react';
+import { filterMrStateAtom, mergeRequestsKeyAtom, refreshMergeRequestsAtom } from './store/appAtoms';
 import { setAtomRegistry } from './store/appStore';
 import { useContext } from 'react';
+import { Exit } from 'effect';
 
 export default function App() {
   const registry = useContext(RegistryContext);
@@ -30,6 +31,9 @@ export default function App() {
   useEffect(() => {
     setAtomRegistry(registry);
   }, [registry]);
+
+  const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
+  const mergeRequestsKey = useAtomValue(mergeRequestsKeyAtom);
 
   const renderer = useRenderer();
   const activePane = useAppStore(state => state.activePane);
@@ -59,7 +63,7 @@ export default function App() {
     setFilterMrState(newState);
   };
 
-  useKeyboard((key: ParsedKey) => {
+  useKeyboard(async (key: ParsedKey) => {
     // Handle escape - close any active modal
     if (key.name === 'escape') {
       if (activeModal !== 'none') {
@@ -92,7 +96,8 @@ export default function App() {
         if (key.ctrl) {
           openSettingsFile();
         } else {
-          forceRefreshMergeRequests(registry, registry.get(mergeRequestsKeyAtom));
+          const mr = await refreshMergeRequests(mergeRequestsKey);
+          console.log(mr)
         }
         break;
       case '?':
