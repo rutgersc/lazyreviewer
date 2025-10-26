@@ -17,7 +17,7 @@ import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom } from "../store/appAtoms";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -439,7 +439,7 @@ export default function MergeRequestPane({}: {}) {
     onSuccess: (success) => success.value as Set<string>,
     onFailure: () => new Set<string>()
   });
-  const refetchSelectedMrPipeline = useAppStore((state) => state.refetchSelectedMrPipeline);
+  const refetchSelectedMrPipeline = useAtomSet(refetchSelectedMrPipelineAtom);
 
   const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -602,10 +602,9 @@ export default function MergeRequestPane({}: {}) {
         break;
       case 'p':
         if (mergeRequests[selectedIndex]) {
-          refetchSelectedMrPipeline().then(() => {
-            setCopyNotification('Pipeline refreshed!');
-            setTimeout(() => setCopyNotification(null), 2000);
-          });
+          refetchSelectedMrPipeline();
+          setCopyNotification('Pipeline refreshed!');
+          setTimeout(() => setCopyNotification(null), 2000);
         }
         break;
       case 'a':

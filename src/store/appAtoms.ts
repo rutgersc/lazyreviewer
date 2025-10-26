@@ -11,6 +11,7 @@ import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
 import { fetchJobHistory } from '../gitlab/gitlabgraphql';
+import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -53,6 +54,40 @@ export const branchDifferencesAtom = Atom.make<Map<string, BranchDifference>>(ne
 export const jobHistoryDataAtom = Atom.make<any[]>([]);
 export const jobHistoryLoadingAtom = Atom.make<boolean>(false);
 export const selectedJobForHistoryAtom = Atom.make<string | null>(null);
+
+// Phase 7: Pipeline Refetch
+export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
+  Effect.gen(function* () {
+    const mergeRequests = get(unwrappedMergeRequestsAtom);
+    const selectedMrIndex = get(selectedMrIndexAtom);
+    const userSelections = get(userSelectionsAtom);
+    const selectedUserSelectionEntry = get(selectedUserSelectionEntryAtom);
+    
+    const selectedMr = mergeRequests[selectedMrIndex];
+    if (!selectedMr) {
+      console.log('[Pipeline] No MR selected');
+      return;
+    }
+
+    const selectionEntry = userSelections[selectedUserSelectionEntry];
+    if (!selectionEntry) {
+      console.log('[Pipeline] No selection entry found');
+      return;
+    }
+
+    console.log(`[Pipeline] Refetching pipeline for MR !${selectedMr.iid}`);
+
+    yield* Effect.promise(() => refetchMrPipeline(
+      selectionEntry.name,
+      selectedMr.id,
+      selectedMr.project.fullPath,
+      selectedMr.iid,
+      'opened'
+    ));
+
+    console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid} (cache updates now handled by atoms)`);
+  })
+);
 
 export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
   Effect.gen(function* () {

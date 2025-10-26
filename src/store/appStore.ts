@@ -36,7 +36,6 @@ interface AppStore {
   mergeRequests: MergeRequest[];
   fetchMrs: () => Promise<void>
   loadMrs: () => Promise<void>
-  refetchSelectedMrPipeline: () => Promise<void>;
   fetchJobHistoryForSelectedJob: (selectedPipelineJobIndex: number) => Promise<void>;
 
   // Selection states
@@ -179,33 +178,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
       }
 
       return;
-    },
-
-    refetchSelectedMrPipeline: async () => {
-      const state = get();
-      const selectedMr = state.mergeRequests[state.selectedMergeRequest];
-      if (!selectedMr) {
-        console.log('[Pipeline] No MR selected');
-        return;
-      }
-
-      const selectionEntry = state.userSelections[state.selectedUserSelectionEntry];
-      if (!selectionEntry) {
-        console.log('[Pipeline] No selection entry found');
-        return;
-      }
-
-      console.log(`[Pipeline] Refetching pipeline for MR !${selectedMr.iid}`);
-
-      await refetchMrPipeline(
-        selectionEntry.name,
-        selectedMr.id,
-        selectedMr.project.fullPath,
-        selectedMr.iid,
-        'opened'
-      );
-
-      console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid} (cache updates now handled by atoms)`);
     },
   });
 }, {
