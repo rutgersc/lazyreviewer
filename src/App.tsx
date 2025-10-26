@@ -42,7 +42,6 @@ export default function App() {
 
   const loadMrs = useAppStore(state => state.loadMrs);
 
-  const fetchMrs = useAppStore(state => state.fetchMrs);
   const mergeRequests = useAppStore(state => state.mergeRequests);
   const selectedIndex = useAppStore(state => state.selectedMergeRequest);
 
