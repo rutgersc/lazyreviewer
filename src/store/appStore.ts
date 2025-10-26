@@ -34,10 +34,8 @@ interface AppStore {
   selectedUserSelectionEntry: number;
 
   mergeRequests: MergeRequest[];
-  branchDifferences: Map<string, BranchDifference>;
   fetchMrs: () => Promise<void>
   loadMrs: () => Promise<void>
-  setBranchDifferences: (differences: Map<string, BranchDifference>) => void
   refetchSelectedMrPipeline: () => Promise<void>;
 
   // Selection states
@@ -93,7 +91,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     selectedJobForHistory: null,
 
     mergeRequests: [],
-    branchDifferences: new Map(),
     selectedMergeRequest: 0,
 
     // Actions
@@ -132,8 +129,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
         set({ jobHistoryData: [], jobHistoryLoading: false });
       }
     },
-
-    setBranchDifferences: (differences) => set({ branchDifferences: differences }),
 
     fetchMrs: async () => {
       const state = get();

@@ -9,6 +9,7 @@ import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { Effect } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
+import type { BranchDifference } from "../hooks/useRepositoryBranches";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -43,6 +44,9 @@ export const ignoredMergeRequestsAtom = appAtomRuntime.atom(
 export const seenMergeRequestsAtom = appAtomRuntime.atom(
   Effect.sync(() => new Set<string>(loadSettings().seenMergeRequests))
 );
+
+// Phase 5: Branch Differences
+export const branchDifferencesAtom = Atom.make<Map<string, BranchDifference>>(new Map());
 
 export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
   Effect.gen(function* () {
