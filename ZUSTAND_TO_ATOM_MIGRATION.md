@@ -122,10 +122,10 @@ git commit -m "[Migration Phase X.Y] Description"
 
 ### **Phase 6: Job History State** (depends on Phase 2)
 **Group: Pipeline Job History**
-- [ ] 6.1: `jobHistoryData` → `fetchJobHistoryAtom` function atom
-- [ ] 6.2: Remove `jobHistoryLoading` - use `Result.isWaiting()` instead
-- [ ] 6.3: Update JobHistoryModal to use new atom
-- [ ] 6.4: Remove migrated state from Zustand store
+- [x] 6.1: `jobHistoryData` → `fetchJobHistoryAtom` function atom
+- [x] 6.2: Remove `jobHistoryLoading` - use `Result.isWaiting()` instead
+- [x] 6.3: Update JobHistoryModal to use new atom
+- [x] 6.4: Remove migrated state from Zustand store
 
 **Files to Update:**
 - `src/components/JobHistoryModal.tsx`
@@ -212,6 +212,6 @@ Phase 9 (Cleanup)           → Requires: All phases 1-8 complete
 
 ## Progress Tracking
 
-**Completed Phases:** 5/9 (Phase 1, 2, 3, 4 & 5 complete)
+**Completed Phases:** 6/9 (Phase 1, 2, 3, 4, 5 & 6 complete)
 
 Last Updated: 2025-01-26
