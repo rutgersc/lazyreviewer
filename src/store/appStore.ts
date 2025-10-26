@@ -4,7 +4,7 @@ import type { MergeRequest } from '../schemas/mergeRequestSchema';
 import type { UserGroup, UserOrGroupId, UserSelection, UserSelectionEntry } from '../userselection/userSelection';
 import { ActivePane } from '../userselection/userSelection';
 import type { BranchDifference } from '../hooks/useRepositoryBranches';
-import { groups, mockUserSelections, users } from '../data/usersAndGroups';
+import { mockUserSelections } from '../data/usersAndGroups';
 import { shallow } from "zustand/shallow";
 import { fetchMergeRequests, fetchMergeRequestsByProject, refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 import { fetchBranchDifferences } from '../mergerequests/branch-difference-effects';
@@ -30,11 +30,8 @@ export type ActiveModal =
   | 'eventLog';
 
 interface AppStore {
-  groups: UserGroup[]
-  users: UserSelection[]
   userSelections: UserSelectionEntry[];
   selectedUserSelectionEntry: number;
-  currentUser: string;
 
   mergeRequests: MergeRequest[];
   branchDifferences: Map<string, BranchDifference>;
@@ -90,14 +87,11 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
   return ({
     infoPaneTab: 'overview',
 
-    groups: groups,
-    users: users,
     userSelections: mockUserSelections,
 
     // Initial state (rehydrated by persist middleware)
     selectedUserSelectionEntry: 0,
     lastTargetBranch: null,
-    currentUser: 'r.schoorstra',
     jobHistoryData: [],
     jobHistoryLoading: false,
     selectedJobForHistory: null,
@@ -274,7 +268,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
   partialize: (state) => ({
     selectedUserSelectionEntry: state.selectedUserSelectionEntry,
     mrState: 'opened',
-    currentUser: state.currentUser,
     lastTargetBranch: state.lastTargetBranch,
   }),
 }));

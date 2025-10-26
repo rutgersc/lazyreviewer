@@ -2,7 +2,7 @@ import { Atom, Result } from "@effect-atom/atom-react";
 import type { MergeRequest } from "../schemas/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane } from "../userselection/userSelection";
-import { groups, mockUserSelections } from "../data/usersAndGroups";
+import { groups, mockUserSelections, users } from "../data/usersAndGroups";
 import { extractSelectionData, type ActiveModal, type InfoPaneTab } from "./appStore";
 import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
@@ -28,6 +28,11 @@ export const selectedMrAtom = Atom.make(get =>  {
 
 export const userSelectionsAtom = Atom.make<UserSelectionEntry[]>(mockUserSelections);
 export const selectedUserSelectionEntryAtom = Atom.make<number>(0);
+
+// Phase 3: Static/Simple Data
+export const groupsAtom = Atom.make(groups);
+export const usersAtom = Atom.make(users);
+export const currentUserAtom = Atom.make<string>('r.schoorstra');
 
 export const filterMrStateAtom = Atom.make<MergeRequestState>('opened');
 
@@ -63,6 +68,7 @@ export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
     const userSelectionIndex = get(selectedUserSelectionEntryAtom);
     const selectionEntry = userSelections[userSelectionIndex];
     const filterMrState = get(filterMrStateAtom);
+    const groups = get(groupsAtom);
 
     return extractSelectionData(selectionEntry, groups, filterMrState);
 })

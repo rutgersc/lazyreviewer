@@ -17,7 +17,7 @@ import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom } from "../store/appAtoms";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -137,7 +137,7 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
 };
 
 const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }> }) => {
-  const currentUser = useAppStore((state) => state.currentUser);
+  const currentUser = useAtomValue(currentUserAtom);
   const seenMergeRequests = useAppStore((state) => state.seenMergeRequests);
   const isApprovedByMe = mr.approvedBy.some(approver => approver.username === currentUser);
   const isMyMr = mr.author === currentUser;
@@ -424,6 +424,7 @@ export default function MergeRequestPane({}: {}) {
   const [activePane, setActivePane] = useAtom(activePaneAtom);
   const [activeModal, setActiveModal] = useAtom(activeModalAtom);
   const [filterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
+  const currentUser = useAtomValue(currentUserAtom);
 
   const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
   const toggleSeenMergeRequest = useAppStore((state) => state.toggleSeenMergeRequest);
@@ -708,7 +709,6 @@ export default function MergeRequestPane({}: {}) {
           const isIgnored = ignoredMergeRequests.has(mr.id);
           const highlightInfo = getMrHighlightInfo(mr, index);
           const repoColor = settings.repositoryColors[mr.project.fullPath];
-          const currentUser = useAppStore.getState().currentUser;
           const isMyMr = mr.author === currentUser;
 
           return (
