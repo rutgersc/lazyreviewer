@@ -10,7 +10,8 @@
       "Read(//f/GitRepos/effect-atom/**)",
       "Bash(bun add:*)",
       "Bash(bun remove:*)",
-      "WebFetch(domain:effect.website)"
+      "WebFetch(domain:effect.website)",
+      "WebFetch(domain:effect-ts.github.io)"
     ],
     "deny": [],
     "ask": []
