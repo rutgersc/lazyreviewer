@@ -107,13 +107,10 @@ const mergeRequestWithLoggingLayer = MergeRequestStorageLogged.pipe(
   Layer.provide(Layer.succeedContext(DefaultServices.liveServices))
 )
 
-export const appLayer =
-  Layer.merge(
-    mergeRequestWithLoggingLayer,
-    Registry.layer);
+// Do not rely on Regsitry.layer: this is likely internal to atom-effect
+export const appLayer = mergeRequestWithLoggingLayer
 
 export const atomRuntime = Atom.runtime(appLayer)
-
 
 export const mrsByUserAtomFamily = Atom.family((key: MRCacheKey) => {
   console.log("[mrsByUserAtomFamily] Creating atom for key:", toCacheKeyString(key));

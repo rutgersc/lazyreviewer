@@ -7,7 +7,7 @@ import { mrsByUserAtomFamily, mrsByProjectAtomFamily, MRCacheKey, ProjectMRCache
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import type { PlatformError } from "@effect/platform/Error";
 import type { ParseError } from "effect/ParseResult";
-import { Effect, Layer } from "effect";
+import { Console, Effect, Layer } from "effect";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -63,20 +63,20 @@ export const unwrappedMergeRequestsAtom = Atom.map(
     }
 )
 
-export const refreshMergeRequestsAtom = atomRuntime.fn((cacheKey: CacheKey | undefined) =>
+export const refreshMergeRequestsAtom = atomRuntime.fn((cacheKey: CacheKey | undefined, atomContext) =>
   Effect.gen(function* () {
     if (!cacheKey) return
 
     switch (cacheKey._tag) {
       case "ProjectMRs":
         yield* invalidateProjectMRsCache(cacheKey)
-        yield* Atom.refresh(mergeRequestsKeyAtom)
         break
       case "UserMRs":
         yield* invalidateUserMRsCache(cacheKey)
-        yield* Atom.refresh(mergeRequestsKeyAtom)
         break
     }
+
+    atomContext.refresh(mergeRequestsKeyAtom)
   })
 )
 
