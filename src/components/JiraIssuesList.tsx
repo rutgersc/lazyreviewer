@@ -8,7 +8,7 @@ import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/url-effect';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../store/appAtoms';
+import { infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, activeModalAtom } from '../store/appAtoms';
 
 interface JiraIssuesListProps {
   activePane: ActivePane;
@@ -23,7 +23,7 @@ type JiraListItem = {
 };
 
 export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesListProps) {
-  const activeModal = useAppStore(state => state.activeModal);
+  const activeModal = useAtomValue(activeModalAtom);
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const [selectedJiraIndex, setSelectedJiraIndex] = useAtom(selectedJiraIndexAtom);
   const [selectedJiraSubIndex, setSelectedJiraSubIndex] = useAtom(selectedJiraSubIndexAtom);

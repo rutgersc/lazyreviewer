@@ -11,7 +11,7 @@ import { useAppStore } from '../store/appStore';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { formatDiscussionsForClipboard } from '../gitlab/gitlabDiscussionFormatter';
 import { useAtom, useAtomValue } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, selectedDiscussionIndexAtom } from '../store/appAtoms';
+import { infoPaneTabAtom, selectedDiscussionIndexAtom, activeModalAtom } from '../store/appAtoms';
 
 interface OverviewProps {
   activePane: ActivePane;
@@ -25,7 +25,7 @@ export default function Overview({
   selectedUserSelectionEntry
 }: OverviewProps) {
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
-  const activeModal = useAppStore(state => state.activeModal);
+  const activeModal = useAtomValue(activeModalAtom);
   const [selectedDiscussionIndex, setSelectedDiscussionIndex] = useAtom(selectedDiscussionIndexAtom);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 

@@ -11,7 +11,7 @@ import { openUrl } from '../system/url-effect';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { loadJobLog } from '../gitlab/pipelinejob-log';
 import { useAtom, useAtomValue } from "@effect-atom/atom-react";
-import { infoPaneTabAtom, selectedActivityIndexAtom } from "../store/appAtoms";
+import { infoPaneTabAtom, selectedActivityIndexAtom, activeModalAtom } from "../store/appAtoms";
 
 type EventType =
   | 'mr_created'
@@ -235,7 +235,7 @@ const formatEventDetails = (event: Event): string => {
 };
 
 export default function ActivityLog({ activePane, mergeRequest, columns }: ActivityLogProps) {
-  const activeModal = useAppStore(state => state.activeModal);
+  const activeModal = useAtomValue(activeModalAtom);
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const [selectedActivityIndex, setSelectedActivityIndex] = useAtom(selectedActivityIndexAtom);
 

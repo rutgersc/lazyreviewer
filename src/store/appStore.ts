@@ -51,8 +51,6 @@ interface AppStore {
   selectedMergeRequest: number;
 
   // UI state
-  activePane: ActivePane;
-  activeModal: ActiveModal;
   lastTargetBranch: string | null;
   jobHistoryData: JobHistoryEntry[];
   jobHistoryLoading: boolean;
@@ -61,8 +59,6 @@ interface AppStore {
   // selectedUsernames: () => string[]
 
   // Actions
-  setActivePane: (pane: ActivePane) => void;
-  setActiveModal: (modal: ActiveModal) => void;
   setSelectedUserSelectionEntry: (entry: number) => void;
   setSelectedMergeRequest: (mergeRequest: number) => void;
   setLastTargetBranch: (branch: string) => void;
@@ -92,8 +88,6 @@ export function setAtomRegistry(registry: AtomRegistry.Registry) {
 export const useAppStore = create<AppStore>()(persist((set, get) => {
 
   return ({
-    activePane: ActivePane.MergeRequests,
-    activeModal: 'none',
     infoPaneTab: 'overview',
 
     groups: groups,
@@ -152,10 +146,6 @@ export const useAppStore = create<AppStore>()(persist((set, get) => {
     },
 
     setSelectedUserSelectionEntry: (entry) => set({ selectedUserSelectionEntry: entry }),
-
-    setActivePane: (pane) => set({ activePane: pane }),
-
-    setActiveModal: (modal) => set({ activeModal: modal }),
 
     setLastTargetBranch: (branch) => set({ lastTargetBranch: branch }),
 
