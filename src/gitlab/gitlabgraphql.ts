@@ -2,6 +2,7 @@ import { GraphQLClient } from "graphql-request"
 import { getSdk, type MRsQuery, type ProjectMRsQuery, type CiJobStatus, type MergeRequestState } from "../generated/gitlab-sdk";
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
 import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest } from "../schemas/mergeRequestSchema";
+import { Data, Effect } from "effect";
 
 export type {
   PipelineJob,
@@ -120,18 +121,25 @@ export const mapMrFromQuery = (
   } satisfies GitlabMergeRequest;
 }
 
-export const getGitlabMrs = async (usernames: string[], state: MergeRequestState = 'opened'): Promise<GitlabMergeRequest[]> => {
-  const endpoint = `https://git.elabnext.com/api/graphql`
+export class FetchGitlabMrsError extends Data.TaggedError("FetchGitlabMrsError")<{
+  cause: unknown;
+}> { }
+
+export const getGitlabMrs = Effect.fn("getGitlabMrs")(function* (usernames: string[], state: MergeRequestState = 'opened') {
+  const endpoint = `https://git.elabnext.com/api/graphql`;
   const token = process.env.GITLAB_TOKEN;
   const client = new GraphQLClient(endpoint, {
     headers: { Authorization: `Bearer ${token}` }
-  })
+  });
 
-  const sdk = getSdk(client)
-  const data = await sdk.MRs({
-    usernames: usernames,
-    state: state,
-    first: 7 // TODO: remove this or something
+  const sdk = getSdk(client);
+  const data = yield* Effect.tryPromise({
+    try: () => sdk.MRs({
+      usernames: usernames,
+      state: state,
+      first: 7 // TODO: remove this or something
+    }),
+    catch: cause => new FetchGitlabMrsError({ cause })
   });
 
   const fs = require('fs');
@@ -149,14 +157,14 @@ export const getGitlabMrs = async (usernames: string[], state: MergeRequestState
       .map(mr => mapMrFromQuery(user!.username, mr));
 
     if (user!.authoredMergeRequests!.nodes!.length > mappedMrs.length) {
-      console.error(`Fetched more MRs than needed ${user!.authoredMergeRequests!.nodes!.length} > ${mappedMrs.length}`)
+      console.error(`Fetched more MRs than needed ${user!.authoredMergeRequests!.nodes!.length} > ${mappedMrs.length}`);
     }
 
     return mappedMrs;
   });
 
   return res;
-}
+})
 
 export const getGitlabMrsByProject = async (projectPath: string, state: MergeRequestState = 'opened'): Promise<GitlabMergeRequest[]> => {
   console.log(`[GitLab] Fetching MRs for project: "${projectPath}", state: ${state}`);

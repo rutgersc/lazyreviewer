@@ -22,24 +22,18 @@ function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): Me
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 }
 
-export const fetchMergeRequestsEffect = (key: MRCacheKey) =>
-  Effect.tryPromise({
-    try: () => fetchMergeRequests(key.usernames as string[], key.state),
-    catch: (error) => new Error(`Failed to fetch MRs: ${error}`)
-  });
-
-export async function fetchMergeRequests(
+export const fetchMergeRequests = Effect.fn("getGitlabMrs")(function* (
   selectedUsernames: readonly string[],
-  state: MergeRequestState = 'opened'
-): Promise<MergeRequest[]> {
+  state: MergeRequestState = "opened"
+) {
   if (selectedUsernames.length === 0) return [];
 
-  const mrs = await getGitlabMrs(selectedUsernames as string[], state);
+  const mrs = yield* getGitlabMrs(selectedUsernames as string[], state);
   const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
-  const tickets = await loadJiraTickets(jiraKeys);
+  const tickets = yield* loadJiraTickets(jiraKeys);
 
   return processMrsWithJira(mrs, tickets);
-}
+});
 
 export const fetchMergeRequestsByProjectEffect = (key: ProjectMRCacheKey) =>
   Effect.tryPromise({

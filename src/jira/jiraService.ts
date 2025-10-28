@@ -1,3 +1,5 @@
+import { Data, Effect } from "effect";
+
 export type JiraStatusName =
   | "FINAL REVIEW"
   | "TEST IN PROGRESS"
@@ -190,7 +192,11 @@ const searchIssues = async (baseUrl: string, apiToken: string, jql: string, maxR
   return data;
 }
 
-export const loadJiraTickets = async (ticketKeys: string[]) => {
+export class FetchJiraTicketsFailedError extends Data.TaggedError("Error1")<{
+  cause: unknown;
+}> { }
+
+export const loadJiraTickets = Effect.fn("loadJiraTickets")(function* (ticketKeys: string[]) {
   if (ticketKeys.length === 0) {
     return [];
   }
@@ -209,10 +215,13 @@ export const loadJiraTickets = async (ticketKeys: string[]) => {
     throw new Error("Jira credentials not configured. Set JIRA_EMAIL and JIRA_API_TOKEN in .env");
   }
 
-  const result = await searchIssues(
-    'https://scisure.atlassian.net',
-    authToken,
-    `issuekey in (${ticketKeys.join(',')})`);
+  const result = yield* Effect.tryPromise({
+    try: () => searchIssues(
+      'https://scisure.atlassian.net',
+      authToken,
+      `issuekey in (${ticketKeys.join(',')})`),
+    catch: cause => new FetchJiraTicketsFailedError({ cause })
+  });
 
   // Process each issue to limit comments to last 10 and sort by creation date
   const processedIssues = result.issues.map(issue => {
@@ -237,4 +246,4 @@ export const loadJiraTickets = async (ticketKeys: string[]) => {
   });
 
   return processedIssues;
-}
+})

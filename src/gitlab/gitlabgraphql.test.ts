@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { Effect, Layer, Schema } from "effect";
 import { MergeRequestSchema } from "../schemas/mergeRequestSchema";
-import { fetchMergeRequestsEffect } from "../mergerequests/mergerequests-effects";
+import { fetchMergeRequests } from "../mergerequests/mergerequests-effects";
 import { MRCacheKey } from "../mergerequests/mergerequests-caching-effects";
 import * as KeyValueStore from "@effect/platform/KeyValueStore";
 import * as FileSystem from "@effect/platform-node/NodeFileSystem";
@@ -28,7 +28,7 @@ describe("GitLab MR Cache Persistence", () => {
       );
 
       console.log(`[Test] Fetching MRs...`);
-      const fresh = yield* fetchMergeRequestsEffect(key);
+      const fresh = yield* fetchMergeRequests(key.usernames);
       console.log(`[Test] Fetched ${fresh.length} MRs`);
 
       expect(fresh.length).toBeGreaterThan(0);

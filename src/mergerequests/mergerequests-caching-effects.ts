@@ -1,6 +1,6 @@
 import { Effect, Data, Console } from "effect"
 import { type MergeRequest } from "../schemas/mergeRequestSchema"
-import { fetchMergeRequestsByProjectEffect, fetchMergeRequestsEffect } from "./mergerequests-effects"
+import { fetchMergeRequestsByProjectEffect, fetchMergeRequests } from "./mergerequests-effects"
 import type { MergeRequestState } from "../generated/gitlab-sdk"
 import { MergeRequestStorage } from "../services/mergeRequestStorage"
 
@@ -40,7 +40,7 @@ export const fetchUserMRsWithCache = (key: MRCacheKey) => Effect.gen(function* (
 
   yield* Console.log(`[Cache] MISS: ${cacheKey}`)
 
-  const fresh = (yield* fetchMergeRequestsEffect(key))
+  const fresh = (yield* fetchMergeRequests(key.usernames))
   yield* storage.set(cacheKey, fresh);
   return fresh
 })
@@ -51,11 +51,11 @@ export const fetchProjectMRsWithCache = (key: ProjectMRCacheKey) => Effect.gen(f
 
   const cached = yield* storage.get(cacheKey);
   if (cached._tag === "Some") {
-    console.log(`[Cache] Hit: ${cacheKey}`)
+    yield* Console.log(`[Cache] Hit: ${cacheKey}`)
     return cached.value
   }
 
-  console.log(`[Cache] Miss: ${cacheKey}`)
+  yield* Console.log(`[Cache] Miss: ${cacheKey}`)
   const fresh = yield* fetchMergeRequestsByProjectEffect(key)
   yield* storage.set(cacheKey, fresh)
   return fresh
@@ -65,22 +65,22 @@ export const invalidateUserMRsCache = (key: MRCacheKey) => Effect.gen(function* 
   const cacheKey = toCacheKeyString(key)
   const storage = yield* MergeRequestStorage
   yield* storage.invalidate(cacheKey)
-  console.log(`[Cache] Invalidated: ${cacheKey}`)
+  yield* Console.log(`[Cache] Invalidated: ${cacheKey}`)
 })
 
 export const invalidateProjectMRsCache = (key: ProjectMRCacheKey) => Effect.gen(function* () {
   const cacheKey = toProjectCacheKeyString(key)
   const storage = yield* MergeRequestStorage
   yield* storage.invalidate(cacheKey)
-  console.log(`[Cache] Invalidated: ${cacheKey}`)
+  yield* Console.log(`[Cache] Invalidated: ${cacheKey}`)
 })
 
 export const forceRefreshUserMRsCache = (key: MRCacheKey) => Effect.gen(function* () {
   const cacheKey = toCacheKeyString(key)
   const storage = yield* MergeRequestStorage
 
-  console.log(`[Cache] Force refresh: ${cacheKey}`)
-  const fresh = (yield* fetchMergeRequestsEffect(key)) satisfies Readonly<MergeRequest[]>
+  yield* Console.log(`[Cache] Force refresh: ${cacheKey}`)
+  const fresh = (yield* fetchMergeRequests(key.usernames))
   yield* storage.set(cacheKey, fresh)
 
   return fresh
@@ -90,7 +90,7 @@ export const forceRefreshProjectMRsCache = (key: ProjectMRCacheKey) => Effect.ge
   const cacheKey = toProjectCacheKeyString(key)
   const storage = yield* MergeRequestStorage
 
-  console.log(`[Cache] Force refresh: ${cacheKey}`)
+  yield* Console.log(`[Cache] Force refresh: ${cacheKey}`)
   const fresh = yield* fetchMergeRequestsByProjectEffect(key)
   yield* storage.set(cacheKey, fresh)
 
