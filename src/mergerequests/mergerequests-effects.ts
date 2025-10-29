@@ -6,7 +6,7 @@ import { loadJiraTickets } from "../jira/jiraService";
 import { type MergeRequestState, getSdk } from "../generated/gitlab-sdk";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
-import { Effect } from "effect";
+import { Effect, Console, Data } from "effect";
 import type { MRCacheKey, ProjectMRCacheKey } from "./mergerequests-caching-effects";
 
 function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
@@ -35,61 +35,69 @@ export const fetchMergeRequests = Effect.fn("getGitlabMrs")(function* (
   return processMrsWithJira(mrs, tickets);
 });
 
-export const fetchMergeRequestsByProjectEffect = (key: ProjectMRCacheKey) =>
-  Effect.tryPromise({
-    try: () => fetchMergeRequestsByProject(key.projectPath, key.state),
-    catch: (error) => new Error(`Failed to fetch project MRs: ${error}`)
-  });
+export class FetchMergeRequestsByProjectError extends Data.TaggedError("FetchMergeRequestsByProjectError")<{
+  cause: unknown;
+}> { }
 
-export async function fetchMergeRequestsByProject(
+export const fetchMergeRequestsByProject = Effect.fn("fetchMergeRequestsByProject")(function* (
   projectPath: string,
   state: MergeRequestState = 'opened'
-): Promise<MergeRequest[]> {
+) {
   // Parse the repository ID to determine provider
   const parsed = parseRepositoryId(projectPath);
   let mrs: GitlabMergeRequest[];
 
   if (parsed.provider === 'bitbucket') {
-    console.log(`[MR] Fetching from BitBucket: ${parsed.workspace}/${parsed.repo}`);
-    mrs = await getBitbucketPrs(parsed.workspace, parsed.repo, state);
+    yield* Console.log(`[MR] Fetching from BitBucket: ${parsed.workspace}/${parsed.repo}`);
+    mrs = yield* Effect.tryPromise({
+      try: () => getBitbucketPrs(parsed.workspace, parsed.repo, state),
+      catch: cause => new FetchMergeRequestsByProjectError({ cause })
+    });
   } else {
-    console.log(`[MR] Fetching from GitLab: ${projectPath}`);
-    mrs = await getGitlabMrsByProject(projectPath, state);
+    yield* Console.log(`[MR] Fetching from GitLab: ${projectPath}`);
+    mrs = yield* getGitlabMrsByProject(projectPath, state);
   }
 
   const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
-  const tickets = await loadJiraTickets(jiraKeys);
+  const tickets = yield* loadJiraTickets(jiraKeys);
 
   return processMrsWithJira(mrs, tickets);
-}
+})
 
-export async function refetchMrPipeline(
+export const fetchMergeRequestsByProjectEffect = (key: ProjectMRCacheKey) =>
+  fetchMergeRequestsByProject(key.projectPath, key.state);
+
+export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (
   selectedUserSelectionEntry: string,
   mrId: string,
   projectPath: string,
   iid: string,
   state: MergeRequestState = 'opened'
-): Promise<void> {
-  console.log(`[Pipeline] Refetching pipeline for MR ${iid} (${mrId})`);
+) {
+  yield* Console.log(`[Pipeline] Refetching pipeline for MR ${iid} (${mrId})`);
 
-  const pipeline = await getMrPipeline(projectPath, iid);
+  const pipeline = yield* getMrPipeline(projectPath, iid);
   if (!pipeline) {
-    console.log(`[Pipeline] No pipeline data returned for MR ${iid}`);
+    yield* Console.log(`[Pipeline] No pipeline data returned for MR ${iid}`);
     return;
   }
 
-  console.log(`[Pipeline] Pipeline fetched for MR ${iid}`);
-}
+  yield* Console.log(`[Pipeline] Pipeline fetched for MR ${iid}`);
+})
 
-export async function retargetMergeRequest(
+export class RetargetMergeRequestError extends Data.TaggedError("RetargetMergeRequestError")<{
+  cause: unknown;
+}> { }
+
+export const retargetMergeRequest = Effect.fn("retargetMergeRequest")(function* (
   selectedUserSelectionEntry: string,
   mrId: string,
   projectPath: string,
   iid: string,
   newTargetBranch: string,
   state: MergeRequestState = 'opened'
-): Promise<{ success: boolean; error?: string }> {
-  console.log(`[Retarget] Updating MR ${iid} to target branch: ${newTargetBranch}`);
+) {
+  yield* Console.log(`[Retarget] Updating MR ${iid} to target branch: ${newTargetBranch}`);
 
   const endpoint = `https://git.elabnext.com/api/graphql`;
   const token = process.env.GITLAB_TOKEN;
@@ -99,24 +107,21 @@ export async function retargetMergeRequest(
 
   const sdk = getSdk(client);
 
-  try {
-    const result = await sdk.UpdateMRTargetBranch({
+  const result = yield* Effect.tryPromise({
+    try: () => sdk.UpdateMRTargetBranch({
       projectPath,
       iid,
       targetBranch: newTargetBranch
-    });
+    }),
+    catch: cause => new RetargetMergeRequestError({ cause })
+  });
 
-    if (result.mergeRequestUpdate?.errors && result.mergeRequestUpdate.errors.length > 0) {
-      const errorMsg = result.mergeRequestUpdate.errors.join(', ');
-      console.error(`[Retarget] Failed to update MR ${iid}:`, errorMsg);
-      return { success: false, error: errorMsg };
-    }
-
-    console.log(`[Retarget] Successfully updated target branch for MR ${iid} to ${newTargetBranch}`);
-    return { success: true };
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`[Retarget] Exception while updating MR ${iid}:`, errorMsg);
+  if (result.mergeRequestUpdate?.errors && result.mergeRequestUpdate.errors.length > 0) {
+    const errorMsg = result.mergeRequestUpdate.errors.join(', ');
+    yield* Console.error(`[Retarget] Failed to update MR ${iid}:`, errorMsg);
     return { success: false, error: errorMsg };
   }
-}
+
+  yield* Console.log(`[Retarget] Successfully updated target branch for MR ${iid} to ${newTargetBranch}`);
+  return { success: true };
+})

@@ -1,13 +1,14 @@
 import type { MergeRequest, PipelineJob } from "../schemas/mergeRequestSchema";
 import { getJobTrace } from "./gitlabgraphql";
-import { existsSync, writeFileSync, mkdirSync } from "fs"
- import { join } from "path"
-  import { execSync } from "child_process"
+import { existsSync, writeFileSync, mkdirSync } from "fs";
+import { join } from "path";
+import { execSync } from "child_process";
+import { Effect, Console } from "effect";
 
-export const loadJobLog = async (
+export const loadJobLog = Effect.fn("loadJobLog")(function* (
   selectedMergeRequest: MergeRequest,
   job: PipelineJob
-) => {
+) {
   const logsDir = join(process.cwd(), "logs");
   const logFileName = `${selectedMergeRequest.project.name}_job_${job.name}_${job.localId}.ansi`;
   const logFilePath = join(logsDir, logFileName);
@@ -17,8 +18,8 @@ export const loadJobLog = async (
   }
 
   if (!existsSync(logFilePath)) {
-    console.log(`Log does not exist yet: ${logFilePath}`);
-    const log = await getJobTrace(
+    yield* Console.log(`Log does not exist yet: ${logFilePath}`);
+    const log = yield* getJobTrace(
       selectedMergeRequest.project.fullPath,
       job.id
     );
@@ -28,7 +29,7 @@ export const loadJobLog = async (
     }
 
     writeFileSync(logFilePath, log, "utf8");
-    console.log(`Log saved to: ${logFilePath}`);
+    yield* Console.log(`Log saved to: ${logFilePath}`);
   }
 
   if (process.platform === 'win32') {
@@ -38,4 +39,4 @@ export const loadJobLog = async (
   } else {
     execSync(`xdg-open "${logFilePath}"`);
   }
-};
+});

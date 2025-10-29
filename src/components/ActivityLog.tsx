@@ -8,9 +8,8 @@ import type { PipelineJob } from "../gitlab/gitlabgraphql";
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/url-effect';
 import { copyToClipboard } from '../system/clipboard-effect';
-import { loadJobLog } from '../gitlab/pipelinejob-log';
-import { useAtom, useAtomValue } from "@effect-atom/atom-react";
-import { infoPaneTabAtom, selectedActivityIndexAtom, activeModalAtom } from "../store/appAtoms";
+import { useAtom, useAtomValue, useAtomSet } from "@effect-atom/atom-react";
+import { infoPaneTabAtom, selectedActivityIndexAtom, activeModalAtom, loadJobLogAtom } from "../store/appAtoms";
 
 type EventType =
   | 'mr_created'
@@ -237,6 +236,7 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
   const activeModal = useAtomValue(activeModalAtom);
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const [selectedActivityIndex, setSelectedActivityIndex] = useAtom(selectedActivityIndexAtom);
+  const runLoadJobLog = useAtomSet(loadJobLogAtom);
 
   const events = extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
@@ -259,7 +259,7 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
         const selectedEvent = events[selectedActivityIndex];
         if (selectedEvent && mergeRequest) {
           if (selectedEvent.type === 'pipeline' && selectedEvent.actionData?.job) {
-            loadJobLog(mergeRequest, selectedEvent.actionData.job);
+            runLoadJobLog({ mergeRequest, job: selectedEvent.actionData.job });
           } else if (selectedEvent.actionData?.url) {
             openUrl(selectedEvent.actionData.url);
           }

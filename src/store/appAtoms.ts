@@ -5,12 +5,13 @@ import { ActivePane, extractSelectionData } from "../userselection/userSelection
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
 import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
-import { Effect } from "effect";
+import { Effect, Console } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 import { LogStorage, type LogEntry } from "../services/logStorage";
+import { loadJobLog } from '../gitlab/pipelinejob-log';
 
 
 // const STORE_FILE = 'debug/store.json';
@@ -89,27 +90,27 @@ export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
 
     const selectedMr = mergeRequests[selectedMrIndex];
     if (!selectedMr) {
-      console.log('[Pipeline] No MR selected');
+      yield* Console.log('[Pipeline] No MR selected');
       return;
     }
 
     const selectionEntry = userSelections[selectedUserSelectionEntry];
     if (!selectionEntry) {
-      console.log('[Pipeline] No selection entry found');
+      yield* Console.log('[Pipeline] No selection entry found');
       return;
     }
 
-    console.log(`[Pipeline] Refetching pipeline for MR !${selectedMr.iid}`);
+    yield* Console.log(`[Pipeline] Refetching pipeline for MR !${selectedMr.iid}`);
 
-    yield* Effect.promise(() => refetchMrPipeline(
+    yield* refetchMrPipeline(
       selectionEntry.name,
       selectedMr.id,
       selectedMr.project.fullPath,
       selectedMr.iid,
       'opened'
-    ));
+    );
 
-    console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid} (cache updates now handled by atoms)`);
+    yield* Console.log(`[Pipeline] Pipeline refetch complete for MR !${selectedMr.iid} (cache updates now handled by atoms)`);
   })
 );
 
@@ -274,6 +275,11 @@ export const consoleLogsAtom = appAtomRuntime.subscriptionRef(
 
 // Re-export LogEntry type for consumers
 export type { LogEntry }
+
+// Phase 10: Job Log Loading
+export const loadJobLogAtom = appAtomRuntime.fn((args: { mergeRequest: MergeRequest, job: import("../schemas/mergeRequestSchema").PipelineJob }) =>
+  loadJobLog(args.mergeRequest, args.job)
+);
 
 
 

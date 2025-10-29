@@ -1,4 +1,4 @@
-import { Data, Effect } from "effect";
+import { Data, Effect, Console } from "effect";
 
 export type JiraStatusName =
   | "FINAL REVIEW"
@@ -146,51 +146,64 @@ export const extractTextFromJiraComment = (comment: JiraComment): string => {
   }
 };
 
-const searchIssues = async (baseUrl: string, apiToken: string, jql: string, maxResults: number = 100): Promise<JiraSearchResponse> => {
+export class SearchJiraIssuesError extends Data.TaggedError("SearchJiraIssuesError")<{
+  cause: unknown;
+}> { }
+
+const searchIssues = Effect.fn("searchIssues")(function* (baseUrl: string, apiToken: string, jql: string, maxResults: number = 100) {
   // documentation: https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/#api-rest-api-3-search-jql-post
-  const response = await fetch(
-    `${baseUrl}/rest/api/3/search/jql`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${apiToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        jql,
-        maxResults,
-        fields: [
-          'summary',
-          'parent',
-          'status',
-          'assignee',
-          'priority',
-          'issuetype',
-          'created',
-          'updated',
-          'comment',
-          'parent.issuetype'
-        ],
-      })
-    });
+  const response = yield* Effect.tryPromise({
+    try: () => fetch(
+      `${baseUrl}/rest/api/3/search/jql`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${apiToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jql,
+          maxResults,
+          fields: [
+            'summary',
+            'parent',
+            'status',
+            'assignee',
+            'priority',
+            'issuetype',
+            'created',
+            'updated',
+            'comment',
+            'parent.issuetype'
+          ],
+        })
+      }),
+    catch: cause => new SearchJiraIssuesError({ cause })
+  });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Jira API error response:", errorText);
+    const errorText = yield* Effect.tryPromise({
+      try: () => response.text(),
+      catch: cause => new SearchJiraIssuesError({ cause })
+    });
+    yield* Console.error("Jira API error response:", errorText);
     throw new Error(`Jira API error: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  const data = await response.json() as JiraSearchResponse;
+  const data = yield* Effect.tryPromise({
+    try: () => response.json() as Promise<JiraSearchResponse>,
+    catch: cause => new SearchJiraIssuesError({ cause })
+  });
 
   // Write the raw response to a JSON file for debugging
   // const fs = require('fs');
   // const path = require('path');
   // const outputPath = path.join(process.cwd(), 'debug/jira-response-debug.json');
   // fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
-  // console.log(`Jira response written to: ${outputPath}`);
+  // yield* Console.log(`Jira response written to: ${outputPath}`);
 
   return data;
-}
+})
 
 export class FetchJiraTicketsFailedError extends Data.TaggedError("Error1")<{
   cause: unknown;
@@ -215,13 +228,10 @@ export const loadJiraTickets = Effect.fn("loadJiraTickets")(function* (ticketKey
     throw new Error("Jira credentials not configured. Set JIRA_EMAIL and JIRA_API_TOKEN in .env");
   }
 
-  const result = yield* Effect.tryPromise({
-    try: () => searchIssues(
-      'https://scisure.atlassian.net',
-      authToken,
-      `issuekey in (${ticketKeys.join(',')})`),
-    catch: cause => new FetchJiraTicketsFailedError({ cause })
-  });
+  const result = yield* searchIssues(
+    'https://scisure.atlassian.net',
+    authToken,
+    `issuekey in (${ticketKeys.join(',')})`);
 
   // Process each issue to limit comments to last 10 and sort by creation date
   const processedIssues = result.issues.map(issue => {

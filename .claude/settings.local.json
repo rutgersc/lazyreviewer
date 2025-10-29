@@ -14,7 +14,8 @@
       "WebFetch(domain:effect-ts.github.io)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git grep:*)"
+      "Bash(git grep:*)",
+      "Bash(git show:*)"
     ],
     "deny": [],
     "ask": []

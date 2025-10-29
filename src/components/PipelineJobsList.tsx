@@ -4,9 +4,8 @@ import { Colors } from '../colors';
 import { getJobStatusDisplay } from '../gitlab/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 import { ActivePane } from '../userselection/userSelection';
-import { loadJobLog } from '../gitlab/pipelinejob-log';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom } from '../store/appAtoms';
+import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom } from '../store/appAtoms';
 
 interface PipelineJobsListProps {
   activePane: ActivePane;
@@ -23,6 +22,7 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
   const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
   const setJobHistoryLoading = useAtomSet(jobHistoryLoadingAtom);
   const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
+  const runLoadJobLog = useAtomSet(loadJobLogAtom);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
@@ -41,7 +41,7 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
       case 'i':
         const selectedJob = pipelineJobs[selectedPipelineJobIndex];
         if (selectedJob && selectedMergeRequest) {
-          loadJobLog(selectedMergeRequest, selectedJob.job);
+          runLoadJobLog({ mergeRequest: selectedMergeRequest, job: selectedJob.job });
         }
         break;
       case 'y':
