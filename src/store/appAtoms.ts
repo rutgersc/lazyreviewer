@@ -6,7 +6,7 @@ import { groups, mockUserSelections, users } from "../data/usersAndGroups";
 import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { Effect, Console } from "effect";
-import { appAtomRuntime, NodeSdkLive } from "./appLayerRuntime";
+import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
@@ -216,17 +216,16 @@ const mrsByProjectAtomFamily = Atom.family((key: ProjectMRCacheKey) => {
     return atom.pipe(Atom.setLazy(false), Atom.keepAlive);
 })
 
-export const mergeRequestsAtom = Atom.make((get): Result.Result<readonly MergeRequest[], unknown>  => {
-
-    const cacheKey = get(mergeRequestsKeyAtom);
-    switch (cacheKey?._tag) {
-        case undefined:
-            return Result.success([]);
-        case "ProjectMRs":
-            return get(mrsByProjectAtomFamily(cacheKey));
-        case "UserMRs":
-            return get(mrsByUserAtomFamily(cacheKey));
-    }
+export const mergeRequestsAtom = Atom.make((get) => {
+  const cacheKey = get(mergeRequestsKeyAtom);
+  switch (cacheKey?._tag) {
+    case undefined:
+      return Result.success([]);
+    case "ProjectMRs":
+      return get(mrsByProjectAtomFamily(cacheKey));
+    case "UserMRs":
+      return get(mrsByUserAtomFamily(cacheKey));
+  }
 })
 
 export const unwrappedMergeRequestsAtom = Atom.map(

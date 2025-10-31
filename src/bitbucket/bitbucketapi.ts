@@ -149,32 +149,27 @@ const fetchBitbucketComments = Effect.fn("fetchBitbucketComments")(function* (wo
   authToken: string) {
   const url = `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/pullrequests/${prId}/comments`;
 
-  try {
-    const response = yield* Effect.tryPromise({
-      try: () => fetch(url, {
-        headers: {
-          'Authorization': `Basic ${authToken}`,
-          'Accept': 'application/json',
-        }
-      }),
-      catch: cause => new FetchBitbucketPrCommentsError({ cause })
-    });
+  const response = yield* Effect.tryPromise({
+    try: () => fetch(url, {
+      headers: {
+        'Authorization': `Basic ${authToken}`,
+        'Accept': 'application/json',
+      }
+    }),
+    catch: cause => new FetchBitbucketPrCommentsError({ cause })
+  });
 
-    if (!response.ok) {
-      yield* Console.error(`[BitBucket] Failed to fetch comments for PR ${prId}: ${response.status} ${response.statusText}`);
-      return [];
-    }
-
-    const data = yield* Effect.tryPromise({
-      try: () => response.json() as Promise<BitbucketCommentsResponse>,
-      catch: cause => new BitbucketCommentsJsonParseError({ cause })
-    });
-
-    return data.values || [];
-  } catch (error) {
-    yield* Console.error(`[BitBucket] Error fetching comments for PR ${prId}:`, error);
+  if (!response.ok) {
+    yield* Console.error(`[BitBucket] Failed to fetch comments for PR ${prId}: ${response.status} ${response.statusText}`);
     return [];
   }
+
+  const data = yield* Effect.tryPromise({
+    try: () => response.json() as Promise<BitbucketCommentsResponse>,
+    catch: cause => new BitbucketCommentsJsonParseError({ cause })
+  });
+
+  return data.values || [];
 });
 
 function countCommentsByResolution(comments: BitbucketComment[]): {
@@ -243,7 +238,12 @@ const fetchCommentsForAllPrs = Effect.fn("fetchCommentsForAllPrs")(function* (
   const results = yield* Effect.forEach(
     prs,
     (pr) => Effect.gen(function* () {
-      const comments = yield* fetchBitbucketComments(workspace, repoSlug, pr.id, authToken);
+      const comments = yield* fetchBitbucketComments(workspace, repoSlug, pr.id, authToken).pipe(
+        Effect.catchAll((error) => Effect.gen(function* () {
+          yield* Console.error(`[BitBucket] Failed to fetch comments for PR ${pr.id}, using empty array:`, error);
+          return [];
+        }))
+      );
       const counts = countCommentsByResolution(comments);
       return { prId: pr.id, counts, comments };
     }),
