@@ -20,7 +20,7 @@ const logStorageLayer = LogStorage.Default.pipe(
   Layer.provide(fileSystemLayer)
 )
 
-const consoleLoggedLayer = ConsoleLogged.pipe(
+export const consoleLoggedLayer = ConsoleLogged.pipe(
   Layer.provide(logStorageLayer),
   Layer.provide(Layer.succeedContext(DefaultServices.liveServices))
 )

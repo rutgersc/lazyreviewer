@@ -6,7 +6,7 @@ import { groups, mockUserSelections, users } from "../data/usersAndGroups";
 import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
 import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { Effect, Console } from "effect";
-import { appAtomRuntime } from "./appLayerRuntime";
+import { appAtomRuntime, NodeSdkLive } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
@@ -241,31 +241,34 @@ export const unwrappedMergeRequestsAtom = Atom.map(
 )
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, atomContext) =>
-  Effect.gen(function* () {
+  {
+    const f = Effect.gen(function* () {
 
-    const cacheKey = atomContext(mergeRequestsKeyAtom);
-    if (!cacheKey) {
-      return;
-    }
+      const cacheKey = atomContext(mergeRequestsKeyAtom);
+      if (!cacheKey) {
+        return;
+      }
 
-    // Force refresh fetches new data and updates cache WITHOUT clearing it first
-    // This keeps old data visible while new data loads
-    switch (cacheKey._tag) {
-      case "ProjectMRs":
-        yield* forceRefreshProjectMRsCache(cacheKey)
-        break
-      case "UserMRs":
-        yield* forceRefreshUserMRsCache(cacheKey)
-        break
-    }
+      // Force refresh fetches new data and updates cache WITHOUT clearing it first
+      // This keeps old data visible while new data loads
+      switch (cacheKey._tag) {
+        case "ProjectMRs":
+          yield* forceRefreshProjectMRsCache(cacheKey);
+          break;
+        case "UserMRs":
+          yield* forceRefreshUserMRsCache(cacheKey);
+          break;
+      }
 
-    // fetchBranchDifferences(mrs).then(differences => {
-    //   set({ branchDifferences: differences });
-    // });
+      // fetchBranchDifferences(mrs).then(differences => {
+      //   set({ branchDifferences: differences });
+      // });
+      // Refresh the atom to read the newly updated cache
+      atomContext.refresh(mergeRequestsKeyAtom);
+    });
 
-    // Refresh the atom to read the newly updated cache
-    atomContext.refresh(mergeRequestsKeyAtom)
-  })
+    return f;
+  }
 )
 
 // Phase 9: Console Logs

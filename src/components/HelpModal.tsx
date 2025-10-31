@@ -9,6 +9,8 @@ import { openUrl } from '../system/url-effect';
 import { getScroller } from '../hooks/useScrollBox';
 import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, toggleIgnoreMergeRequestAtom, type InfoPaneTab, refetchSelectedMrPipelineAtom, refreshMergeRequestsAtom } from '../store/appAtoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { appAtomRuntime, appLayer, consoleLoggedLayer } from '../store/appLayerRuntime';
+import { Console, Effect, Layer } from 'effect';
 
 interface HelpModalProps {
   isVisible: boolean;
@@ -206,7 +208,11 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
     onRefresh: async () => {
       setActiveModal('none');
       const mr = await refreshMergeRequests();
-      console.log(mr)
+      Console.Console.pipe(
+        Effect.flatMap(_ => _.log(mr)),
+        Effect.provide(consoleLoggedLayer),
+        Effect.runPromise
+      );
     },
     onOpenSettings: () => {
       setActiveModal('none');

@@ -1,3 +1,4 @@
+import { Console, Data, Effect } from "effect";
 import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/gitlabgraphql";
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
 
@@ -120,34 +121,61 @@ export interface BitbucketCommentsResponse {
   next?: string;
 }
 
-async function fetchBitbucketComments(
-  workspace: string,
+export class FetchBitbucketPrCommentsError extends Data.TaggedError("FetchBitbucketPrCommentsError")<{
+  cause: unknown;
+}> { }
+
+export class BitbucketCommentsJsonParseError extends Data.TaggedError("BitbucketCommentsJsonParseError")<{
+  cause: unknown;
+}> { }
+
+export class BitbucketCredentialsNotConfiguredError extends Data.TaggedError("BitbucketCredentialsNotConfiguredError")<{
+  message: string;
+}> { }
+
+export class FetchBitbucketPrsError extends Data.TaggedError("FetchBitbucketPrsError")<{
+  cause: unknown;
+  status: number;
+  statusText: string;
+}> { }
+
+export class BitbucketPrsJsonParseError extends Data.TaggedError("BitbucketPrsJsonParseError")<{
+  cause: unknown;
+}> { }
+
+const fetchBitbucketComments = Effect.fn("fetchBitbucketComments")(function* (workspace: string,
   repoSlug: string,
   prId: number,
-  authToken: string
-): Promise<BitbucketComment[]> {
+  authToken: string) {
   const url = `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/pullrequests/${prId}/comments`;
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Basic ${authToken}`,
-        'Accept': 'application/json',
-      }
+    const response = yield* Effect.tryPromise({
+      try: () => fetch(url, {
+        headers: {
+          'Authorization': `Basic ${authToken}`,
+          'Accept': 'application/json',
+        }
+      }),
+      catch: cause => new FetchBitbucketPrCommentsError({ cause })
     });
 
     if (!response.ok) {
-      console.error(`[BitBucket] Failed to fetch comments for PR ${prId}: ${response.status} ${response.statusText}`);
+      yield* Console.error(`[BitBucket] Failed to fetch comments for PR ${prId}: ${response.status} ${response.statusText}`);
       return [];
     }
 
-    const data = await response.json() as BitbucketCommentsResponse;
+    const data = yield* Effect.tryPromise({
+      try: () => response.json() as Promise<BitbucketCommentsResponse>,
+      catch: cause => new BitbucketCommentsJsonParseError({ cause })
+    });
+
     return data.values || [];
   } catch (error) {
-    console.error(`[BitBucket] Error fetching comments for PR ${prId}:`, error);
+    yield* Console.error(`[BitBucket] Error fetching comments for PR ${prId}:`, error);
     return [];
   }
-}
+});
 
 function countCommentsByResolution(comments: BitbucketComment[]): {
   total: number;
@@ -204,38 +232,42 @@ function mapBitbucketCommentsToDiscussions(comments: BitbucketComment[]): Discus
   });
 }
 
-async function fetchCommentsForAllPrs(
+const fetchCommentsForAllPrs = Effect.fn("fetchCommentsForAllPrs")(function* (
   workspace: string,
   repoSlug: string,
   prs: BitbucketPullRequest[],
   authToken: string
-): Promise<Map<number, { total: number; resolved: number; unresolved: number; comments: BitbucketComment[] }>> {
-  console.log(`[BitBucket] Fetching comments for ${prs.length} PRs in parallel...`);
+) {
+  yield* Console.log(`[BitBucket] Fetching comments for ${prs.length} PRs in parallel...`);
 
-  const commentPromises = prs.map(async (pr) => {
-    const comments = await fetchBitbucketComments(workspace, repoSlug, pr.id, authToken);
-    const counts = countCommentsByResolution(comments);
-    return { prId: pr.id, counts, comments };
-  });
-
-  const results = await Promise.all(commentPromises);
+  const results = yield* Effect.forEach(
+    prs,
+    (pr) => Effect.gen(function* () {
+      const comments = yield* fetchBitbucketComments(workspace, repoSlug, pr.id, authToken);
+      const counts = countCommentsByResolution(comments);
+      return { prId: pr.id, counts, comments };
+    }),
+    { concurrency: "unbounded" }
+  );
 
   const commentDataMap = new Map<number, { total: number; resolved: number; unresolved: number; comments: BitbucketComment[] }>();
   results.forEach(({ prId, counts, comments }) => {
     commentDataMap.set(prId, { ...counts, comments });
   });
 
-  console.log(`[BitBucket] Fetched comments for ${commentDataMap.size} PRs`);
+  yield* Console.log(`[BitBucket] Fetched comments for ${commentDataMap.size} PRs`);
   return commentDataMap;
-}
+});
 
-export async function getBitbucketPrs(
+export const getBitbucketPrs = Effect.fn("getBitbucketPrs")(function* (
   workspace: string,
   repoSlug: string,
   state: 'opened' | 'merged' | 'closed' | 'all' | 'locked' = 'opened'
-): Promise<GitlabMergeRequest[]> {
+) {
   if (!(process.env.BITBUCKET_EMAIL && process.env.BITBUCKET_API_TOKEN)) {
-    throw new Error("BitBucket credentials not configured. Set BITBUCKET_EMAIL and BITBUCKET_API_TOKEN in .env");
+    return yield* Effect.fail(new BitbucketCredentialsNotConfiguredError({
+      message: "BitBucket credentials not configured. Set BITBUCKET_EMAIL and BITBUCKET_API_TOKEN in .env"
+    }));
   }
 
   const credentials = `${process.env.BITBUCKET_EMAIL}:${process.env.BITBUCKET_API_TOKEN}`;
@@ -246,38 +278,47 @@ export async function getBitbucketPrs(
     ? `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/pullrequests?pagelen=50`
     : `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/pullrequests?state=${bbState}&pagelen=50`;
 
-  console.log(`[BitBucket] Fetching PRs for ${workspace}/${repoSlug}, state: ${bbState}`);
+  yield* Console.log(`[BitBucket] Fetching PRs for ${workspace}/${repoSlug}, state: ${bbState}`);
 
-  try {
-    const response = await fetch(url, {
+  const response = yield* Effect.tryPromise({
+    try: () => fetch(url, {
       headers: {
         'Authorization': `Basic ${authToken}`,
         'Accept': 'application/json',
       }
+    }),
+    catch: (cause) => new FetchBitbucketPrsError({ cause, status: 0, statusText: 'Network error' })
+  });
+
+  if (!response.ok) {
+    const errorText = yield* Effect.tryPromise({
+      try: () => response.text(),
+      catch: () => 'Unable to read error response'
     });
+    yield* Console.error(`BitBucket API error: ${response.status} ${response.statusText} - ${errorText}`);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`BitBucket API error: ${response.status} ${response.statusText} - ${errorText}`);
-      throw new Error(`BitBucket API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json() as BitbucketPullRequestsResponse;
-
-    const fs = require('fs');
-    const path = require('path');
-    const outputPath = path.join(process.cwd(), 'debug/bitbucket-response-debug.json');
-    fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
-    console.log(`BitBucket response written to: ${outputPath}`);
-
-    const commentCountsMap = await fetchCommentsForAllPrs(workspace, repoSlug, data.values, authToken);
-
-    return data.values.map(pr => mapBitbucketToGitlabMergeRequest(pr, workspace, repoSlug, commentCountsMap.get(pr.id)));
-  } catch (error) {
-    console.error('[BitBucket] Failed to fetch pull requests:', error);
-    throw error;
+    return yield* Effect.fail(new FetchBitbucketPrsError({
+      cause: errorText,
+      status: response.status,
+      statusText: response.statusText
+    }));
   }
-}
+
+  const data = yield* Effect.tryPromise({
+    try: () => response.json() as Promise<BitbucketPullRequestsResponse>,
+    catch: (cause) => new BitbucketPrsJsonParseError({ cause })
+  });
+
+  const fs = require('fs');
+  const path = require('path');
+  const outputPath = path.join(process.cwd(), 'debug/bitbucket-response-debug.json');
+  fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
+  yield* Console.log(`BitBucket response written to: ${outputPath}`);
+
+  const commentCountsMap = yield* fetchCommentsForAllPrs(workspace, repoSlug, data.values, authToken);
+
+  return data.values.map(pr => mapBitbucketToGitlabMergeRequest(pr, workspace, repoSlug, commentCountsMap.get(pr.id)));
+});
 
 function mapStateTobitbucket(state: 'opened' | 'merged' | 'closed' | 'all' | 'locked'): string {
   switch (state) {

@@ -19,6 +19,8 @@ import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom } from './store/appAtoms';
+import { Console, Effect } from 'effect';
+import { consoleLoggedLayer } from './store/appLayerRuntime';
 
 export default function App() {
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
@@ -78,7 +80,11 @@ export default function App() {
           openSettingsFile();
         } else {
           const mr = await refreshMergeRequests();
-          console.log(mr)
+          Console.Console.pipe(
+            Effect.flatMap(_ => _.log(mr)),
+            Effect.provide(consoleLoggedLayer),
+            Effect.runPromise
+          );
         }
         break;
       case '?':
@@ -202,7 +208,7 @@ export default function App() {
               backgroundColor: '#282a36'
             }}
           >
-            {/* <ConsolePane isActive={activePane === ActivePane.Console} /> */}
+            <ConsolePane isActive={activePane === ActivePane.Console} />
           </box>
         </box>
       </box>

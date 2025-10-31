@@ -48,24 +48,24 @@ export const fetchMergeRequestsByProject = Effect.fn("fetchMergeRequestsByProjec
   let mrs: GitlabMergeRequest[];
 
   if (parsed.provider === 'bitbucket') {
-    yield* Console.log(`[MR] Fetching from BitBucket: ${parsed.workspace}/${parsed.repo}`);
-    mrs = yield* Effect.tryPromise({
-      try: () => getBitbucketPrs(parsed.workspace, parsed.repo, state),
-      catch: cause => new FetchMergeRequestsByProjectError({ cause })
-    });
+    yield* Console.log(`Fetching from BitBucket: ${parsed.workspace}/${parsed.repo}`);
+    mrs = yield* getBitbucketPrs(parsed.workspace, parsed.repo, state);
   } else {
-    yield* Console.log(`[MR] Fetching from GitLab: ${projectPath}`);
+    yield* Console.log(`Fetching from GitLab: ${projectPath}`);
     mrs = yield* getGitlabMrsByProject(projectPath, state);
   }
 
+  yield* Console.log(`Fetched ${mrs.length} merge requests`);
+
   const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
+  yield* Console.log(`Loading ${jiraKeys.length} Jira tickets`);
   const tickets = yield* loadJiraTickets(jiraKeys);
 
   return processMrsWithJira(mrs, tickets);
 })
 
 export const fetchMergeRequestsByProjectEffect = (key: ProjectMRCacheKey) =>
-  fetchMergeRequestsByProject(key.projectPath, key.state);
+  fetchMergeRequestsByProject(key.projectPath, key.state).pipe(Effect.withSpan("mySpan"));
 
 export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (
   selectedUserSelectionEntry: string,
