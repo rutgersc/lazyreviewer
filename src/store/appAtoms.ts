@@ -208,21 +208,15 @@ export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
 
 const mrsByKeyAtomFamily = Atom.family((key: CacheKey) => {
     const oh = Effect.gen(function* () {
-      const effect =
-        key._tag === "UserMRs"
+      return key._tag === "UserMRs"
           ? yield* fetchUserMRsWithCache(key)
           : yield* fetchProjectMRsWithCache(key);
-      return effect;
     })
     .pipe(
       Effect.catchAllCause((cause) =>
         Effect.gen(function* () {
-          yield* (yield* Console.Console).error(
-            "Error fetching merge requests:",
-            cause
-          );
-          const mr: readonly MergeRequest[] = [];
-          return mr;
+          yield* (yield* Console.Console).error("Error fetching merge requests:", cause);
+          return [] as readonly MergeRequest[] ;
         })
       )
     );
