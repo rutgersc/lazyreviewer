@@ -105,7 +105,7 @@ const JiraCommentSchema = Schema.Struct({
   id: Schema.String,
   author: Schema.Struct({
     displayName: Schema.String,
-    emailAddress: Schema.String
+    emailAddress: Schema.optional(Schema.String)
   }),
   body: JiraCommentBodySchema,
   created: Schema.String,

@@ -26,8 +26,8 @@ export const consoleLoggedLayer = ConsoleLogged.pipe(
 )
 
 const mergeRequestWithLoggingLayer = MergeRequestStorageLogged.pipe(
-  Layer.provide(mergeRequestStorageLayer),
-  Layer.provide(consoleLoggedLayer) // Use wrapped console
+  Layer.provideMerge(mergeRequestStorageLayer),
+  Layer.provideMerge(consoleLoggedLayer) // Use wrapped console
 )
 
 // Merge logStorageLayer into the final app layer so LogStorage is available

@@ -83,7 +83,7 @@ export const selectedJobForHistoryAtom = Atom.make<string | null>(null);
 // Phase 7: Pipeline Refetch
 export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
   Effect.gen(function* () {
-    const mergeRequests = get(unwrappedMergeRequestsAtom);
+    const mergeRequests = yield* Result.toExit(get(mergeRequestsAtom));
     const selectedMrIndex = get(selectedMrIndexAtom);
     const userSelections = get(userSelectionsAtom);
     const selectedUserSelectionEntry = get(selectedUserSelectionEntryAtom);
@@ -206,26 +206,39 @@ export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
     return extractSelectionData(selectionEntry, groups, filterMrState);
 })
 
-const mrsByUserAtomFamily = Atom.family((key: MRCacheKey) => {
-    const atom = appAtomRuntime.atom(fetchUserMRsWithCache(key));
+const mrsByKeyAtomFamily = Atom.family((key: CacheKey) => {
+    const oh = Effect.gen(function* () {
+      const effect =
+        key._tag === "UserMRs"
+          ? yield* fetchUserMRsWithCache(key)
+          : yield* fetchProjectMRsWithCache(key);
+      return effect;
+    })
+    .pipe(
+      Effect.catchAllCause((cause) =>
+        Effect.gen(function* () {
+          yield* (yield* Console.Console).error(
+            "Error fetching merge requests:",
+            cause
+          );
+          const mr: readonly MergeRequest[] = [];
+          return mr;
+        })
+      )
+    );
+
+    const atom = appAtomRuntime.atom(oh);
     return atom.pipe(Atom.setLazy(false), Atom.keepAlive);
 });
 
-const mrsByProjectAtomFamily = Atom.family((key: ProjectMRCacheKey) => {
-    const atom = appAtomRuntime.atom(fetchProjectMRsWithCache(key));
-    return atom.pipe(Atom.setLazy(false), Atom.keepAlive);
-})
-
 export const mergeRequestsAtom = Atom.make((get) => {
   const cacheKey = get(mergeRequestsKeyAtom);
-  switch (cacheKey?._tag) {
-    case undefined:
-      return Result.success([]);
-    case "ProjectMRs":
-      return get(mrsByProjectAtomFamily(cacheKey));
-    case "UserMRs":
-      return get(mrsByUserAtomFamily(cacheKey));
+  if (!cacheKey) {
+    console.log("mergeRequestsAtom NOOOO cacheKey", cacheKey)
+    return Result.success([]);
   }
+  console.log("mergeRequestsAtom")
+  return get(mrsByKeyAtomFamily(cacheKey));
 })
 
 export const unwrappedMergeRequestsAtom = Atom.map(
@@ -239,17 +252,14 @@ export const unwrappedMergeRequestsAtom = Atom.map(
     }
 )
 
-export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, atomContext) =>
-  {
+export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     const f = Effect.gen(function* () {
 
-      const cacheKey = atomContext(mergeRequestsKeyAtom);
+      const cacheKey = get(mergeRequestsKeyAtom);
       if (!cacheKey) {
         return;
       }
 
-      // Force refresh fetches new data and updates cache WITHOUT clearing it first
-      // This keeps old data visible while new data loads
       switch (cacheKey._tag) {
         case "ProjectMRs":
           yield* forceRefreshProjectMRsCache(cacheKey);
@@ -263,8 +273,14 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, atomContext) =>
       //   set({ branchDifferences: differences });
       // });
       // Refresh the atom to read the newly updated cache
-      atomContext.refresh(mergeRequestsKeyAtom);
-    });
+      get.refresh(mergeRequestsKeyAtom);
+    }).pipe(
+      Effect.catchAllCause((cause) =>
+        Effect.gen(function* () {
+          yield* (yield* Console.Console).error("Error refreshing merge requests:", cause)
+        })
+      )
+    );
 
     return f;
   }

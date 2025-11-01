@@ -7,7 +7,7 @@ import { openSettingsFile } from '../settings/settings';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { openUrl } from '../system/url-effect';
 import { getScroller } from '../hooks/useScrollBox';
-import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, toggleIgnoreMergeRequestAtom, type InfoPaneTab, refetchSelectedMrPipelineAtom, refreshMergeRequestsAtom } from '../store/appAtoms';
+import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, toggleIgnoreMergeRequestAtom, type InfoPaneTab, refetchSelectedMrPipelineAtom, refreshMergeRequestsAtom, mergeRequestsAtom } from '../store/appAtoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { appAtomRuntime, appLayer, consoleLoggedLayer } from '../store/appLayerRuntime';
 import { Console, Effect, Layer } from 'effect';

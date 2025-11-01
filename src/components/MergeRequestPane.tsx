@@ -16,7 +16,7 @@ import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedMergeRequestsAtom } from "../store/appAtoms";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -438,7 +438,7 @@ export default function MergeRequestPane({}: {}) {
     onSuccess: (success) => success.value as Set<string>,
     onFailure: () => new Set<string>()
   });
-  const refetchSelectedMrPipeline = useAtomSet(refetchSelectedMrPipelineAtom);
+  const refetchSelectedMrPipeline = useAtomSet(refetchSelectedMrPipelineAtom, { mode: 'promiseExit' });
 
   const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -601,7 +601,7 @@ export default function MergeRequestPane({}: {}) {
         break;
       case 'p':
         if (mergeRequests[selectedIndex]) {
-          refetchSelectedMrPipeline();
+          const w = refetchSelectedMrPipeline();
           setCopyNotification('Pipeline refreshed!');
           setTimeout(() => setCopyNotification(null), 2000);
         }

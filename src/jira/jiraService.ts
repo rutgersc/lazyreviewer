@@ -14,7 +14,7 @@ export interface JiraComment {
   id: string;
   author: {
     displayName: string;
-    emailAddress: string;
+    emailAddress?: string;
   };
   body: {
     content: Array<{
