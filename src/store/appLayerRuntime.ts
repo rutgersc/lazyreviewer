@@ -1,5 +1,5 @@
 import { KeyValueStore, Path } from "@effect/platform"
-import { Layer, DefaultServices } from "effect"
+import { Layer, DefaultServices, Context, Console } from "effect"
 import * as FileSystem from "@effect/platform-node/NodeFileSystem"
 import { MergeRequestStorageLogged } from "../services/mergeRequestStorageLogged"
 import { MergeRequestStorage } from "../services/mergeRequestStorage"

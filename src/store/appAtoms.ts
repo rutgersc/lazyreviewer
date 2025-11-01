@@ -206,6 +206,12 @@ export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
     return extractSelectionData(selectionEntry, groups, filterMrState);
 })
 
+export const log = (...args: ReadonlyArray<any>) =>
+  Effect.andThen(Console.Console, _ => _.log(...args));
+
+export const error = (...args: ReadonlyArray<any>) =>
+  Effect.andThen(Console.Console, _ => _.log(...args));
+
 const mrsByKeyAtomFamily = Atom.family((key: CacheKey) => {
     const oh = Effect.gen(function* () {
       return key._tag === "UserMRs"
@@ -215,14 +221,15 @@ const mrsByKeyAtomFamily = Atom.family((key: CacheKey) => {
     .pipe(
       Effect.catchAllCause((cause) =>
         Effect.gen(function* () {
-          yield* (yield* Console.Console).error("Error fetching merge requests:", cause);
-          return [] as readonly MergeRequest[] ;
+          yield* error("Error fetching merge requests:", cause)
+          return [] as readonly MergeRequest[];
         })
       )
     );
 
-    const atom = appAtomRuntime.atom(oh);
-    return atom.pipe(Atom.setLazy(false), Atom.keepAlive);
+    return appAtomRuntime.atom(oh).pipe(
+      Atom.setLazy(false),
+      Atom.keepAlive);
 });
 
 export const mergeRequestsAtom = Atom.make((get) => {

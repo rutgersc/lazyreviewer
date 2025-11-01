@@ -1,4 +1,4 @@
-import { Effect, Data, Console } from "effect"
+import { Effect, Data, Console, Context } from "effect"
 import type { PlatformError } from "@effect/platform/Error"
 import type { ParseError } from "effect/ParseResult"
 import { type MergeRequest } from "../schemas/mergeRequestSchema"
@@ -8,6 +8,7 @@ import { MergeRequestStorage } from "../services/mergeRequestStorage"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlabgraphql"
 import type { SearchJiraIssuesError } from "../jira/jiraService"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
+import { liveServices, type DefaultServices } from "effect/DefaultServices"
 
 export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
   readonly usernames: readonly string[]
@@ -45,6 +46,7 @@ const toProjectCacheKeyString = (key: ProjectMRCacheKey): string => {
   return `mrs_${key.state}_${fixedProject}_gitlab`
 }
 
+
 export const fetchUserMRsWithCache = (key: MRCacheKey): Effect.Effect<
   readonly MergeRequest[],
   MergeRequestsCacheError,
@@ -56,8 +58,7 @@ export const fetchUserMRsWithCache = (key: MRCacheKey): Effect.Effect<
   const cached = yield* storage.get(cacheKey);
   if (cached._tag === "Some") {
     yield* Console.log(`[Cache] Hit: ${cacheKey}, ${cached.value[0]?.targetbranch}`)
-    const v: readonly MergeRequest[] = cached.value;
-    return v;
+    return cached.value as readonly MergeRequest[];
   }
 
   yield* Console.log(`[Cache] MISS: ${cacheKey}`)
@@ -78,8 +79,7 @@ export const fetchProjectMRsWithCache = (key: ProjectMRCacheKey): Effect.Effect<
   const cached = yield* storage.get(cacheKey);
   if (cached._tag === "Some") {
     yield* Console.log(`[Cache] Hit: ${cacheKey}`)
-    const v: readonly MergeRequest[] = cached.value;
-    return v;
+    return cached.value as  readonly MergeRequest[];
   }
 
   yield* Console.log(`[Cache] Miss: ${cacheKey}`)
