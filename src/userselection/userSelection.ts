@@ -48,12 +48,10 @@ export enum ActivePane {
 }
 
 export const extractSelectionData = (
-  entry: UserSelectionEntry | undefined,
+  entry: UserSelectionEntry,
   groups: UserGroup[],
   state: MergeRequestState
-): CacheKey | undefined => {
-  if (!entry) return undefined;
-
+): CacheKey => {
   const usernames = new Set<string>();
   const repositories = new Set<string>();
 
@@ -87,5 +85,5 @@ export const extractSelectionData = (
     });
   }
 
-  return undefined;
+  throw new Error("unreachable");
 };

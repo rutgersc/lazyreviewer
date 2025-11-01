@@ -197,9 +197,11 @@ export const selectedActivityIndexAtom = Atom.make<number>(0);
 export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
 export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
-    const userSelections = get(userSelectionsAtom);
-    const userSelectionIndex = get(selectedUserSelectionEntryAtom);
-    const selectionEntry = userSelections[userSelectionIndex];
+    const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
+    if (!selectionEntry) {
+      return;
+    }
+
     const filterMrState = get(filterMrStateAtom);
     const groups = get(groupsAtom);
 
@@ -213,33 +215,27 @@ export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
 const mrsByKeyAtomFamily = Atom.family((key: CacheKey) => {
-    const oh = Effect.gen(function* () {
-      return key._tag === "UserMRs"
-          ? yield* fetchUserMRsWithCache(key)
-          : yield* fetchProjectMRsWithCache(key);
-    })
-    .pipe(
-      Effect.catchAllCause((cause) =>
-        Effect.gen(function* () {
-          yield* error("Error fetching merge requests:", cause)
-          return [] as readonly MergeRequest[];
-        })
-      )
-    );
+  const oh = Effect.gen(function* () {
+    return key._tag === "UserMRs"
+      ? yield* fetchUserMRsWithCache(key)
+      : yield* fetchProjectMRsWithCache(key);
+  }).pipe(
+    Effect.catchAllCause((cause) =>
+      Effect.gen(function* () {
+        yield* error("Error fetching merge requests:", cause);
+        return [] as readonly MergeRequest[];
+      })
+    )
+  );
 
-    return appAtomRuntime.atom(oh).pipe(
-      Atom.setLazy(false),
-      Atom.keepAlive);
+  return appAtomRuntime.atom(oh).pipe(Atom.setLazy(false), Atom.keepAlive);
 });
 
 export const mergeRequestsAtom = Atom.make((get) => {
   const cacheKey = get(mergeRequestsKeyAtom);
-  if (!cacheKey) {
-    console.log("mergeRequestsAtom NOOOO cacheKey", cacheKey)
-    return Result.success([]);
-  }
-  console.log("mergeRequestsAtom")
-  return get(mrsByKeyAtomFamily(cacheKey));
+  return cacheKey
+    ? get(mrsByKeyAtomFamily(cacheKey))
+    : Result.success([]);
 })
 
 export const unwrappedMergeRequestsAtom = Atom.map(
@@ -254,7 +250,7 @@ export const unwrappedMergeRequestsAtom = Atom.map(
 )
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
-    const f = Effect.gen(function* () {
+    return Effect.gen(function* () {
 
       const cacheKey = get(mergeRequestsKeyAtom);
       if (!cacheKey) {
@@ -282,8 +278,6 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
         })
       )
     );
-
-    return f;
   }
 )
 

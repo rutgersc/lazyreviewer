@@ -7,7 +7,7 @@ import { type MergeRequestState, getSdk } from "../generated/gitlab-sdk";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
 import { Effect, Console, Data } from "effect";
-import type { MRCacheKey, ProjectMRCacheKey } from "./mergerequests-caching-effects";
+import type { ProjectMRCacheKey } from "./mergerequests-caching-effects";
 
 function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
   ensurePipelineJobsInSettings(mrs);
@@ -39,33 +39,41 @@ export class FetchMergeRequestsByProjectError extends Data.TaggedError("FetchMer
   cause: unknown;
 }> { }
 
-export const fetchMergeRequestsByProject = Effect.fn("fetchMergeRequestsByProject")(function* (
-  projectPath: string,
-  state: MergeRequestState = 'opened'
-) {
-  // Parse the repository ID to determine provider
-  const parsed = parseRepositoryId(projectPath);
-  let mrs: GitlabMergeRequest[];
 
-  if (parsed.provider === 'bitbucket') {
-    yield* Console.log(`Fetching from BitBucket: ${parsed.workspace}/${parsed.repo}`);
-    mrs = yield* getBitbucketPrs(parsed.workspace, parsed.repo, state);
-  } else {
-    yield* Console.log(`Fetching from GitLab: ${projectPath}`);
-    mrs = yield* getGitlabMrsByProject(projectPath, state);
-  }
+export class MergeRequestsService extends Effect.Service<MergeRequestsService>()("MergeRequestsService", {
+  accessors: true,
+  effect: Effect.gen(function* () {
+    // const store = yield* KeyValueStore.KeyValueStore
+    // const schemaStore = store.forSchema(Schema.Array(MergeRequestSchema))
 
-  yield* Console.log(`Fetched ${mrs.length} merge requests`);
+    const fetchMergeRequestsByProject = Effect.fn(function* ({ projectPath, state }: ProjectMRCacheKey) {
+      const parsed = parseRepositoryId(projectPath);
+      let mrs: GitlabMergeRequest[];
 
-  const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
-  yield* Console.log(`Loading ${jiraKeys.length} Jira tickets`);
-  const tickets = yield* loadJiraTickets(jiraKeys);
+      if (parsed.provider === "bitbucket") {
+        yield* Console.log(
+          `Fetching from BitBucket: ${parsed.workspace}/${parsed.repo}`
+        );
+        mrs = yield* getBitbucketPrs(parsed.workspace, parsed.repo, state);
+      } else {
+        yield* Console.log(`Fetching from GitLab: ${projectPath}`);
+        mrs = yield* getGitlabMrsByProject(projectPath, state);
+      }
 
-  return processMrsWithJira(mrs, tickets);
-})
+      const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
+      const tickets = yield* loadJiraTickets(jiraKeys);
 
-export const fetchMergeRequestsByProjectEffect = (key: ProjectMRCacheKey) =>
-  fetchMergeRequestsByProject(key.projectPath, key.state).pipe(Effect.withSpan("mySpan"));
+      return processMrsWithJira(mrs, tickets);
+    });
+
+
+    return {
+      get: (key: string) => schemaStore.get(key),
+      set: (key: string, value: readonly MergeRequest[]) => schemaStore.set(key, value),
+      invalidate: (key: string) => schemaStore.remove(key)
+    } as const
+  })
+}) {}
 
 export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (
   selectedUserSelectionEntry: string,

@@ -1,6 +1,8 @@
 import { Console, Data, Effect } from "effect";
 import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/gitlabgraphql";
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
+import { id } from "effect/Fiber";
+import { HttpClient } from "@effect/platform";
 
 export interface BitbucketAccount {
   display_name: string;
