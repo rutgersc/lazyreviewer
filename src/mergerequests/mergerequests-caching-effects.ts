@@ -8,7 +8,6 @@ import { MergeRequestStorage } from "../services/mergeRequestStorage"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlabgraphql"
 import type { SearchJiraIssuesError } from "../jira/jiraService"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
-import { liveServices, type DefaultServices } from "effect/DefaultServices"
 
 export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
   readonly usernames: readonly string[]
@@ -22,7 +21,6 @@ export class ProjectMRCacheKey extends Data.TaggedClass("ProjectMRs")<{
 
 export type CacheKey = MRCacheKey | ProjectMRCacheKey
 
-// Unified error type for all MR cache operations
 export type MergeRequestsCacheError =
   | string
   | FetchGitlabMrsError
