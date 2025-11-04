@@ -92,12 +92,12 @@ const JiraCommentContentTextSchema = Schema.Struct({
 })
 
 const JiraCommentContentBlockSchema = Schema.Struct({
-  content: Schema.mutable(Schema.Array(JiraCommentContentTextSchema)),
+  content:  Schema.optional(Schema.mutable(Schema.Array(JiraCommentContentTextSchema))),
   type: Schema.String
 })
 
 const JiraCommentBodySchema = Schema.Struct({
-  content: Schema.mutable(Schema.Array(JiraCommentContentBlockSchema)),
+  content: Schema.optional(Schema.mutable(Schema.Array(JiraCommentContentBlockSchema))),
   type: Schema.String
 })
 

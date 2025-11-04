@@ -38,6 +38,18 @@ const getJiraStatusColor = (statusName: string | undefined): string => {
   return Colors.PRIMARY;
 };
 
+const getCreatedDateColor = (createdAt: Date): string => {
+  const now = new Date();
+  const ageInMs = now.getTime() - createdAt.getTime();
+  const ageInDays = ageInMs / (1000 * 60 * 60 * 24);
+
+  if (ageInDays < 1) return '#f5f3bf';
+  if (ageInDays < 3) return Colors.PRIMARY;
+  if (ageInDays < 7) return Colors.SECONDARY;
+  if (ageInDays < 14) return Colors.WARNING;
+  return Colors.ERROR;
+};
+
 const TimeColumnAuthorTitle = ({
   mr,
   isMyMr
@@ -153,7 +165,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
     <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
       <box style={{ width: 3 }}>
         <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
+          style={{ fg: getCreatedDateColor(createdAt), attributes: TextAttributes.DIM }}
           wrapMode='none'
         >
           {formatCompactTime(createdAt)}
@@ -346,7 +358,7 @@ const IgnoredMergeRequestRow = ({
       <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
         <box style={{ width: 3 }}>
           <text
-            style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
+            style={{ fg: getCreatedDateColor(mr.createdAt), attributes: TextAttributes.DIM }}
             wrapMode='none'
           >
             {formatCompactTime(mr.createdAt)}
