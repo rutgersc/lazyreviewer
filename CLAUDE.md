@@ -192,6 +192,45 @@ After completing any coding session, ALWAYS:
 3. **Refactor proactively**: Extract common patterns into hooks, utilities, or shared functions
 4. **Consolidate similar functions**: If multiple functions do similar things, consider unifying them with parameters
 
+**Code Reuse and Deduplication:**
+
+**CRITICAL: Always check for code duplication BEFORE and AFTER making changes.**
+
+Less code is better. When implementing features:
+
+1. **Before implementing**: Scan for existing similar patterns
+   - Are there functions/atoms that do something similar?
+   - Can existing code be extended instead of duplicated?
+   - Is there a parallel pattern that suggests abstraction?j
+
+2. **After implementing**: Review for unification opportunities
+   - Look for code that reads from the same source multiple times
+   - Identify separate state tracking the same underlying data
+   - Spot parallel implementations that differ only in parameters. Extract the common part to a parameterized function.
+
+3. **Apply the Single Source of Truth principle**:
+   - ❌ BAD: Multiple atoms/functions accessing the same cache/state separately
+   - ✅ GOOD: One unified source, derive specialized views from it
+   - ❌ BAD: Separate loading states for initial load vs refresh
+   - ✅ GOOD: Single loading atom that covers all loading scenarios
+
+**Real example from this codebase:**
+```typescript
+// ❌ BEFORE: Double cache access
+fetchUserMRsWithCache() → returns data only
+getLastRefreshTimestamp() → reads same cache for timestamp only
+mrsByKeyAtomFamily → for data
+lastRefreshTimestampByKeyAtomFamily → for timestamp
+
+// ✅ AFTER: Single cache access
+fetchUserMRsWithCache() → returns { data, timestamp }
+mrsCacheByKeyAtomFamily → single source
+mergeRequestsAtom → derives .data
+lastRefreshTimestampAtom → derives .timestamp
+```
+
+**Rule of thumb**: If you're reading the same data twice or tracking the same concept in multiple places, consolidate into one source and derive views from it.
+
 **Comment Policy:**
 - **NEVER add excessive comments** - code should be self-documenting
 - **NO explanatory comments** for obvious operations
