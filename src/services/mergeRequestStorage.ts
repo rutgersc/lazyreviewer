@@ -2,15 +2,25 @@ import { KeyValueStore } from "@effect/platform"
 import { Console, Effect, Layer, Schema } from "effect"
 import { MergeRequestSchema, type MergeRequest } from "../schemas/mergeRequestSchema"
 
+const CachedMergeRequestsSchema = Schema.Struct({
+  data: Schema.Array(MergeRequestSchema),
+  timestamp: Schema.Date
+})
+
+export type CachedMergeRequests = Schema.Schema.Type<typeof CachedMergeRequestsSchema>
+
 export class MergeRequestStorage extends Effect.Service<MergeRequestStorage>()("MergeRequestStorage", {
   accessors: true,
   effect: Effect.gen(function* () {
     const store = yield* KeyValueStore.KeyValueStore
-    const schemaStore = store.forSchema(Schema.Array(MergeRequestSchema))
+    const schemaStore = store.forSchema(CachedMergeRequestsSchema)
 
     return {
       get: (key: string) => schemaStore.get(key),
-      set: (key: string, value: readonly MergeRequest[]) => schemaStore.set(key, value),
+      set: (key: string, value: readonly MergeRequest[]) => schemaStore.set(key, {
+        data: value,
+        timestamp: new Date()
+      }),
       invalidate: (key: string) => schemaStore.remove(key)
     } as const
   })

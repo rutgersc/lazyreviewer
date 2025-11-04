@@ -16,7 +16,7 @@ import type { MergeRequestState } from "../generated/gitlab-sdk";
 import { filterPipelineJobs } from "../gitlab/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedMergeRequestsAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedMergeRequestsAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom } from "../store/appAtoms";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -434,8 +434,8 @@ export default function MergeRequestPane({}: {}) {
   const selectedIndex = getSelectedMRIndex;
 
   const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
-  const refreshResult = useAtomValue(refreshMergeRequestsAtom);
-  const isRefreshing = Result.isWaiting(refreshResult);
+  const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
+  const lastRefreshTimestamp = useAtomValue(unwrappedLastRefreshTimestampAtom);
 
   const [activePane, setActivePane] = useAtom(activePaneAtom);
   const [activeModal, setActiveModal] = useAtom(activeModalAtom);
@@ -690,11 +690,19 @@ export default function MergeRequestPane({}: {}) {
         isActive={isActive}
       />
 
-      {isRefreshing && (
+      {isLoading && (
         <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
           <Spinner />
           <text style={{ fg: Colors.INFO }}>
-            Refreshing merge requests...
+            Loading merge requests...
+          </text>
+        </box>
+      )}
+
+      {!isLoading && lastRefreshTimestamp && (
+        <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+          <text style={{ fg: Colors.SUPPORTING }}>
+            Last refreshed: {formatCompactTime(lastRefreshTimestamp)} ago
           </text>
         </box>
       )}

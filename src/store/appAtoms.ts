@@ -214,7 +214,7 @@ export const log = (...args: ReadonlyArray<any>) =>
 export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
-const mrsByKeyAtomFamily = Atom.family((key: CacheKey) => {
+const mrsCacheByKeyAtomFamily = Atom.family((key: CacheKey) => {
   const oh = Effect.gen(function* () {
     return key._tag === "UserMRs"
       ? yield* fetchUserMRsWithCache(key)
@@ -223,7 +223,7 @@ const mrsByKeyAtomFamily = Atom.family((key: CacheKey) => {
     Effect.catchAllCause((cause) =>
       Effect.gen(function* () {
         yield* error("Error fetching merge requests:", cause);
-        return [] as readonly MergeRequest[];
+        return { data: [] as readonly MergeRequest[], timestamp: null as Date | null };
       })
     )
   );
@@ -233,9 +233,10 @@ const mrsByKeyAtomFamily = Atom.family((key: CacheKey) => {
 
 export const mergeRequestsAtom = Atom.make((get) => {
   const cacheKey = get(mergeRequestsKeyAtom);
-  return cacheKey
-    ? get(mrsByKeyAtomFamily(cacheKey))
-    : Result.success([]);
+  if (!cacheKey) return Result.success([]);
+
+  const cacheResult = get(mrsCacheByKeyAtomFamily(cacheKey));
+  return Result.map(cacheResult, (cache) => cache.data);
 })
 
 export const unwrappedMergeRequestsAtom = Atom.map(
@@ -248,6 +249,32 @@ export const unwrappedMergeRequestsAtom = Atom.map(
         })
     }
 )
+
+export const lastRefreshTimestampAtom = Atom.make((get) => {
+  const cacheKey = get(mergeRequestsKeyAtom);
+  if (!cacheKey) return Result.success(null as Date | null);
+
+  const cacheResult = get(mrsCacheByKeyAtomFamily(cacheKey));
+  return Result.map(cacheResult, (cache) => cache.timestamp);
+})
+
+export const unwrappedLastRefreshTimestampAtom = Atom.map(
+  lastRefreshTimestampAtom,
+  (result): Date | null => {
+    return Result.match(result, {
+      onInitial: () => null,
+      onFailure: () => null,
+      onSuccess: (timestamp) => timestamp.value
+    })
+  }
+)
+
+export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
+  const mrResult = get(mergeRequestsAtom);
+  const refreshResult = get(refreshMergeRequestsAtom);
+
+  return Result.isWaiting(mrResult) || Result.isWaiting(refreshResult);
+});
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     return Effect.gen(function* () {

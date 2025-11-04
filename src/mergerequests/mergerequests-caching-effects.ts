@@ -46,7 +46,7 @@ const toProjectCacheKeyString = (key: ProjectMRCacheKey): string => {
 
 
 export const fetchUserMRsWithCache = (key: MRCacheKey): Effect.Effect<
-  readonly MergeRequest[],
+  { data: readonly MergeRequest[], timestamp: Date | null },
   MergeRequestsCacheError,
   MergeRequestStorage
 > => Effect.gen(function* () {
@@ -55,21 +55,21 @@ export const fetchUserMRsWithCache = (key: MRCacheKey): Effect.Effect<
 
   const cached = yield* storage.get(cacheKey);
   if (cached._tag === "Some") {
-    yield* Console.log(`[Cache] Hit: ${cacheKey}, ${cached.value[0]?.targetbranch}`)
-    return cached.value as readonly MergeRequest[];
+    yield* Console.log(`[Cache] Hit: ${cacheKey}, ${cached.value.data[0]?.targetbranch}`)
+    return { data: cached.value.data, timestamp: cached.value.timestamp };
   }
 
   yield* Console.log(`[Cache] MISS: ${cacheKey}`)
 
   const fresh = (yield* fetchMergeRequests(key.usernames))
   yield* storage.set(cacheKey, fresh);
-  return fresh
+  return { data: fresh, timestamp: new Date() }
 })
 
 const test = MergeRequestStorage.get("test");
 
 export const fetchProjectMRsWithCache = (key: ProjectMRCacheKey): Effect.Effect<
-  readonly MergeRequest[],
+  { data: readonly MergeRequest[], timestamp: Date | null },
   MergeRequestsCacheError,
   MergeRequestStorage
 > => Effect.gen(function* () {
@@ -78,13 +78,13 @@ export const fetchProjectMRsWithCache = (key: ProjectMRCacheKey): Effect.Effect<
   const cached = yield* MergeRequestStorage.get(cacheKey);
   if (cached._tag === "Some") {
     yield* Console.log(`[Cache] Hit: ${cacheKey}`)
-    return cached.value as  readonly MergeRequest[];
+    return { data: cached.value.data, timestamp: cached.value.timestamp };
   }
 
   yield* Console.log(`[Cache] Miss: ${cacheKey}`)
   const fresh = yield* fetchMergeRequestsByProject(key)
   yield* MergeRequestStorage.set(cacheKey, fresh)
-  return fresh
+  return { data: fresh, timestamp: new Date() }
 });
 
 export const forceRefreshUserMRsCache = (key: MRCacheKey) => Effect.gen(function* () {
