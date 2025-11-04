@@ -12,6 +12,7 @@ import type { BranchDifference } from "../hooks/useRepositoryBranches";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 import { LogStorage, type LogEntry } from "../services/logStorage";
 import { loadJobLog } from '../gitlab/pipelinejob-log';
+import { fetchJobHistory } from '../gitlab/gitlabgraphql';
 
 
 // const STORE_FILE = 'debug/store.json';
@@ -79,6 +80,7 @@ export const branchDifferencesAtom = Atom.make<Map<string, BranchDifference>>(ne
 export const jobHistoryDataAtom = Atom.make<any[]>([]);
 export const jobHistoryLoadingAtom = Atom.make<boolean>(false);
 export const selectedJobForHistoryAtom = Atom.make<string | null>(null);
+export const jobHistoryLimitAtom = Atom.make<number>(15);
 
 // Phase 7: Pipeline Refetch
 export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
@@ -321,33 +323,47 @@ export const loadJobLogAtom = appAtomRuntime.fn((args: { mergeRequest: MergeRequ
   loadJobLog(args.mergeRequest, args.job)
 );
 
+// Phase 11: Job History Loading
+export const fetchJobHistoryAtom = appAtomRuntime.fn((_, get) =>
+  Effect.gen(function* () {
+    const selectedMr = get(selectedMrAtom);
+    const selectedPipelineJobIndex = get(selectedPipelineJobIndexAtom);
+    const limit = get(jobHistoryLimitAtom);
 
+    if (!selectedMr) {
+      yield* Console.log('[JobHistory] No MR selected');
+      return { job: null, history: [] };
+    }
 
+    const jobs = selectedMr.pipeline.stage.flatMap(stage => stage.jobs);
+    const selectedJob = jobs[selectedPipelineJobIndex];
 
-const fetchJobHistoryForSelectedJob = async (selectedPipelineJobIndex: number) => {
-    //   const state = get();
-    //   const selectedMr = state.mergeRequests[state.selectedMergeRequest];
-    //   if (!selectedMr) {
-    //     console.log('[JobHistory] No MR selected');
-    //     return;
-    //   }
+    if (!selectedJob) {
+      yield* Console.log('[JobHistory] No job selected');
+      return { job: null, history: [] };
+    }
 
-    //   const jobs = selectedMr.pipeline.stage.flatMap(stage => stage.jobs);
-    //   const selectedJob = jobs[selectedPipelineJobIndex];
-    //   if (!selectedJob) {
-    //     console.log('[JobHistory] No job selected');
-    //     return;
-    //   }
+    yield* Console.log(`[JobHistory] Fetching history for ${selectedJob.name} (limit: ${limit})`);
 
-    //   try {
-    //     const history = await fetchJobHistory(
-    //       selectedMr.project.fullPath,
-    //       selectedJob.name,
-    //       15
-    //     );
-    //     console.log('[JobHistory] Fetched history:', history);
-    //   } catch (error) {
-    //     console.error('[JobHistory] Failed to fetch job history:', error);
-    //   }
+    const history = yield* fetchJobHistory(
+      selectedMr.project.fullPath,
+      selectedJob.name,
+      limit
+    );
 
-    };
+    yield* Console.log(`[JobHistory] Fetched ${history.length} entries`);
+
+    return { job: selectedJob, history };
+  })
+);
+
+// Phase 12: Increment Job History Limit
+export const incrementJobHistoryLimitAtom = Atom.writable(
+  (get) => get(jobHistoryLimitAtom),
+  (ctx, _?: void) => {
+    const currentLimit = ctx.get(jobHistoryLimitAtom);
+    const newLimit = currentLimit + 15;
+    ctx.set(jobHistoryLimitAtom, newLimit);
+    return newLimit;
+  }
+);

@@ -3,8 +3,8 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { getJobStatusDisplay } from '../gitlab/jobStatus';
 import { Colors } from '../colors';
-import { jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom } from '../store/appAtoms';
-import { useAtomValue } from '@effect-atom/atom-react';
+import { jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, jobHistoryLimitAtom, incrementJobHistoryLimitAtom, fetchJobHistoryAtom } from '../store/appAtoms';
+import { useAtomValue, useAtomSet, useAtom } from '@effect-atom/atom-react';
 
 interface JobHistoryModalProps {
   isVisible: boolean;
@@ -35,6 +35,11 @@ export default function JobHistoryModal({
   const jobName = useAtomValue(selectedJobForHistoryAtom);
   const jobHistory = useAtomValue(jobHistoryDataAtom);
   const isLoading = useAtomValue(jobHistoryLoadingAtom);
+  const currentLimit = useAtomValue(jobHistoryLimitAtom);
+  const [, incrementLimit] = useAtom(incrementJobHistoryLimitAtom);
+  const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
+  const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
+  const runFetchJobHistory = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
 
   useKeyboard((key: ParsedKey) => {
     if (!isVisible) return;
@@ -45,6 +50,15 @@ export default function JobHistoryModal({
       setSelectedIndex(prev => Math.min(prev + 1, jobHistory.length - 1));
     } else if (key.name === 'k' || key.name === 'up') {
       setSelectedIndex(prev => Math.max(prev - 1, 0));
+    } else if (key.name === 'm') {
+      incrementLimit(); // Increment limit
+      runFetchJobHistory().then((exit) => {
+        if (exit._tag === 'Success') {
+          const { job, history } = exit.value;
+          setJobHistoryData(history);
+          setSelectedJobForHistory(job?.name || null);
+        }
+      });
     } else if (key.name === 'return') {
       const selectedEntry = jobHistory[selectedIndex];
       if (selectedEntry?.webPath) {
@@ -206,10 +220,10 @@ export default function JobHistoryModal({
           gap: 0
         }}>
           <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
-            {`${totalRuns} total runs · ${developRuns} on develop · ${failedRuns} failures`}
+            {`${totalRuns} total runs · ${developRuns} on develop · ${failedRuns} failures · limit: ${currentLimit}`}
           </text>
           <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
-            j/k: navigate • enter: open • esc: close
+            j/k: navigate • enter: open • m: load more (+15) • esc: close
           </text>
         </box>
       </box>

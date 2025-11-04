@@ -39,7 +39,7 @@ export default function App() {
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
 
   useEffect(() => {
-      renderer.console.toggle();
+      // renderer.console.toggle();
   }, []);
 
   const handleStateSelect = async (newState: MergeRequestState) => {
@@ -68,6 +68,7 @@ export default function App() {
         process.exit();
 
       case '~':
+      case 'z':
         renderer.console.toggle();
         break;
       case 'o':

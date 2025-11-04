@@ -5,7 +5,7 @@ import { getJobStatusDisplay } from '../gitlab/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 import { ActivePane } from '../userselection/userSelection';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom } from '../store/appAtoms';
+import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryLimitAtom } from '../store/appAtoms';
 
 interface PipelineJobsListProps {
   activePane: ActivePane;
@@ -22,7 +22,9 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
   const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
   const setJobHistoryLoading = useAtomSet(jobHistoryLoadingAtom);
   const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
+  const setJobHistoryLimit = useAtomSet(jobHistoryLimitAtom);
   const runLoadJobLog = useAtomSet(loadJobLogAtom);
+  const runFetchJobHistory = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
@@ -46,10 +48,15 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
         break;
       case 'y':
         if (pipelineJobs[selectedPipelineJobIndex]) {
-          throw new Error("reimplement with atoms")
-          // fetchJobHistoryForSelectedJob(selectedPipelineJobIndex).then(() => {
-          //   setActiveModal('jobHistory');
-          // });
+          setJobHistoryLimit(15); // Reset to default limit
+          runFetchJobHistory().then((exit) => {
+            if (exit._tag === 'Success') {
+              const { job, history } = exit.value;
+              setJobHistoryData(history);
+              setSelectedJobForHistory(job?.name || null);
+            }
+            setActiveModal('jobHistory');
+          });
         }
         break;
     }
