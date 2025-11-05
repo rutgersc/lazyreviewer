@@ -13,6 +13,22 @@ interface PipelineJobsListProps {
   selectedPipelineJobIndex: number;
 }
 
+function formatDuration(seconds: number | null): string {
+  if (seconds === null || seconds === 0) return '-';
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  }
+  return `${secs}s`;
+}
+
 export default function PipelineJobsList({ activePane, pipelineJobs, selectedPipelineJobIndex }: PipelineJobsListProps) {
   const activeModal = useAtomValue(activeModalAtom);
   const setActiveModal = useAtomSet(activeModalAtom);
@@ -82,7 +98,7 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
             style={{
               flexDirection: "row",
               alignItems: "center",
-              gap: 2,
+              gap: 1,
               backgroundColor: index === selectedPipelineJobIndex ? Colors.SELECTED : 'transparent'
             }}
           >
@@ -91,6 +107,12 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
               wrapMode='none'
             >
               {getJobStatusDisplay(job.status).symbol}
+            </text>
+            <text
+              style={{ fg: Colors.SUPPORTING, width: 8 }}
+              wrapMode='none'
+            >
+              {formatDuration(job.duration)}
             </text>
             <text
               style={{ fg: Colors.NEUTRAL }}

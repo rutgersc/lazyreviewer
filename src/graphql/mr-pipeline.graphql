@@ -19,6 +19,7 @@ query MRPipeline($projectPath: ID!, $iid: String!) {
                 status
                 failureMessage
                 startedAt
+                duration
               }
             }
             status

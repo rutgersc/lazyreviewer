@@ -23,7 +23,8 @@ export const PipelineJobSchema = Schema.Struct({
   ),
   failureMessage: Schema.NullOr(Schema.String),
   webPath: Schema.NullOr(Schema.String),
-  startedAt: Schema.String
+  startedAt: Schema.String,
+  duration: Schema.NullOr(Schema.Number)
 }); //.annotations({ identifier: "PipelineJob" })
 
 export const PipelineStageSchema = Schema.Struct({

@@ -80,6 +80,7 @@ query MRs($usernames: [String!], $state: MergeRequestState, $first: Int!) {
                     status
                     failureMessage
                     startedAt
+                    duration
                   }
                 }
 

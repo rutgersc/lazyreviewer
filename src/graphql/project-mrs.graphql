@@ -82,6 +82,7 @@ query ProjectMRs($projectPath: ID!, $state: MergeRequestState, $first: Int!) {
                   status
                   failureMessage
                   startedAt
+                  duration
                 }
               }
 

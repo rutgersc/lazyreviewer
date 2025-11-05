@@ -30030,7 +30030,7 @@ export type MrPipelineQueryVariables = Exact<{
 }>;
 
 
-export type MrPipelineQuery = { project: { mergeRequest: { id: string, iid: string, headPipeline: { active: boolean, iid: string, stages: { __typename: 'CiStageConnection', nodes: Array<{ id: string, name: string | null, status: string | null, jobs: { nodes: Array<{ id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null } | null> | null } | null } | null> | null } | null } | null } | null } | null };
+export type MrPipelineQuery = { project: { mergeRequest: { id: string, iid: string, headPipeline: { active: boolean, iid: string, stages: { __typename: 'CiStageConnection', nodes: Array<{ id: string, name: string | null, status: string | null, jobs: { nodes: Array<{ id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null, duration: number | null } | null> | null } | null } | null> | null } | null } | null } | null } | null };
 
 export type MRsQueryVariables = Exact<{
   usernames: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
@@ -30039,7 +30039,7 @@ export type MRsQueryVariables = Exact<{
 }>;
 
 
-export type MRsQuery = { users: { count: number, nodes: Array<{ username: string, authoredMergeRequests: { count: number, pageInfo: { hasNextPage: boolean }, nodes: Array<{ id: string, iid: string, name: string | null, webUrl: string | null, sourceBranch: string, targetBranch: string, createdAt: string, updatedAt: string, state: MergeRequestState, project: { name: string, path: string, fullPath: string }, author: { name: string, avatarUrl: string | null } | null, approvedBy: { nodes: Array<{ id: any, name: string, username: string } | null> | null } | null, discussions: { nodes: Array<{ resolved: boolean, resolvable: boolean, id: any, notes: { nodes: Array<{ __typename: 'Note', id: any, body: string, createdAt: string, resolvable: boolean, resolved: boolean, author: { name: string } | null, position: { filePath: string, newLine: number | null, oldLine: number | null, oldPath: string | null } | null } | null> | null } } | null> | null }, headPipeline: { active: boolean, iid: string, stages: { __typename: 'CiStageConnection', nodes: Array<{ id: string, name: string | null, status: string | null, jobs: { nodes: Array<{ id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null } | null> | null } | null } | null> | null } | null } | null } | null> | null } | null } | null> | null } | null };
+export type MRsQuery = { users: { count: number, nodes: Array<{ username: string, authoredMergeRequests: { count: number, pageInfo: { hasNextPage: boolean }, nodes: Array<{ id: string, iid: string, name: string | null, webUrl: string | null, sourceBranch: string, targetBranch: string, createdAt: string, updatedAt: string, state: MergeRequestState, project: { name: string, path: string, fullPath: string }, author: { name: string, avatarUrl: string | null } | null, approvedBy: { nodes: Array<{ id: any, name: string, username: string } | null> | null } | null, discussions: { nodes: Array<{ resolved: boolean, resolvable: boolean, id: any, notes: { nodes: Array<{ __typename: 'Note', id: any, body: string, createdAt: string, resolvable: boolean, resolved: boolean, author: { name: string } | null, position: { filePath: string, newLine: number | null, oldLine: number | null, oldPath: string | null } | null } | null> | null } } | null> | null }, headPipeline: { active: boolean, iid: string, stages: { __typename: 'CiStageConnection', nodes: Array<{ id: string, name: string | null, status: string | null, jobs: { nodes: Array<{ id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null, duration: number | null } | null> | null } | null } | null> | null } | null } | null } | null> | null } | null } | null> | null } | null };
 
 export type ProjectMRsQueryVariables = Exact<{
   projectPath: Scalars['ID']['input'];
@@ -30048,7 +30048,7 @@ export type ProjectMRsQueryVariables = Exact<{
 }>;
 
 
-export type ProjectMRsQuery = { project: { id: string, name: string, path: string, fullPath: string, mergeRequests: { count: number, pageInfo: { hasNextPage: boolean }, nodes: Array<{ id: string, iid: string, title: string, webUrl: string | null, sourceBranch: string, targetBranch: string, createdAt: string, updatedAt: string, state: MergeRequestState, project: { name: string, path: string, fullPath: string }, author: { name: string, username: string, avatarUrl: string | null } | null, approvedBy: { nodes: Array<{ id: any, name: string, username: string } | null> | null } | null, discussions: { nodes: Array<{ resolved: boolean, resolvable: boolean, id: any, notes: { nodes: Array<{ __typename: 'Note', id: any, body: string, createdAt: string, resolvable: boolean, resolved: boolean, author: { name: string } | null, position: { filePath: string, newLine: number | null, oldLine: number | null, oldPath: string | null } | null } | null> | null } } | null> | null }, headPipeline: { active: boolean, iid: string, stages: { __typename: 'CiStageConnection', nodes: Array<{ id: string, name: string | null, status: string | null, jobs: { nodes: Array<{ id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null } | null> | null } | null } | null> | null } | null } | null } | null> | null } | null } | null };
+export type ProjectMRsQuery = { project: { id: string, name: string, path: string, fullPath: string, mergeRequests: { count: number, pageInfo: { hasNextPage: boolean }, nodes: Array<{ id: string, iid: string, title: string, webUrl: string | null, sourceBranch: string, targetBranch: string, createdAt: string, updatedAt: string, state: MergeRequestState, project: { name: string, path: string, fullPath: string }, author: { name: string, username: string, avatarUrl: string | null } | null, approvedBy: { nodes: Array<{ id: any, name: string, username: string } | null> | null } | null, discussions: { nodes: Array<{ resolved: boolean, resolvable: boolean, id: any, notes: { nodes: Array<{ __typename: 'Note', id: any, body: string, createdAt: string, resolvable: boolean, resolved: boolean, author: { name: string } | null, position: { filePath: string, newLine: number | null, oldLine: number | null, oldPath: string | null } | null } | null> | null } } | null> | null }, headPipeline: { active: boolean, iid: string, stages: { __typename: 'CiStageConnection', nodes: Array<{ id: string, name: string | null, status: string | null, jobs: { nodes: Array<{ id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null, duration: number | null } | null> | null } | null } | null> | null } | null } | null } | null> | null } | null } | null };
 
 export type ProjectPipelinesJobHistoryQueryVariables = Exact<{
   projectPath: Scalars['ID']['input'];
@@ -30130,6 +30130,7 @@ export const MrPipelineDocument = gql`
                 status
                 failureMessage
                 startedAt
+                duration
               }
             }
             status
@@ -30219,6 +30220,7 @@ export const MRsDocument = gql`
                     status
                     failureMessage
                     startedAt
+                    duration
                   }
                 }
                 status
@@ -30312,6 +30314,7 @@ export const ProjectMRsDocument = gql`
                   status
                   failureMessage
                   startedAt
+                  duration
                 }
               }
               status

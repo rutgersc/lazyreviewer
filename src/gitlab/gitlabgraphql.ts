@@ -63,7 +63,8 @@ export const mapMrFromQuery = (
             status: job?.status || 'CREATED',
             failureMessage: job?.failureMessage || null,
             webPath: job?.webPath || null,
-            startedAt: job?.startedAt || ''
+            startedAt: job?.startedAt || '',
+            duration: job?.duration ?? null
           } satisfies PipelineJob))
           .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
           || []
@@ -216,7 +217,8 @@ export const getGitlabMrsByProject = Effect.fn("getGitlabMrsByProject")(function
               status: job?.status || 'CREATED',
               failureMessage: job?.failureMessage || null,
               webPath: job?.webPath || null,
-              startedAt: job?.startedAt || ''
+              startedAt: job?.startedAt || '',
+              duration: job?.duration ?? null
             } satisfies PipelineJob))
             .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
             || []
@@ -367,7 +369,8 @@ export const getMrPipeline = Effect.fn("getMrPipeline")(function* (projectPath: 
             status: job?.status || 'CREATED',
             failureMessage: job?.failureMessage || null,
             webPath: job?.webPath || null,
-            startedAt: job?.startedAt || ''
+            startedAt: job?.startedAt || '',
+            duration: job?.duration ?? null
           } satisfies PipelineJob))
           .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
           || []
