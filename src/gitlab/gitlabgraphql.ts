@@ -20,6 +20,7 @@ export interface JobHistoryEntry {
   jobStatus: CiJobStatus;
   failureMessage: string | null;
   startedAt: string;
+  duration: number | null;
   pipelineId: string;
   pipelineIid: number;
   pipelineRef: string;
@@ -419,6 +420,7 @@ export const fetchJobHistory = Effect.fn("fetchJobHistory")(function* (
         jobStatus: job.status || 'CREATED',
         failureMessage: job.failureMessage || null,
         startedAt: job.startedAt || '',
+        duration: job.duration ?? null,
         pipelineId: pipeline!.id,
         pipelineIid: parseInt(pipeline!.iid),
         pipelineRef: pipeline!.ref || '',

@@ -5,6 +5,7 @@ import { getJobStatusDisplay } from '../gitlab/jobStatus';
 import { Colors } from '../colors';
 import { jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, jobHistoryLimitAtom, incrementJobHistoryLimitAtom, fetchJobHistoryAtom } from '../store/appAtoms';
 import { useAtomValue, useAtomSet, useAtom } from '@effect-atom/atom-react';
+import { useAutoScroll } from '../hooks/useAutoScroll';
 
 interface JobHistoryModalProps {
   isVisible: boolean;
@@ -26,6 +27,22 @@ function formatRelativeTime(isoString: string): string {
   return 'just now';
 }
 
+function formatDuration(seconds: number | null): string {
+  if (seconds === null || seconds === 0) return '-';
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  }
+  return `${secs}s`;
+}
+
 export default function JobHistoryModal({
   isVisible,
   onClose
@@ -41,15 +58,28 @@ export default function JobHistoryModal({
   const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
   const runFetchJobHistory = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
 
+  const { scrollBoxRef, scrollToItem } = useAutoScroll({
+    itemHeight: 2,
+    lookahead: 2,
+  });
+
   useKeyboard((key: ParsedKey) => {
     if (!isVisible) return;
 
     if (key.name === 'escape') {
       onClose();
     } else if (key.name === 'j' || key.name === 'down') {
-      setSelectedIndex(prev => Math.min(prev + 1, jobHistory.length - 1));
+      setSelectedIndex(prev => {
+        const newIndex = Math.min(prev + 1, jobHistory.length - 1);
+        scrollToItem(newIndex);
+        return newIndex;
+      });
     } else if (key.name === 'k' || key.name === 'up') {
-      setSelectedIndex(prev => Math.max(prev - 1, 0));
+      setSelectedIndex(prev => {
+        const newIndex = Math.max(prev - 1, 0);
+        scrollToItem(newIndex);
+        return newIndex;
+      });
     } else if (key.name === 'm') {
       incrementLimit(); // Increment limit
       runFetchJobHistory().then((exit) => {
@@ -109,7 +139,17 @@ export default function JobHistoryModal({
         </box>
 
         {/* Content */}
-        <box style={{ flexDirection: 'column', padding: 1, flexGrow: 1, overflow: 'scroll' }}>
+        <scrollbox
+          ref={scrollBoxRef}
+          style={{
+            flexDirection: 'column',
+            padding: 1,
+            flexGrow: 1,
+            contentOptions: {
+              backgroundColor: Colors.BACKGROUND,
+            }
+          }}
+        >
           {isLoading ? (
             <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
               Loading job history...
@@ -153,6 +193,11 @@ export default function JobHistoryModal({
                       </text>
                       <text style={{ fg: statusDisplay.color, width: 10 }} wrapMode='none'>
                         {statusDisplay.description.toUpperCase()}
+                      </text>
+
+                      {/* Duration */}
+                      <text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>
+                        {formatDuration(entry.duration)}
                       </text>
 
                       {/* Develop indicator */}
@@ -208,7 +253,7 @@ export default function JobHistoryModal({
               })}
             </box>
           )}
-        </box>
+        </scrollbox>
 
         {/* Footer */}
         <box style={{
