@@ -7,52 +7,61 @@ This directory contains the detailed implementation plan for refactoring LazyGit
 ### 📋 Start Here
 - **[00-overview.md](./00-overview.md)** - Problem statement, solution overview, and design decisions
 
-### 🔨 Implementation Phases
+### 🔨 Implementation Phases (CORRECT ORDER)
 
-1. **[01-event-stream-storage.md](./01-event-stream-storage.md)**
-   - Append-only event log
-   - Auto-incrementing event IDs
-   - Event storage service
+**⚠️ IMPORTANT: Phases must be done in order due to dependencies!**
+
+1. **[01-raw-fetch-methods.md](./01-raw-fetch-methods.md)** ⭐ **START HERE**
+   - Create raw fetch functions (return unprocessed API responses)
+   - Define TypeScript types for all API responses
+   - Union type for all raw responses
+   - Type guards for response discrimination
    - **Dependencies:** None (foundational)
 
-2. **[02-response-normalization.md](./02-response-normalization.md)**
+2. **[02-event-stream-storage.md](./02-event-stream-storage.md)**
+   - Append-only event log
+   - Auto-incrementing event IDs
+   - Event storage service using response types from Phase 1
+   - **Dependencies:** Phase 1 (needs raw response types)
+
+3. **[03-response-normalization.md](./03-response-normalization.md)**
    - Parser interface for raw API responses
    - MR unique identifier (MRId)
    - GitLab & Bitbucket parsers
-   - **Dependencies:** Phase 1 (can be parallel)
+   - **Dependencies:** Phase 1 (needs raw response types), Phase 2 (stores events)
 
-3. **[03-projection-engine.md](./03-projection-engine.md)**
+4. **[04-projection-engine.md](./04-projection-engine.md)**
    - Project events into current MR state
    - Incremental projection cache
    - Last-write-wins conflict resolution
-   - **Dependencies:** Phase 1, 2
+   - **Dependencies:** Phase 2 (event storage), Phase 3 (parsers)
 
-4. **[04-multi-strategy-sync.md](./04-multi-strategy-sync.md)**
+5. **[05-multi-strategy-sync.md](./05-multi-strategy-sync.md)**
    - Repository sync (all MRs in repo)
    - User sync (all MRs by author)
    - Single MR refresh
    - Sync orchestration
-   - **Dependencies:** Phase 1, 3
+   - **Dependencies:** Phase 1 (raw fetches), Phase 2 (event append), Phase 4 (projection)
 
-5. **[05-filtering-user-selections.md](./05-filtering-user-selections.md)**
+6. **[06-filtering-user-selections.md](./06-filtering-user-selections.md)**
    - User selections as client-side filters
    - Filter predicate builder
    - Instant selection switching
-   - **Dependencies:** Phase 3, 4
+   - **Dependencies:** Phase 4 (projected MRs), Phase 5 (sync)
 
-6. **[06-time-travel.md](./06-time-travel.md)**
+7. **[07-time-travel.md](./07-time-travel.md)**
    - View MR state at any event
    - Event history browser UI
    - Historical comparison
-   - **Dependencies:** Phase 3, 5
+   - **Dependencies:** Phase 4 (projection), Phase 6 (filtering)
 
-7. **[07-jira-integration.md](./07-jira-integration.md)**
+8. **[08-jira-integration.md](./08-jira-integration.md)**
    - Fetch Jira for projected MRs
    - Jira deduplication
    - Optional: Jira events
-   - **Dependencies:** Phase 3, 5
+   - **Dependencies:** Phase 4 (projected MRs), Phase 6 (filtering)
 
-8. **[08-migration-cleanup.md](./08-migration-cleanup.md)**
+9. **[09-migration-cleanup.md](./09-migration-cleanup.md)**
    - Migrate old cache to events
    - Remove legacy code
    - Clean old storage
@@ -63,15 +72,40 @@ This directory contains the detailed implementation plan for refactoring LazyGit
 
 - [x] Architecture research complete
 - [x] Design decisions made
-- [x] Implementation plan created
-- [ ] Phase 1 in progress
-- [ ] Phase 2 not started
-- [ ] Phase 3 not started
-- [ ] Phase 4 not started
-- [ ] Phase 5 not started
-- [ ] Phase 6 not started
-- [ ] Phase 7 not started
-- [ ] Phase 8 not started
+- [x] Fetch methods analysis complete (FETCH_METHODS_ANALYSIS.md)
+- [x] Implementation plan created and **reordered correctly**
+- [ ] **Phase 1 ready to start** ⭐ (Raw Fetch Methods)
+- [ ] Phase 2 not started (Event Storage)
+- [ ] Phase 3 not started (Response Normalization)
+- [ ] Phase 4 not started (Projection Engine)
+- [ ] Phase 5 not started (Multi-Strategy Sync)
+- [ ] Phase 6 not started (Filtering)
+- [ ] Phase 7 not started (Time-Travel)
+- [ ] Phase 8 not started (Jira Integration)
+- [ ] Phase 9 not started (Migration & Cleanup)
+
+## ⚠️ Important Notes
+
+### Why Phase Order Matters
+
+**Phase 1 MUST come before Phase 2** because:
+1. Event storage needs to know the structure of API responses
+2. TypeScript types from raw responses are used in event definitions
+3. We want precise types, not `unknown`
+4. Type safety across the entire system depends on this foundation
+
+### Previous Mistake
+
+We initially tried to build event storage (old Phase 1) before knowing what we'd store. This was backward. The correct order is:
+
+```
+Fetch → Types → Storage → Parse → Project
+```
+
+Not:
+```
+Storage → Fetch → Parse → Project  ❌
+```
 
 ## Key Concepts
 

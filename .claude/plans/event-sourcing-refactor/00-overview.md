@@ -104,16 +104,27 @@ type MRId = string  // Format: "gitlab:elab/elab:123" or "bitbucket:workspace/re
 - ✅ Testable (replay events for any state)
 - ✅ Future-proof (can add analytics, ML, etc.)
 
-## Implementation Phases
+## Implementation Phases (Correct Order)
 
-1. **Event Stream Storage** - Append-only log with auto-increment IDs
-2. **Response Normalization** - Parse raw API responses to unified schema
-3. **Projection Engine** - Calculate current state from events
-4. **Multi-Strategy Sync** - Repo/user/single-MR sync implementations
-5. **Filtering & User Selections** - Client-side filtering of projected state
-6. **Time-Travel** - Historical projection and UI
-7. **Jira Integration** - Adapt to work with projected MRs
-8. **Migration & Cleanup** - Migrate old data, remove legacy code
+**IMPORTANT: Phases must be implemented in dependency order!**
+
+1. **Raw Fetch Methods & Response Types** - Create fetch functions that return raw API responses, define TypeScript types for each response
+2. **Event Stream Storage** - Append-only log with auto-increment IDs (using response types from Phase 1)
+3. **Response Normalization** - Parse raw API responses to unified schema
+4. **Projection Engine** - Calculate current state from events
+5. **Multi-Strategy Sync** - Repo/user/single-MR sync implementations
+6. **Filtering & User Selections** - Client-side filtering of projected state
+7. **Time-Travel** - Historical projection and UI
+8. **Jira Integration** - Adapt to work with projected MRs
+9. **Migration & Cleanup** - Migrate old data, remove legacy code
+
+### Why This Order?
+
+**Phase 1 must come first** because:
+- We need to know the exact structure of API responses before designing event storage
+- TypeScript types from raw responses are used in event definitions
+- Event storage schema depends on these types
+- Precision in types = precision in event-sourcing architecture
 
 ## Technical Estimates
 

@@ -1,26 +1,31 @@
-# Phase 1: Event Stream Storage Foundation
+# Phase 2: Event Stream Storage Foundation
 
 ## Goal
 Create an append-only event log with auto-incrementing IDs to store all fetch operations.
 
 ## Dependencies
-None - foundational phase
+- **Phase 1 complete** (raw fetch methods and response types must exist first)
+  - Need `RawFetchResponse` union type
+  - Need specific response types: `MRsQuery`, `ProjectMRsQuery`, `BitbucketRepoFetchResponse`
+  - Event schema will use these types for `rawResponse` field
 
 ## Tasks
 
 ### Task 1.1: Event Schema Definition
 
-**Define core event types:**
+**Define core event types using raw response types from Phase 1:**
 
 ```typescript
 // src/events/eventTypes.ts
+
+import type { RawFetchResponse } from '../fetch/types';
 
 type FetchEvent = {
   eventId: number              // Auto-increment: 1, 2, 3, ...
   timestamp: Date              // When fetch occurred
   fetchType: FetchType
   scope: FetchScope
-  rawResponse: unknown         // Exact API response (JSON)
+  rawResponse: RawFetchResponse  // Typed! Uses union from Phase 1
 }
 
 type FetchType =
