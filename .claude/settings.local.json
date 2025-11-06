@@ -16,7 +16,8 @@
       "Bash(git commit:*)",
       "Bash(git grep:*)",
       "Bash(git show:*)",
-      "Bash(bun --print:*)"
+      "Bash(bun --print:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []
