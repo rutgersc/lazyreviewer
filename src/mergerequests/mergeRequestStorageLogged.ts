@@ -1,5 +1,5 @@
 import { Layer, Effect, Console as ConsoleI } from "effect";
-import type { MergeRequest } from "../schemas/mergeRequestSchema";
+import type { MergeRequest } from "./mergeRequestSchema";
 import { MergeRequestStorage } from "./mergeRequestStorage";
 
 export const MergeRequestStorageLogged = Layer.effect(

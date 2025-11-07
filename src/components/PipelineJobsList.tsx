@@ -1,7 +1,7 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { Colors } from '../colors';
-import { getJobStatusDisplay } from '../gitlab/jobStatus';
+import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
 import { ActivePane } from '../userselection/userSelection';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';

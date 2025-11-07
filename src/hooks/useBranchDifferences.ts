@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { getBranchDifference } from '../git/git-effects';
 import { loadSettings } from '../settings/settings';
-import type { MergeRequest } from '../schemas/mergeRequestSchema';
+import type { MergeRequest } from '../mergerequests/mergeRequestSchema';
 import type { BranchDifference } from './useRepositoryBranches';
 
 export const useBranchDifferences = (mergeRequests: MergeRequest[]): Map<string, BranchDifference> => {

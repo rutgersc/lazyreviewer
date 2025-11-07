@@ -1,11 +1,11 @@
 import { KeyValueStore, Path } from "@effect/platform"
 import { Layer, DefaultServices, Context, Console } from "effect"
 import * as FileSystem from "@effect/platform-node/NodeFileSystem"
-import { MergeRequestStorageLogged } from "../services/mergeRequestStorageLogged"
-import { MergeRequestStorage } from "../services/mergeRequestStorage"
-import { LogStorage } from "../services/logStorage"
-import { ConsoleLogged } from "../services/consoleLogged"
+import { MergeRequestStorageLogged } from "../mergerequests/mergeRequestStorageLogged"
+import { LogStorage } from "../logging/logStorage"
 import { Atom } from "@effect-atom/atom-react"
+import { ConsoleLogged } from "../logging/consoleLogged"
+import { MergeRequestStorage } from "../mergerequests/mergeRequestStorage"
 
 const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
 const cacheLayer = KeyValueStore.layerFileSystem("debug").pipe(

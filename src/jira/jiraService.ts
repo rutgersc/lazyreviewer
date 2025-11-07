@@ -9,6 +9,7 @@ import {
   type JiraIssue,
   type JiraSearchResponse
 } from "./jira-schema";
+import type { JiraIssuesFetchedEvent } from "../events/jira-events";
 
 export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
 
@@ -142,19 +143,33 @@ export class FetchJiraTicketsFailedError extends Data.TaggedError("Error1")<{
 }> { }
 
 export const loadJiraTickets = Effect.fn(function* (ticketKeys: string[]) {
+  const event = yield* loadJiraTicketsAsEvent(ticketKeys);
+  return projectJiraIssuesFetchedEvent(event);
+})
+
+// Event-returning wrapper function
+export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[]) {
   if (ticketKeys.length === 0) {
-    return [];
+    const emptyResponse: JiraSearchResponse = {
+      issues: [],
+      total: 0,
+      maxResults: 0
+    };
+    const event: JiraIssuesFetchedEvent = {
+      type: 'jira-issues-fetched-event',
+      searchResponse: emptyResponse,
+      issues: emptyResponse,
+      forTicketKeys: ticketKeys
+    };
+    return event;
   }
 
-  // Support both plain text (preferred) and pre-encoded base64 (legacy)
   let authToken: string;
 
   if (process.env.JIRA_EMAIL && process.env.JIRA_API_TOKEN) {
-    // Preferred: plain text credentials, we'll encode them
     const credentials = `${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`;
     authToken = Buffer.from(credentials).toString('base64');
   } else if (process.env.JIRA_API_TOKEN_BASE64) {
-    // Legacy: pre-encoded base64
     authToken = process.env.JIRA_API_TOKEN_BASE64;
   } else {
     throw new Error("Jira credentials not configured. Set JIRA_EMAIL and JIRA_API_TOKEN in .env");
@@ -165,10 +180,8 @@ export const loadJiraTickets = Effect.fn(function* (ticketKeys: string[]) {
     authToken,
     `issuekey in (${ticketKeys.join(',')})`);
 
-  // Process each issue to limit comments to last 10 and sort by creation date
   const processedIssues = result.issues.map(issue => {
     if (issue.fields.comment?.comments) {
-      // Sort comments by creation date (newest first) and take the last 10
       const sortedComments = issue.fields.comment.comments
         .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
         .slice(0, 10);
@@ -187,5 +200,22 @@ export const loadJiraTickets = Effect.fn(function* (ticketKeys: string[]) {
     return issue;
   });
 
-  return processedIssues;
-})
+  const processedResponse: JiraSearchResponse = {
+    ...result,
+    issues: processedIssues
+  };
+
+  const event: JiraIssuesFetchedEvent = {
+    type: 'jira-issues-fetched-event',
+    searchResponse: result,
+    issues: processedResponse,
+    forTicketKeys: ticketKeys
+  };
+
+  return event;
+});
+
+// Projection function
+export const projectJiraIssuesFetchedEvent = (event: JiraIssuesFetchedEvent): JiraIssue[] => {
+  return event.issues.issues;
+};

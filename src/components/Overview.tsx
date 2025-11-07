@@ -5,10 +5,10 @@ import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
-import type { MergeRequest } from '../schemas/mergeRequestSchema';
+import type { MergeRequest } from '../mergerequests/mergeRequestSchema';
 import type { UserSelectionEntry } from '../userselection/userSelection';
 import { copyToClipboard } from '../system/clipboard-effect';
-import { formatDiscussionsForClipboard } from '../gitlab/gitlabDiscussionFormatter';
+import { formatDiscussionsForClipboard } from '../gitlab/display/gitlabDiscussionFormatter';
 import { useAtom, useAtomValue } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, selectedDiscussionIndexAtom, activeModalAtom } from '../store/appAtoms';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import { getJobStatusDisplay } from '../gitlab/jobStatus';
+import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
 import { Colors } from '../colors';
 import { jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, jobHistoryLimitAtom, incrementJobHistoryLimitAtom, fetchJobHistoryAtom } from '../store/appAtoms';
 import { useAtomValue, useAtomSet, useAtom } from '@effect-atom/atom-react';

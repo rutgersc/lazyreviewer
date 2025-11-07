@@ -1,5 +1,5 @@
-import type { CiJobStatus } from '../generated/gitlab-sdk';
-import { Colors } from '../colors';
+import type { CiJobStatus } from '../../generated/gitlab-sdk';
+import { Colors } from '../../colors';
 
 export interface JobStatusDisplay {
   symbol: string;

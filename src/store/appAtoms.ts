@@ -1,5 +1,5 @@
 import { Atom, Result } from "@effect-atom/atom-react";
-import type { MergeRequest } from "../schemas/mergeRequestSchema";
+import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
@@ -10,9 +10,9 @@ import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
-import { LogStorage, type LogEntry } from "../services/logStorage";
-import { loadJobLog } from '../gitlab/pipelinejob-log';
-import { fetchJobHistory } from '../gitlab/gitlabgraphql';
+import { LogStorage, type LogEntry } from "../logging/logStorage";
+import { loadJobLog } from '../mergerequests/pipelinejob-log-effects';
+import { fetchJobHistory, type PipelineJob } from '../gitlab/gitlabgraphql';
 
 
 // const STORE_FILE = 'debug/store.json';
@@ -319,7 +319,9 @@ export const consoleLogsAtom = appAtomRuntime.subscriptionRef(
 export type { LogEntry }
 
 // Phase 10: Job Log Loading
-export const loadJobLogAtom = appAtomRuntime.fn((args: { mergeRequest: MergeRequest, job: import("../gitlab/gitlab-schema").PipelineJob }) =>
+export const loadJobLogAtom = appAtomRuntime.fn((args: {
+  mergeRequest: MergeRequest,
+  job: PipelineJob }) =>
   loadJobLog(args.mergeRequest, args.job)
 );
 

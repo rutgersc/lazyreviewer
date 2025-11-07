@@ -1,6 +1,6 @@
 import { KeyValueStore } from "@effect/platform"
 import { Console, Effect, Layer, Schema } from "effect"
-import { MergeRequestSchema, type MergeRequest } from "../schemas/mergeRequestSchema"
+import { MergeRequestSchema, type MergeRequest } from "../mergerequests/mergeRequestSchema"
 
 const CachedMergeRequestsSchema = Schema.Struct({
   data: Schema.Array(MergeRequestSchema),

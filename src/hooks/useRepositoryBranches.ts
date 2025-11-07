@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { loadSettings, saveSettings } from '../settings/settings';
 import { getCurrentBranch, getBranchDifference } from '../git/git-effects';
-import type { MergeRequest } from '../schemas/mergeRequestSchema';
+import type { MergeRequest } from '../mergerequests/mergeRequestSchema';
 
 export interface RepositoryBranch {
   projectPath: string;
