@@ -1,0 +1,90 @@
+query SingleMR($projectPath: ID!, $iid: String!) {
+  project(fullPath: $projectPath) {
+    id
+    name
+    path
+    fullPath
+    mergeRequest(iid: $iid) {
+      id
+      iid
+
+      title
+      webUrl
+
+      sourceBranch
+      targetBranch
+      project {
+        name
+        path
+        fullPath
+      }
+
+      author {
+        name
+        username
+        avatarUrl
+      }
+      createdAt
+      updatedAt
+
+      state
+      approvedBy {
+        nodes {
+          id
+          name
+          username
+        }
+      }
+      discussions {
+        nodes {
+          resolved
+          resolvable
+          id
+          notes {
+            nodes {
+              id
+              __typename
+              body
+              author {
+                name
+              }
+              createdAt
+              resolvable
+              resolved
+              position {
+                filePath
+                newLine
+                oldLine
+                oldPath
+              }
+            }
+          }
+        }
+      }
+      headPipeline {
+        active
+        iid
+        stages {
+          __typename
+          nodes {
+            id
+            name
+            jobs {
+              nodes {
+                id
+                webPath
+                name
+                status
+                failureMessage
+                startedAt
+                duration
+              }
+            }
+
+            status
+          }
+        }
+      }
+    }
+  }
+}

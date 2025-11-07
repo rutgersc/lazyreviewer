@@ -3,7 +3,7 @@ import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/g
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
 import { id } from "effect/Fiber";
 import { HttpClient } from "@effect/platform";
-import type { BitbucketPrsFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
+import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 
 export interface BitbucketAccount {
   display_name: string;
@@ -241,6 +241,32 @@ const fetchCommentsForAllPrs = Effect.fn("fetchCommentsForAllPrs")(function* (
   return commentDataMap;
 });
 
+export class FetchSingleBitbucketPrError extends Data.TaggedError("FetchSingleBitbucketPrError")<{
+  cause: unknown;
+  status: number;
+  statusText: string;
+}> { }
+
+export const getSingleBitbucketPr = Effect.fn("getSingleBitbucketPr")(function* (
+  workspace: string,
+  repoSlug: string,
+  prId: number
+) {
+  const event = yield* getSingleBitbucketPrAsEvent(workspace, repoSlug, prId);
+
+  const credentials = `${process.env.BITBUCKET_EMAIL}:${process.env.BITBUCKET_API_TOKEN}`;
+  const authToken = Buffer.from(credentials).toString("base64");
+
+  // Fetch comments for the PR
+  const commentsEvent = yield* fetchBitbucketCommentsAsEvent(workspace, repoSlug, prId, authToken);
+  const comments = projectBitbucketPrCommentsFetchedEvent(commentsEvent);
+
+  const counts = countCommentsByResolution(comments);
+  const commentData = { ...counts, comments };
+
+  return projectBitbucketSinglePrFetchedEvent(event, commentData);
+})
+
 export const getBitbucketPrs = Effect.fn("getBitbucketPrs")(function* (
   workspace: string,
   repoSlug: string,
@@ -457,6 +483,64 @@ export const fetchBitbucketCommentsAsEvent = Effect.fn("fetchBitbucketCommentsAs
   return event;
 });
 
+export const getSingleBitbucketPrAsEvent = Effect.fn("getSingleBitbucketPrAsEvent")(function* (
+  workspace: string,
+  repoSlug: string,
+  prId: number
+) {
+  if (!(process.env.BITBUCKET_EMAIL && process.env.BITBUCKET_API_TOKEN)) {
+    return yield* Effect.fail(new BitbucketCredentialsNotConfiguredError({
+      message: "BitBucket credentials not configured. Set BITBUCKET_EMAIL and BITBUCKET_API_TOKEN in .env"
+    }));
+  }
+
+  const credentials = `${process.env.BITBUCKET_EMAIL}:${process.env.BITBUCKET_API_TOKEN}`;
+  const authToken = Buffer.from(credentials).toString("base64");
+
+  const url = `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/pullrequests/${prId}`;
+
+  yield* Console.log(`[BitBucket] Fetching single PR: ${prId} in ${workspace}/${repoSlug}`);
+
+  const response = yield* Effect.tryPromise({
+    try: () => fetch(url, {
+      headers: {
+        'Authorization': `Basic ${authToken}`,
+        'Accept': 'application/json',
+      }
+    }),
+    catch: (cause) => new FetchSingleBitbucketPrError({ cause, status: 0, statusText: 'Network error' })
+  });
+
+  if (!response.ok) {
+    const errorText = yield* Effect.tryPromise({
+      try: () => response.text(),
+      catch: () => 'Unable to read error response'
+    });
+    yield* Console.error(`BitBucket API error: ${response.status} ${response.statusText} - ${errorText}`);
+
+    return yield* Effect.fail(new FetchSingleBitbucketPrError({
+      cause: errorText,
+      status: response.status,
+      statusText: response.statusText
+    }));
+  }
+
+  const data = yield* Effect.tryPromise({
+    try: () => response.json() as Promise<BitbucketPullRequest>,
+    catch: (cause) => new BitbucketPrsJsonParseError({ cause })
+  });
+
+  const event: BitbucketSinglePrFetchedEvent = {
+    type: 'bitbucket-single-pr-fetched-event',
+    pr: data,
+    forWorkspace: workspace,
+    forRepoSlug: repoSlug,
+    forPrId: prId
+  };
+
+  return event;
+});
+
 // Projection functions
 export const projectBitbucketPrsFetchedEvent = (
   event: BitbucketPrsFetchedEvent,
@@ -467,4 +551,11 @@ export const projectBitbucketPrsFetchedEvent = (
 
 export const projectBitbucketPrCommentsFetchedEvent = (event: BitbucketPrCommentsFetchedEvent): BitbucketComment[] => {
   return event.commentsResponse.values || [];
+};
+
+export const projectBitbucketSinglePrFetchedEvent = (
+  event: BitbucketSinglePrFetchedEvent,
+  commentData: { total: number; resolved: number; unresolved: number; comments: BitbucketComment[] }
+): GitlabMergeRequest => {
+  return mapBitbucketToGitlabMergeRequest(event.pr, event.forWorkspace, event.forRepoSlug, commentData);
 };

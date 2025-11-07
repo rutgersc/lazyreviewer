@@ -1,7 +1,8 @@
-import type { BitbucketPullRequestsResponse, BitbucketCommentsResponse } from "../bitbucket/bitbucketapi";
+import type { BitbucketPullRequestsResponse, BitbucketCommentsResponse, BitbucketPullRequest } from "../bitbucket/bitbucketapi";
 
 export type BitbucketEvent =
     | BitbucketPrsFetchedEvent
+    | BitbucketSinglePrFetchedEvent
     | BitbucketPrCommentsFetchedEvent
 
 export interface BitbucketPrsFetchedEvent {
@@ -10,6 +11,14 @@ export interface BitbucketPrsFetchedEvent {
     forWorkspace: string,
     forRepoSlug: string,
     forState: 'opened' | 'merged' | 'closed' | 'all' | 'locked'
+}
+
+export interface BitbucketSinglePrFetchedEvent {
+    type: 'bitbucket-single-pr-fetched-event',
+    pr: BitbucketPullRequest,
+    forWorkspace: string,
+    forRepoSlug: string,
+    forPrId: number
 }
 
 export interface BitbucketPrCommentsFetchedEvent {

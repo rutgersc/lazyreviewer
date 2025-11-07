@@ -19,6 +19,8 @@ import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
 import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedMergeRequestsAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom } from "../store/appAtoms";
+import { getSingleMr } from "../gitlab/gitlabgraphql";
+import { Effect, Runtime } from "effect";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -615,9 +617,23 @@ export default function MergeRequestPane({}: {}) {
         break;
       case 'p':
         if (mergeRequests[selectedIndex]) {
-          const w = refetchSelectedMrPipeline();
-          setCopyNotification('Pipeline refreshed!');
-          setTimeout(() => setCopyNotification(null), 2000);
+          const mr = mergeRequests[selectedIndex];
+          const projectPath = mr.project.fullPath;
+          const iid = mr.iid;
+
+          Effect.runPromise(getSingleMr(projectPath, iid)).then((refreshedMr) => {
+            if (refreshedMr) {
+              setCopyNotification(`MR refreshed: ${refreshedMr.title}`);
+              console.log('[SingleMR] Refreshed:', refreshedMr);
+            } else {
+              setCopyNotification('MR refresh failed!');
+            }
+            setTimeout(() => setCopyNotification(null), 3000);
+          }).catch((error: unknown) => {
+            setCopyNotification('MR refresh error!');
+            console.error('[SingleMR] Error:', error);
+            setTimeout(() => setCopyNotification(null), 3000);
+          });
         }
         break;
       case 'a':

@@ -30073,6 +30073,14 @@ export type ProjectsQueryVariables = Exact<{
 
 export type ProjectsQuery = { projects: { count: number, nodes: Array<{ id: string, name: string, fullPath: string, mergeRequests: { nodes: Array<{ name: string | null, webPath: string } | null> | null } | null } | null> | null } | null };
 
+export type SingleMrQueryVariables = Exact<{
+  projectPath: Scalars['ID']['input'];
+  iid: Scalars['String']['input'];
+}>;
+
+
+export type SingleMrQuery = { project: { id: string, name: string, path: string, fullPath: string, mergeRequest: { id: string, iid: string, title: string, webUrl: string | null, sourceBranch: string, targetBranch: string, createdAt: string, updatedAt: string, state: MergeRequestState, project: { name: string, path: string, fullPath: string }, author: { name: string, username: string, avatarUrl: string | null } | null, approvedBy: { nodes: Array<{ id: any, name: string, username: string } | null> | null } | null, discussions: { nodes: Array<{ resolved: boolean, resolvable: boolean, id: any, notes: { nodes: Array<{ __typename: 'Note', id: any, body: string, createdAt: string, resolvable: boolean, resolved: boolean, author: { name: string } | null, position: { filePath: string, newLine: number | null, oldLine: number | null, oldPath: string | null } | null } | null> | null } } | null> | null }, headPipeline: { active: boolean, iid: string, stages: { __typename: 'CiStageConnection', nodes: Array<{ id: string, name: string | null, status: string | null, jobs: { nodes: Array<{ id: any | null, webPath: string | null, name: string | null, status: CiJobStatus | null, failureMessage: string | null, startedAt: string | null, duration: number | null } | null> | null } | null } | null> | null } | null } | null } | null } | null };
+
 export type UpdateMrTargetBranchMutationVariables = Exact<{
   projectPath: Scalars['ID']['input'];
   iid: Scalars['String']['input'];
@@ -30389,6 +30397,93 @@ export const ProjectsDocument = gql`
   }
 }
     `;
+export const SingleMrDocument = gql`
+    query SingleMR($projectPath: ID!, $iid: String!) {
+  project(fullPath: $projectPath) {
+    id
+    name
+    path
+    fullPath
+    mergeRequest(iid: $iid) {
+      id
+      iid
+      title
+      webUrl
+      sourceBranch
+      targetBranch
+      project {
+        name
+        path
+        fullPath
+      }
+      author {
+        name
+        username
+        avatarUrl
+      }
+      createdAt
+      updatedAt
+      state
+      approvedBy {
+        nodes {
+          id
+          name
+          username
+        }
+      }
+      discussions {
+        nodes {
+          resolved
+          resolvable
+          id
+          notes {
+            nodes {
+              id
+              __typename
+              body
+              author {
+                name
+              }
+              createdAt
+              resolvable
+              resolved
+              position {
+                filePath
+                newLine
+                oldLine
+                oldPath
+              }
+            }
+          }
+        }
+      }
+      headPipeline {
+        active
+        iid
+        stages {
+          __typename
+          nodes {
+            id
+            name
+            jobs {
+              nodes {
+                id
+                webPath
+                name
+                status
+                failureMessage
+                startedAt
+                duration
+              }
+            }
+            status
+          }
+        }
+      }
+    }
+  }
+}
+    `;
 export const UpdateMrTargetBranchDocument = gql`
     mutation UpdateMRTargetBranch($projectPath: ID!, $iid: String!, $targetBranch: String!) {
   mergeRequestUpdate(
@@ -30434,6 +30529,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     Projects(variables?: ProjectsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<ProjectsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ProjectsQuery>({ document: ProjectsDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'Projects', 'query', variables);
+    },
+    SingleMR(variables: SingleMrQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<SingleMrQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<SingleMrQuery>({ document: SingleMrDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'SingleMR', 'query', variables);
     },
     UpdateMRTargetBranch(variables: UpdateMrTargetBranchMutationVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<UpdateMrTargetBranchMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<UpdateMrTargetBranchMutation>({ document: UpdateMrTargetBranchDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'UpdateMRTargetBranch', 'mutation', variables);

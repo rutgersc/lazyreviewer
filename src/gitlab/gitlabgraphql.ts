@@ -1,11 +1,11 @@
 import { GraphQLClient } from "graphql-request"
-import { getSdk, type MRsQuery, type ProjectMRsQuery, type CiJobStatus, type MergeRequestState } from "../generated/gitlab-sdk";
+import { getSdk, type MRsQuery, type ProjectMRsQuery, type SingleMrQuery, type CiJobStatus, type MergeRequestState } from "../generated/gitlab-sdk";
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
 import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest } from "./gitlab-schema";
 import { Data, Effect, Console } from "effect";
 import fs from "fs";
 import path from "path";
-import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent } from "../events/gitlab-events";
+import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent } from "../events/gitlab-events";
 
 export type {
   PipelineJob,
@@ -232,6 +232,23 @@ export const fetchJobHistory = Effect.fn("fetchJobHistory")(function* (
   return history;
 })
 
+export class FetchSingleMrError extends Data.TaggedError("FetchSingleMrError")<{
+  cause: unknown;
+}> { }
+
+export const getSingleMr = Effect.fn("getSingleMr")(function* (projectPath: string, iid: string) {
+  const event = yield* getSingleMrAsEvent(projectPath, iid);
+  const mr = projectGitlabSingleMrFetchedEvent(event);
+
+  if (!mr) {
+    yield* Console.log(`[SingleMR] No MR found for ${iid} in ${projectPath}`);
+  } else {
+    yield* Console.log(`[SingleMR] Fetched MR ${iid} in ${projectPath}`);
+  }
+
+  return mr;
+})
+
 // Event-returning wrapper functions
 export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (usernames: string[], state: MergeRequestState = 'opened') {
   const sdk = getElabGitSdk();
@@ -347,6 +364,28 @@ export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(functi
     jobHistory: data,
     forProjectPath: projectPath,
     forJobName: jobName
+  };
+
+  return event;
+});
+
+export const getSingleMrAsEvent = Effect.fn("getSingleMrAsEvent")(function* (projectPath: string, iid: string) {
+  yield* Console.log(`[GitLab] Fetching single MR: ${iid} in project "${projectPath}"`);
+
+  const sdk = getElabGitSdk();
+  const data = yield* Effect.tryPromise({
+    try: () => sdk.SingleMR({
+      projectPath: projectPath,
+      iid: iid
+    }),
+    catch: cause => new FetchSingleMrError({ cause })
+  });
+
+  const event: GitlabSingleMrFetchedEvent = {
+    type: 'gitlab-single-mr-fetched-event',
+    mr: data,
+    forProjectPath: projectPath,
+    forIid: iid
   };
 
   return event;
@@ -520,6 +559,87 @@ export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetch
     });
 
   return history;
+};
+
+export const projectGitlabSingleMrFetchedEvent = (event: GitlabSingleMrFetchedEvent): GitlabMergeRequest | null => {
+  const mr = event.mr.project?.mergeRequest;
+
+  if (!mr) {
+    return null;
+  }
+
+  const pipeline = {
+    stage: mr.headPipeline?.stages?.nodes
+      ?.map(stage => ({
+        name: stage?.name || '',
+        jobs: stage?.jobs?.nodes
+          ?.map(job => ({
+            id: job?.id || '',
+            localId: Number(job?.id.split('/').pop()),
+            name: job?.name || '',
+            status: job?.status || 'CREATED',
+            failureMessage: job?.failureMessage || null,
+            webPath: job?.webPath || null,
+            startedAt: job?.startedAt || '',
+            duration: job?.duration ?? null
+          } satisfies PipelineJob))
+          .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
+          || []
+      })) || []
+  };
+
+  const rawDiscussions = mr.discussions?.nodes || [];
+  const discussions: Discussion[] = rawDiscussions.map(d => ({
+    id: d?.id || '',
+    resolved: d?.resolved || false,
+    resolvable: d?.resolvable || false,
+    notes: (d?.notes?.nodes || []).map(note => ({
+      id: note?.id || '',
+      body: note?.body || '',
+      author: note?.author?.name || '',
+      createdAt: new Date(note?.createdAt || ''),
+      resolvable: note?.resolvable || false,
+      resolved: note?.resolved || false,
+      position: note?.position ? {
+        filePath: note.position.filePath || null,
+        newLine: note.position.newLine || null,
+        oldLine: note.position.oldLine || null,
+        oldPath: note.position.oldPath || null,
+      } : null,
+    }))
+  }));
+
+  const totalDiscussions = discussions.length;
+  const resolvableDiscussions = discussions.filter(d => d.resolvable).length;
+  const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved === true).length;
+  const unresolvedDiscussions = resolvableDiscussions - resolvedDiscussions;
+
+  return {
+    id: mr.id,
+    iid: mr.iid,
+    title: mr.title!,
+    jiraIssueKeys: extractElabTicketsFromTitle(mr.title!),
+    webUrl: mr.webUrl!,
+    sourcebranch: mr.sourceBranch,
+    targetbranch: mr.targetBranch,
+    project: {
+      name: mr.project.name,
+      path: mr.project.path,
+      fullPath: mr.project.fullPath
+    },
+    author: mr.author?.username || '',
+    avatarUrl: mr.author?.avatarUrl || null,
+    createdAt: new Date(mr.createdAt),
+    updatedAt: new Date(mr.updatedAt),
+    state: mr.state,
+    approvedBy: mr!.approvedBy!.nodes!.map(n => ({ id: n!.id || n!.name, name: n!.name, username: n!.username })),
+    resolvableDiscussions,
+    resolvedDiscussions,
+    unresolvedDiscussions,
+    totalDiscussions,
+    discussions,
+    pipeline: pipeline
+  } satisfies GitlabMergeRequest;
 };
 
 

@@ -1,8 +1,9 @@
-import type { MergeRequestState, MrPipelineQuery, MRsQuery, ProjectMRsQuery, ProjectPipelinesJobHistoryQuery } from "../generated/gitlab-sdk";
+import type { MergeRequestState, MrPipelineQuery, MRsQuery, ProjectMRsQuery, SingleMrQuery, ProjectPipelinesJobHistoryQuery } from "../generated/gitlab-sdk";
 
 export type Event =
     | GitlabUserMergeRequestsFetchedEvent
     | GitlabprojectMergeRequestsFetchedEvent
+    | GitlabSingleMrFetchedEvent
     | GitlabJobTraceFetchedEvent
     | GitlabPipelineFetchedEvent
     | GitlabJobHistoryFetchedEvent
@@ -19,6 +20,13 @@ export interface GitlabprojectMergeRequestsFetchedEvent {
     mrs: ProjectMRsQuery,
     forProjectPath: string,
     forState: MergeRequestState
+}
+
+export interface GitlabSingleMrFetchedEvent {
+    type: 'gitlab-single-mr-fetched-event',
+    mr: SingleMrQuery,
+    forProjectPath: string,
+    forIid: string
 }
 
 export interface GitlabJobTraceFetchedEvent {
