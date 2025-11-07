@@ -1,5 +1,6 @@
 import { TextAttributes } from '@opentui/core';
-import type { MergeRequest, Discussion, DiscussionNote } from '../schemas/mergeRequestSchema';
+import type { Discussion, DiscussionNote } from '../gitlab/gitlab-schema';
+import type { MergeRequest } from '../schemas/mergeRequestSchema';
 import { formatCompactTime } from '../utils/formatting';
 import { Colors } from '../colors';
 

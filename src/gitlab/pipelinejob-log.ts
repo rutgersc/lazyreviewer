@@ -1,4 +1,5 @@
-import type { MergeRequest, PipelineJob } from "../schemas/mergeRequestSchema";
+import type { MergeRequest } from "../schemas/mergeRequestSchema";
+import type { PipelineJob } from "./gitlab-schema";
 import { getJobTrace } from "./gitlabgraphql";
 import { existsSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";

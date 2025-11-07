@@ -1,7 +1,7 @@
 import { GraphQLClient } from "graphql-request"
 import { getSdk, type MRsQuery, type ProjectMRsQuery, type CiJobStatus, type MergeRequestState } from "../generated/gitlab-sdk";
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
-import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest } from "../schemas/mergeRequestSchema";
+import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest } from "./gitlab-schema";
 import { Data, Effect, Console } from "effect";
 import fs from "fs";
 import path from "path";
@@ -12,7 +12,7 @@ export type {
   DiscussionNote,
   Discussion,
   GitlabMergeRequest
-} from "../schemas/mergeRequestSchema"
+} from "./gitlab-schema"
 
 export interface JobHistoryEntry {
   jobId: string;
@@ -32,7 +32,6 @@ export interface JobHistoryEntry {
   mergeRequestTitle: string | null;
   mergeRequestAuthor: string | null;
 }
-
 
 export const mapMrFromQuery = (
   username: string,
@@ -139,7 +138,6 @@ const getElabGitSdk = () => {
   return sdk;
 };
 
-
 export const getGitlabMrs = Effect.fn("getGitlabMrs")(function* (usernames: string[], state: MergeRequestState = 'opened') {
   const sdk = getElabGitSdk();
   const data = yield* Effect.tryPromise({
@@ -178,16 +176,6 @@ export const getGitlabMrs = Effect.fn("getGitlabMrs")(function* (usernames: stri
 export class FetchGitlabProjectMrsError extends Data.TaggedError("FetchGitlabProjectMrsError")<{
   cause: unknown;
 }> { }
-
-const getGitElabnextSdk = () => {
-  const endpoint = `https://git.elabnext.com/api/graphql`
-  const token = process.env.GITLAB_TOKEN;
-  const client = new GraphQLClient(endpoint, {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-
-  return getSdk(client);
-}
 
 export const getGitlabMrsByProject = Effect.fn("getGitlabMrsByProject")(function* (projectPath: string, state: MergeRequestState = 'opened') {
   yield* Console.log(`[GitLab] Fetching MRs for project: "${projectPath}", state: ${state}`);
@@ -279,7 +267,7 @@ export const getGitlabMrsByProject = Effect.fn("getGitlabMrsByProject")(function
     } satisfies GitlabMergeRequest;
   }
 
-  const sdk = getGitElabnextSdk();
+  const sdk = getElabGitSdk();
   const data = yield* Effect.tryPromise({
     try: () => sdk.ProjectMRs({
       projectPath: projectPath,
@@ -288,10 +276,6 @@ export const getGitlabMrsByProject = Effect.fn("getGitlabMrsByProject")(function
     }),
     catch: cause => new FetchGitlabProjectMrsError({ cause })
   });
-
-  const outputPath = path.join(process.cwd(), 'debug/gitlab-project-response-debug.json');
-  fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
-  yield* Console.log(`Gitlab project response written to: ${outputPath}`);
 
   const mrs = data.project?.mergeRequests?.nodes || [];
   return mrs.filter(mr => mr !== null).map(mr => mapProjectMr(mr!));

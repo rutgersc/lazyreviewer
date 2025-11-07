@@ -1,4 +1,6 @@
-import type { MergeRequest, GitlabMergeRequest, JiraIssue } from "../schemas/mergeRequestSchema";
+import type { MergeRequest } from "../schemas/mergeRequestSchema";
+import type { GitlabMergeRequest } from "../gitlab/gitlab-schema";
+import type { JiraIssue } from "../jira/jira-schema";
 import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline } from "../gitlab/gitlabgraphql";
 import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
 import { parseRepositoryId } from "../providers/repositoryParser";

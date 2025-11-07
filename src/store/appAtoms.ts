@@ -319,7 +319,7 @@ export const consoleLogsAtom = appAtomRuntime.subscriptionRef(
 export type { LogEntry }
 
 // Phase 10: Job Log Loading
-export const loadJobLogAtom = appAtomRuntime.fn((args: { mergeRequest: MergeRequest, job: import("../schemas/mergeRequestSchema").PipelineJob }) =>
+export const loadJobLogAtom = appAtomRuntime.fn((args: { mergeRequest: MergeRequest, job: import("../gitlab/gitlab-schema").PipelineJob }) =>
   loadJobLog(args.mergeRequest, args.job)
 );
 

@@ -1,80 +1,16 @@
-import { Data, Effect, Console } from "effect";
+import { Data, Effect, Console, Schema } from "effect";
+import {
+  JiraStatusNameSchema,
+  JiraCommentSchema,
+  JiraIssueSchema,
+  JiraSearchResponseSchema,
+  type JiraStatusName,
+  type JiraComment,
+  type JiraIssue,
+  type JiraSearchResponse
+} from "./jira-schema";
 
-export type JiraStatusName =
-  | "FINAL REVIEW"
-  | "TEST IN PROGRESS"
-  | "To Do"
-  | "Done"
-  | "Merge Requested"
-  | "Merged"
-  | "Pending"
-  | "In Progress";
-
-export interface JiraComment {
-  id: string;
-  author: {
-    displayName: string;
-    emailAddress?: string;
-  };
-  body: {
-    content: Array<{
-      content: Array<{
-        text?: string;
-        type: string;
-      }>;
-      type: string;
-    }>;
-    type: string;
-  };
-  created: string;
-  updated: string;
-}
-
-export interface JiraIssue {
-  key: string;
-  id: string,
-  self: string,
-  fields: {
-    summary: string;
-    parent?: {
-      key: string;
-      fields: {
-        summary: string;
-        issuetype: {
-          name: string;
-        };
-      };
-    };
-    status: {
-      name: JiraStatusName;
-      statusCategory: {
-        name: string;
-      };
-    };
-    assignee?: {
-      displayName: string;
-      emailAddress: string;
-    } | null;
-    priority: {
-      name: string;
-    };
-    issuetype: {
-      name: string;
-    };
-    created: string;
-    updated: string;
-    comment: {
-      total: number;
-      comments: JiraComment[];
-    };
-  };
-}
-
-export interface JiraSearchResponse {
-  issues: JiraIssue[];
-  total: number;
-  maxResults: number;
-}
+export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
 
 const elabPattern = /ELAB-\d+/g;
 export const extractElabTicketsFromTitle = (title: string): string[] => {
@@ -190,26 +126,22 @@ const searchIssues = Effect.fn("searchIssues")(function* (baseUrl: string, apiTo
     throw new Error(`Jira API error: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  const data = yield* Effect.tryPromise({
-    try: () => response.json() as Promise<JiraSearchResponse>,
+  const jsonData = yield* Effect.tryPromise({
+    try: () => response.json(),
     catch: cause => new SearchJiraIssuesError({ cause })
   });
 
-  // Write the raw response to a JSON file for debugging
-  // const fs = require('fs');
-  // const path = require('path');
-  // const outputPath = path.join(process.cwd(), 'debug/jira-response-debug.json');
-  // fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
-  // yield* Console.log(`Jira response written to: ${outputPath}`);
-
-  return data;
+  return yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknownPromise(JiraSearchResponseSchema)(jsonData),
+    catch: cause => new SearchJiraIssuesError({ cause })
+  });
 })
 
 export class FetchJiraTicketsFailedError extends Data.TaggedError("Error1")<{
   cause: unknown;
 }> { }
 
-export const loadJiraTickets = Effect.fn("loadJiraTickets")(function* (ticketKeys: string[]) {
+export const loadJiraTickets = Effect.fn(function* (ticketKeys: string[]) {
   if (ticketKeys.length === 0) {
     return [];
   }

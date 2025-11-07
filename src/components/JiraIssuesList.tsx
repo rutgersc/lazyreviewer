@@ -2,7 +2,7 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import JiraIssueInfo from './JiraIssueInfo';
 import { Colors } from '../colors';
-import type { JiraIssue } from '../schemas/mergeRequestSchema';
+import type { JiraIssue } from '../jira/jira-schema';
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/url-effect';
 import { copyToClipboard } from '../system/clipboard-effect';

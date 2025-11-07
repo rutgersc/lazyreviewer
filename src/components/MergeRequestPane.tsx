@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
-import { type MergeRequest, type JiraIssue, type GitlabMergeRequest, type PipelineStage, type PipelineJob } from "../schemas/mergeRequestSchema";
+import { type MergeRequest } from "../schemas/mergeRequestSchema";
+import { type JiraIssue } from "../jira/jira-schema";
+import { type GitlabMergeRequest, type PipelineStage, type PipelineJob } from "../gitlab/gitlab-schema";
 import { formatCompactTime } from "../utils/formatting";
 import { copyToClipboard } from "../system/clipboard-effect";
 import { openUrl } from "../system/url-effect";
