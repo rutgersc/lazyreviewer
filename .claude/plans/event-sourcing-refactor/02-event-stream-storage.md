@@ -1,213 +1,219 @@
-# Phase 2: Event Stream Storage Foundation
+# Phase 2: Event Stream Storage (File I/O)
 
 ## Goal
-Create an append-only event log with auto-incrementing IDs to store all fetch operations.
+Simple file-based storage for events. Two functions: `loadEvents()` and `appendEvent()`.
 
 ## Dependencies
-- **Phase 1 complete** (raw fetch methods and response types must exist first)
-  - Need `RawFetchResponse` union type
-  - Need specific response types: `MRsQuery`, `ProjectMRsQuery`, `BitbucketRepoFetchResponse`
-  - Event schema will use these types for `rawResponse` field
+- **Phase 1 complete** ✅ (fetch functions and event types exist)
+- Uses existing event types from `src/events/events.ts`
 
-## Tasks
+## Design: Numbered Event Files
 
-### Task 1.1: Event Schema Definition
-
-**Define core event types using raw response types from Phase 1:**
-
-```typescript
-// src/events/eventTypes.ts
-
-import type { RawFetchResponse } from '../fetch/types';
-
-type FetchEvent = {
-  eventId: number              // Auto-increment: 1, 2, 3, ...
-  timestamp: Date              // When fetch occurred
-  fetchType: FetchType
-  scope: FetchScope
-  rawResponse: RawFetchResponse  // Typed! Uses union from Phase 1
-}
-
-type FetchType =
-  | 'repo'        // Fetched all MRs in repository
-  | 'user'        // Fetched all MRs by author
-  | 'single-mr'   // Refreshed single MR
-
-type FetchScope =
-  | { type: 'repo', repoId: string }
-  | { type: 'user', username: string }
-  | { type: 'single-mr', mrId: string }
-
-// Event metadata for querying
-type EventMetadata = Omit<FetchEvent, 'rawResponse'>
+### File Naming Pattern
+```
+events/
+  0_2025-11-08T10-30-00-000Z_gitlab-user-mrs-fetched-event.json
+  1_2025-11-08T10-35-12-456Z_gitlab-project-mrs-fetched-event.json
+  2_2025-11-08T10-40-25-789Z_bitbucket-prs-fetched-event.json
+  3_2025-11-08T11-15-00-123Z_gitlab-single-mr-fetched-event.json
+  ...
 ```
 
-**Key Design Decisions:**
-- Store raw API response as `unknown` (exact JSON from GraphQL/REST)
-- eventId is simple counter (1, 2, 3, ...) - no UUIDs needed
-- timestamp for ordering and last-write-wins logic
-- scope allows filtering events by what was fetched
+**Format:** `{sequentialNumber}_{timestamp}_{event.type}.json`
 
-### Task 1.2: Event Storage Service
+- Sequential numbering: 0, 1, 2, 3, ...
+- Timestamp: ISO 8601 with colons replaced by hyphens (filesystem-safe)
+- Event type comes from the event's `type` field
+- No concurrency handling (single-process app)
 
-**Extend existing storage or create new service:**
+## Implementation
+
+### Task 2.1: loadEvents()
+
+**Load all events from disk, sorted by number:**
 
 ```typescript
-// src/services/eventStorage.ts
+// src/events/eventStorage.ts
 
-interface EventStorage {
-  // Append new event (returns assigned eventId)
-  appendEvent(event: Omit<FetchEvent, 'eventId'>): Effect<number>
+import type { Event } from './events';
 
-  // Get next eventId (for incrementing)
-  getNextEventId(): Effect<number>
-
-  // Read single event
-  getEvent(eventId: number): Effect<FetchEvent | null>
-
-  // Read event range (for projection)
-  getEvents(fromId: number, toId?: number): Effect<FetchEvent[]>
-
-  // Get all events (for full projection)
-  getAllEvents(): Effect<FetchEvent[]>
-
-  // Get event metadata (without rawResponse, for UI)
-  getEventMetadata(fromId: number, toId?: number): Effect<EventMetadata[]>
-
-  // Get latest eventId (current head of log)
-  getLatestEventId(): Effect<number>
-}
+/**
+ * Load all events from disk, sorted by event number
+ * Parses event number and timestamp from filename
+ */
+export const loadEvents = (): Effect<Event[]>
 ```
 
-**Implementation Approach:**
-1. Use existing `MergeRequestStorage` pattern (Effect KeyValueStore)
-2. Storage keys:
-   - `event_{eventId}` → FetchEvent (full event with raw response)
-   - `event_counter` → number (current max eventId)
-   - `event_index` → number[] (list of all eventIds for fast enumeration)
+**Implementation:**
+1. Read `events/` directory
+2. Parse filenames to extract numbers and timestamps
+3. Sort by number (ascending)
+4. Read each JSON file
+5. Parse as `Event` type
+6. Return sorted array
 
-3. Append operation:
+**Example result:**
+```typescript
+[
+  { type: 'gitlab-user-mrs-fetched-event', mrs: {...}, forUsernames: [...], ... },
+  { type: 'gitlab-project-mrs-fetched-event', mrs: {...}, forProjectPath: '...', ... },
+  ...
+]
+```
+
+**Note:** If you need the timestamp later, parse it from the filename.
+
+### Task 2.2: appendEvent()
+
+**Write event to next numbered file:**
+
+```typescript
+/**
+ * Append event to log with next sequential number
+ * Returns the event number assigned
+ */
+export const appendEvent = (event: Event): Effect<number>
+```
+
+**Implementation:**
+1. Read `events/` directory
+2. Find highest event number (e.g., max = 5)
+3. nextNumber = max + 1 (e.g., 6)
+4. Generate timestamp:
    ```typescript
-   appendEvent(event):
-     1. Increment counter atomically
-     2. Store event with new ID
-     3. Update index
-     4. Return eventId
+   const timestamp = new Date().toISOString(); // "2025-11-08T14:30:25.123Z"
+   const fileTimestamp = timestamp.replace(/:/g, '-'); // "2025-11-08T14-30-25.123Z"
    ```
+5. filename = `{nextNumber}_{fileTimestamp}_{event.type}.json`
+6. Write JSON.stringify(event) to file (just the event, nothing else)
+7. Return nextNumber
 
-**Storage Schema:**
+**Example:**
 ```typescript
-// KeyValueStore entries
+// Highest existing file: 42_2025-11-08T14-30-00-000Z_gitlab-user-mrs-fetched-event.json
+const eventNumber = yield* appendEvent({
+  type: 'gitlab-project-mrs-fetched-event',
+  mrs: projectMrsQuery,
+  forProjectPath: 'elab/elab',
+  forState: 'opened'
+});
+// Writes: 43_2025-11-08T14-35-12-456Z_gitlab-project-mrs-fetched-event.json
+// Returns: 43
+```
+
+## Event File Format
+
+**File contains ONLY the event data (no wrapper):**
+
+```json
 {
-  "event_1": { eventId: 1, timestamp: "...", fetchType: "repo", ... },
-  "event_2": { eventId: 2, timestamp: "...", fetchType: "user", ... },
-  // ...
-  "event_counter": 42,                    // Latest eventId
-  "event_index": [1, 2, 3, ..., 42]      // All eventIds
+  "type": "gitlab-user-mrs-fetched-event",
+  "mrs": {
+    "data": {
+      "user": {
+        "assignedMergeRequests": {
+          "nodes": [...]
+        }
+      }
+    }
+  },
+  "forUsernames": ["john.doe"],
+  "forState": "opened"
 }
 ```
 
-**Error Handling:**
-- Failed appends don't increment counter (atomic)
-- Validation: eventId must be sequential
-- Malformed events logged but don't block future appends
+**Metadata is in the filename:**
+- Event number: First part of filename (`5_...`)
+- Timestamp: Second part of filename (`..._2025-11-08T14-30-25.123Z_...`)
+- Event type: Third part of filename (`..._gitlab-user-mrs-fetched-event.json`)
 
-### Task 1.3: Event Append Functions
+## Storage Location
 
-**Create convenience functions for each fetch type:**
-
-```typescript
-// src/events/eventAppenders.ts
-
-export const appendRepoFetchEvent = (
-  repoId: string,
-  rawResponse: unknown
-): Effect<number> => {
-  return appendEvent({
-    timestamp: new Date(),
-    fetchType: 'repo',
-    scope: { type: 'repo', repoId },
-    rawResponse
-  });
-};
-
-export const appendUserFetchEvent = (
-  username: string,
-  rawResponse: unknown
-): Effect<number> => {
-  return appendEvent({
-    timestamp: new Date(),
-    fetchType: 'user',
-    scope: { type: 'user', username },
-    rawResponse
-  });
-};
-
-export const appendSingleMRFetchEvent = (
-  mrId: string,
-  rawResponse: unknown
-): Effect<number> => {
-  return appendEvent({
-    timestamp: new Date(),
-    fetchType: 'single-mr',
-    scope: { type: 'single-mr', mrId },
-    rawResponse
-  });
-};
+Use existing storage pattern:
+```
+storage/
+  events/
+    0_2025-11-08T10-30-00-000Z_gitlab-user-mrs-fetched-event.json
+    1_2025-11-08T10-35-12-456Z_gitlab-project-mrs-fetched-event.json
+    ...
 ```
 
-**Usage Pattern:**
-```typescript
-// In fetch functions
-const rawResponse = await fetchFromGitLabAPI(...);
-yield* appendRepoFetchEvent('elab/elab', rawResponse);
-// Projection will be triggered automatically
-```
+Reference `src/services/mergeRequestStorage.ts` for storage path patterns.
 
 ## Files to Create/Modify
 
 ### New Files
-- `src/events/eventTypes.ts` - Event schema types
-- `src/events/eventStorage.ts` - Event storage service (Effect-based)
-- `src/events/eventAppenders.ts` - Convenience append functions
+- `src/events/eventStorage.ts` - `loadEvents()` and `appendEvent()` functions
 
-### Files to Reference
-- `src/services/mergeRequestStorage.ts` - Existing storage pattern to follow
-- `src/schemas/mergeRequestSchema.ts` - For understanding MR types
+### Existing Files (reference only)
+- `src/events/events.ts` - Event union type (already exists)
+- `src/events/gitlab-events.ts` - GitLab event types (already exists)
+- `src/events/bitbucket-events.ts` - Bitbucket event types (already exists)
+- `src/events/jira-events.ts` - Jira event types (already exists)
+- `src/services/mergeRequestStorage.ts` - Storage path patterns
 
-## Testing Strategy
+## Usage Pattern
 
-### Unit Tests
-- Event storage append/read operations
-- Counter increment logic
-- Event index maintenance
-- Error handling (malformed events, storage failures)
+### Appending Events
+```typescript
+// In fetch functions - after fetching data
+const projectMrsQuery = yield* fetchProjectMRs('elab/elab', 'opened');
 
-### Integration Tests
-- Append multiple events in sequence
-- Read event ranges
-- Verify eventIds are sequential
-- Test concurrent appends (if needed)
+yield* appendEvent({
+  type: 'gitlab-project-mrs-fetched-event',
+  mrs: projectMrsQuery,
+  forProjectPath: 'elab/elab',
+  forState: 'opened'
+});
+```
+
+### Loading Events
+```typescript
+// For projection
+const allEvents = yield* loadEvents();
+
+// Events are already sorted by number (time order)
+for (const event of allEvents) {
+  // Process event based on type
+  if (event.type === 'gitlab-user-mrs-fetched-event') {
+    // ...
+  }
+}
+```
 
 ## Success Criteria
 
-- ✅ Events can be appended with auto-increment IDs
-- ✅ Event counter is maintained correctly
-- ✅ Events can be read individually or in ranges
-- ✅ Raw API responses are preserved exactly
-- ✅ Event metadata can be queried without loading raw responses
-- ✅ Storage is persistent across app restarts
+- ✅ `appendEvent()` creates sequentially numbered files
+- ✅ File names include event type for readability
+- ✅ `loadEvents()` reads all events in order
+- ✅ JSON parsing works for all event types
+- ✅ Event numbers have no gaps
+- ✅ Works on Windows and macOS
 
-## Performance Considerations
+## Implementation Notes
 
-- **Write Performance**: Each append = 2-3 storage writes (event + counter + index)
-- **Read Performance**: Range queries efficient with index
-- **Storage Size**: ~50KB per event (acceptable for unlimited retention)
-- **Memory**: Events not loaded into memory except during projection
+**Simplicity:**
+- No index file needed (just read directory)
+- No wrapper object (file = event JSON directly)
+- Metadata in filename (number + timestamp + type)
+- Finding next number = scan directory for max
 
-## Next Phase Dependencies
+**Error Handling:**
+- If directory doesn't exist, create it
+- If no events exist, start at 0
+- Invalid JSON files should log error but not crash
+- Missing event files (gaps) should log warning
 
-Phase 2 (Response Normalization) will:
-- Read rawResponse from events
-- Parse provider-specific formats
-- Extract MRs for projection
+**Performance:**
+- Finding next number: O(n) where n = number of events
+- Loading all events: O(n) - acceptable for projection
+- For 1000 events ~50ms, for 10000 events ~500ms
+- Can optimize later if needed
+
+## Next Phase
+
+Phase 3 (Response Normalization) will:
+- Call `loadEvents()` to get all events
+- Process each event based on its `type`
+- Extract and normalize MRs from different event types
+- Build projection from normalized data
