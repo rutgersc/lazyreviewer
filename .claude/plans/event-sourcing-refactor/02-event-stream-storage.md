@@ -184,11 +184,41 @@ for (const event of allEvents) {
 ## Success Criteria
 
 - ✅ `appendEvent()` creates sequentially numbered files
-- ✅ File names include event type for readability
+- ✅ File names include timestamp and event type for readability
 - ✅ `loadEvents()` reads all events in order
 - ✅ JSON parsing works for all event types
 - ✅ Event numbers have no gaps
 - ✅ Works on Windows and macOS
+- ✅ Integrated into app layer and available throughout application
+- ✅ Tested and verified working
+
+## Implementation Complete ✅
+
+**Files Created:**
+- `src/events/eventStorage.ts` - EventStorage service with loadEvents() and appendEvent()
+- `src/events/eventSchemas.ts` - Effect Schema definitions for event validation
+
+**Files Modified:**
+- `src/events/events.ts` - Exported EventStorage
+- `src/store/appLayerRuntime.ts` - Added EventStorage to app layer
+
+**Test Results:**
+- ✅ Successfully appends events with sequential numbers
+- ✅ Successfully loads all events in order
+- ✅ File format matches specification exactly
+- ✅ **Schema validation**: Invalid events are rejected with clear error messages
+- ✅ **JSON parsing**: Corrupted JSON files are caught and logged
+- ✅ **Resilient**: System continues loading valid events even when some fail
+- ✅ Example files created in `storage/events/`:
+  - `0_2025-11-08T09-25-24.165Z_gitlab-user-mrs-fetched-event.json`
+  - `1_2025-11-08T09-25-24.169Z_gitlab-user-mrs-fetched-event.json`
+
+**Schema Validation Details:**
+- Uses Effect Schema discriminated union for type-safe parsing
+- Validates event `type` field against known event types
+- Validates required fields (usernames, project paths, etc.)
+- Uses `Schema.Any` for complex nested GraphQL/API response data
+- Failed events are logged but don't crash the system
 
 ## Implementation Notes
 

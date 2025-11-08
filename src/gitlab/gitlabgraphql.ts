@@ -1,5 +1,14 @@
 import { GraphQLClient } from "graphql-request"
-import { getSdk, type MRsQuery, type ProjectMRsQuery, type SingleMrQuery, type CiJobStatus, type MergeRequestState } from "../generated/gitlab-sdk";
+import { getSdk as getMRsSdk } from "../graphql/mrs.generated";
+import type { MRsQuery } from "../graphql/mrs.generated";
+import { getSdk as getProjectMRsSdk } from "../graphql/project-mrs.generated";
+import type { ProjectMRsQuery } from "../graphql/project-mrs.generated";
+import { getSdk as getSingleMrSdk } from "../graphql/single-mr.generated";
+import type { SingleMrQuery } from "../graphql/single-mr.generated";
+import { getSdk as getMrPipelineSdk } from "../graphql/mr-pipeline.generated";
+import { getSdk as getProjectPipelinesJobHistorySdk } from "../graphql/project-pipelines-job-history.generated";
+import { getSdk as getJobSdk } from "../graphql/job.generated";
+import type { CiJobStatus, MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
 import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest } from "./gitlab-schema";
 import { Data, Effect, Console } from "effect";
@@ -135,8 +144,16 @@ const getElabGitSdk = () => {
   const client = new GraphQLClient(endpoint, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  const sdk = getSdk(client);
-  return sdk;
+
+  // Combine all SDKs into one unified SDK
+  return {
+    ...getMRsSdk(client),
+    ...getProjectMRsSdk(client),
+    ...getSingleMrSdk(client),
+    ...getMrPipelineSdk(client),
+    ...getProjectPipelinesJobHistorySdk(client),
+    ...getJobSdk(client),
+  };
 };
 
 export const getGitlabMrs = Effect.fn("getGitlabMrs")(function* (usernames: string[], state: MergeRequestState = 'opened') {
@@ -314,7 +331,7 @@ export const getMrPipelineAsEvent = Effect.fn("getMrPipelineAsEvent")(function* 
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  const sdk = getSdk(client);
+  const sdk = getMrPipelineSdk(client);
 
   const data = yield* Effect.tryPromise({
     try: () => sdk.MRPipeline({
@@ -348,7 +365,7 @@ export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(functi
     }
   });
 
-  const sdk = getSdk(client);
+  const sdk = getProjectPipelinesJobHistorySdk(client);
 
   const data = yield* Effect.tryPromise({
     try: () => sdk.ProjectPipelinesJobHistory({

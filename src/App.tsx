@@ -13,7 +13,7 @@ import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
 import { ActivePane } from "./userselection/userSelection";
 import { useEffect, useState } from 'react';
-import { type MergeRequestState } from "./generated/gitlab-sdk";
+import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
 import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";

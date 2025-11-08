@@ -13,3 +13,5 @@ export type Event =
     | BitbucketPrsFetchedEvent
     | BitbucketSinglePrFetchedEvent
     | BitbucketPrCommentsFetchedEvent
+
+export { EventStorage } from "./eventStorage"

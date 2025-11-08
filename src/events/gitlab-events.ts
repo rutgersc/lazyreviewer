@@ -1,4 +1,9 @@
-import type { MergeRequestState, MrPipelineQuery, MRsQuery, ProjectMRsQuery, SingleMrQuery, ProjectPipelinesJobHistoryQuery } from "../generated/gitlab-sdk";
+import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
+import type { MrPipelineQuery } from "../graphql/mr-pipeline.generated";
+import type { MRsQuery } from "../graphql/mrs.generated";
+import type { ProjectMRsQuery } from "../graphql/project-mrs.generated";
+import type { SingleMrQuery } from "../graphql/single-mr.generated";
+import type { ProjectPipelinesJobHistoryQuery } from "../graphql/project-pipelines-job-history.generated";
 
 export type Event =
     | GitlabUserMergeRequestsFetchedEvent

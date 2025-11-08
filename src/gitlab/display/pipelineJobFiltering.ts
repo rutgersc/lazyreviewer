@@ -1,6 +1,6 @@
 import type { PipelineJob, PipelineStage } from '../gitlabgraphql';
 import type { JobImportance } from '../../settings/settings';
-import type { CiJobStatus } from '../../generated/gitlab-sdk';
+import type { CiJobStatus } from '../../graphql/generated/gitlab-base-types';
 
 export interface FilteredPipelineData {
   stages: PipelineStage[];

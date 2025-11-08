@@ -1,7 +1,7 @@
 import React from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { type MergeRequestState } from '../generated/gitlab-sdk';
+import { type MergeRequestState } from '../graphql/generated/gitlab-base-types';
 
 interface MrStateFilterModalProps {
   isVisible: boolean;

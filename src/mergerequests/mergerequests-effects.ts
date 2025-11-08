@@ -5,7 +5,8 @@ import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline } from "../gitlab/gi
 import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
 import { parseRepositoryId } from "./repositoryParser";
 import { loadJiraTickets } from "../jira/jiraService";
-import { type MergeRequestState, getSdk } from "../generated/gitlab-sdk";
+import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
+import { getSdk as getUpdateMrTargetBranchSdk } from "../graphql/update-mr-target-branch.generated";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
 import { Effect, Console, Data } from "effect";
@@ -102,7 +103,7 @@ export const retargetMergeRequest = Effect.fn("retargetMergeRequest")(function* 
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  const sdk = getSdk(client);
+  const sdk = getUpdateMrTargetBranchSdk(client);
 
   const result = yield* Effect.tryPromise({
     try: () => sdk.UpdateMRTargetBranch({

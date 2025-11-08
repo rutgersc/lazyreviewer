@@ -1,4 +1,4 @@
-import type { CiJobStatus } from '../../generated/gitlab-sdk';
+import type { CiJobStatus } from '../../graphql/generated/gitlab-base-types';
 import { Colors } from '../../colors';
 
 export interface JobStatusDisplay {

@@ -15,9 +15,13 @@ const config: CodegenConfig = {
   ],
   documents: ['src/graphql/**/*.graphql'],
   generates: {
-    'src/generated/gitlab-sdk.ts': {
+    'src/graphql/': {
+      preset: 'near-operation-file',
+      presetConfig: {
+        extension: '.generated.ts',
+        baseTypesPath: 'generated/gitlab-base-types',
+      },
       plugins: [
-        'typescript',
         'typescript-operations',
         'typescript-graphql-request',
       ],
@@ -27,6 +31,22 @@ const config: CodegenConfig = {
         dedupeOperationSuffix: true,
         enumsAsTypes: true,
         useTypeImports: true,
+        immutableTypes: true,  // Generate readonly types (compatible with Effect schemas)
+        scalars: {
+          Time: 'string',
+          Date: 'string',
+          ID: 'string',
+        },
+      },
+    },
+    'src/graphql/generated/gitlab-base-types.ts': {
+      plugins: ['typescript'],
+      config: {
+        avoidOptionals: true,
+        skipTypename: true,
+        enumsAsTypes: true,
+        useTypeImports: true,
+        immutableTypes: true,
         scalars: {
           Time: 'string',
           Date: 'string',

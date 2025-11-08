@@ -1,5 +1,5 @@
 import { TextAttributes } from '@opentui/core';
-import type { MergeRequestState } from '../generated/gitlab-sdk';
+import type { MergeRequestState } from '../graphql/generated/gitlab-base-types';
 import { Colors } from '../colors';
 
 interface MrStateTabsProps {

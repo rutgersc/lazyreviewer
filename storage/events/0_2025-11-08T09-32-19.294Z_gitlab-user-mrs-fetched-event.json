@@ -1,0 +1,8 @@
+{
+  "type": "gitlab-user-mrs-fetched-event",
+  "mrs": {},
+  "forUsernames": [
+    "test-user"
+  ],
+  "forState": "opened"
+}

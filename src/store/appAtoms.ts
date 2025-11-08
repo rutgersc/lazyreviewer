@@ -4,7 +4,7 @@ import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
 import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
-import type { MergeRequestState } from "../generated/gitlab-sdk";
+import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";

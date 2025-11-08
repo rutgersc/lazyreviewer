@@ -6,6 +6,7 @@ import { LogStorage } from "../logging/logStorage"
 import { Atom } from "@effect-atom/atom-react"
 import { ConsoleLogged } from "../logging/consoleLogged"
 import { MergeRequestStorage } from "../mergerequests/mergeRequestStorage"
+import { EventStorage } from "../events/events"
 
 const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
 const cacheLayer = KeyValueStore.layerFileSystem("debug").pipe(
@@ -13,6 +14,10 @@ const cacheLayer = KeyValueStore.layerFileSystem("debug").pipe(
 )
 
 const logStorageLayer = LogStorage.Default.pipe(
+  Layer.provide(fileSystemLayer)
+)
+
+const eventStorageLayer = EventStorage.Default.pipe(
   Layer.provide(fileSystemLayer)
 )
 
@@ -29,8 +34,9 @@ const MergeRequestStorageLoggedLayer2 = MergeRequestStorageLogged.pipe(
 );
 
 // Do not rely on Regsitry.layer: this is likely internal to atom-effect
-export const appLayer = Layer.merge(
+export const appLayer = Layer.mergeAll(
   MergeRequestStorageLoggedLayer2,
-  logStorageLayer
+  logStorageLayer,
+  eventStorageLayer
 )
 export const appAtomRuntime = Atom.runtime(appLayer)

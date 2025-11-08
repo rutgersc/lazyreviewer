@@ -14,7 +14,7 @@ import { Colors } from "../colors";
 import { useRepositoryBranches } from "../hooks/useRepositoryBranches";
 import { loadSettings } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
-import type { MergeRequestState } from "../generated/gitlab-sdk";
+import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
