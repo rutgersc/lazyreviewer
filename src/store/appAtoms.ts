@@ -225,32 +225,30 @@ const mrsCacheByKeyAtomFamily = Atom.family((key: CacheKey) => {
 
   // Use subscriptionRef to automatically consume the stream
   return appAtomRuntime.subscriptionRef(
-    Effect.scoped(
-      Effect.gen(function* () {
-        console.log("[Atom] Creating SubscriptionRef for stream consumption")
-        const service = yield* EventStorage
+    Effect.gen(function* () {
+      console.log("[Atom] Creating SubscriptionRef for stream consumption")
+      const service = yield* EventStorage
 
-        const existingEvents = yield* service.loadEvents
-        console.log("[Atom] EventStorage acquired - existing events:", existingEvents.length)
+      const existingEvents = yield* service.loadEvents
+      console.log("[Atom] EventStorage acquired - existing events:", existingEvents.length)
 
-        // Create a SubscriptionRef to hold the current state
-        const stateRef = yield* SubscriptionRef.make(initialState)
+      // Create a SubscriptionRef to hold the current state
+      const stateRef = yield* SubscriptionRef.make(initialState)
 
-        // Run the stream in the background, updating the ref with each scanned state
-        yield* Effect.forkScoped(
-          Stream.runForEach(
-            Stream.scan(service.eventsStream, initialState, projectMrState(key)),
-            (state) => Effect.gen(function* () {
-              console.log("[Atom] Stream emitted state:", state.data.length, "MRs")
-              yield* SubscriptionRef.set(stateRef, state)
-            })
-          )
+      // Start consuming the stream immediately as a daemon
+      const fiber = yield* Effect.forkDaemon(
+        Stream.runForEach(
+          Stream.scan(service.eventsStream, initialState, projectMrState(key)),
+          (state) => Effect.gen(function* () {
+            console.log("[Atom] Stream emitted state:", state.data.length, "MRs")
+            yield* SubscriptionRef.set(stateRef, state)
+          })
         )
+      )
 
-        console.log("[Atom] Stream consumer forked, returning SubscriptionRef")
-        return stateRef
-      })
-    )
+      console.log("[Atom] Stream consumer forked as daemon")
+      return stateRef
+    })
   )
 });
 export const mergeRequestsAtom = Atom.make((get) => {
@@ -303,6 +301,20 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
   const mrResult = get(mergeRequestsAtom);
   const refreshResult = get(refreshMergeRequestsAtom);
 
+  // Don't consider it "loading" if we have data (even if stream is still consuming)
+  // Only show loading if we're in Initial state or actively refreshing
+  const hasData = Result.match(mrResult, {
+    onInitial: () => false,
+    onFailure: () => false,
+    onSuccess: (data) => data.value.length > 0
+  });
+
+  // If we have data, only show loading if actively refreshing
+  if (hasData) {
+    return Result.isWaiting(refreshResult);
+  }
+
+  // If no data yet, show loading if either MRs or refresh is waiting
   return Result.isWaiting(mrResult) || Result.isWaiting(refreshResult);
 });
 
