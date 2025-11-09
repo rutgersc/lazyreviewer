@@ -10,6 +10,7 @@ import {
   type JiraSearchResponse
 } from "./jira-schema";
 import type { JiraIssuesFetchedEvent } from "../events/jira-events";
+import { EventStorage, type Event } from "../events/events";
 
 export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
 
