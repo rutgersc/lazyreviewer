@@ -1,5 +1,5 @@
 import { FileSystem, Path } from "@effect/platform"
-import { Effect, Array as EffectArray, Schema, SubscriptionRef } from "effect"
+import { Effect, Array as EffectArray, Schema, Stream, PubSub } from "effect"
 import type { Event } from "./events"
 import { EventSchema } from "./eventSchemas"
 
@@ -12,8 +12,8 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
     const eventsDir = path.join(EVENTS_DIR)
 
-    // Create a subscription ref to notify when events change
-    const eventsRef = yield* SubscriptionRef.make<readonly Event[]>([])
+    // Create a PubSub for broadcasting new events
+    const eventsPubSub = yield* PubSub.unbounded<Event>()
 
     // Ensure events directory exists
     yield* fs.makeDirectory(eventsDir, { recursive: true }).pipe(
@@ -115,21 +115,41 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
       yield* Effect.logInfo(`Appended event ${nextNumber}: ${event.type}`)
 
-      // Update subscription ref with new events
-      const allEvents = yield* loadEvents
-      yield* SubscriptionRef.set(eventsRef, allEvents)
+      // Publish new event to all subscribers
+      yield* PubSub.publish(eventsPubSub, event)
 
       return nextNumber
     })
 
-    // Load initial events into the ref
-    const initialEvents = yield* loadEvents
-    yield* SubscriptionRef.set(eventsRef, initialEvents)
+    // Create a stream that replays all historical events, then streams new events
+    const eventsStream = Stream.unwrapScoped(
+      Effect.gen(function* () {
+        console.log("[EventStorage] eventsStream Effect starting - this runs when stream is consumed")
+
+        // Load all historical events first
+        const historicalEvents = yield* loadEvents
+        console.log("[EventStorage] Loaded historical events:", historicalEvents.length, "events")
+
+        // Subscribe to new events
+        const newEventsStream = Stream.fromPubSub(eventsPubSub)
+
+        // Combine: emit all historical events, then new events
+        const combinedStream = Stream.concat(
+          Stream.fromIterable(historicalEvents),
+          newEventsStream
+        )
+
+        console.log("[EventStorage] Returning combined stream (historical + new)")
+        return combinedStream
+      })
+    )
+
+    console.log("[EventStorage] Service created - eventsStream constructed (but not yet consumed)")
 
     return {
       loadEvents,
       appendEvent,
-      eventsRef
+      eventsStream
     } as const
   })
 }) {}

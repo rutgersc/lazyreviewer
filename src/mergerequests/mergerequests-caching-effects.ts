@@ -224,6 +224,74 @@ export const queryProjectMRsFromEvents = (
   return { data, timestamp: new Date() }
 }
 
+export type MrState = { data: readonly MergeRequest[], timestamp: Date | null }
+
+// Pure projection function for folding events into MR state
+// Returns a projection function specialized for a specific cache key
+export const projectMrState = (key: CacheKey) => (state: MrState, event: Event): MrState => {
+  // Handle GitlabUserMergeRequestsFetchedEvent
+  console.log("Projecting", { key:key._tag, eventtype: event.type })
+  if (key._tag === "UserMRs" && event.type === 'gitlab-user-mrs-fetched-event') {
+    // Check if this event matches our key
+    if (
+      event.forState === key.state &&
+      event.forUsernames.length === key.usernames.length &&
+      event.forUsernames.every(u => key.usernames.includes(u))
+    ) {
+      // Project GitLab MRs from the event
+      const gitlabMrs = projectGitlabUserMrsFetchedEvent(event)
+
+      // Enrich with existing Jira data from state
+      const jiraTickets = state.data.flatMap(mr => mr.jiraIssues)
+      const enrichedMrs = gitlabMrs
+        .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+
+      return { data: enrichedMrs, timestamp: new Date() }
+    }
+  }
+
+  // Handle GitlabprojectMergeRequestsFetchedEvent
+  if (key._tag === "ProjectMRs" && event.type === 'gitlab-project-mrs-fetched-event') {
+    const mrEvent = event as GitlabprojectMergeRequestsFetchedEvent
+
+    // Check if this event matches our key
+    if (mrEvent.forState === key.state && mrEvent.forProjectPath === key.projectPath) {
+      // Project GitLab MRs from the event
+      const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
+
+      // Enrich with existing Jira data from state
+      const jiraTickets = state.data.flatMap(mr => mr.jiraIssues)
+      const enrichedMrs = gitlabMrs
+        .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+
+      return { data: enrichedMrs, timestamp: new Date() }
+    }
+  }
+
+  // Handle JiraIssuesFetchedEvent - enrich existing MRs
+  if (event.type === 'jira-issues-fetched-event') {
+    const newJiraTickets = projectJiraIssuesFetchedEvent(event)
+
+    // Get all Jira tickets (existing + new)
+    const existingJiraTickets = state.data.flatMap(mr => mr.jiraIssues)
+    const allJiraTickets = [...existingJiraTickets, ...newJiraTickets]
+
+    // Re-enrich all MRs with updated Jira data
+    const enrichedMrs = state.data.map(mr => {
+      // Get raw GitLab MR data (without jiraIssues)
+      const { jiraIssues, ...gitlabMr } = mr
+      return enrichMrWithJiraIssues(gitlabMr as GitlabMergeRequest, allJiraTickets)
+    })
+
+    return { ...state, data: enrichedMrs }
+  }
+
+  // Event not relevant to this key, return state unchanged
+  return state
+}
+
 // CQRS: Unified query function for any CacheKey
 export const queryMRsFromEvents = (
   allEvents: readonly Event[],

@@ -86,6 +86,7 @@ export const extractTextFromJiraComment = (comment: JiraComment): string => {
 
 export class SearchJiraIssuesError extends Data.TaggedError("SearchJiraIssuesError")<{
   cause: unknown;
+  data?: string
 }> { }
 
 const searchIssues = Effect.fn("searchIssues")(function* (baseUrl: string, apiToken: string, jql: string, maxResults: number = 100) {
@@ -135,7 +136,7 @@ const searchIssues = Effect.fn("searchIssues")(function* (baseUrl: string, apiTo
 
   return yield* Effect.tryPromise({
     try: () => Schema.decodeUnknownPromise(JiraSearchResponseSchema)(jsonData),
-    catch: cause => new SearchJiraIssuesError({ cause })
+    catch: cause => new SearchJiraIssuesError({ cause, data: jsonData })
   });
 })
 

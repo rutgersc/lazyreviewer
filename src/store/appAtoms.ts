@@ -3,10 +3,10 @@ import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents } from "../mergerequests/mergerequests-caching-effects";
+import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState } from "../mergerequests/mergerequests-caching-effects";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
-import { Effect, Console } from "effect";
+import { Effect, Console, Stream, SubscriptionRef } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
@@ -218,29 +218,54 @@ export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
 const mrsCacheByKeyAtomFamily = Atom.family((key: CacheKey) => {
-  // CQRS Query: Pure projection from subscribed events
-  return Atom.make((get) => {
-    const eventsResult = get(allEventsAtom);
+  // CQRS Query: Stream folding with projectMrState into SubscriptionRef
+  const initialState: MrState = { data: [], timestamp: null }
 
-    return Result.match(eventsResult, {
-      onInitial: () => Result.initial(),
-      onFailure: () => Result.success({ data: [] as readonly MergeRequest[], timestamp: null as Date | null }),
-      onSuccess: (events) => {
-        const projected = queryMRsFromEvents(events.value, key);
-        return Result.success(projected);
-      }
-    });
-  });
+  console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", key)
+
+  // Use subscriptionRef to automatically consume the stream
+  return appAtomRuntime.subscriptionRef(
+    Effect.scoped(
+      Effect.gen(function* () {
+        console.log("[Atom] Creating SubscriptionRef for stream consumption")
+        const service = yield* EventStorage
+
+        const existingEvents = yield* service.loadEvents
+        console.log("[Atom] EventStorage acquired - existing events:", existingEvents.length)
+
+        // Create a SubscriptionRef to hold the current state
+        const stateRef = yield* SubscriptionRef.make(initialState)
+
+        // Run the stream in the background, updating the ref with each scanned state
+        yield* Effect.forkScoped(
+          Stream.runForEach(
+            Stream.scan(service.eventsStream, initialState, projectMrState(key)),
+            (state) => Effect.gen(function* () {
+              console.log("[Atom] Stream emitted state:", state.data.length, "MRs")
+              yield* SubscriptionRef.set(stateRef, state)
+            })
+          )
+        )
+
+        console.log("[Atom] Stream consumer forked, returning SubscriptionRef")
+        return stateRef
+      })
+    )
+  )
 });
-
 export const mergeRequestsAtom = Atom.make((get) => {
   const cacheKey = get(mergeRequestsKeyAtom);
   if (!cacheKey) return Result.success([]);
 
   const cacheResult = get(mrsCacheByKeyAtomFamily(cacheKey));
-  return Result.map(cacheResult, (cache) => cache.data);
-})
 
+  console.log("mergeRequestsAtom", cacheResult)
+
+  return Result.map(cacheResult, (state) => {
+    // State is now MrState directly (not PullResult)
+    return state.data;
+  });
+})
 export const unwrappedMergeRequestsAtom = Atom.map(
     mergeRequestsAtom,
     (result): readonly MergeRequest[] => {
@@ -257,7 +282,10 @@ export const lastRefreshTimestampAtom = Atom.make((get) => {
   if (!cacheKey) return Result.success(null as Date | null);
 
   const cacheResult = get(mrsCacheByKeyAtomFamily(cacheKey));
-  return Result.map(cacheResult, (cache) => cache.timestamp);
+  return Result.map(cacheResult, (state) => {
+    // State is now MrState directly (not PullResult)
+    return state.timestamp;
+  });
 })
 
 export const unwrappedLastRefreshTimestampAtom = Atom.map(
@@ -304,9 +332,10 @@ export const consoleLogsAtom = appAtomRuntime.subscriptionRef(
   Effect.map(LogStorage, service => service.logsRef)
 )
 
-// Event subscription - subscribes to all events from EventStorage
-export const allEventsAtom = appAtomRuntime.subscriptionRef(
-  Effect.map(EventStorage, service => service.eventsRef)
+// Event subscription - subscribes to event stream from EventStorage
+export const allEventsAtom = appAtomRuntime.pull(
+  Stream.unwrap(Effect.map(EventStorage, service => service.eventsStream)),
+  { initialValue: [] }
 )
 
 // Re-export LogEntry type for consumers
@@ -331,7 +360,7 @@ export const fetchJobHistoryAtom = appAtomRuntime.fn((_, get) =>
       return { job: null, history: [] };
     }
 
-    const jobs = selectedMr.pipeline.stage.flatMap(stage => stage.jobs);
+    const jobs = selectedMr.pipeline.stage.flatMap((stage: any) => stage.jobs);
     const selectedJob = jobs[selectedPipelineJobIndex];
 
     if (!selectedJob) {

@@ -71,7 +71,7 @@ export const JiraIssueSchema = Schema.Struct({
     created: Schema.String,
     updated: Schema.String,
     comment: Schema.Struct({
-      total: Schema.Number,
+      total: Schema.optionalWith(Schema.Number, { default: () => 0 }),
       comments: Schema.mutable(Schema.Array(JiraCommentSchema))
     })
   })
@@ -79,8 +79,8 @@ export const JiraIssueSchema = Schema.Struct({
 
 export const JiraSearchResponseSchema = Schema.Struct({
   issues: Schema.mutable(Schema.Array(JiraIssueSchema)),
-  total: Schema.Number,
-  maxResults: Schema.Number
+  total: Schema.optionalWith(Schema.Number, { default: () => 0 }),
+  maxResults: Schema.optionalWith(Schema.Number, { default: () => 0 })
 });
 
 export type JiraStatusName = Schema.Schema.Type<typeof JiraStatusNameSchema>;
