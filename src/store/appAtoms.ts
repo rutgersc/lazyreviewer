@@ -3,7 +3,8 @@ import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { type CacheKey, forceRefreshUserMRsCache, forceRefreshProjectMRsCache, MRCacheKey, fetchUserMRsWithCache, ProjectMRCacheKey, fetchProjectMRsWithCache } from "../mergerequests/mergerequests-caching-effects";
+import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents } from "../mergerequests/mergerequests-caching-effects";
+import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
@@ -217,20 +218,19 @@ export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
 const mrsCacheByKeyAtomFamily = Atom.family((key: CacheKey) => {
-  const oh = Effect.gen(function* () {
-    return key._tag === "UserMRs"
-      ? yield* fetchUserMRsWithCache(key)
-      : yield* fetchProjectMRsWithCache(key);
-  }).pipe(
-    Effect.catchAllCause((cause) =>
-      Effect.gen(function* () {
-        yield* error("Error fetching merge requests:", cause);
-        return { data: [] as readonly MergeRequest[], timestamp: null as Date | null };
-      })
-    )
-  );
+  // CQRS Query: Pure projection from subscribed events
+  return Atom.make((get) => {
+    const eventsResult = get(allEventsAtom);
 
-  return appAtomRuntime.atom(oh).pipe(Atom.setLazy(false), Atom.keepAlive);
+    return Result.match(eventsResult, {
+      onInitial: () => Result.initial(),
+      onFailure: () => Result.success({ data: [] as readonly MergeRequest[], timestamp: null as Date | null }),
+      onSuccess: (events) => {
+        const projected = queryMRsFromEvents(events.value, key);
+        return Result.success(projected);
+      }
+    });
+  });
 });
 
 export const mergeRequestsAtom = Atom.make((get) => {
@@ -280,26 +280,15 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     return Effect.gen(function* () {
-
       const cacheKey = get(mergeRequestsKeyAtom);
       if (!cacheKey) {
         return;
       }
 
-      switch (cacheKey._tag) {
-        case "ProjectMRs":
-          yield* forceRefreshProjectMRsCache(cacheKey);
-          break;
-        case "UserMRs":
-          yield* forceRefreshUserMRsCache(cacheKey);
-          break;
-      }
+      // CQRS Command: Just append events, atoms will auto-project via subscription
+      yield* ensureMRsEvents(cacheKey);
 
-      // fetchBranchDifferences(mrs).then(differences => {
-      //   set({ branchDifferences: differences });
-      // });
-      // Refresh the atom to read the newly updated cache
-      get.refresh(mergeRequestsKeyAtom);
+      // No need to refresh - subscription will trigger atom updates automatically
     }).pipe(
       Effect.catchAllCause((cause) =>
         Effect.gen(function* () {
@@ -313,6 +302,11 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
 // Phase 9: Console Logs
 export const consoleLogsAtom = appAtomRuntime.subscriptionRef(
   Effect.map(LogStorage, service => service.logsRef)
+)
+
+// Event subscription - subscribes to all events from EventStorage
+export const allEventsAtom = appAtomRuntime.subscriptionRef(
+  Effect.map(EventStorage, service => service.eventsRef)
 )
 
 // Re-export LogEntry type for consumers

@@ -1,7 +1,7 @@
 import type { MergeRequest } from "./mergeRequestSchema";
 import type { GitlabMergeRequest } from "../gitlab/gitlab-schema";
 import type { JiraIssue } from "../jira/jira-schema";
-import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline } from "../gitlab/gitlabgraphql";
+import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline, getMrPipelineAsEvent } from "../gitlab/gitlabgraphql";
 import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
 import { parseRepositoryId } from "./repositoryParser";
 import { loadJiraTickets } from "../jira/jiraService";
@@ -11,6 +11,7 @@ import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
 import { Effect, Console, Data } from "effect";
 import type { MRCacheKey, ProjectMRCacheKey } from "./mergerequests-caching-effects";
+import { EventStorage } from "../events/events";
 
 function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
   ensurePipelineJobsInSettings(mrs);
@@ -74,13 +75,11 @@ export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (
 ) {
   yield* Console.log(`[Pipeline] Refetching pipeline for MR ${iid} (${mrId})`);
 
-  const pipeline = yield* getMrPipeline(projectPath, iid);
-  if (!pipeline) {
-    yield* Console.log(`[Pipeline] No pipeline data returned for MR ${iid}`);
-    return;
-  }
+  const eventStorage = yield* EventStorage;
+  const pipelineEvent = yield* getMrPipelineAsEvent(projectPath, iid);
 
-  yield* Console.log(`[Pipeline] Pipeline fetched for MR ${iid}`);
+  yield* eventStorage.appendEvent(pipelineEvent);
+  yield* Console.log(`[Pipeline] Pipeline event appended for MR ${iid}`);
 })
 
 export class RetargetMergeRequestError extends Data.TaggedError("RetargetMergeRequestError")<{

@@ -114,8 +114,9 @@ const enrichMrWithJiraIssues = (mr: GitlabMergeRequest, jiraTickets: readonly Ji
   )
 })
 
-export const fetchUserMRsWithCache = (key: MRCacheKey): Effect.Effect<
-  { data: readonly MergeRequest[], timestamp: Date | null },
+// CQRS: Command side - ensures events exist
+export const ensureUserMRsEvents = (key: MRCacheKey): Effect.Effect<
+  void,
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
@@ -127,16 +128,7 @@ export const fetchUserMRsWithCache = (key: MRCacheKey): Effect.Effect<
 
   if (Option.isSome(cachedMrEvent)) {
     yield* Console.log(`[EventCache] Hit: ${cacheKey}`)
-
-    const gitlabMrs = projectGitlabUserMrsFetchedEvent(cachedMrEvent.value)
-
-    const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-    const jiraTickets = loadJiraTicketsFromEvents(allEvents, jiraKeys)
-    const data = gitlabMrs
-      .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
-      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-
-    return { data, timestamp: new Date() }
+    return
   }
 
   yield* Console.log(`[EventCache] MISS: ${cacheKey}`)
@@ -146,23 +138,40 @@ export const fetchUserMRsWithCache = (key: MRCacheKey): Effect.Effect<
   yield* eventStorage.appendEvent(mrEvent)
   yield* Console.log(`[Event] Appended: ${mrEvent.type} for users ${mrEvent.forUsernames.join(', ')}`)
 
+  // Fetch Jira events
   const gitlabMrs = projectGitlabUserMrsFetchedEvent(mrEvent)
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
 
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
   yield* eventStorage.appendEvent(jiraEvent)
-  const jiraTickets = projectJiraIssuesFetchedEvent(jiraEvent)
+  yield* Console.log(`[Event] Appended: ${jiraEvent.type} for keys ${jiraKeys.join(', ')}`)
+})
 
-  // Enrich MRs with Jira tickets
+// CQRS: Query side - projects data from events
+export const queryUserMRsFromEvents = (
+  allEvents: readonly Event[],
+  key: MRCacheKey
+): { data: readonly MergeRequest[], timestamp: Date | null } => {
+  const cachedMrEvent = findLatestUserMrsEvent(allEvents, key.usernames, key.state)
+
+  if (Option.isNone(cachedMrEvent)) {
+    return { data: [], timestamp: null }
+  }
+
+  const gitlabMrs = projectGitlabUserMrsFetchedEvent(cachedMrEvent.value)
+  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
+  const jiraTickets = loadJiraTicketsFromEvents(allEvents, jiraKeys)
+
   const data = gitlabMrs
     .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
   return { data, timestamp: new Date() }
-})
+}
 
-export const fetchProjectMRsWithCache = (key: ProjectMRCacheKey): Effect.Effect<
-  { data: readonly MergeRequest[], timestamp: Date | null },
+// CQRS: Command side - ensures events exist
+export const ensureProjectMRsEvents = (key: ProjectMRCacheKey): Effect.Effect<
+  void,
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
@@ -174,16 +183,7 @@ export const fetchProjectMRsWithCache = (key: ProjectMRCacheKey): Effect.Effect<
 
   if (Option.isSome(cachedMrEvent)) {
     yield* Console.log(`[EventCache] Hit: ${cacheKey}`)
-
-    const gitlabMrs = projectGitlabProjectMrsFetchedEvent(cachedMrEvent.value)
-    const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-
-    const jiraTickets = loadJiraTicketsFromEvents(allEvents, jiraKeys)
-    const data = gitlabMrs
-      .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
-      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-
-    return { data, timestamp: new Date() }
+    return
   }
 
   yield* Console.log(`[EventCache] Miss: ${cacheKey}`)
@@ -193,77 +193,61 @@ export const fetchProjectMRsWithCache = (key: ProjectMRCacheKey): Effect.Effect<
   yield* eventStorage.appendEvent(mrEvent)
   yield* Console.log(`[Event] Appended: ${mrEvent.type} for project ${mrEvent.forProjectPath}`)
 
-  // Get Jira keys and fetch fresh Jira tickets
+  // Fetch Jira events
   const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
 
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
   yield* eventStorage.appendEvent(jiraEvent)
-  const jiraTickets = projectJiraIssuesFetchedEvent(jiraEvent)
+  yield* Console.log(`[Event] Appended: ${jiraEvent.type} for keys ${jiraKeys.join(', ')}`)
+})
 
-  // Enrich MRs with Jira tickets
+// CQRS: Query side - projects data from events
+export const queryProjectMRsFromEvents = (
+  allEvents: readonly Event[],
+  key: ProjectMRCacheKey
+): { data: readonly MergeRequest[], timestamp: Date | null } => {
+  const cachedMrEvent = findLatestProjectMrsEvent(allEvents, key.projectPath, key.state)
+
+  if (Option.isNone(cachedMrEvent)) {
+    return { data: [], timestamp: null }
+  }
+
+  const gitlabMrs = projectGitlabProjectMrsFetchedEvent(cachedMrEvent.value)
+  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
+  const jiraTickets = loadJiraTicketsFromEvents(allEvents, jiraKeys)
+
   const data = gitlabMrs
     .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
   return { data, timestamp: new Date() }
-});
+}
 
-export const forceRefreshUserMRsCache = (key: MRCacheKey) => Effect.gen(function* () {
-  const cacheKey = toCacheKeyString(key)
-  const eventStorage = yield* EventStorage
+// CQRS: Unified query function for any CacheKey
+export const queryMRsFromEvents = (
+  allEvents: readonly Event[],
+  key: CacheKey
+): { data: readonly MergeRequest[], timestamp: Date | null } => {
+  return key._tag === "UserMRs"
+    ? queryUserMRsFromEvents(allEvents, key)
+    : queryProjectMRsFromEvents(allEvents, key)
+}
 
-  yield* Console.log(`[EventCache] Force refresh: ${cacheKey}`)
-
-  // Fetch new MR event
-  const mrEvent = yield* getGitlabMrsAsEvent(key.usernames as string[], key.state)
-  yield* eventStorage.appendEvent(mrEvent)
-  yield* Console.log(`[Event] Appended: ${mrEvent.type} for users ${mrEvent.forUsernames.join(', ')} (force refresh)`)
-
-  // Get Jira keys and fetch fresh Jira tickets
-  const gitlabMrs = projectGitlabUserMrsFetchedEvent(mrEvent)
-  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-
-  const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-  yield* eventStorage.appendEvent(jiraEvent)
-  const jiraTickets = projectJiraIssuesFetchedEvent(jiraEvent)
-
-  // Enrich MRs with Jira tickets
-  const data = gitlabMrs
-    .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-
-  return data
-})
+// CQRS: Unified command function for any CacheKey
+export const ensureMRsEvents = (key: CacheKey): Effect.Effect<
+  void,
+  MergeRequestsCacheError,
+  EventStorage
+> => {
+  return key._tag === "UserMRs"
+    ? ensureUserMRsEvents(key)
+    : ensureProjectMRsEvents(key)
+}
 
 
 
 
 
 
-export const forceRefreshProjectMRsCache = (key: ProjectMRCacheKey) => Effect.gen(function* () {
-  const cacheKey = toProjectCacheKeyString(key)
-  const eventStorage = yield* EventStorage
 
-  yield* Console.log(`[EventCache] Force refresh: ${cacheKey}`)
-
-  // Fetch new MR event
-  const mrEvent = yield* getGitlabMrsByProjectAsEvent(key.projectPath, key.state)
-  yield* eventStorage.appendEvent(mrEvent)
-  yield* Console.log(`[Event] Appended: ${mrEvent.type} for project ${mrEvent.forProjectPath} (force refresh)`)
-
-  // Get Jira keys and fetch fresh Jira tickets
-  const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
-  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-
-  const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-  yield* eventStorage.appendEvent(jiraEvent)
-  const jiraTickets = projectJiraIssuesFetchedEvent(jiraEvent)
-
-  // Enrich MRs with Jira tickets
-  const data = gitlabMrs
-    .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-
-  return data
-})

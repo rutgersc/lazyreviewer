@@ -1,5 +1,5 @@
 import { FileSystem, Path } from "@effect/platform"
-import { Effect, Array as EffectArray, Schema } from "effect"
+import { Effect, Array as EffectArray, Schema, SubscriptionRef } from "effect"
 import type { Event } from "./events"
 import { EventSchema } from "./eventSchemas"
 
@@ -11,6 +11,9 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     const path = yield* Path.Path
 
     const eventsDir = path.join(EVENTS_DIR)
+
+    // Create a subscription ref to notify when events change
+    const eventsRef = yield* SubscriptionRef.make<readonly Event[]>([])
 
     // Ensure events directory exists
     yield* fs.makeDirectory(eventsDir, { recursive: true }).pipe(
@@ -112,12 +115,21 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
       yield* Effect.logInfo(`Appended event ${nextNumber}: ${event.type}`)
 
+      // Update subscription ref with new events
+      const allEvents = yield* loadEvents
+      yield* SubscriptionRef.set(eventsRef, allEvents)
+
       return nextNumber
     })
 
+    // Load initial events into the ref
+    const initialEvents = yield* loadEvents
+    yield* SubscriptionRef.set(eventsRef, initialEvents)
+
     return {
       loadEvents,
-      appendEvent
+      appendEvent,
+      eventsRef
     } as const
   })
 }) {}
