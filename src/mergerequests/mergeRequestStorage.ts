@@ -20,8 +20,7 @@ export class MergeRequestStorage extends Effect.Service<MergeRequestStorage>()("
       set: (key: string, value: readonly MergeRequest[]) => schemaStore.set(key, {
         data: value,
         timestamp: new Date()
-      }),
-      invalidate: (key: string) => schemaStore.remove(key)
+      })
     } as const
   })
 }) {}
@@ -40,11 +39,6 @@ export const MergeRequestStorageLogged = Layer.effect(
     const set = Effect.fn(function* (key: string, value: readonly MergeRequest[]) {
       yield* consoleService.log("[MergeRequestStorage] set ", key)
       return yield* storage.set(key, value);
-    });
-
-    const invalidate = Effect.fn(function* (key: string) {
-      yield* consoleService.log("[MergeRequestStorage] set ", key)
-      return yield* storage.invalidate(key);
     });
 
     return {

@@ -5,9 +5,12 @@ import { type MergeRequest } from "./mergeRequestSchema"
 import { fetchMergeRequestsByProject, fetchMergeRequests } from "./mergerequests-effects"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import { MergeRequestStorage } from "./mergeRequestStorage"
+import { EventStorage } from "../events/events"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlabgraphql"
 import type { SearchJiraIssuesError } from "../jira/jiraService"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
+import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, projectGitlabUserMrsFetchedEvent, projectGitlabProjectMrsFetchedEvent } from "../gitlab/gitlabgraphql"
+import { loadJiraTickets } from "../jira/jiraService"
 
 export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
   readonly usernames: readonly string[]
@@ -48,10 +51,11 @@ const toProjectCacheKeyString = (key: ProjectMRCacheKey): string => {
 export const fetchUserMRsWithCache = (key: MRCacheKey): Effect.Effect<
   { data: readonly MergeRequest[], timestamp: Date | null },
   MergeRequestsCacheError,
-  MergeRequestStorage
+  MergeRequestStorage | EventStorage
 > => Effect.gen(function* () {
   const cacheKey = toCacheKeyString(key)
   const storage = yield* MergeRequestStorage
+  const eventStorage = yield* EventStorage
 
   const cached = yield* storage.get(cacheKey);
   if (cached._tag === "Some") {
@@ -61,7 +65,27 @@ export const fetchUserMRsWithCache = (key: MRCacheKey): Effect.Effect<
 
   yield* Console.log(`[Cache] MISS: ${cacheKey}`)
 
-  const fresh = (yield* fetchMergeRequests(key.usernames))
+  // Fetch and create event
+  const event = yield* getGitlabMrsAsEvent(key.usernames as string[], key.state)
+
+  // Append to event log (dual-write)
+  yield* eventStorage.appendEvent(event)
+  yield* Console.log(`[Event] Appended: ${event.type} for users ${event.forUsernames.join(', ')}`)
+
+  // Process event to get normalized MRs (same logic as getGitlabMrs)
+  const gitlabMrs = projectGitlabUserMrsFetchedEvent(event)
+  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap((mr) => mr.jiraIssueKeys)))
+  const tickets = yield* loadJiraTickets(jiraKeys)
+
+  const fresh = gitlabMrs
+    .map((mr): MergeRequest => ({
+      ...mr,
+      jiraIssues: mr.jiraIssueKeys.flatMap((jiraKey) =>
+        tickets.filter((t) => t.key === jiraKey)
+      ),
+    }))
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+
   yield* storage.set(cacheKey, fresh);
   return { data: fresh, timestamp: new Date() }
 })
@@ -71,28 +95,73 @@ const test = MergeRequestStorage.get("test");
 export const fetchProjectMRsWithCache = (key: ProjectMRCacheKey): Effect.Effect<
   { data: readonly MergeRequest[], timestamp: Date | null },
   MergeRequestsCacheError,
-  MergeRequestStorage
+  MergeRequestStorage | EventStorage
 > => Effect.gen(function* () {
   const cacheKey = toProjectCacheKeyString(key)
+  const storage = yield* MergeRequestStorage
+  const eventStorage = yield* EventStorage
 
-  const cached = yield* MergeRequestStorage.get(cacheKey);
+  const cached = yield* storage.get(cacheKey);
   if (cached._tag === "Some") {
     yield* Console.log(`[Cache] Hit: ${cacheKey}`)
     return { data: cached.value.data, timestamp: cached.value.timestamp };
   }
 
   yield* Console.log(`[Cache] Miss: ${cacheKey}`)
-  const fresh = yield* fetchMergeRequestsByProject(key)
-  yield* MergeRequestStorage.set(cacheKey, fresh)
+
+  // Fetch and create event
+  const event = yield* getGitlabMrsByProjectAsEvent(key.projectPath, key.state)
+
+  // Append to event log (dual-write)
+  yield* eventStorage.appendEvent(event)
+  yield* Console.log(`[Event] Appended: ${event.type} for project ${event.forProjectPath}`)
+
+  // Process event to get normalized MRs (same logic as getGitlabMrsByProject)
+  const gitlabMrs = projectGitlabProjectMrsFetchedEvent(event)
+  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap((mr) => mr.jiraIssueKeys)))
+  const tickets = yield* loadJiraTickets(jiraKeys)
+
+  const fresh = gitlabMrs
+    .map((mr): MergeRequest => ({
+      ...mr,
+      jiraIssues: mr.jiraIssueKeys.flatMap((jiraKey) =>
+        tickets.filter((t) => t.key === jiraKey)
+      ),
+    }))
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+
+  yield* storage.set(cacheKey, fresh)
   return { data: fresh, timestamp: new Date() }
 });
 
 export const forceRefreshUserMRsCache = (key: MRCacheKey) => Effect.gen(function* () {
   const cacheKey = toCacheKeyString(key)
   const storage = yield* MergeRequestStorage
+  const eventStorage = yield* EventStorage
 
   yield* Console.log(`[Cache] Force refresh: ${cacheKey}`)
-  const fresh = (yield* fetchMergeRequests(key.usernames))
+
+  // Fetch and create event
+  const event = yield* getGitlabMrsAsEvent(key.usernames as string[], key.state)
+
+  // Append to event log (dual-write)
+  yield* eventStorage.appendEvent(event)
+  yield* Console.log(`[Event] Appended: ${event.type} for users ${event.forUsernames.join(', ')} (force refresh)`)
+
+  // Process event to get normalized MRs
+  const gitlabMrs = projectGitlabUserMrsFetchedEvent(event)
+  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap((mr) => mr.jiraIssueKeys)))
+  const tickets = yield* loadJiraTickets(jiraKeys)
+
+  const fresh = gitlabMrs
+    .map((mr): MergeRequest => ({
+      ...mr,
+      jiraIssues: mr.jiraIssueKeys.flatMap((jiraKey) =>
+        tickets.filter((t) => t.key === jiraKey)
+      ),
+    }))
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+
   yield* storage.set(cacheKey, fresh)
 
   return fresh
@@ -122,9 +191,31 @@ export const invalidateProjectMRsCache = (key: ProjectMRCacheKey) => Effect.gen(
 export const forceRefreshProjectMRsCache = (key: ProjectMRCacheKey) => Effect.gen(function* () {
   const cacheKey = toProjectCacheKeyString(key)
   const storage = yield* MergeRequestStorage
+  const eventStorage = yield* EventStorage
 
   yield* Console.log(`[Cache] Force refresh: ${cacheKey}`)
-  const fresh = yield* fetchMergeRequestsByProject(key)
+
+  // Fetch and create event
+  const event = yield* getGitlabMrsByProjectAsEvent(key.projectPath, key.state)
+
+  // Append to event log (dual-write)
+  yield* eventStorage.appendEvent(event)
+  yield* Console.log(`[Event] Appended: ${event.type} for project ${event.forProjectPath} (force refresh)`)
+
+  // Process event to get normalized MRs
+  const gitlabMrs = projectGitlabProjectMrsFetchedEvent(event)
+  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap((mr) => mr.jiraIssueKeys)))
+  const tickets = yield* loadJiraTickets(jiraKeys)
+
+  const fresh = gitlabMrs
+    .map((mr): MergeRequest => ({
+      ...mr,
+      jiraIssues: mr.jiraIssueKeys.flatMap((jiraKey) =>
+        tickets.filter((t) => t.key === jiraKey)
+      ),
+    }))
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+
   yield* storage.set(cacheKey, fresh)
 
   return fresh

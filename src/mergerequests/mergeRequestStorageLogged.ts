@@ -20,16 +20,9 @@ export const MergeRequestStorageLogged = Layer.effect(
         return yield* storage.set(key, value);
       });
 
-    const invalidate = (key: string) =>
-      Effect.gen(function* () {
-        // yield* Console.log(`[MRStorage] invalidate: ${key}`);
-        return yield* storage.invalidate(key);
-      });
-
     return new MergeRequestStorage({
       get: get,
       set: set,
-      invalidate: invalidate,
     })
   })
 )
