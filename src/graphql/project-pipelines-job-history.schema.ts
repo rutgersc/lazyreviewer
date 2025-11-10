@@ -8,6 +8,10 @@ export const ProjectPipelinesJobHistoryQuerySchema: Schema.Schema<ProjectPipelin
   project: Schema.NullOr(Schema.Struct({
     id: Schema.Any,
     pipelines: Schema.NullOr(Schema.Struct({
+      pageInfo: Schema.Struct({
+        hasNextPage: Schema.Boolean,
+        endCursor: Schema.NullOr(Schema.String)
+      }),
       nodes: Schema.NullOr(Schema.Array(
         Schema.NullOr(Schema.Struct({
         id: Schema.Any,

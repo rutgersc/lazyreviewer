@@ -1,7 +1,11 @@
-query ProjectPipelinesJobHistory($projectPath: ID!, $jobName: String!, $first: Int!) {
+query ProjectPipelinesJobHistory($projectPath: ID!, $jobName: String!, $first: Int!, $after: String) {
   project(fullPath: $projectPath) {
     id
-    pipelines(first: $first) {
+    pipelines(first: $first, after: $after) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       nodes {
         id
         iid
