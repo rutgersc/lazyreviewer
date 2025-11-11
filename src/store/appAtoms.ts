@@ -6,7 +6,7 @@ import { groups, mockUserSelections, users } from "../data/usersAndGroups";
 import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState, MrStateNotFetched, MrStateFetched } from "../mergerequests/mergerequests-caching-effects";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
-import { Effect, Console, Stream, SubscriptionRef, Match } from "effect";
+import { Effect, Console, Stream, SubscriptionRef, Match, Hash, Equal } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
@@ -199,16 +199,22 @@ export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 export const selectedActivityIndexAtom = Atom.make<number>(0);
 export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
-export const mergeRequestsUserSelectionKeyAtom = Atom.make((get): CacheKey | undefined  => {
+// Simple string key for atom family - derived from user selection + filter state
+export const mergeRequestsCacheKeyStringAtom = Atom.make((get): string | undefined => {
     const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
     if (!selectionEntry) {
-      return;
+      return undefined;
     }
 
     const filterMrState = get(filterMrStateAtom);
     const groups = get(groupsAtom);
 
-    return extractSelectionData(selectionEntry, groups, filterMrState);
+    const cacheKey = extractSelectionData(selectionEntry, groups, filterMrState);
+
+    // Create stable string key for family lookup
+    return cacheKey._tag === "UserMRs"
+      ? `user:${[...cacheKey.usernames].sort().join(',')}:${cacheKey.state}`
+      : `project:${cacheKey.projectPath}:${cacheKey.state}`;
 })
 
 export const log = (...args: ReadonlyArray<any>) =>
@@ -217,27 +223,38 @@ export const log = (...args: ReadonlyArray<any>) =>
 export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
-const mrsCacheByKeyAtomFamily = Atom.family((key: CacheKey) => {
-  const initialState = new MrStateNotFetched()
+const mrsCacheByKeyAtomFamily = Atom.family((keyString: string) => {
 
-  console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", key)
+  console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", keyString)
 
   return appAtomRuntime.atom(
-    (get) => Stream.unwrap(
-      Effect.map(EventStorage, service =>
-        Stream.scan(service.eventsStream, initialState, projectMrState(key))
-      )
-    ),
-    { initialValue: initialState }
-  )
+    (get) => {
+      // Parse the string key to get user selections and state
+      const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
+      if (!selectionEntry) {
+        return Stream.empty;
+      }
+
+      const filterMrState = get(filterMrStateAtom);
+      const groups = get(groupsAtom);
+      const cacheKey = extractSelectionData(selectionEntry, groups, filterMrState);
+
+      return Stream.unwrap(
+        Effect.map(EventStorage, service =>
+          Stream.scan(service.eventsStream, new MrStateNotFetched(), projectMrState(cacheKey))
+        )
+      );
+    },
+    { initialValue: new MrStateNotFetched() }
+  ).pipe(Atom.keepAlive) // Keep atom alive even when unmounted
 });
 
 // Core atom: exposes the full MrState discriminated union
 export const mrStateAtom = Atom.make((get) => {
-  const cacheKey = get(mergeRequestsUserSelectionKeyAtom);
-  if (!cacheKey) return Result.success(new MrStateNotFetched());
+  const keyString = get(mergeRequestsCacheKeyStringAtom);
+  if (!keyString) return Result.success(new MrStateNotFetched());
 
-  const cacheResult = get(mrsCacheByKeyAtomFamily(cacheKey));
+  const cacheResult = get(mrsCacheByKeyAtomFamily(keyString));
 
   return cacheResult; // Result<MrState, E>
 })
@@ -257,9 +274,9 @@ export const unwrappedMrStateAtom = Atom.map(
 // Derived: extract just the MR array
 export const mergeRequestsAtom = Atom.map(
   mrStateAtom,
-  (result) => Result.map(result, (state) =>
+  (result) => Result.map(result, (state: MrState) =>
     Match.value(state).pipe(
-      Match.tag("NotFetched", () => []),
+      Match.tag("NotFetched", () => [] as readonly MergeRequest[]),
       Match.tag("Fetched", (s) => s.data),
       Match.exhaustive
     )
@@ -281,7 +298,7 @@ export const unwrappedMergeRequestsAtom = Atom.map(
 // Derived: extract timestamp from MrState
 export const lastRefreshTimestampAtom = Atom.map(
   mrStateAtom,
-  (result) => Result.map(result, (state) =>
+  (result) => Result.map(result, (state: MrState) =>
     Match.value(state).pipe(
       Match.tag("NotFetched", () => null as Date | null),
       Match.tag("Fetched", (s) => s.timestamp),
@@ -306,18 +323,12 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
   const stateResult = get(mrStateAtom);
   const refreshResult = get(refreshMergeRequestsAtom);
 
-  // Determine loading state based on MrState discriminant only
   // Note: stateResult.waiting is always true because the stream continuously listens for events
   return Result.match(stateResult, {
-    // Initial state (before stream starts) - show loading
     onInitial: () => true,
-    // Failure state - not loading (show error instead)
     onFailure: () => false,
-    // Success state - check the MrState discriminant
-    onSuccess: (state) => Match.value(state.value).pipe(
-      // NotFetched: No data yet, only show loading if actively refreshing
+    onSuccess: (state) => Match.value(state.value as MrState).pipe(
       Match.tag("NotFetched", () => Result.isWaiting(refreshResult)),
-      // Fetched: Have data, only show loading if actively refreshing
       Match.tag("Fetched", () => Result.isWaiting(refreshResult)),
       Match.exhaustive
     )
@@ -326,13 +337,16 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     return Effect.gen(function* () {
-      const cacheKey = get(mergeRequestsUserSelectionKeyAtom);
-      if (!cacheKey) {
-        console.log("[Refresh] No cache key, skipping")
+      const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
+      if (!selectionEntry) {
         return;
       }
 
-      console.log("[Refresh] Refreshing MRs for key:", cacheKey)
+      const filterMrState = get(filterMrStateAtom);
+      const groups = get(groupsAtom);
+      const cacheKey = extractSelectionData(selectionEntry, groups, filterMrState);
+
+      console.log("[Refresh] Refreshing MRs for key:", cacheKey._tag)
 
       // CQRS Command: Just append events, atoms will auto-project via subscription
       yield* ensureMRsEvents(cacheKey);

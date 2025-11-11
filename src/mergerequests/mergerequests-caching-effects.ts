@@ -226,7 +226,7 @@ export type MrState = MrStateNotFetched | MrStateFetched
 // Pure projection function for folding events into MR state
 // Returns a projection function specialized for a specific cache key
 export const projectMrState = (key: CacheKey) => (state: MrState, event: Event): MrState => {
-  console.log("Projecting", { key:key._tag, eventtype: event.type })
+  // console.log("Projecting", { key:key._tag, eventtype: event.type })
 
   if (key._tag === "UserMRs" && event.type === 'gitlab-user-mrs-fetched-event') {
     if (

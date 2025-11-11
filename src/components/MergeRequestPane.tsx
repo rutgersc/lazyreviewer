@@ -441,13 +441,6 @@ export default function MergeRequestPane({}: {}) {
   const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
   const lastRefreshTimestamp = useAtomValue(unwrappedLastRefreshTimestampAtom);
 
-  console.log("[MergeRequestPane]", {
-    mrStateTag: mrState._tag,
-    dataLength: mrState._tag === "Fetched" ? mrState.data.length : "N/A",
-    isLoading,
-    shouldShowEmpty: !isLoading && (mrState._tag === "NotFetched" || (mrState._tag === "Fetched" && mrState.data.length === 0))
-  });
-
   const [activePane, setActivePane] = useAtom(activePaneAtom);
   const [activeModal, setActiveModal] = useAtom(activeModalAtom);
   const [filterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
