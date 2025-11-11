@@ -13,7 +13,7 @@ import type { BranchDifference } from "../hooks/useRepositoryBranches";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 import { LogStorage, type LogEntry } from "../logging/logStorage";
 import { loadJobLog } from '../mergerequests/pipelinejob-log-effects';
-import { fetchJobHistory, type PipelineJob } from '../gitlab/gitlabgraphql';
+import { fetchJobHistory, type PipelineJob } from '../gitlab/gitlab-graphql';
 
 
 // const STORE_FILE = 'debug/store.json';
@@ -199,7 +199,7 @@ export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 export const selectedActivityIndexAtom = Atom.make<number>(0);
 export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
-export const mergeRequestsKeyAtom = Atom.make((get): CacheKey | undefined  => {
+export const mergeRequestsUserSelectionKeyAtom = Atom.make((get): CacheKey | undefined  => {
     const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
     if (!selectionEntry) {
       return;
@@ -218,52 +218,31 @@ export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
 const mrsCacheByKeyAtomFamily = Atom.family((key: CacheKey) => {
-  // CQRS Query: Stream folding with projectMrState into SubscriptionRef
   const initialState: MrState = { data: [], timestamp: null }
 
   console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", key)
 
-  // Use subscriptionRef to automatically consume the stream
-  return appAtomRuntime.subscriptionRef(
-    Effect.gen(function* () {
-      console.log("[Atom] Creating SubscriptionRef for stream consumption")
-      const service = yield* EventStorage
-
-      const existingEvents = yield* service.loadEvents
-      console.log("[Atom] EventStorage acquired - existing events:", existingEvents.length)
-
-      // Create a SubscriptionRef to hold the current state
-      const stateRef = yield* SubscriptionRef.make(initialState)
-
-      // Start consuming the stream immediately as a daemon
-      const fiber = yield* Effect.forkDaemon(
-        Stream.runForEach(
-          Stream.scan(service.eventsStream, initialState, projectMrState(key)),
-          (state) => Effect.gen(function* () {
-            console.log("[Atom] Stream emitted state:", state.data.length, "MRs")
-            yield* SubscriptionRef.set(stateRef, state)
-          })
-        )
+  return appAtomRuntime.atom(
+    (get) => Stream.unwrap(
+      Effect.map(EventStorage, service =>
+        Stream.scan(service.eventsStream, initialState, projectMrState(key))
       )
-
-      console.log("[Atom] Stream consumer forked as daemon")
-      return stateRef
-    })
+    ),
+    { initialValue: initialState }
   )
 });
+
 export const mergeRequestsAtom = Atom.make((get) => {
-  const cacheKey = get(mergeRequestsKeyAtom);
-  if (!cacheKey) return Result.success([]);
+  const userSelectionKey = get(mergeRequestsUserSelectionKeyAtom);
+  if (!userSelectionKey) return Result.success([]);
 
-  const cacheResult = get(mrsCacheByKeyAtomFamily(cacheKey));
+  const currentMergeRequests = get(mrsCacheByKeyAtomFamily(userSelectionKey));
 
-  console.log("mergeRequestsAtom", cacheResult)
-
-  return Result.map(cacheResult, (state) => {
-    // State is now MrState directly (not PullResult)
-    return state.data;
-  });
+  return currentMergeRequests.pipe(
+    Result.map((state) => state.data)
+  );
 })
+
 export const unwrappedMergeRequestsAtom = Atom.map(
     mergeRequestsAtom,
     (result): readonly MergeRequest[] => {
@@ -276,12 +255,11 @@ export const unwrappedMergeRequestsAtom = Atom.map(
 )
 
 export const lastRefreshTimestampAtom = Atom.make((get) => {
-  const cacheKey = get(mergeRequestsKeyAtom);
-  if (!cacheKey) return Result.success(null as Date | null);
+  const userSelectionKey = get(mergeRequestsUserSelectionKeyAtom);
+  if (!userSelectionKey) return Result.success(null as Date | null);
 
-  const cacheResult = get(mrsCacheByKeyAtomFamily(cacheKey));
-  return Result.map(cacheResult, (state) => {
-    // State is now MrState directly (not PullResult)
+  const currentMergeRequests = get(mrsCacheByKeyAtomFamily(userSelectionKey));
+  return Result.map(currentMergeRequests, (state) => {
     return state.timestamp;
   });
 })
@@ -320,14 +298,18 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     return Effect.gen(function* () {
-      const cacheKey = get(mergeRequestsKeyAtom);
+      const cacheKey = get(mergeRequestsUserSelectionKeyAtom);
       if (!cacheKey) {
+        console.log("[Refresh] No cache key, skipping")
         return;
       }
+
+      console.log("[Refresh] Refreshing MRs for key:", cacheKey)
 
       // CQRS Command: Just append events, atoms will auto-project via subscription
       yield* ensureMRsEvents(cacheKey);
 
+      console.log("[Refresh] Events appended, stream should receive them")
       // No need to refresh - subscription will trigger atom updates automatically
     }).pipe(
       Effect.catchAllCause((cause) =>

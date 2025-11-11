@@ -2,8 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { type MergeRequest } from "../mergerequests/mergeRequestSchema";
-import { type JiraIssue } from "../jira/jira-schema";
-import { type GitlabMergeRequest, type PipelineStage, type PipelineJob } from "../gitlab/gitlab-schema";
+import { type PipelineStage, type PipelineJob } from "../gitlab/gitlab-schema";
 import { formatCompactTime } from "../utils/formatting";
 import { copyToClipboard } from "../system/clipboard-effect";
 import { openUrl } from "../system/url-effect";
@@ -18,8 +17,8 @@ import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, mergeRequestsAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedMergeRequestsAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom } from "../store/appAtoms";
-import { getSingleMr } from "../gitlab/gitlabgraphql";
+import { filterMrStateAtom, selectedMrIndexAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedMergeRequestsAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom } from "../store/appAtoms";
+import { getSingleMr } from "../gitlab/gitlab-graphql";
 import { Effect, Runtime } from "effect";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {

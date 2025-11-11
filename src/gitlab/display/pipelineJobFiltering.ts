@@ -1,4 +1,4 @@
-import type { PipelineJob, PipelineStage } from '../gitlabgraphql';
+import type { PipelineJob, PipelineStage } from '../gitlab-graphql';
 import type { JobImportance } from '../../settings/settings';
 import type { CiJobStatus } from '../../graphql/generated/gitlab-base-types';
 

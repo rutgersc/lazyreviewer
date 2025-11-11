@@ -12,13 +12,14 @@ const logStorageLayer = LogStorage.Default.pipe(
   Layer.provide(fileSystemLayer)
 )
 
-const eventStorageLayer = EventStorage.Default.pipe(
-  Layer.provide(fileSystemLayer)
-)
-
 export const consoleLoggedLayer = ConsoleLogged.pipe(
   Layer.provide(logStorageLayer),
   Layer.provide(Layer.succeedContext(DefaultServices.liveServices))
+)
+
+const eventStorageLayer = EventStorage.Default.pipe(
+  Layer.provide(fileSystemLayer),
+  Layer.provide(consoleLoggedLayer)
 )
 
 // Do not rely on Registry.layer: this is likely internal to atom-effect

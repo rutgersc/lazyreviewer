@@ -7,12 +7,13 @@ import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import { EventStorage, type Event } from "../events/events"
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent } from "../events/gitlab-events"
 import type { JiraIssuesFetchedEvent } from "../events/jira-events"
-import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlabgraphql"
+import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
 import type { SearchJiraIssuesError, JiraIssue } from "../jira/jiraService"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
-import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, projectGitlabUserMrsFetchedEvent, projectGitlabProjectMrsFetchedEvent } from "../gitlab/gitlabgraphql"
+import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent } from "../gitlab/gitlab-graphql"
 import { loadJiraTicketsAsEvent, projectJiraIssuesFetchedEvent } from "../jira/jiraService"
 import type { GitlabMergeRequest } from "../gitlab/gitlab-schema"
+import { projectGitlabProjectMrsFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
 
 export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
   readonly usernames: readonly string[]
@@ -120,18 +121,7 @@ export const ensureUserMRsEvents = (key: MRCacheKey): Effect.Effect<
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
-  const cacheKey = toCacheKeyString(key)
   const eventStorage = yield* EventStorage
-
-  const allEvents = yield* eventStorage.loadEvents
-  const cachedMrEvent = findLatestUserMrsEvent(allEvents, key.usernames, key.state)
-
-  if (Option.isSome(cachedMrEvent)) {
-    yield* Console.log(`[EventCache] Hit: ${cacheKey}`)
-    return
-  }
-
-  yield* Console.log(`[EventCache] MISS: ${cacheKey}`)
 
   // Fetch new MR event
   const mrEvent = yield* getGitlabMrsAsEvent(key.usernames as string[], key.state)
@@ -229,10 +219,9 @@ export type MrState = { data: readonly MergeRequest[], timestamp: Date | null }
 // Pure projection function for folding events into MR state
 // Returns a projection function specialized for a specific cache key
 export const projectMrState = (key: CacheKey) => (state: MrState, event: Event): MrState => {
-  // Handle GitlabUserMergeRequestsFetchedEvent
   console.log("Projecting", { key:key._tag, eventtype: event.type })
+
   if (key._tag === "UserMRs" && event.type === 'gitlab-user-mrs-fetched-event') {
-    // Check if this event matches our key
     if (
       event.forState === key.state &&
       event.forUsernames.length === key.usernames.length &&

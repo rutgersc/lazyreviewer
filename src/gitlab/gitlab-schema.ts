@@ -1,4 +1,5 @@
 import { Schema} from "effect";
+import type { CiJobStatus } from "../graphql/generated/gitlab-base-types";
 
 export const PipelineJobSchema = Schema.Struct({
   id: Schema.String,
@@ -84,6 +85,25 @@ export const GitlabMergeRequestSchema = Schema.Struct({
     stage: Schema.mutable(Schema.Array(PipelineStageSchema))
   })
 }).annotations({ identifier: "GitlabMergeRequest" })
+
+export interface JobHistoryEntry {
+  jobId: string;
+  jobName: string;
+  jobStatus: CiJobStatus;
+  failureMessage: string | null;
+  startedAt: string;
+  duration: number | null;
+  pipelineId: string;
+  pipelineIid: number;
+  pipelineRef: string;
+  pipelineCreatedAt: string;
+  pipelineSource: string;
+  webPath: string | null;
+  isDevelopBranch: boolean;
+  mergeRequestIid: string | null;
+  mergeRequestTitle: string | null;
+  mergeRequestAuthor: string | null;
+}
 
 export type PipelineJob = Schema.Schema.Type<typeof PipelineJobSchema>
 export type PipelineStage = Schema.Schema.Type<typeof PipelineStageSchema>

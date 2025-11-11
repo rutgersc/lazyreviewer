@@ -1,7 +1,7 @@
 import type { MergeRequest } from "./mergeRequestSchema";
 import type { GitlabMergeRequest } from "../gitlab/gitlab-schema";
 import type { JiraIssue } from "../jira/jira-schema";
-import { getGitlabMrs, getGitlabMrsByProject, getMrPipeline, getMrPipelineAsEvent } from "../gitlab/gitlabgraphql";
+import { getGitlabMrsAsEvent, getGitlabMrsByProject, getMrPipeline, getMrPipelineAsEvent } from "../gitlab/gitlab-graphql";
 import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
 import { parseRepositoryId } from "./repositoryParser";
 import { loadJiraTickets } from "../jira/jiraService";
@@ -12,6 +12,7 @@ import { GraphQLClient } from "graphql-request";
 import { Effect, Console, Data } from "effect";
 import type { MRCacheKey, ProjectMRCacheKey } from "./mergerequests-caching-effects";
 import { EventStorage } from "../events/events";
+import { projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections";
 
 function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
   ensurePipelineJobsInSettings(mrs);
@@ -32,7 +33,7 @@ export const fetchMergeRequests = Effect.fn("getGitlabMrs")(function* (
 ) {
   if (selectedUsernames.length === 0) return [];
 
-  const mrs = yield* getGitlabMrs(selectedUsernames as string[], state);
+  const mrs =  projectGitlabUserMrsFetchedEvent(yield* getGitlabMrsAsEvent(selectedUsernames as string[], state));
   const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
   const tickets = yield* loadJiraTickets(jiraKeys);
 

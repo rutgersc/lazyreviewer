@@ -1,5 +1,5 @@
 import { Console, Data, Effect } from "effect";
-import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/gitlabgraphql";
+import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/gitlab-graphql";
 import { extractElabTicketsFromTitle } from "../jira/jiraService";
 import { id } from "effect/Fiber";
 import { HttpClient } from "@effect/platform";

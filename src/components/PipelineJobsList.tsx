@@ -2,7 +2,7 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { Colors } from '../colors';
 import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
-import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
+import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { ActivePane } from '../userselection/userSelection';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryLimitAtom } from '../store/appAtoms';

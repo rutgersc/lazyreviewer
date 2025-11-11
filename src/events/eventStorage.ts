@@ -1,5 +1,5 @@
 import { FileSystem, Path } from "@effect/platform"
-import { Effect, Array as EffectArray, Schema, Stream, PubSub } from "effect"
+import { Effect, Schema, Stream, PubSub, Console } from "effect"
 import type { Event } from "./events"
 import { EventSchema } from "./eventSchemas"
 
@@ -9,10 +9,10 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
   effect: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem
     const path = yield* Path.Path
+    const console = yield* Console.Console;
 
     const eventsDir = path.join(EVENTS_DIR)
 
-    // Create a PubSub for broadcasting new events
     const eventsPubSub = yield* PubSub.unbounded<Event>()
 
     // Ensure events directory exists
@@ -45,6 +45,8 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     }
 
     const loadEvents = Effect.gen(function* () {
+      yield* console.log("[EventStorage] loading all events..")
+
       // Read directory
       const files = yield* fs.readDirectory(eventsDir).pipe(
         Effect.catchAll(() => Effect.succeed([]))
@@ -63,7 +65,6 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
             const filePath = path.join(eventsDir, parsed.filename)
             const content = yield* fs.readFileString(filePath)
 
-            // Parse JSON and validate with schema
             const jsonData = yield* Effect.try({
               try: () => JSON.parse(content),
               catch: (error) => new Error(`JSON parse error: ${error}`)
@@ -83,23 +84,20 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
         { concurrency: "unbounded" }
       )
 
-      // Filter out failed loads
       return events.filter((event): event is Event => event !== null)
     })
 
     const appendEvent = (event: Event) => Effect.gen(function* () {
-      // Read directory to find highest event number
       const files = yield* fs.readDirectory(eventsDir);
 
-      // Parse filenames to get event numbers
       const eventNumbers = files
         .map(parseFilename)
         .filter((parsed): parsed is NonNullable<typeof parsed> => parsed !== null)
         .map(parsed => parsed.eventNumber)
 
-      // Find next event number
-      const maxNumber = eventNumbers.length > 0 ? Math.max(...eventNumbers) : -1
-      const nextNumber = maxNumber + 1
+      const nextNumber = eventNumbers.length > 0
+        ? Math.max(...eventNumbers) + 1
+        : 0
 
       // Generate timestamp
       const timestamp = new Date().toISOString() // "2025-11-08T14:30:25.123Z"
@@ -111,40 +109,28 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
       // Write event to file
       const eventJson = JSON.stringify(event, null, 2)
+
+      yield* Console.log(`[EventStorage] Appended: ${filename}`)
       yield* fs.writeFileString(filePath, eventJson)
-
-      yield* Effect.logInfo(`Appended event ${nextNumber}: ${event.type}`)
-
-      // Publish new event to all subscribers
       yield* PubSub.publish(eventsPubSub, event)
 
       return nextNumber
     })
 
-    // Create a stream that replays all historical events, then streams new events
     const eventsStream = Stream.unwrapScoped(
       Effect.gen(function* () {
-        console.log("[EventStorage] eventsStream Effect starting - this runs when stream is consumed")
+        yield* console.log("[EventStorage] new subscriber initializing..")
 
-        // Load all historical events first
         const historicalEvents = yield* loadEvents
-        console.log("[EventStorage] Loaded historical events:", historicalEvents.length, "events")
 
-        // Subscribe to new events
         const newEventsStream = Stream.fromPubSub(eventsPubSub)
 
-        // Combine: emit all historical events, then new events
-        const combinedStream = Stream.concat(
+        return Stream.concat(
           Stream.fromIterable(historicalEvents),
           newEventsStream
         )
-
-        console.log("[EventStorage] Returning combined stream (historical + new)")
-        return combinedStream
       })
     )
-
-    console.log("[EventStorage] Service created - eventsStream constructed (but not yet consumed)")
 
     return {
       loadEvents,

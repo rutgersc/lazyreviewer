@@ -6,7 +6,7 @@ import JiraIssuesList from './JiraIssuesList';
 import PipelineJobsList from './PipelineJobsList';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
-import type { PipelineJob, PipelineStage } from '../gitlab/gitlabgraphql';
+import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { useScrollBox } from '../hooks/useScrollBox';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, selectedDiscussionIndexAtom, selectedActivityIndexAtom, selectedPipelineJobIndexAtom, selectedMrAtom, selectedUserSelectionEntryAtom, userSelectionsAtom, type InfoPaneTab } from '../store/appAtoms';
