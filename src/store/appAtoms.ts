@@ -3,10 +3,10 @@ import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState } from "../mergerequests/mergerequests-caching-effects";
+import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState, MrStateNotFetched, MrStateFetched } from "../mergerequests/mergerequests-caching-effects";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
-import { Effect, Console, Stream, SubscriptionRef } from "effect";
+import { Effect, Console, Stream, SubscriptionRef, Match } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
@@ -218,7 +218,7 @@ export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
 const mrsCacheByKeyAtomFamily = Atom.family((key: CacheKey) => {
-  const initialState: MrState = { data: [], timestamp: null }
+  const initialState = new MrStateNotFetched()
 
   console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", key)
 
@@ -232,37 +232,63 @@ const mrsCacheByKeyAtomFamily = Atom.family((key: CacheKey) => {
   )
 });
 
-export const mergeRequestsAtom = Atom.make((get) => {
-  const userSelectionKey = get(mergeRequestsUserSelectionKeyAtom);
-  if (!userSelectionKey) return Result.success([]);
+// Core atom: exposes the full MrState discriminated union
+export const mrStateAtom = Atom.make((get) => {
+  const cacheKey = get(mergeRequestsUserSelectionKeyAtom);
+  if (!cacheKey) return Result.success(new MrStateNotFetched());
 
-  const currentMergeRequests = get(mrsCacheByKeyAtomFamily(userSelectionKey));
+  const cacheResult = get(mrsCacheByKeyAtomFamily(cacheKey));
 
-  return currentMergeRequests.pipe(
-    Result.map((state) => state.data)
-  );
+  return cacheResult; // Result<MrState, E>
 })
 
-export const unwrappedMergeRequestsAtom = Atom.map(
-    mergeRequestsAtom,
-    (result): readonly MergeRequest[] => {
-        return Result.match(result, {
-            onInitial: () => [],
-            onFailure: () => [],
-            onSuccess: (mrs) =>  mrs.value
-        })
-    }
+// Derived: unwrapped MrState for direct access
+export const unwrappedMrStateAtom = Atom.map(
+  mrStateAtom,
+  (result): MrState => {
+    return Result.match(result, {
+      onInitial: () => new MrStateNotFetched(),
+      onFailure: () => new MrStateNotFetched(),
+      onSuccess: (state) => state.value
+    })
+  }
 )
 
-export const lastRefreshTimestampAtom = Atom.make((get) => {
-  const userSelectionKey = get(mergeRequestsUserSelectionKeyAtom);
-  if (!userSelectionKey) return Result.success(null as Date | null);
+// Derived: extract just the MR array
+export const mergeRequestsAtom = Atom.map(
+  mrStateAtom,
+  (result) => Result.map(result, (state) =>
+    Match.value(state).pipe(
+      Match.tag("NotFetched", () => []),
+      Match.tag("Fetched", (s) => s.data),
+      Match.exhaustive
+    )
+  )
+)
 
-  const currentMergeRequests = get(mrsCacheByKeyAtomFamily(userSelectionKey));
-  return Result.map(currentMergeRequests, (state) => {
-    return state.timestamp;
-  });
-})
+// Derived: unwrapped MR array for convenience
+export const unwrappedMergeRequestsAtom = Atom.map(
+  mergeRequestsAtom,
+  (result): readonly MergeRequest[] => {
+    return Result.match(result, {
+      onInitial: () => [],
+      onFailure: () => [],
+      onSuccess: (mrs) => mrs.value
+    })
+  }
+)
+
+// Derived: extract timestamp from MrState
+export const lastRefreshTimestampAtom = Atom.map(
+  mrStateAtom,
+  (result) => Result.map(result, (state) =>
+    Match.value(state).pipe(
+      Match.tag("NotFetched", () => null as Date | null),
+      Match.tag("Fetched", (s) => s.timestamp),
+      Match.exhaustive
+    )
+  )
+)
 
 export const unwrappedLastRefreshTimestampAtom = Atom.map(
   lastRefreshTimestampAtom,
@@ -275,25 +301,27 @@ export const unwrappedLastRefreshTimestampAtom = Atom.map(
   }
 )
 
+// Derived: compute loading state from MrState
 export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
-  const mrResult = get(mergeRequestsAtom);
+  const stateResult = get(mrStateAtom);
   const refreshResult = get(refreshMergeRequestsAtom);
 
-  // Don't consider it "loading" if we have data (even if stream is still consuming)
-  // Only show loading if we're in Initial state or actively refreshing
-  const hasData = Result.match(mrResult, {
-    onInitial: () => false,
+  // Determine loading state based on MrState discriminant only
+  // Note: stateResult.waiting is always true because the stream continuously listens for events
+  return Result.match(stateResult, {
+    // Initial state (before stream starts) - show loading
+    onInitial: () => true,
+    // Failure state - not loading (show error instead)
     onFailure: () => false,
-    onSuccess: (data) => data.value.length > 0
+    // Success state - check the MrState discriminant
+    onSuccess: (state) => Match.value(state.value).pipe(
+      // NotFetched: No data yet, only show loading if actively refreshing
+      Match.tag("NotFetched", () => Result.isWaiting(refreshResult)),
+      // Fetched: Have data, only show loading if actively refreshing
+      Match.tag("Fetched", () => Result.isWaiting(refreshResult)),
+      Match.exhaustive
+    )
   });
-
-  // If we have data, only show loading if actively refreshing
-  if (hasData) {
-    return Result.isWaiting(refreshResult);
-  }
-
-  // If no data yet, show loading if either MRs or refresh is waiting
-  return Result.isWaiting(mrResult) || Result.isWaiting(refreshResult);
 });
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {

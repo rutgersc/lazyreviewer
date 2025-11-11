@@ -141,11 +141,11 @@ export const ensureUserMRsEvents = (key: MRCacheKey): Effect.Effect<
 export const queryUserMRsFromEvents = (
   allEvents: readonly Event[],
   key: MRCacheKey
-): { data: readonly MergeRequest[], timestamp: Date | null } => {
+): MrState => {
   const cachedMrEvent = findLatestUserMrsEvent(allEvents, key.usernames, key.state)
 
   if (Option.isNone(cachedMrEvent)) {
-    return { data: [], timestamp: null }
+    return new MrStateNotFetched()
   }
 
   const gitlabMrs = projectGitlabUserMrsFetchedEvent(cachedMrEvent.value)
@@ -156,7 +156,7 @@ export const queryUserMRsFromEvents = (
     .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
-  return { data, timestamp: new Date() }
+  return new MrStateFetched({ data, timestamp: new Date() })
 }
 
 // CQRS: Command side - ensures events exist
@@ -196,11 +196,11 @@ export const ensureProjectMRsEvents = (key: ProjectMRCacheKey): Effect.Effect<
 export const queryProjectMRsFromEvents = (
   allEvents: readonly Event[],
   key: ProjectMRCacheKey
-): { data: readonly MergeRequest[], timestamp: Date | null } => {
+): MrState => {
   const cachedMrEvent = findLatestProjectMrsEvent(allEvents, key.projectPath, key.state)
 
   if (Option.isNone(cachedMrEvent)) {
-    return { data: [], timestamp: null }
+    return new MrStateNotFetched()
   }
 
   const gitlabMrs = projectGitlabProjectMrsFetchedEvent(cachedMrEvent.value)
@@ -211,10 +211,17 @@ export const queryProjectMRsFromEvents = (
     .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
-  return { data, timestamp: new Date() }
+  return new MrStateFetched({ data, timestamp: new Date() })
 }
 
-export type MrState = { data: readonly MergeRequest[], timestamp: Date | null }
+export class MrStateNotFetched extends Data.TaggedClass("NotFetched")<{}> {}
+
+export class MrStateFetched extends Data.TaggedClass("Fetched")<{
+  readonly data: readonly MergeRequest[]
+  readonly timestamp: Date
+}> {}
+
+export type MrState = MrStateNotFetched | MrStateFetched
 
 // Pure projection function for folding events into MR state
 // Returns a projection function specialized for a specific cache key
@@ -231,12 +238,14 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: Event):
       const gitlabMrs = projectGitlabUserMrsFetchedEvent(event)
 
       // Enrich with existing Jira data from state
-      const jiraTickets = state.data.flatMap(mr => mr.jiraIssues)
+      const jiraTickets = state._tag === "Fetched"
+        ? state.data.flatMap(mr => mr.jiraIssues)
+        : []
       const enrichedMrs = gitlabMrs
         .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
-      return { data: enrichedMrs, timestamp: new Date() }
+      return new MrStateFetched({ data: enrichedMrs, timestamp: new Date() })
     }
   }
 
@@ -250,17 +259,24 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: Event):
       const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
 
       // Enrich with existing Jira data from state
-      const jiraTickets = state.data.flatMap(mr => mr.jiraIssues)
+      const jiraTickets = state._tag === "Fetched"
+        ? state.data.flatMap(mr => mr.jiraIssues)
+        : []
       const enrichedMrs = gitlabMrs
         .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
-      return { data: enrichedMrs, timestamp: new Date() }
+      return new MrStateFetched({ data: enrichedMrs, timestamp: new Date() })
     }
   }
 
   // Handle JiraIssuesFetchedEvent - enrich existing MRs
   if (event.type === 'jira-issues-fetched-event') {
+    // Only enrich if we have fetched MRs
+    if (state._tag === "NotFetched") {
+      return state
+    }
+
     const newJiraTickets = projectJiraIssuesFetchedEvent(event)
 
     // Get all Jira tickets (existing + new)
@@ -274,7 +290,7 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: Event):
       return enrichMrWithJiraIssues(gitlabMr as GitlabMergeRequest, allJiraTickets)
     })
 
-    return { ...state, data: enrichedMrs }
+    return new MrStateFetched({ data: enrichedMrs, timestamp: state.timestamp })
   }
 
   // Event not relevant to this key, return state unchanged
@@ -285,7 +301,7 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: Event):
 export const queryMRsFromEvents = (
   allEvents: readonly Event[],
   key: CacheKey
-): { data: readonly MergeRequest[], timestamp: Date | null } => {
+): MrState => {
   return key._tag === "UserMRs"
     ? queryUserMRsFromEvents(allEvents, key)
     : queryProjectMRsFromEvents(allEvents, key)
