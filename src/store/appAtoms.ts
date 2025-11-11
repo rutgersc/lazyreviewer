@@ -224,27 +224,33 @@ export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
 const mrsCacheByKeyAtomFamily = Atom.family((keyString: string) => {
-
   console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", keyString)
 
+  // Parse the key string to extract the CacheKey parameters
+  // Format: "user:username1,username2:state" or "project:path:state"
+  const parseCacheKey = (): CacheKey => {
+    const parts = keyString.split(':');
+    if (parts[0] === 'user') {
+      return new MRCacheKey({
+        usernames: parts[1]?.split(',') || [],
+        state: parts[2] as MergeRequestState
+      });
+    } else {
+      return new ProjectMRCacheKey({
+        projectPath: parts[1] || '',
+        state: parts[2] as MergeRequestState
+      });
+    }
+  };
+
+  const cacheKey = parseCacheKey();
+
   return appAtomRuntime.atom(
-    (get) => {
-      // Parse the string key to get user selections and state
-      const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
-      if (!selectionEntry) {
-        return Stream.empty;
-      }
-
-      const filterMrState = get(filterMrStateAtom);
-      const groups = get(groupsAtom);
-      const cacheKey = extractSelectionData(selectionEntry, groups, filterMrState);
-
-      return Stream.unwrap(
-        Effect.map(EventStorage, service =>
-          Stream.scan(service.eventsStream, new MrStateNotFetched(), projectMrState(cacheKey))
-        )
-      );
-    },
+    Stream.unwrap(
+      Effect.map(EventStorage, service =>
+        Stream.scan(service.eventsStream, new MrStateNotFetched(), projectMrState(cacheKey))
+      )
+    ),
     { initialValue: new MrStateNotFetched() }
   ).pipe(Atom.keepAlive) // Keep atom alive even when unmounted
 });
