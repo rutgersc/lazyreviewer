@@ -1,4 +1,4 @@
-import { Effect, Data, Console, Context, Option } from "effect"
+import { Effect, Data, Console, Context, Option, Chunk } from "effect"
 import type { PlatformError } from "@effect/platform/Error"
 import type { ParseError } from "effect/ParseResult"
 import { type MergeRequest } from "./mergeRequestSchema"
@@ -296,6 +296,9 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: Event):
   // Event not relevant to this key, return state unchanged
   return state
 }
+
+// export const projectMrStateChunked = (key: CacheKey) => (state: MrState, events: Chunk.Chunk<Event>): MrState => {
+//   return }
 
 // CQRS: Unified query function for any CacheKey
 export const queryMRsFromEvents = (

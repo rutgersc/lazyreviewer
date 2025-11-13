@@ -6,6 +6,7 @@ import { EventSchema } from "./eventSchemas"
 const EVENTS_DIR = "storage/events"
 
 export class EventStorage extends Effect.Service<EventStorage>()("EventStorage", {
+  accessors: true,
   effect: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem
     const path = yield* Path.Path

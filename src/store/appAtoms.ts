@@ -3,10 +3,10 @@ import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState, MrStateNotFetched, MrStateFetched } from "../mergerequests/mergerequests-caching-effects";
+import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, projectMrStateChunked, type MrState, MrStateNotFetched, MrStateFetched } from "../mergerequests/mergerequests-caching-effects";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
-import { Effect, Console, Stream, SubscriptionRef, Match, Hash, Equal } from "effect";
+import { Effect, Console, Stream, SubscriptionRef, Match, Hash, Equal, Duration, Chunk } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../hooks/useRepositoryBranches";
@@ -224,35 +224,47 @@ export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
 const mrsCacheByKeyAtomFamily = Atom.family((keyString: string) => {
-  console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", keyString)
+  console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", keyString);
 
   // Parse the key string to extract the CacheKey parameters
   // Format: "user:username1,username2:state" or "project:path:state"
   const parseCacheKey = (): CacheKey => {
-    const parts = keyString.split(':');
-    if (parts[0] === 'user') {
+    const parts = keyString.split(":");
+    if (parts[0] === "user") {
       return new MRCacheKey({
-        usernames: parts[1]?.split(',') || [],
-        state: parts[2] as MergeRequestState
+        usernames: parts[1]?.split(",") || [],
+        state: parts[2] as MergeRequestState,
       });
     } else {
       return new ProjectMRCacheKey({
-        projectPath: parts[1] || '',
-        state: parts[2] as MergeRequestState
+        projectPath: parts[1] || "",
+        state: parts[2] as MergeRequestState,
       });
     }
   };
 
   const cacheKey = parseCacheKey();
 
-  return appAtomRuntime.atom(
-    Stream.unwrap(
-      Effect.map(EventStorage, service =>
-        Stream.scan(service.eventsStream, new MrStateNotFetched(), projectMrState(cacheKey))
-      )
-    ),
-    { initialValue: new MrStateNotFetched() }
-  ).pipe(Atom.keepAlive) // Keep atom alive even when unmounted
+  return appAtomRuntime
+    .atom(
+      Stream.unwrap(
+        Effect.gen(function* () {
+          const stream = yield* EventStorage.eventsStream;
+          return Stream.groupedWithin(stream, 100, "0.1 seconds").pipe(
+            Stream.scan(
+              new MrStateNotFetched(),
+              (state: MrState, events) =>
+                Chunk.reduce(
+                  events,
+                  state,
+                  (currentState, event) => projectMrState(cacheKey)(currentState, event))
+            )
+          );
+        })
+      ),
+      { initialValue: new MrStateNotFetched() }
+    )
+    .pipe(Atom.keepAlive); // Keep atom alive even when unmounted
 });
 
 // Core atom: exposes the full MrState discriminated union
@@ -351,14 +363,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
       const filterMrState = get(filterMrStateAtom);
       const groups = get(groupsAtom);
       const cacheKey = extractSelectionData(selectionEntry, groups, filterMrState);
-
-      console.log("[Refresh] Refreshing MRs for key:", cacheKey._tag)
-
-      // CQRS Command: Just append events, atoms will auto-project via subscription
       yield* ensureMRsEvents(cacheKey);
-
-      console.log("[Refresh] Events appended, stream should receive them")
-      // No need to refresh - subscription will trigger atom updates automatically
     }).pipe(
       Effect.catchAllCause((cause) =>
         Effect.gen(function* () {
