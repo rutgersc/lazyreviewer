@@ -223,9 +223,15 @@ export class MrStateFetched extends Data.TaggedClass("Fetched")<{
 
 export type MrState = MrStateNotFetched | MrStateFetched
 
+// Events that are relevant for MR state projection
+export type MrRelevantEvent =
+  | GitlabUserMergeRequestsFetchedEvent
+  | GitlabprojectMergeRequestsFetchedEvent
+  | JiraIssuesFetchedEvent
+
 // Pure projection function for folding events into MR state
 // Returns a projection function specialized for a specific cache key
-export const projectMrState = (key: CacheKey) => (state: MrState, event: Event): MrState => {
+export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelevantEvent): MrState => {
   // console.log("Projecting", { key:key._tag, eventtype: event.type })
 
   if (key._tag === "UserMRs" && event.type === 'gitlab-user-mrs-fetched-event') {

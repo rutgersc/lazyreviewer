@@ -3,8 +3,8 @@ import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState, MrStateNotFetched, MrStateFetched } from "../mergerequests/mergerequests-caching-effects";
-import { EventStorage } from "../events/events";
+import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState, MrStateNotFetched, MrStateFetched, type MrRelevantEvent } from "../mergerequests/mergerequests-caching-effects";
+import { EventStorage, type Event } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console, Stream, SubscriptionRef, Match, Hash, Equal, Duration, Chunk } from "effect";
 import { appAtomRuntime } from "./appLayerRuntime";
@@ -237,7 +237,15 @@ const mrsCacheByKeyAtomFamily = Atom.family((keyString: string) => {
         const groupsList = get(groupsAtom);
         const cacheKey = extractSelectionData(selectionEntry, groupsList, state);
 
+        // Filter to only MR-relevant events
+        const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
+          return event.type === 'gitlab-user-mrs-fetched-event' ||
+                 event.type === 'gitlab-project-mrs-fetched-event' ||
+                 event.type === 'jira-issues-fetched-event';
+        };
+
         return Stream.groupedWithin(yield* EventStorage.eventsStream, 100, "0.1 seconds").pipe(
+          Stream.map(chunk => Chunk.filter(chunk, isMrRelevantEvent)),
           Stream.scan(
             new MrStateNotFetched(),
             (mrState: MrState, events) =>
