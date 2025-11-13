@@ -3,7 +3,7 @@ import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, projectMrStateChunked, type MrState, MrStateNotFetched, MrStateFetched } from "../mergerequests/mergerequests-caching-effects";
+import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState, MrStateNotFetched, MrStateFetched } from "../mergerequests/mergerequests-caching-effects";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console, Stream, SubscriptionRef, Match, Hash, Equal, Duration, Chunk } from "effect";
@@ -207,14 +207,9 @@ export const mergeRequestsCacheKeyStringAtom = Atom.make((get): string | undefin
     }
 
     const filterMrState = get(filterMrStateAtom);
-    const groups = get(groupsAtom);
 
-    const cacheKey = extractSelectionData(selectionEntry, groups, filterMrState);
-
-    // Create stable string key for family lookup
-    return cacheKey._tag === "UserMRs"
-      ? `user:${[...cacheKey.usernames].sort().join(',')}:${cacheKey.state}`
-      : `project:${cacheKey.projectPath}:${cacheKey.state}`;
+    // Create stable string key using userSelectionEntryId + state
+    return `${selectionEntry.userSelectionEntryId}:${filterMrState}`;
 })
 
 export const log = (...args: ReadonlyArray<any>) =>
@@ -226,45 +221,40 @@ export const error = (...args: ReadonlyArray<any>) =>
 const mrsCacheByKeyAtomFamily = Atom.family((keyString: string) => {
   console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", keyString);
 
-  // Parse the key string to extract the CacheKey parameters
-  // Format: "user:username1,username2:state" or "project:path:state"
-  const parseCacheKey = (): CacheKey => {
-    const parts = keyString.split(":");
-    if (parts[0] === "user") {
-      return new MRCacheKey({
-        usernames: parts[1]?.split(",") || [],
-        state: parts[2] as MergeRequestState,
-      });
-    } else {
-      return new ProjectMRCacheKey({
-        projectPath: parts[1] || "",
-        state: parts[2] as MergeRequestState,
-      });
-    }
-  };
+  return appAtomRuntime.atom(
+    Stream.unwrap(
+      Effect.gen(function* () {
+        const stream = yield* EventStorage.eventsStream;
 
-  const cacheKey = parseCacheKey();
+        // Parse the key string: "userSelectionEntryId:state"
+        const [userSelectionEntryId, stateStr] = keyString.split(":");
+        const state = stateStr as MergeRequestState;
 
-  return appAtomRuntime
-    .atom(
-      Stream.unwrap(
-        Effect.gen(function* () {
-          const stream = yield* EventStorage.eventsStream;
-          return Stream.groupedWithin(stream, 100, "0.1 seconds").pipe(
-            Stream.scan(
-              new MrStateNotFetched(),
-              (state: MrState, events) =>
-                Chunk.reduce(
-                  events,
-                  state,
-                  (currentState, event) => projectMrState(cacheKey)(currentState, event))
-            )
-          );
-        })
-      ),
-      { initialValue: new MrStateNotFetched() }
-    )
-    .pipe(Atom.keepAlive); // Keep atom alive even when unmounted
+        // Load static data once
+        const userSelections = mockUserSelections;
+        const groupsList = groups;
+
+        const selectionEntry = userSelections.find(e => e.userSelectionEntryId === userSelectionEntryId);
+        if (!selectionEntry) {
+          throw new Error(`UserSelectionEntry not found: ${userSelectionEntryId}`);
+        }
+
+        const cacheKey = extractSelectionData(selectionEntry, groupsList, state);
+
+        return Stream.groupedWithin(stream, 100, "0.1 seconds").pipe(
+          Stream.scan(
+            new MrStateNotFetched(),
+            (mrState: MrState, events) =>
+              Chunk.reduce(
+                events,
+                mrState,
+                (currentState, event) => projectMrState(cacheKey)(currentState, event))
+          )
+        );
+      })
+    ),
+    { initialValue: new MrStateNotFetched() }
+  ).pipe(Atom.keepAlive); // Keep atom alive even when unmounted
 });
 
 // Core atom: exposes the full MrState discriminated union
