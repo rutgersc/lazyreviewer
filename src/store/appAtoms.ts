@@ -3,7 +3,7 @@ import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState, MrStateNotFetched, MrStateFetched, type MrRelevantEvent } from "../mergerequests/mergerequests-caching-effects";
+import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState, MrStateNotFetched, MrStateFetched, type MrRelevantEvent, AllMrsState, projectAllMrs } from "../mergerequests/mergerequests-caching-effects";
 import { EventStorage, type Event } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console, Stream, SubscriptionRef, Match, Hash, Equal, Duration, Chunk } from "effect";
@@ -199,125 +199,96 @@ export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 export const selectedActivityIndexAtom = Atom.make<number>(0);
 export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
-// Simple string key for atom family - derived from user selection + filter state
-export const mergeRequestsCacheKeyStringAtom = Atom.make((get): string | undefined => {
-    const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
-    if (!selectionEntry) {
-      return undefined;
-    }
-
-    const filterMrState = get(filterMrStateAtom);
-
-    // Create stable string key using userSelectionEntryId + state
-    return `${selectionEntry.userSelectionEntryId}:${filterMrState}`;
-})
-
 export const log = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
 export const error = (...args: ReadonlyArray<any>) =>
   Effect.andThen(Console.Console, _ => _.log(...args));
 
-const mrsCacheByKeyAtomFamily = Atom.family((keyString: string) => {
-  console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", keyString);
+// Single global stream of ALL MRs indexed by ID
+export const allMrsAtom = appAtomRuntime.atom(
+  Stream.unwrap(
+    Effect.gen(function* () {
+      const stream = yield* EventStorage.eventsStream;
 
-  // Parse once to get the IDs for lookup
-  const [userSelectionEntryId, stateStr] = keyString.split(":");
-  const state = stateStr as MergeRequestState;
+      // Filter to only MR-relevant events
+      const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
+        return event.type === 'gitlab-user-mrs-fetched-event' ||
+               event.type === 'gitlab-project-mrs-fetched-event' ||
+               event.type === 'jira-issues-fetched-event';
+      };
 
-  return appAtomRuntime.atom(get =>
-    Stream.unwrap(
-      Effect.gen(function* () {
-        const userSelections = get(userSelectionsAtom);
-        const selectionEntry = userSelections.find(e => e.userSelectionEntryId === userSelectionEntryId);
-        if (!selectionEntry) {
-          throw new Error(`UserSelectionEntry not found: ${userSelectionEntryId}`);
-        }
+      return stream.pipe(
+        Stream.filter(isMrRelevantEvent),
+        Stream.groupedWithin(100, "0.1 seconds"),
+        Stream.scan(
+          new AllMrsState({ mrsByGid: new Map(), timestamp: new Date() }),
+          (state: AllMrsState, events) =>
+            Chunk.reduce(events, state, (currentState, event) => projectAllMrs(currentState, event))
+        )
+      );
+    })
+  ),
+  { initialValue: new AllMrsState({ mrsByGid: new Map(), timestamp: new Date() }) }
+).pipe(Atom.keepAlive);
 
-        const groupsList = get(groupsAtom);
-        const cacheKey = extractSelectionData(selectionEntry, groupsList, state);
+// Filter MRs based on CacheKey criteria
+const filterMrsByCacheKey = (allMrs: ReadonlyMap<string, MergeRequest>, cacheKey: CacheKey): readonly MergeRequest[] => {
+  const filtered: MergeRequest[] = [];
 
-        // Filter to only MR-relevant events
-        const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
-          return event.type === 'gitlab-user-mrs-fetched-event' ||
-                 event.type === 'gitlab-project-mrs-fetched-event' ||
-                 event.type === 'jira-issues-fetched-event';
-        };
+  allMrs.forEach(mr => {
+    // Filter by state
+    if (mr.state !== cacheKey.state) {
+      return;
+    }
 
-        return Stream.groupedWithin(yield* EventStorage.eventsStream, 100, "0.1 seconds").pipe(
-          Stream.map(chunk => Chunk.filter(chunk, isMrRelevantEvent)),
-          Stream.scan(
-            new MrStateNotFetched(),
-            (mrState: MrState, events) =>
-              Chunk.reduce(
-                events,
-                mrState,
-                (currentState, event) => projectMrState(cacheKey)(currentState, event))
-          )
-        );
-      })
-    ),
-    { initialValue: new MrStateNotFetched() }
-  ).pipe(Atom.keepAlive); // Keep atom alive even when unmounted
+    // Filter by user or project
+    if (cacheKey._tag === "UserMRs") {
+      // Check if MR author is in the usernames list
+      if (cacheKey.usernames.includes(mr.author)) {
+        filtered.push(mr);
+      }
+    } else if (cacheKey._tag === "ProjectMRs") {
+      // Check if MR belongs to the project
+      if (mr.project.fullPath === cacheKey.projectPath) {
+        filtered.push(mr);
+      }
+    }
+  });
+
+  // Sort by updated date descending
+  return filtered.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+};
+
+// Filtered MRs based on current user selection and state
+export const filteredMrsAtom = Atom.make((get) => {
+  const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
+  if (!selectionEntry) {
+    return [];
+  }
+
+  const filterMrState = get(filterMrStateAtom);
+  const groupsList = get(groupsAtom);
+  const cacheKey = extractSelectionData(selectionEntry, groupsList, filterMrState);
+
+  const allMrsResult = get(allMrsAtom);
+
+  return Result.match(allMrsResult, {
+    onInitial: () => [] as readonly MergeRequest[],
+    onFailure: () => [] as readonly MergeRequest[],
+    onSuccess: (state) => filterMrsByCacheKey(state.value.mrsByGid, cacheKey)
+  });
 });
 
-// Core atom: exposes the full MrState discriminated union
-export const mrStateAtom = Atom.make((get) => {
-  const keyString = get(mergeRequestsCacheKeyStringAtom);
-  if (!keyString) return Result.success(new MrStateNotFetched());
+// Alias for backwards compatibility
+export const mergeRequestsAtom = Atom.make((get) => Result.success(get(filteredMrsAtom)));
+export const unwrappedMergeRequestsAtom = filteredMrsAtom;
 
-  const cacheResult = get(mrsCacheByKeyAtomFamily(keyString));
-
-  return cacheResult; // Result<MrState, E>
-})
-
-// Derived: unwrapped MrState for direct access
-export const unwrappedMrStateAtom = Atom.map(
-  mrStateAtom,
-  (result): MrState => {
-    return Result.match(result, {
-      onInitial: () => new MrStateNotFetched(),
-      onFailure: () => new MrStateNotFetched(),
-      onSuccess: (state) => state.value
-    })
-  }
-)
-
-// Derived: extract just the MR array
-export const mergeRequestsAtom = Atom.map(
-  mrStateAtom,
-  (result) => Result.map(result, (state: MrState) =>
-    Match.value(state).pipe(
-      Match.tag("NotFetched", () => [] as readonly MergeRequest[]),
-      Match.tag("Fetched", (s) => s.data),
-      Match.exhaustive
-    )
-  )
-)
-
-// Derived: unwrapped MR array for convenience
-export const unwrappedMergeRequestsAtom = Atom.map(
-  mergeRequestsAtom,
-  (result): readonly MergeRequest[] => {
-    return Result.match(result, {
-      onInitial: () => [],
-      onFailure: () => [],
-      onSuccess: (mrs) => mrs.value
-    })
-  }
-)
-
-// Derived: extract timestamp from MrState
+// Extract timestamp from global MR state
 export const lastRefreshTimestampAtom = Atom.map(
-  mrStateAtom,
-  (result) => Result.map(result, (state: MrState) =>
-    Match.value(state).pipe(
-      Match.tag("NotFetched", () => null as Date | null),
-      Match.tag("Fetched", (s) => s.timestamp),
-      Match.exhaustive
-    )
-  )
-)
+  allMrsAtom,
+  (result) => Result.map(result, (state: AllMrsState) => state.timestamp)
+);
 
 export const unwrappedLastRefreshTimestampAtom = Atom.map(
   lastRefreshTimestampAtom,
@@ -328,23 +299,12 @@ export const unwrappedLastRefreshTimestampAtom = Atom.map(
       onSuccess: (timestamp) => timestamp.value
     })
   }
-)
+);
 
-// Derived: compute loading state from MrState
+// Derived: compute loading state
 export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
-  const stateResult = get(mrStateAtom);
   const refreshResult = get(refreshMergeRequestsAtom);
-
-  // Note: stateResult.waiting is always true because the stream continuously listens for events
-  return Result.match(stateResult, {
-    onInitial: () => true,
-    onFailure: () => false,
-    onSuccess: (state) => Match.value(state.value as MrState).pipe(
-      Match.tag("NotFetched", () => Result.isWaiting(refreshResult)),
-      Match.tag("Fetched", () => Result.isWaiting(refreshResult)),
-      Match.exhaustive
-    )
-  });
+  return Result.isWaiting(refreshResult);
 });
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {

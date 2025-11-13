@@ -229,6 +229,74 @@ export type MrRelevantEvent =
   | GitlabprojectMergeRequestsFetchedEvent
   | JiraIssuesFetchedEvent
 
+// Global MR state - all MRs indexed by ID
+export class AllMrsState extends Data.TaggedClass("AllMrsState")<{
+  readonly mrsByGid: ReadonlyMap<string, MergeRequest>
+  readonly timestamp: Date
+}> {}
+
+// Project all MRs into a single indexed map
+export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMrsState => {
+  const currentMap = new Map(state.mrsByGid);
+
+  // Handle GitLab user MRs
+  if (event.type === 'gitlab-user-mrs-fetched-event') {
+    const gitlabMrs = projectGitlabUserMrsFetchedEvent(event);
+
+    // Update/add each MR to the map
+    gitlabMrs.forEach(gitlabMr => {
+      const existing = currentMap.get(gitlabMr.id);
+      const jiraIssues = existing?.jiraIssues || [];
+      const enriched = enrichMrWithJiraIssues(gitlabMr, jiraIssues);
+      currentMap.set(gitlabMr.id, enriched);
+    });
+
+    return new AllMrsState({
+      mrsByGid: currentMap,
+      timestamp: new Date()
+    });
+  }
+
+  // Handle GitLab project MRs
+  if (event.type === 'gitlab-project-mrs-fetched-event') {
+    const gitlabMrs = projectGitlabProjectMrsFetchedEvent(event);
+
+    gitlabMrs.forEach(gitlabMr => {
+      const existing = currentMap.get(gitlabMr.id);
+      const jiraIssues = existing?.jiraIssues || [];
+      const enriched = enrichMrWithJiraIssues(gitlabMr, jiraIssues);
+      currentMap.set(gitlabMr.id, enriched);
+    });
+
+    return new AllMrsState({
+      mrsByGid: currentMap,
+      timestamp: new Date()
+    });
+  }
+
+  // Handle Jira issues - enrich all MRs that reference these issues
+  if (event.type === 'jira-issues-fetched-event') {
+    const newJiraTickets = projectJiraIssuesFetchedEvent(event);
+
+    // Re-enrich all MRs that have jira issue keys matching the new tickets
+    currentMap.forEach((mr, gid) => {
+      if (mr.jiraIssueKeys.some(key => newJiraTickets.some(ticket => ticket.key === key))) {
+        const { jiraIssues, ...gitlabMr } = mr;
+        const allJiraTickets = [...jiraIssues, ...newJiraTickets];
+        const enriched = enrichMrWithJiraIssues(gitlabMr as GitlabMergeRequest, allJiraTickets);
+        currentMap.set(gid, enriched);
+      }
+    });
+
+    return new AllMrsState({
+      mrsByGid: currentMap,
+      timestamp: state.timestamp // Keep original timestamp for Jira enrichment
+    });
+  }
+
+  return state;
+};
+
 // Pure projection function for folding events into MR state
 // Returns a projection function specialized for a specific cache key
 export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelevantEvent): MrState => {

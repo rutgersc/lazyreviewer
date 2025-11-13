@@ -17,7 +17,7 @@ import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMrStateAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom } from "../store/appAtoms";
 import { getSingleMr } from "../gitlab/gitlab-graphql";
 import { Effect, Runtime } from "effect";
 
@@ -436,8 +436,7 @@ export default function MergeRequestPane({}: {}) {
   const setSelectedMergeRequest = setSelectedMRIndex;
   const selectedIndex = getSelectedMRIndex;
 
-  const mrState = useAtomValue(unwrappedMrStateAtom);
-  const mergeRequests = mrState._tag === "Fetched" ? mrState.data : [];
+  const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
   const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
   const lastRefreshTimestamp = useAtomValue(unwrappedLastRefreshTimestampAtom);
 
@@ -717,13 +716,13 @@ export default function MergeRequestPane({}: {}) {
         </box>
       )}
 
-      {!isLoading && (mrState._tag === "NotFetched" || (mrState._tag === "Fetched" && mrState.data.length === 0)) && (
+      {!isLoading && mergeRequests.length === 0 && (
         <box style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", flexGrow: 1, gap: 1 }}>
           <text style={{ fg: Colors.SUPPORTING }}>
-            {mrState._tag === "NotFetched" ? "No merge requests loaded yet" : "No merge requests found"}
+            No merge requests found
           </text>
           <text style={{ fg: Colors.NEUTRAL }}>
-            {mrState._tag === "NotFetched" ? "Press 'r' to fetch merge requests" : "Try changing the filter or refresh to fetch new data"}
+            Try changing the filter or refresh to fetch new data
           </text>
         </box>
       )}
