@@ -221,27 +221,23 @@ export const error = (...args: ReadonlyArray<any>) =>
 const mrsCacheByKeyAtomFamily = Atom.family((keyString: string) => {
   console.log("[Atom] mrsCacheByKeyAtomFamily created for key:", keyString);
 
-  return appAtomRuntime.atom(
+  // Parse once to get the IDs for lookup
+  const [userSelectionEntryId, stateStr] = keyString.split(":");
+  const state = stateStr as MergeRequestState;
+
+  return appAtomRuntime.atom(get =>
     Stream.unwrap(
       Effect.gen(function* () {
-        const stream = yield* EventStorage.eventsStream;
-
-        // Parse the key string: "userSelectionEntryId:state"
-        const [userSelectionEntryId, stateStr] = keyString.split(":");
-        const state = stateStr as MergeRequestState;
-
-        // Load static data once
-        const userSelections = mockUserSelections;
-        const groupsList = groups;
-
+        const userSelections = get(userSelectionsAtom);
         const selectionEntry = userSelections.find(e => e.userSelectionEntryId === userSelectionEntryId);
         if (!selectionEntry) {
           throw new Error(`UserSelectionEntry not found: ${userSelectionEntryId}`);
         }
 
+        const groupsList = get(groupsAtom);
         const cacheKey = extractSelectionData(selectionEntry, groupsList, state);
 
-        return Stream.groupedWithin(stream, 100, "0.1 seconds").pipe(
+        return Stream.groupedWithin(yield* EventStorage.eventsStream, 100, "0.1 seconds").pipe(
           Stream.scan(
             new MrStateNotFetched(),
             (mrState: MrState, events) =>
@@ -351,8 +347,9 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
       }
 
       const filterMrState = get(filterMrStateAtom);
-      const groups = get(groupsAtom);
-      const cacheKey = extractSelectionData(selectionEntry, groups, filterMrState);
+      // Note: When groups becomes dynamic via groupsAtom, use get(groupsAtom) here
+      const groupsList = get(groupsAtom);
+      const cacheKey = extractSelectionData(selectionEntry, groupsList, filterMrState);
       yield* ensureMRsEvents(cacheKey);
     }).pipe(
       Effect.catchAllCause((cause) =>

@@ -49,7 +49,7 @@ export enum ActivePane {
 
 export const extractSelectionData = (
   entry: UserSelectionEntry,
-  groups: UserGroup[],
+  groups: readonly UserGroup[],
   state: MergeRequestState
 ): CacheKey => {
   const usernames = new Set<string>();
