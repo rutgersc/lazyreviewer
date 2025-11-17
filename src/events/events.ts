@@ -1,17 +1,20 @@
-import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent } from "./gitlab-events";
-import type { JiraIssuesFetchedEvent } from "./jira-events";
-import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "./bitbucket-events";
+import { GitlabEventSchema, type GitlabEvent } from "./gitlab-events";
+import { JiraEventSchema, type JiraEvent } from "./jira-events";
+import { BitbucketEventSchema, type BitbucketEvent } from "./bitbucket-events";
+import { CompactionEventSchema, type MergeRequestsCompactedEvent } from "./event-compaction-events";
+import { Schema } from "effect";
 
 export type Event =
-    | GitlabUserMergeRequestsFetchedEvent
-    | GitlabprojectMergeRequestsFetchedEvent
-    | GitlabSingleMrFetchedEvent
-    | GitlabJobTraceFetchedEvent
-    | GitlabPipelineFetchedEvent
-    | GitlabJobHistoryFetchedEvent
-    | JiraIssuesFetchedEvent
-    | BitbucketPrsFetchedEvent
-    | BitbucketSinglePrFetchedEvent
-    | BitbucketPrCommentsFetchedEvent
+    | GitlabEvent
+    | JiraEvent
+    | BitbucketEvent
+    | MergeRequestsCompactedEvent
 
-export { EventStorage } from "./eventStorage"
+export const EventSchema = Schema.Union(
+  GitlabEventSchema,
+  BitbucketEventSchema,
+  JiraEventSchema,
+  CompactionEventSchema
+)
+
+export { EventStorage } from "../eventstore/eventStorage"

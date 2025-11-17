@@ -1,7 +1,6 @@
 import { FileSystem, Path } from "@effect/platform"
 import { Effect, Schema, Stream, PubSub, Console } from "effect"
-import type { Event } from "./events"
-import { EventSchema } from "./eventSchemas"
+import { EventSchema, type Event } from "../events/events"
 
 const EVENTS_DIR = "storage/events"
 

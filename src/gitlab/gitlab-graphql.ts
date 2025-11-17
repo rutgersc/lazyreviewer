@@ -280,7 +280,7 @@ export const getSingleMrAsEvent = Effect.fn("getSingleMrAsEvent")(function* (pro
     type: 'gitlab-single-mr-fetched-event',
     mr: data,
     forProjectPath: projectPath,
-    forIid: iid
+    forMrId: iid
   };
 
   return event;
