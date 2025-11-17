@@ -5,20 +5,12 @@ import { MergeRequestSchema } from "../mergerequests/mergeRequestSchema";
 
 export interface MergeRequestsCompactedEvent {
     type: 'mergerequests-compacted-event',
-    mrs: MergeRequest,
-    forUsernames: string[],
-    forState: MergeRequestState
-    forProjectPath: string,
-    forMrid: string
+    mrs: MergeRequest[]
 }
 
 const MergeRequestsCompactedEventSchema = Schema.Struct({
   type: Schema.Literal('mergerequests-compacted-event'),
-  mrs: MergeRequestSchema,
-  forUsernames: Schema.Array(Schema.String),
-  forState: Schema.String,
-  forProjectPath: Schema.String,
-  forMrid: Schema.String
+  mrs: Schema.Array(MergeRequestSchema)
 })
 
 export const CompactionEventSchema = Schema.Union(
