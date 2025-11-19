@@ -29,6 +29,7 @@ export default function MrStateTabs({ currentState, onStateChange, isActive }: M
           return (
             <text
               key={state.key}
+              onMouseDown={() => onStateChange(state.key)}
               style={{
                 fg: tabColor,
                 attributes: isSelected ? TextAttributes.BOLD : undefined,

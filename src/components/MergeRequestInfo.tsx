@@ -7,9 +7,10 @@ import { Colors } from '../colors';
 interface MergeRequestInfoProps {
   mergeRequest: MergeRequest;
   selectedDiscussionIndex?: number;
+  onSelectDiscussion?: (index: number) => void;
 }
 
-export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex = 0 }: MergeRequestInfoProps) {
+export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex = 0, onSelectDiscussion }: MergeRequestInfoProps) {
   const renderDiscussionNote = (note: DiscussionNote, index: number) => {
     const isReply = index > 0; // First note is original, rest are replies
     const marginLeft = isReply ? 4 : 2;
@@ -97,6 +98,8 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
           return (
             <box
               key={discussion.id}
+              id={`discussion-${index}`}
+              onMouseDown={() => onSelectDiscussion?.(index)}
               style={{
                 flexDirection: "column",
                 marginLeft: 2,

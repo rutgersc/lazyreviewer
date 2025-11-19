@@ -18,6 +18,9 @@ interface OverviewProps {
   selectedUserSelectionEntry: UserSelectionEntry | undefined;
 }
 
+import { useAutoScroll } from '../hooks/useAutoScroll';
+import { useEffect } from 'react';
+
 export default function Overview({
   activePane,
   selectedMergeRequest,
@@ -27,6 +30,12 @@ export default function Overview({
   const activeModal = useAtomValue(activeModalAtom);
   const [selectedDiscussionIndex, setSelectedDiscussionIndex] = useAtom(selectedDiscussionIndexAtom);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+
+  const handleSelectDiscussion = (index: number) => {
+      setSelectedDiscussionIndex(index);
+      scrollToId(`discussion-${index}`);
+  };
 
   const unresolvedDiscussions = selectedMergeRequest?.discussions.filter(d => d.resolvable && !d.resolved) || [];
 
@@ -38,11 +47,13 @@ export default function Overview({
     switch (key.name) {
       case 'j':
       case 'down':
-        setSelectedDiscussionIndex(Math.min(selectedDiscussionIndex + 1, unresolvedDiscussions.length - 1));
+        const nextIndex = Math.min(selectedDiscussionIndex + 1, unresolvedDiscussions.length - 1);
+        handleSelectDiscussion(nextIndex);
         break;
       case 'k':
       case 'up':
-        setSelectedDiscussionIndex(Math.max(selectedDiscussionIndex - 1, 0));
+        const prevIndex = Math.max(selectedDiscussionIndex - 1, 0);
+        handleSelectDiscussion(prevIndex);
         break;
       case 'c':
         const discussion = unresolvedDiscussions[selectedDiscussionIndex];
@@ -70,7 +81,11 @@ export default function Overview({
 
   const content = (() => {
     if ((activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) && selectedMergeRequest) {
-      return <MergeRequestInfo mergeRequest={selectedMergeRequest} selectedDiscussionIndex={selectedDiscussionIndex} />;
+      return <MergeRequestInfo
+          mergeRequest={selectedMergeRequest}
+          selectedDiscussionIndex={selectedDiscussionIndex}
+          onSelectDiscussion={handleSelectDiscussion}
+      />;
     }
 
     if (activePane === ActivePane.UserSelection && selectedUserSelectionEntry) {
@@ -88,7 +103,19 @@ export default function Overview({
 
   return (
     <box style={{ flexDirection: "column", position: "relative", flexGrow: 1 }}>
-      {content}
+      <scrollbox
+        ref={scrollBoxRef}
+        style={{
+          flexGrow: 1,
+          width: "100%",
+          contentOptions: { backgroundColor: '#282a36' },
+          scrollbarOptions: {
+            trackOptions: { foregroundColor: '#bd93f9', backgroundColor: '#44475a' },
+          },
+        }}
+      >
+        {content}
+      </scrollbox>
       {copyNotification && (
         <box
           style={{

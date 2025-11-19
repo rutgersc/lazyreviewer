@@ -10,6 +10,8 @@ import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
 import { useAtom, useAtomValue, useAtomSet } from "@effect-atom/atom-react";
 import { infoPaneTabAtom, selectedActivityIndexAtom, activeModalAtom, loadJobLogAtom } from "../store/appAtoms";
+import { useAutoScroll } from '../hooks/useAutoScroll';
+import { useEffect } from 'react';
 
 type EventType =
   | 'mr_created'
@@ -237,6 +239,7 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const [selectedActivityIndex, setSelectedActivityIndex] = useAtom(selectedActivityIndexAtom);
   const runLoadJobLog = useAtomSet(loadJobLogAtom);
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
 
   const events = extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
@@ -248,11 +251,15 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
     switch (key.name) {
       case 'j':
       case 'down':
-        setSelectedActivityIndex(Math.min(selectedActivityIndex + 1, events.length - 1));
+        const next = Math.min(selectedActivityIndex + 1, events.length - 1);
+        setSelectedActivityIndex(next);
+        scrollToId(`activity-${next}`);
         break;
       case 'k':
       case 'up':
-        setSelectedActivityIndex(Math.max(selectedActivityIndex - 1, 0));
+        const prev = Math.max(selectedActivityIndex - 1, 0);
+        setSelectedActivityIndex(prev);
+        scrollToId(`activity-${prev}`);
         break;
       case 'i':
       case 'return':
@@ -275,6 +282,17 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
   });
 
   return (
+    <scrollbox
+      ref={scrollBoxRef}
+      style={{
+        flexGrow: 1,
+        width: "100%",
+        contentOptions: { backgroundColor: '#282a36' },
+        scrollbarOptions: {
+          trackOptions: { foregroundColor: '#bd93f9', backgroundColor: '#44475a' },
+        },
+      }}
+    >
     <box style={{ flexDirection: "column", gap: 0 }}>
       {events.map((event, index) => {
         const isSelected = index === selectedActivityIndex;
@@ -288,6 +306,11 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
         return (
           <box
             key={index}
+            id={`activity-${index}`}
+            onMouseDown={() => {
+                setSelectedActivityIndex(index);
+                scrollToId(`activity-${index}`);
+            }}
             style={{
               flexDirection: "row",
               gap: 0,
@@ -329,6 +352,7 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
         );
       })}
     </box>
+    </scrollbox>
   );
 }
 

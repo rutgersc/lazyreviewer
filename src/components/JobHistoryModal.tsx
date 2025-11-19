@@ -59,7 +59,6 @@ export default function JobHistoryModal({
   const runFetchJobHistory = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
 
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
-    itemHeight: 2,
     lookahead: 2,
   });
 

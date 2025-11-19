@@ -19,7 +19,6 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
   const isActive = activePane === ActivePane.UserSelection;
   const [highlightIndex, setHighlightIndex] = useState(selectedUserSelectionEntry);
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
-    itemHeight: 1,
     lookahead: 2,
   });
 
@@ -83,6 +82,10 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
     return (
       <box
         key={`${item.userSelectionEntryId}`}
+        onMouseDown={() => {
+          setHighlightIndex(index);
+          setSelectedUserSelectionEntry(index);
+        }}
         style={{
           backgroundColor: isHighlighted ? '#191a21' : 'transparent'
         }}

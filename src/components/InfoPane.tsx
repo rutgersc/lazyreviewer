@@ -65,6 +65,10 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
           {tabs.map((tab, index) => (
             <text
               key={tab}
+              onMouseDown={() => {
+                setInfoPaneTab(tab);
+                setActivePane(ActivePane.InfoPane);
+              }}
               style={{
                 fg: tab === infoPaneTab ? Colors.PRIMARY : Colors.NEUTRAL,
                 attributes: tab === infoPaneTab ? TextAttributes.BOLD : undefined
@@ -121,28 +125,14 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
   };
 
   return (
-    <box style={{ flexDirection: "column", padding: 1, flexGrow: 1, alignItems: "flex-start", height: "100%" }}>
+    <box
+      onMouseDown={() => setActivePane(ActivePane.InfoPane)}
+      style={{ flexDirection: "column", padding: 1, flexGrow: 1, alignItems: "flex-start", height: "100%" }}
+    >
       {renderTabBar()}
-
-      <scrollbox
-        ref={scrollBoxRef}
-        style={{
-          flexGrow: 1,
-          width: "100%",
-          contentOptions: {
-            backgroundColor: '#282a36',
-          },
-          scrollbarOptions: {
-            trackOptions: {
-              foregroundColor: '#bd93f9',
-              backgroundColor: '#44475a',
-            },
-          },
-        }}
-        focused={false}
-      >
+      <box style={{ flexGrow: 1, width: "100%" }}>
         {renderTabContent()}
-      </scrollbox>
+      </box>
     </box>
   );
 }

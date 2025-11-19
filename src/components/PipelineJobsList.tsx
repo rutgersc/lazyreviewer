@@ -7,6 +7,9 @@ import { ActivePane } from '../userselection/userSelection';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryLimitAtom } from '../store/appAtoms';
 
+import { useAutoScroll } from '../hooks/useAutoScroll';
+import { useEffect } from 'react';
+
 interface PipelineJobsListProps {
   activePane: ActivePane;
   pipelineJobs: Array<{ stage: PipelineStage; job: PipelineJob }>;
@@ -41,6 +44,7 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
   const setJobHistoryLimit = useAtomSet(jobHistoryLimitAtom);
   const runLoadJobLog = useAtomSet(loadJobLogAtom);
   const runFetchJobHistory = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
@@ -50,11 +54,15 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
     switch (key.name) {
       case 'j':
       case 'down':
-        setSelectedPipelineJobIndex(Math.min(selectedPipelineJobIndex + 1, pipelineJobs.length - 1));
+        const next = Math.min(selectedPipelineJobIndex + 1, pipelineJobs.length - 1);
+        setSelectedPipelineJobIndex(next);
+        scrollToId(`pipeline-job-${next}`);
         break;
       case 'k':
       case 'up':
-        setSelectedPipelineJobIndex(Math.max(selectedPipelineJobIndex - 1, 0));
+        const prev = Math.max(selectedPipelineJobIndex - 1, 0);
+        setSelectedPipelineJobIndex(prev);
+        scrollToId(`pipeline-job-${prev}`);
         break;
       case 'i':
         const selectedJob = pipelineJobs[selectedPipelineJobIndex];
@@ -90,11 +98,27 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
   const selectedPipelineJob = pipelineJobs[selectedPipelineJobIndex];
 
   return (
+    <scrollbox
+      ref={scrollBoxRef}
+      style={{
+        flexGrow: 1,
+        width: "100%",
+        contentOptions: { backgroundColor: '#282a36' },
+        scrollbarOptions: {
+          trackOptions: { foregroundColor: '#bd93f9', backgroundColor: '#44475a' },
+        },
+      }}
+    >
     <box style={{ flexDirection: "column", gap: 1 }}>
       <box style={{ flexDirection: "column", gap: 0 }}>
         {pipelineJobs.map(({ stage, job }, index) => (
           <box
             key={job.id}
+            id={`pipeline-job-${index}`}
+            onMouseDown={() => {
+                setSelectedPipelineJobIndex(index);
+                scrollToId(`pipeline-job-${index}`);
+            }}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -168,5 +192,6 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
         </box>
       )}
     </box>
+    </scrollbox>
   );
 }
