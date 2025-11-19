@@ -26,11 +26,10 @@
     "@effect/platform": "^0.92.1",
     "@effect/platform-node": "^0.98.4",
     "@effect/schema": "^0.75.5",
-    "@opentui/core": "^0.1.31",
-    "@opentui/react": "^0.1.31",
+    "@opentui/core": "^0.1.46",
+    "@opentui/react": "^0.1.46",
     "dotenv": "^17.2.3",
     "effect": "^3.18.4",
-    "react": "^19.0.0",
-    "zustand": "^5.0.8"
+    "react": "^19.0.0"
   }
 }

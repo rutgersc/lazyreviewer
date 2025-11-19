@@ -4,8 +4,8 @@ import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { type PipelineStage, type PipelineJob } from "../gitlab/gitlab-schema";
 import { formatCompactTime } from "../utils/formatting";
-import { copyToClipboard } from "../system/clipboard-effect";
-import { openUrl } from "../system/url-effect";
+import { copyToClipboard } from "../system/clipboard";
+import { openUrl } from "../system/open-url";
 import { getJobStatusDisplay } from "../gitlab/display/jobStatus";
 import { ActivePane } from "../userselection/userSelection";
 import { useAutoScroll } from "../hooks/useAutoScroll";
@@ -746,6 +746,9 @@ export default function MergeRequestPane({}: {}) {
           return (
             <box
               key={mr.id}
+              onMouseDown={(e) => {
+                setSelectedMRIndex(index);
+              }}
               style={{
                 flexDirection: "column",
                 backgroundColor: highlightInfo.backgroundColor,

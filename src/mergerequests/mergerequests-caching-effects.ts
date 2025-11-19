@@ -116,80 +116,37 @@ const enrichMrWithJiraIssues = (mr: GitlabMergeRequest, jiraTickets: readonly Ji
 })
 
 // CQRS: Command side - ensures events exist
-export const ensureUserMRsEvents = (key: MRCacheKey): Effect.Effect<
+export const decideFetchUserMrs = (usernames: string[], state: MergeRequestState): Effect.Effect<
   void,
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
-  const eventStorage = yield* EventStorage
-
   // Fetch new MR event
-  const mrEvent = yield* getGitlabMrsAsEvent(key.usernames as string[], key.state)
-  yield* eventStorage.appendEvent(mrEvent)
-  yield* Console.log(`[Event] Appended: ${mrEvent.type} for users ${mrEvent.forUsernames.join(', ')}`)
+  const mrEvent = yield* getGitlabMrsAsEvent(usernames, state)
+  yield* EventStorage.appendEvent(mrEvent)
 
   // Fetch Jira events
   const gitlabMrs = projectGitlabUserMrsFetchedEvent(mrEvent)
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-  yield* eventStorage.appendEvent(jiraEvent)
-  yield* Console.log(`[Event] Appended: ${jiraEvent.type} for keys ${jiraKeys.join(', ')}`)
+  yield* EventStorage.appendEvent(jiraEvent)
 })
 
-// CQRS: Query side - projects data from events
-export const queryUserMRsFromEvents = (
-  allEvents: readonly Event[],
-  key: MRCacheKey
-): MrState => {
-  const cachedMrEvent = findLatestUserMrsEvent(allEvents, key.usernames, key.state)
-
-  if (Option.isNone(cachedMrEvent)) {
-    return new MrStateNotFetched()
-  }
-
-  const gitlabMrs = projectGitlabUserMrsFetchedEvent(cachedMrEvent.value)
-  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-  const jiraTickets = loadJiraTicketsFromEvents(allEvents, jiraKeys)
-
-  const data = gitlabMrs
-    .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-
-  return new MrStateFetched({ data, timestamp: new Date() })
-}
-
 // CQRS: Command side - ensures events exist
-export const ensureProjectMRsEvents = (key: ProjectMRCacheKey): Effect.Effect<
+export const decideFetchProjectMrs = (projectPath: string, state: MergeRequestState): Effect.Effect<
   void,
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
-  const cacheKey = toProjectCacheKeyString(key)
-  const eventStorage = yield* EventStorage
-
-  const allEvents = yield* eventStorage.loadEvents
-  const cachedMrEvent = findLatestProjectMrsEvent(allEvents, key.projectPath, key.state)
-
-  if (Option.isSome(cachedMrEvent)) {
-    yield* Console.log(`[EventCache] Hit: ${cacheKey}`)
-    return
-  }
-
-  yield* Console.log(`[EventCache] Miss: ${cacheKey}`)
-
   // Fetch new MR event
-  const mrEvent = yield* getGitlabMrsByProjectAsEvent(key.projectPath, key.state)
-  yield* eventStorage.appendEvent(mrEvent)
-  yield* Console.log(`[Event] Appended: ${mrEvent.type} for project ${mrEvent.forProjectPath}`)
+  const mrEvent = yield* getGitlabMrsByProjectAsEvent(projectPath, state);
+  yield* EventStorage.appendEvent(mrEvent)
 
   // Fetch Jira events
   const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-  yield* eventStorage.appendEvent(jiraEvent)
-  yield* Console.log(`[Event] Appended: ${jiraEvent.type} for keys ${jiraKeys.join(', ')}`)
+  yield* EventStorage.appendEvent(jiraEvent)
 })
 
 // CQRS: Query side - projects data from events
@@ -369,30 +326,6 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelev
 
   // Event not relevant to this key, return state unchanged
   return state
-}
-
-// export const projectMrStateChunked = (key: CacheKey) => (state: MrState, events: Chunk.Chunk<Event>): MrState => {
-//   return }
-
-// CQRS: Unified query function for any CacheKey
-export const queryMRsFromEvents = (
-  allEvents: readonly Event[],
-  key: CacheKey
-): MrState => {
-  return key._tag === "UserMRs"
-    ? queryUserMRsFromEvents(allEvents, key)
-    : queryProjectMRsFromEvents(allEvents, key)
-}
-
-// CQRS: Unified command function for any CacheKey
-export const ensureMRsEvents = (key: CacheKey): Effect.Effect<
-  void,
-  MergeRequestsCacheError,
-  EventStorage
-> => {
-  return key._tag === "UserMRs"
-    ? ensureUserMRsEvents(key)
-    : ensureProjectMRsEvents(key)
 }
 
 

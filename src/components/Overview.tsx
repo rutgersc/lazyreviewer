@@ -7,7 +7,7 @@ import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import type { UserSelectionEntry } from '../userselection/userSelection';
-import { copyToClipboard } from '../system/clipboard-effect';
+import { copyToClipboard } from '../system/clipboard';
 import { formatDiscussionsForClipboard } from '../gitlab/display/gitlabDiscussionFormatter';
 import { useAtom, useAtomValue } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, selectedDiscussionIndexAtom, activeModalAtom } from '../store/appAtoms';

@@ -3,10 +3,10 @@ import type { MergeRequest } from "../mergerequests/mergerequest-schema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRsFromEvents, projectMrState, type MrState, MrStateNotFetched, MrStateFetched, type MrRelevantEvent, AllMrsState, projectAllMrs } from "../mergerequests/mergerequests-caching-effects";
+import { type CacheKey, type MrRelevantEvent, AllMrsState, projectAllMrs, decideFetchUserMrs, decideFetchProjectMrs } from "../mergerequests/mergerequests-caching-effects";
 import { EventStorage, type Event } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
-import { Effect, Console, Stream, SubscriptionRef, Match, Hash, Equal, Duration, Chunk } from "effect";
+import { Effect, Console, Stream, Chunk } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../mergerequests/hooks/useRepositoryBranches";
@@ -296,11 +296,14 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
         return;
       }
 
-      const filterMrState = get(filterMrStateAtom);
-      // Note: When groups becomes dynamic via groupsAtom, use get(groupsAtom) here
       const groupsList = get(groupsAtom);
+      const filterMrState = get(filterMrStateAtom);
       const cacheKey = extractSelectionData(selectionEntry, groupsList, filterMrState);
-      yield* ensureMRsEvents(cacheKey);
+      if (cacheKey._tag === "UserMRs") {
+        yield* decideFetchUserMrs(cacheKey.usernames as string[], cacheKey.state)
+      } else {
+        yield* decideFetchProjectMrs(cacheKey.projectPath, cacheKey.state)
+      }
     }).pipe(
       Effect.catchAllCause((cause) =>
         Effect.gen(function* () {

@@ -6,8 +6,8 @@ import { formatCompactTime } from "../utils/formatting";
 import { extractTextFromJiraComment } from "../jira/jira-service";
 import type { PipelineJob } from "../gitlab/gitlab-graphql";
 import { ActivePane } from '../userselection/userSelection';
-import { openUrl } from '../system/url-effect';
-import { copyToClipboard } from '../system/clipboard-effect';
+import { openUrl } from '../system/open-url';
+import { copyToClipboard } from '../system/clipboard';
 import { useAtom, useAtomValue, useAtomSet } from "@effect-atom/atom-react";
 import { infoPaneTabAtom, selectedActivityIndexAtom, activeModalAtom, loadJobLogAtom } from "../store/appAtoms";
 
