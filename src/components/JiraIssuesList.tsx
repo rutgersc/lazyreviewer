@@ -10,6 +10,7 @@ import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, activeModalAtom } from '../store/appAtoms';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
+import { useDoubleClick } from '../hooks/useDoubleClick';
 import { useEffect } from 'react';
 
 interface JiraIssuesListProps {
@@ -30,6 +31,19 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
   const [selectedJiraIndex, setSelectedJiraIndex] = useAtom(selectedJiraIndexAtom);
   const [selectedJiraSubIndex, setSelectedJiraSubIndex] = useAtom(selectedJiraSubIndexAtom);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+
+  const handleJiraClick = useDoubleClick<JiraListItem>({
+    onSingleClick: (item) => {
+      setSelectedJiraIndex(item.parentIssueIndex);
+      setSelectedJiraSubIndex(item.subIndex);
+      scrollToId(`jira-item-${item.parentIssueIndex}-${item.subIndex}`);
+    },
+    onDoubleClick: (item) => {
+       const jiraBaseUrl = item.issue.self.split('/rest/')[0];
+       const jiraUrl = `${jiraBaseUrl}/browse/${item.issue.key}`;
+       openUrl(jiraUrl);
+    }
+  });
 
   const jiraListItems: JiraListItem[] = [];
   jiraIssues.forEach((issue, issueIndex) => {
@@ -66,13 +80,6 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
       });
     }
   });
-
-  useEffect(() => {
-      const item = jiraListItems.find(i => i.parentIssueIndex === selectedJiraIndex && i.subIndex === selectedJiraSubIndex);
-      if (item) {
-          scrollToId(`jira-item-${item.parentIssueIndex}-${item.subIndex}`);
-      }
-  }, [selectedJiraIndex, selectedJiraSubIndex]);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'jira') return;
@@ -160,11 +167,7 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
             <box
               key={`${item.issue.key}-${item.isParent ? 'parent' : 'main'}`}
               id={`jira-item-${item.parentIssueIndex}-${item.subIndex}`}
-              onMouseDown={() => {
-                setSelectedJiraIndex(item.parentIssueIndex);
-                setSelectedJiraSubIndex(item.subIndex);
-                scrollToId(`jira-item-${item.parentIssueIndex}-${item.subIndex}`);
-              }}
+              onMouseDown={() => handleJiraClick(item)}
               style={{
                 flexDirection: "row",
                 alignItems: "center",

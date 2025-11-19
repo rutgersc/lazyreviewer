@@ -20,6 +20,7 @@ interface OverviewProps {
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useEffect } from 'react';
+import { openUrl } from '../system/open-url';
 
 export default function Overview({
   activePane,
@@ -38,6 +39,14 @@ export default function Overview({
   };
 
   const unresolvedDiscussions = selectedMergeRequest?.discussions.filter(d => d.resolvable && !d.resolved) || [];
+
+  const handleOpenDiscussion = (index: number) => {
+      const discussion = unresolvedDiscussions[index];
+      if (discussion && selectedMergeRequest?.webUrl) {
+          const discussionUrl = `${selectedMergeRequest.webUrl}#note_${discussion.id}`;
+          openUrl(discussionUrl);
+      }
+  };
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'overview') return;
@@ -85,6 +94,7 @@ export default function Overview({
           mergeRequest={selectedMergeRequest}
           selectedDiscussionIndex={selectedDiscussionIndex}
           onSelectDiscussion={handleSelectDiscussion}
+          onOpenDiscussion={handleOpenDiscussion}
       />;
     }
 

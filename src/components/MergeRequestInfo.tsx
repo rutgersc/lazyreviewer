@@ -3,14 +3,21 @@ import type { Discussion, DiscussionNote } from '../gitlab/gitlab-schema';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { formatCompactTime } from '../utils/formatting';
 import { Colors } from '../colors';
+import { useDoubleClick } from '../hooks/useDoubleClick';
 
 interface MergeRequestInfoProps {
   mergeRequest: MergeRequest;
   selectedDiscussionIndex?: number;
   onSelectDiscussion?: (index: number) => void;
+  onOpenDiscussion?: (index: number) => void;
 }
 
-export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex = 0, onSelectDiscussion }: MergeRequestInfoProps) {
+export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex = 0, onSelectDiscussion, onOpenDiscussion }: MergeRequestInfoProps) {
+  const handleDiscussionClick = useDoubleClick<number>({
+    onSingleClick: (index) => onSelectDiscussion?.(index),
+    onDoubleClick: (index) => onOpenDiscussion?.(index)
+  });
+
   const renderDiscussionNote = (note: DiscussionNote, index: number) => {
     const isReply = index > 0; // First note is original, rest are replies
     const marginLeft = isReply ? 4 : 2;
@@ -99,7 +106,7 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
             <box
               key={discussion.id}
               id={`discussion-${index}`}
-              onMouseDown={() => onSelectDiscussion?.(index)}
+              onMouseDown={() => handleDiscussionClick(index)}
               style={{
                 flexDirection: "column",
                 marginLeft: 2,

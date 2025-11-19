@@ -9,6 +9,7 @@ import { openUrl } from "../system/open-url";
 import { getJobStatusDisplay } from "../gitlab/display/jobStatus";
 import { ActivePane } from "../userselection/userSelection";
 import { useAutoScroll } from "../hooks/useAutoScroll";
+import { useDoubleClick } from "../hooks/useDoubleClick";
 import { Colors } from "../colors";
 import { useRepositoryBranches } from "../mergerequests/hooks/useRepositoryBranches";
 import { loadSettings } from "../settings/settings";
@@ -461,6 +462,17 @@ export default function MergeRequestPane({}: {}) {
     lookahead: 2,
   });
 
+  const handleMrClick = useDoubleClick<number>({
+      onSingleClick: (index) => {
+          setSelectedMRIndex(index);
+      },
+      onDoubleClick: (index) => {
+          if (mergeRequests[index]) {
+              openUrl(mergeRequests[index].webUrl);
+          }
+      }
+  });
+
   const repositoryBranches = useRepositoryBranches(mergeRequests);
   const branchDifferences = useAtomValue(branchDifferencesAtom);
   const settings = loadSettings();
@@ -745,9 +757,7 @@ export default function MergeRequestPane({}: {}) {
           return (
             <box
               key={mr.id}
-              onMouseDown={(e) => {
-                setSelectedMRIndex(index);
-              }}
+              onMouseDown={(e) => handleMrClick(index)}
               style={{
                 flexDirection: "column",
                 backgroundColor: highlightInfo.backgroundColor,

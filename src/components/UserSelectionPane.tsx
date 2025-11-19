@@ -4,9 +4,12 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import type { UserSelectionEntry } from '../userselection/userSelection';
 import { ActivePane } from '../userselection/userSelection';
 import { useAutoScroll } from '../hooks/useAutoScroll';
+import { useDoubleClick } from '../hooks/useDoubleClick';
 import { Colors } from '../colors';
 import { selectedUserSelectionEntryAtom, activePaneAtom, userSelectionsAtom } from '../store/appAtoms';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { openUrl } from '../system/open-url';
+import path from 'path';
 
 interface UserSelectionPaneProps {
 }
@@ -23,6 +26,20 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
   });
 
   const setSelectedUserSelectionEntry = useAtomSet(selectedUserSelectionEntryAtom)
+
+  const handleTitleClick = useDoubleClick<void>({
+    onDoubleClick: () => {
+      // We're assuming the process is running from the project root, or we can find the file relative to it.
+      // For simplicity in this environment, we'll try to open the file directly.
+      // Since 'openUrl' opens URLs, for local files we might need a 'file://' prefix or just the path depending on the system/implementation.
+      // However, user asked to open `src\data\usersAndGroups.ts`.
+      // Let's try constructing a file URI.
+      const filePath = path.resolve('src', 'data', 'usersAndGroups.ts');
+      openUrl(filePath); // openUrl usually handles file paths if the system supports it or if we implement it that way.
+                         // If openUrl is strict about URLs, we might need `file://${filePath}`.
+                         // Given previous context of `openUrl`, it seems to invoke `open` command which handles files.
+    }
+  });
 
   useKeyboard((key: ParsedKey) => {
     if (!isActive) {
@@ -102,12 +119,30 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
 
   return (
     <>
-      <text
-        style={{ fg: '#f8f8f2', marginBottom: 1, attributes: TextAttributes.BOLD }}
-        wrapMode='none'
-      >
-        User Selection
-      </text>
+      <box style={{ flexDirection: "row", alignItems: "center", marginBottom: 1, gap: 2 }}>
+        <text
+            onMouseDown={() => handleTitleClick()}
+            style={{ fg: '#f8f8f2', attributes: TextAttributes.BOLD }}
+            wrapMode='none'
+        >
+            User Selection
+        </text>
+        <box
+            onMouseDown={() => {
+                const filePath = path.resolve('src', 'data', 'usersAndGroups.ts');
+                openUrl(filePath);
+            }}
+            style={{
+                backgroundColor: Colors.PRIMARY,
+                paddingLeft: 1,
+                paddingRight: 1,
+            }}
+        >
+            <text style={{ fg: Colors.BACKGROUND, attributes: TextAttributes.BOLD }} wrapMode='none'>
+                Edit
+            </text>
+        </box>
+      </box>
 
       <scrollbox
         ref={scrollBoxRef}
