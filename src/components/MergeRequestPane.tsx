@@ -18,7 +18,7 @@ import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom } from "../store/appAtoms";
 import { getSingleMr } from "../gitlab/gitlab-graphql";
 import { Effect, Runtime } from "effect";
 
@@ -455,6 +455,7 @@ export default function MergeRequestPane({}: {}) {
     onFailure: () => new Set<string>()
   });
   const refetchSelectedMrPipeline = useAtomSet(refetchSelectedMrPipelineAtom, { mode: 'promiseExit' });
+  const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
 
   const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -695,10 +696,27 @@ export default function MergeRequestPane({}: {}) {
       />
 
       {isLoading && (
-        <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+        <box style={{ flexDirection: "row", alignItems: "center", gap: 1,  marginTop: 1 }}>
           <Spinner />
           <text style={{ fg: Colors.INFO }}>
             Loading merge requests...
+          </text>
+        </box>
+      )}
+
+      {!isLoading && lastRefreshTimestamp && (
+        <box style={{ flexDirection: "row", alignItems: "center", gap: 1, marginTop: 1 }}>
+          <text style={{ fg: Colors.SUPPORTING }} wrapMode="none">
+            Last refreshed: {formatCompactTime(lastRefreshTimestamp)} ago
+          </text>
+          <text
+             onMouseDown={() => refreshMergeRequests()}
+             style={{
+              fg: Colors.INFO
+             }}
+             wrapMode='none'
+          >
+              {" >> refresh <<"}
           </text>
         </box>
       )}
@@ -714,13 +732,6 @@ export default function MergeRequestPane({}: {}) {
         </box>
       )}
 
-      {!isLoading && lastRefreshTimestamp && (
-        <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-          <text style={{ fg: Colors.SUPPORTING }}>
-            Last refreshed: {formatCompactTime(lastRefreshTimestamp)} ago
-          </text>
-        </box>
-      )}
 
       {/* <box style={{ flexDirection: "row", alignItems: "center", gap: 0, marginBottom: 0 }}>
         {sharedTicketDisplay}
