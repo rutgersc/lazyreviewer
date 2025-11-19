@@ -200,6 +200,13 @@ export default function JobHistoryModal({
                         {formatDuration(entry.duration)}
                       </text>
 
+                      {/* Runner */}
+                      <text style={{ fg: Colors.SUPPORTING, width: 20 }} wrapMode='none'>
+                        {entry.runnerDescription || entry.runnerShortSha
+                          ? `${entry.runnerShortSha ? `(${entry.runnerShortSha}) ` : ''}${entry.runnerDescription || '-'}`
+                          : '-'}
+                      </text>
+
                       {/* Develop indicator */}
                       <text
                         style={{

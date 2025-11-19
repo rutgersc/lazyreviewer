@@ -30,7 +30,12 @@ export const ProjectPipelinesJobHistoryQuerySchema: Schema.Schema<ProjectPipelin
           status: Schema.NullOr(CiJobStatusSchema),
           failureMessage: Schema.NullOr(Schema.String),
           startedAt: Schema.NullOr(Schema.String),
-          duration: Schema.NullOr(Schema.Number)
+          duration: Schema.NullOr(Schema.Number),
+          runner: Schema.NullOr(Schema.Struct({
+            id: Schema.Unknown,
+            description: Schema.NullOr(Schema.String),
+            shortSha: Schema.NullOr(Schema.String)
+          }))
         }))
       }))
       ))
