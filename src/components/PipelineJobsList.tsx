@@ -8,6 +8,7 @@ import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryLimitAtom } from '../store/appAtoms';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
+import { useDoubleClick } from '../hooks/useDoubleClick';
 import { useEffect } from 'react';
 
 interface PipelineJobsListProps {
@@ -45,6 +46,19 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
   const runLoadJobLog = useAtomSet(loadJobLogAtom);
   const runFetchJobHistory = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+
+  const handleJobClick = useDoubleClick<number>({
+    onSingleClick: (index) => {
+      setSelectedPipelineJobIndex(index);
+      scrollToId(`pipeline-job-${index}`);
+    },
+    onDoubleClick: (index) => {
+      const selectedJob = pipelineJobs[index];
+      if (selectedJob && selectedMergeRequest) {
+        runLoadJobLog({ mergeRequest: selectedMergeRequest, job: selectedJob.job });
+      }
+    }
+  });
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
@@ -115,10 +129,7 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
           <box
             key={job.id}
             id={`pipeline-job-${index}`}
-            onMouseDown={() => {
-                setSelectedPipelineJobIndex(index);
-                scrollToId(`pipeline-job-${index}`);
-            }}
+            onMouseDown={() => handleJobClick(index)}
             style={{
               flexDirection: "row",
               alignItems: "center",
