@@ -1,9 +1,9 @@
 import { Console, Data, Effect } from "effect";
 import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/gitlab-graphql";
-import { extractElabTicketsFromTitle } from "../jira/jiraService";
-import { id } from "effect/Fiber";
-import { HttpClient } from "@effect/platform";
+import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface BitbucketAccount {
   display_name: string;
@@ -417,8 +417,6 @@ export const getBitbucketPrsAsEvent = Effect.fn("getBitbucketPrsAsEvent")(functi
     catch: (cause) => new BitbucketPrsJsonParseError({ cause })
   });
 
-  const fs = require('fs');
-  const path = require('path');
   const outputPath = path.join(process.cwd(), 'debug/bitbucket-response-debug.json');
   fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
   yield* Console.log(`BitBucket response written to: ${outputPath}`);

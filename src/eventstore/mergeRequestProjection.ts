@@ -1,5 +1,5 @@
 import { Effect, Stream } from "effect"
-import type { MergeRequest } from "../mergerequests/mergeRequestSchema"
+import type { MergeRequest } from "../mergerequests/mergerequest-schema"
 import type { GitlabMergeRequest } from "../gitlab/gitlab-schema"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import type { Event } from "../events/events"

@@ -9,7 +9,7 @@ import { openUrl } from '../system/url-effect';
 import { getScroller } from '../hooks/useScrollBox';
 import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, toggleIgnoreMergeRequestAtom, type InfoPaneTab, refetchSelectedMrPipelineAtom, refreshMergeRequestsAtom, mergeRequestsAtom } from '../store/appAtoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
-import { appAtomRuntime, appLayer, consoleLoggedLayer } from '../store/appLayerRuntime';
+import { appAtomRuntime, appLayer, consoleLoggedLayer } from '../appLayerRuntime';
 import { Console, Effect, Layer } from 'effect';
 
 interface HelpModalProps {
@@ -126,6 +126,7 @@ const buildGlobalKeys = (actions: HelpModalActions): KeyBinding[] => [
   { key: '?', description: 'Show this help' },
   { key: '~', description: 'Toggle console', action: actions.onToggleConsole },
   { key: 'o', description: 'Open event log', action: actions.onOpenEventLog },
+  { key: '0', description: 'Dump state to debug/ (debug)' },
   { key: '[, ], Tab, d', description: 'Cycle info tabs', action: actions.onCycleInfoTab },
   { key: 'Ctrl+D/U', description: 'Scroll info pane', action: actions.onScrollInfoPaneDown },
   { key: 'Esc', description: 'Close modals/overlays' },

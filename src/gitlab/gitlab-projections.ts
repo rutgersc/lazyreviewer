@@ -1,5 +1,5 @@
 import type { ProjectMRsQuery } from "../graphql/project-mrs.generated";
-import { extractElabTicketsFromTitle } from "../jira/jiraService";
+import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest, JobHistoryEntry } from "./gitlab-schema";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent } from "../events/gitlab-events";
 import type { MRsQuery } from "../graphql/mrs.generated";

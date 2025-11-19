@@ -15,15 +15,16 @@ import { ActivePane } from "./userselection/userSelection";
 import { useEffect, useState } from 'react';
 import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
 import { openSettingsFile } from "./settings/settings";
-import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
+import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { filterMrStateAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom } from './store/appAtoms';
+import { filterMrStateAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom } from './store/appAtoms';
 import { Console, Effect } from 'effect';
-import { consoleLoggedLayer } from './store/appLayerRuntime';
+import { consoleLoggedLayer } from './appLayerRuntime';
 
 export default function App() {
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
+  const dumpAllMrs = useAtomSet(dumpAllMrsToFileAtom, { mode: 'promiseExit' });
 
   const renderer = useRenderer();
   const [activePane, setActivePane] = useAtom(activePaneAtom);
@@ -90,6 +91,11 @@ export default function App() {
         break;
       case '?':
         setActiveModal('help');
+        break;
+      case '0':
+        await dumpAllMrs();
+        setCopyNotification('State dumped to debug/');
+        setTimeout(() => setCopyNotification(null), 2000);
         break;
       case '[':
         cycleInfoPaneTab('prev');

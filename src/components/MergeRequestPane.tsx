@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
-import { type MergeRequest } from "../mergerequests/mergeRequestSchema";
+import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { type PipelineStage, type PipelineJob } from "../gitlab/gitlab-schema";
 import { formatCompactTime } from "../utils/formatting";
 import { copyToClipboard } from "../system/clipboard-effect";
@@ -10,7 +10,7 @@ import { getJobStatusDisplay } from "../gitlab/display/jobStatus";
 import { ActivePane } from "../userselection/userSelection";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { Colors } from "../colors";
-import { useRepositoryBranches } from "../hooks/useRepositoryBranches";
+import { useRepositoryBranches } from "../mergerequests/hooks/useRepositoryBranches";
 import { loadSettings } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
@@ -411,7 +411,7 @@ const CopyNotificationPopup = ({
     </box>
   ) : null;
 
-export type { MergeRequest } from "../mergerequests/mergeRequestSchema"
+export type { MergeRequest } from "../mergerequests/mergerequest-schema"
 
 const Spinner = () => {
   const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];

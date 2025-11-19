@@ -1,8 +1,8 @@
 import { TextAttributes } from "@opentui/core";
-import { type MergeRequest } from "../mergerequests/mergeRequestSchema";
+import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { Colors } from "../colors";
 import { formatCompactTime } from "../utils/formatting";
-import { extractTextFromJiraComment } from "../jira/jiraService";
+import { extractTextFromJiraComment } from "../jira/jira-service";
 
 type EventType =
   | 'mr_created'

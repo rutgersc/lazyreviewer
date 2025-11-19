@@ -9,7 +9,7 @@ import { getSdk as getMrPipelineSdk } from "../graphql/mr-pipeline.generated";
 import { getSdk as getProjectPipelinesJobHistorySdk } from "../graphql/project-pipelines-job-history.generated";
 import { getSdk as getJobSdk } from "../graphql/job.generated";
 import type { CiJobStatus, MergeRequestState } from "../graphql/generated/gitlab-base-types";
-import { extractElabTicketsFromTitle } from "../jira/jiraService";
+import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest } from "./gitlab-schema";
 import { Data, Effect, Console } from "effect";
 import fs from "fs";

@@ -1,7 +1,7 @@
 import { Schema } from "effect"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
-import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
-import { MergeRequestSchema } from "../mergerequests/mergeRequestSchema";
+import type { MergeRequest } from "../mergerequests/mergerequest-schema";
+import { MergeRequestSchema } from "../mergerequests/mergerequest-schema";
 
 export interface MergeRequestsCompactedEvent {
     type: 'mergerequests-compacted-event',

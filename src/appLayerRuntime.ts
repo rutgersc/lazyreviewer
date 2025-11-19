@@ -1,10 +1,10 @@
 import { Path } from "@effect/platform"
 import { Layer, DefaultServices } from "effect"
 import * as FileSystem from "@effect/platform-node/NodeFileSystem"
-import { LogStorage } from "../logging/logStorage"
+import { LogStorage } from "./logging/logStorage"
 import { Atom } from "@effect-atom/atom-react"
-import { ConsoleLogged } from "../logging/consoleLogged"
-import { EventStorage } from "../events/events"
+import { ConsoleLogged } from "./logging/consoleLogged"
+import { EventStorage } from "./events/events"
 
 const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
 

@@ -5,7 +5,7 @@ import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
-import type { MergeRequest } from '../mergerequests/mergeRequestSchema';
+import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import type { UserSelectionEntry } from '../userselection/userSelection';
 import { copyToClipboard } from '../system/clipboard-effect';
 import { formatDiscussionsForClipboard } from '../gitlab/display/gitlabDiscussionFormatter';

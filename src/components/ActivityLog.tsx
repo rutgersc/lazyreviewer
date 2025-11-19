@@ -1,9 +1,9 @@
 import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { useKeyboard } from '@opentui/react';
-import { type MergeRequest } from "../mergerequests/mergeRequestSchema";
+import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { Colors } from "../colors";
 import { formatCompactTime } from "../utils/formatting";
-import { extractTextFromJiraComment } from "../jira/jiraService";
+import { extractTextFromJiraComment } from "../jira/jira-service";
 import type { PipelineJob } from "../gitlab/gitlab-graphql";
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/url-effect';

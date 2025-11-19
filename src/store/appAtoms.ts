@@ -1,5 +1,5 @@
 import { Atom, Result } from "@effect-atom/atom-react";
-import type { MergeRequest } from "../mergerequests/mergeRequestSchema";
+import type { MergeRequest } from "../mergerequests/mergerequest-schema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
@@ -7,26 +7,15 @@ import { type CacheKey, MRCacheKey, ProjectMRCacheKey, ensureMRsEvents, queryMRs
 import { EventStorage, type Event } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console, Stream, SubscriptionRef, Match, Hash, Equal, Duration, Chunk } from "effect";
-import { appAtomRuntime } from "./appLayerRuntime";
+import { appAtomRuntime } from "../appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
-import type { BranchDifference } from "../hooks/useRepositoryBranches";
+import type { BranchDifference } from "../mergerequests/hooks/useRepositoryBranches";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 import { LogStorage, type LogEntry } from "../logging/logStorage";
 import { loadJobLog } from '../mergerequests/pipelinejob-log-effects';
 import { fetchJobHistory, type PipelineJob } from '../gitlab/gitlab-graphql';
-
-
-// const STORE_FILE = 'debug/store.json';
-// const fileStorage = createJSONStorage(() => ({
-//   getItem: () => (existsSync(STORE_FILE) ? readFileSync(STORE_FILE, 'utf8') : null),
-//   setItem: (_name, value) => {
-//     const dir = dirname(STORE_FILE);
-//     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-//     writeFileSync(STORE_FILE, value, 'utf8');
-//   },
-//   removeItem: () => { try { unlinkSync(STORE_FILE); } catch { /* noop */ } },
-// }));
-
+import { writeFileSync } from 'fs';
+import { join } from 'path';
 
 export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
 
@@ -199,13 +188,6 @@ export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 export const selectedActivityIndexAtom = Atom.make<number>(0);
 export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
-export const log = (...args: ReadonlyArray<any>) =>
-  Effect.andThen(Console.Console, _ => _.log(...args));
-
-export const error = (...args: ReadonlyArray<any>) =>
-  Effect.andThen(Console.Console, _ => _.log(...args));
-
-// Single global stream of ALL MRs indexed by ID
 export const allMrsAtom = appAtomRuntime.atom(
   Stream.unwrap(
     Effect.gen(function* () {
@@ -393,4 +375,57 @@ export const incrementJobHistoryLimitAtom = Atom.writable(
     ctx.set(jobHistoryLimitAtom, newLimit);
     return newLimit;
   }
+);
+
+// Phase 13: Debug Actions
+export const dumpAllMrsToFileAtom = appAtomRuntime.fn((_, get) =>
+  Effect.gen(function* () {
+    const allMrsResult = get(allMrsAtom);
+
+    const allMrsState = Result.match(allMrsResult, {
+      onInitial: () => null,
+      onFailure: () => null,
+      onSuccess: (state) => state.value
+    });
+
+    if (!allMrsState) {
+      yield* Console.log('[Debug] No allMrs state available');
+      return;
+    }
+
+    const debugData = {
+      timestamp: allMrsState.timestamp.toISOString(),
+      totalMRs: allMrsState.mrsByGid.size,
+      mrsByGid: Array.from(allMrsState.mrsByGid.entries()).map(([gid, mr]) => ({
+        gid,
+        mr: {
+          id: mr.id,
+          iid: mr.iid,
+          title: mr.title,
+          state: mr.state,
+          author: mr.author,
+          projectFullPath: mr.project.fullPath,
+          sourcebranch: mr.sourcebranch,
+          targetbranch: mr.targetbranch,
+          createdAt: mr.createdAt.toISOString(),
+          updatedAt: mr.updatedAt.toISOString(),
+          webUrl: mr.webUrl,
+          resolvableDiscussions: mr.resolvableDiscussions,
+          resolvedDiscussions: mr.resolvedDiscussions,
+          unresolvedDiscussions: mr.unresolvedDiscussions,
+          totalDiscussions: mr.totalDiscussions,
+          approvedBy: mr.approvedBy.map(a => a.username),
+          jiraIssues: mr.jiraIssues?.map(issue => issue.key) ?? []
+        }
+      }))
+    };
+
+    yield* Effect.sync(() => {
+      const filename = join('debug', `allMrs-dump-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+      writeFileSync(filename, JSON.stringify(debugData, null, 2), 'utf8');
+      return filename;
+    }).pipe(
+      Effect.tap(filename => Console.log(`[Debug] Dumped allMrs state to ${filename}`))
+    );
+  })
 );

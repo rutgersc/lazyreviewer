@@ -1,10 +1,10 @@
-import type { MergeRequest } from "./mergeRequestSchema";
+import type { MergeRequest } from "./mergerequest-schema";
 import type { GitlabMergeRequest } from "../gitlab/gitlab-schema";
 import type { JiraIssue } from "../jira/jira-schema";
 import { getGitlabMrsAsEvent, getGitlabMrsByProject, getMrPipeline, getMrPipelineAsEvent } from "../gitlab/gitlab-graphql";
 import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
 import { parseRepositoryId } from "./repositoryParser";
-import { loadJiraTickets } from "../jira/jiraService";
+import { loadJiraTickets } from "../jira/jira-service";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { getSdk as getUpdateMrTargetBranchSdk } from "../graphql/update-mr-target-branch.generated";
 import { ensurePipelineJobsInSettings } from "../settings/settings";
