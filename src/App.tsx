@@ -18,9 +18,10 @@ import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { filterMrStateAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom } from './store/appAtoms';
+import { filterMrStateAtom, refreshMergeRequestsAtom, activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom, allJiraIssuesAtom } from './store/appAtoms';
 import { Console, Effect } from 'effect';
 import { consoleLoggedLayer } from './appLayerRuntime';
+import { Result } from '@effect-atom/atom-react';
 
 export default function App() {
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
@@ -38,6 +39,18 @@ export default function App() {
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
+  const allJiraIssuesResult = useAtomValue(allJiraIssuesAtom);
+
+  const jiraIssuesMap = Result.match(allJiraIssuesResult, {
+    onInitial: () => new Map(),
+    onSuccess: (success) => success.value,
+    onFailure: () => new Map()
+  });
+
+  const selectedMrJiraIssues = mergeRequests[selectedIndex]?.jiraIssueKeys.flatMap(key => {
+    const issue = jiraIssuesMap.get(key);
+    return issue ? [issue] : [];
+  }) || [];
 
   useEffect(() => {
       // renderer.console.toggle();
@@ -246,7 +259,7 @@ export default function App() {
       {/* Jira Modal - rendered at app level to cover entire screen */}
       <JiraModal
         isVisible={activeModal === 'jira'}
-        jiraIssues={mergeRequests[selectedIndex]?.jiraIssues || []}
+        jiraIssues={selectedMrJiraIssues}
         onClose={() => setActiveModal('none')}
       />
 

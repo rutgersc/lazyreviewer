@@ -188,6 +188,8 @@ export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 export const selectedActivityIndexAtom = Atom.make<number>(0);
 export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
+import { JiraIssue } from "../jira/jira-service";
+
 export const allMrsAtom = appAtomRuntime.atom(
   Stream.unwrap(
     Effect.gen(function* () {
@@ -204,15 +206,21 @@ export const allMrsAtom = appAtomRuntime.atom(
         Stream.filter(isMrRelevantEvent),
         Stream.groupedWithin(100, "0.1 seconds"),
         Stream.scan(
-          new AllMrsState({ mrsByGid: new Map(), timestamp: new Date() }),
+          new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() }),
           (state: AllMrsState, events) =>
             Chunk.reduce(events, state, (currentState, event) => projectAllMrs(currentState, event))
         )
       );
     })
   ),
-  { initialValue: new AllMrsState({ mrsByGid: new Map(), timestamp: new Date() }) }
+  { initialValue: new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() }) }
 ).pipe(Atom.keepAlive);
+
+export const allJiraIssuesAtom = Atom.map(
+  allMrsAtom,
+  (result) => Result.map(result, (state: AllMrsState) => state.jiraIssuesByKey)
+);
+
 
 // Filter MRs based on CacheKey criteria
 const filterMrsByCacheKey = (allMrs: ReadonlyMap<string, MergeRequest>, cacheKey: CacheKey): readonly MergeRequest[] => {
@@ -418,7 +426,7 @@ export const dumpAllMrsToFileAtom = appAtomRuntime.fn((_, get) =>
           unresolvedDiscussions: mr.unresolvedDiscussions,
           totalDiscussions: mr.totalDiscussions,
           approvedBy: mr.approvedBy.map(a => a.username),
-          jiraIssues: mr.jiraIssues?.map(issue => issue.key) ?? []
+          jiraIssues: mr.jiraIssueKeys
         }
       }))
     };

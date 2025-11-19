@@ -14,15 +14,12 @@ import type { MRCacheKey, ProjectMRCacheKey } from "./mergerequests-caching-effe
 import { EventStorage } from "../events/events";
 import { projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections";
 
-function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
+function processMrsWithJira(mrs: GitlabMergeRequest[]): MergeRequest[] {
   ensurePipelineJobsInSettings(mrs);
 
   return mrs
     .map((mr): MergeRequest => ({
-      ...mr,
-      jiraIssues: mr.jiraIssueKeys.flatMap((jiraKey) =>
-        tickets.filter((t) => t.key === jiraKey)
-      ),
+      ...mr
     }))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 }
@@ -34,10 +31,8 @@ export const fetchMergeRequests = Effect.fn("getGitlabMrs")(function* (
   if (selectedUsernames.length === 0) return [];
 
   const mrs =  projectGitlabUserMrsFetchedEvent(yield* getGitlabMrsAsEvent(selectedUsernames as string[], state));
-  const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
-  const tickets = yield* loadJiraTickets(jiraKeys);
 
-  return processMrsWithJira(mrs, tickets);
+  return processMrsWithJira(mrs);
 });
 
 export class FetchMergeRequestsByProjectError extends Data.TaggedError("FetchMergeRequestsByProjectError")<{
@@ -60,11 +55,7 @@ export const fetchMergeRequestsByProject = Effect.fn("fetchMergeRequestsByProjec
 
   yield* Console.log(`Fetched ${mrs.length} merge requests`);
 
-  const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
-  yield* Console.log(`Loading ${jiraKeys.length} Jira tickets`);
-  const tickets = yield* loadJiraTickets(jiraKeys);
-
-  return processMrsWithJira(mrs, tickets);
+  return processMrsWithJira(mrs);
 })
 
 export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (

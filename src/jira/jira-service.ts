@@ -17,7 +17,7 @@ export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
 const elabPattern = /ELAB-\d+/g;
 export const extractElabTicketsFromTitle = (title: string): string[] => {
   const matches = title.match(elabPattern) ?? [];
-  return Array.from(matches);
+  return Array.from(new Set(matches));
 };
 
 export const extractElabTicketsFromTitles = (titles: string[]): string[] => {

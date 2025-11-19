@@ -8,8 +8,8 @@ import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { useScrollBox } from '../hooks/useScrollBox';
-import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
-import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, selectedDiscussionIndexAtom, selectedActivityIndexAtom, selectedPipelineJobIndexAtom, selectedMrAtom, selectedUserSelectionEntryAtom, userSelectionsAtom, type InfoPaneTab } from '../store/appAtoms';
+import { useAtom, useAtomSet, useAtomValue, Result } from '@effect-atom/atom-react';
+import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, selectedDiscussionIndexAtom, selectedActivityIndexAtom, selectedPipelineJobIndexAtom, selectedMrAtom, selectedUserSelectionEntryAtom, userSelectionsAtom, allJiraIssuesAtom, type InfoPaneTab } from '../store/appAtoms';
 
 interface InfoPaneProps {
   activePane: ActivePane;
@@ -43,7 +43,18 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
         stage.jobs.map((job: PipelineJob) => ({ stage, job }))
       );
 
-  const jiraIssues = selectedMergeRequest?.jiraIssues || [];
+  const allJiraIssuesResult = useAtomValue(allJiraIssuesAtom);
+
+  const jiraIssuesMap = Result.match(allJiraIssuesResult, {
+    onInitial: () => new Map(),
+    onSuccess: (success) => success.value,
+    onFailure: () => new Map()
+  });
+
+  const jiraIssues = selectedMergeRequest?.jiraIssueKeys.flatMap(key => {
+    const issue = jiraIssuesMap.get(key);
+    return issue ? [issue] : [];
+  }) || [];
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane) return;

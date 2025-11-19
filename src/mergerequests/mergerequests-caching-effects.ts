@@ -95,26 +95,6 @@ const findLatestProjectMrsEvent = (
   return lastEvent ? Option.some(lastEvent) : Option.none()
 }
 
-const loadJiraTicketsFromEvents = (
-  events: readonly Event[],
-  ticketKeys: readonly string[]
-): JiraIssue[] => {
-  const relevantEvents = events.filter(
-    (event): event is JiraIssuesFetchedEvent =>
-      event.type === 'jira-issues-fetched-event' &&
-      event.forTicketKeys.some(key => ticketKeys.includes(key))
-  )
-
-  return relevantEvents.flatMap(event => projectJiraIssuesFetchedEvent(event))
-}
-
-const enrichMrWithJiraIssues = (mr: GitlabMergeRequest, jiraTickets: readonly JiraIssue[]): MergeRequest => ({
-  ...mr,
-  jiraIssues: mr.jiraIssueKeys.flatMap(jiraKey =>
-    jiraTickets.filter(t => t.key === jiraKey)
-  )
-})
-
 // CQRS: Command side - ensures events exist
 export const decideFetchUserMrs = (usernames: string[], state: MergeRequestState): Effect.Effect<
   void,
@@ -161,11 +141,8 @@ export const queryProjectMRsFromEvents = (
   }
 
   const gitlabMrs = projectGitlabProjectMrsFetchedEvent(cachedMrEvent.value)
-  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-  const jiraTickets = loadJiraTicketsFromEvents(allEvents, jiraKeys)
 
   const data = gitlabMrs
-    .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
   return new MrStateFetched({ data, timestamp: new Date() })
@@ -189,12 +166,14 @@ export type MrRelevantEvent =
 // Global MR state - all MRs indexed by ID
 export class AllMrsState extends Data.TaggedClass("AllMrsState")<{
   readonly mrsByGid: ReadonlyMap<string, MergeRequest>
+  readonly jiraIssuesByKey: ReadonlyMap<string, JiraIssue>
   readonly timestamp: Date
 }> {}
 
 // Project all MRs into a single indexed map
 export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMrsState => {
   const currentMap = new Map(state.mrsByGid);
+  const currentJiraIssues = new Map(state.jiraIssuesByKey);
 
   // Handle GitLab user MRs
   if (event.type === 'gitlab-user-mrs-fetched-event') {
@@ -202,14 +181,13 @@ export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMr
 
     // Update/add each MR to the map
     gitlabMrs.forEach(gitlabMr => {
-      const existing = currentMap.get(gitlabMr.id);
-      const jiraIssues = existing?.jiraIssues || [];
-      const enriched = enrichMrWithJiraIssues(gitlabMr, jiraIssues);
-      currentMap.set(gitlabMr.id, enriched);
+      // No longer enriching with Jira issues directly
+      currentMap.set(gitlabMr.id, gitlabMr);
     });
 
     return new AllMrsState({
       mrsByGid: currentMap,
+      jiraIssuesByKey: currentJiraIssues,
       timestamp: new Date()
     });
   }
@@ -219,35 +197,29 @@ export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMr
     const gitlabMrs = projectGitlabProjectMrsFetchedEvent(event);
 
     gitlabMrs.forEach(gitlabMr => {
-      const existing = currentMap.get(gitlabMr.id);
-      const jiraIssues = existing?.jiraIssues || [];
-      const enriched = enrichMrWithJiraIssues(gitlabMr, jiraIssues);
-      currentMap.set(gitlabMr.id, enriched);
+      // No longer enriching with Jira issues directly
+      currentMap.set(gitlabMr.id, gitlabMr);
     });
 
     return new AllMrsState({
       mrsByGid: currentMap,
+      jiraIssuesByKey: currentJiraIssues,
       timestamp: new Date()
     });
   }
 
-  // Handle Jira issues - enrich all MRs that reference these issues
+  // Handle Jira issues - update global Jira store
   if (event.type === 'jira-issues-fetched-event') {
     const newJiraTickets = projectJiraIssuesFetchedEvent(event);
 
-    // Re-enrich all MRs that have jira issue keys matching the new tickets
-    currentMap.forEach((mr, gid) => {
-      if (mr.jiraIssueKeys.some(key => newJiraTickets.some(ticket => ticket.key === key))) {
-        const { jiraIssues, ...gitlabMr } = mr;
-        const allJiraTickets = [...jiraIssues, ...newJiraTickets];
-        const enriched = enrichMrWithJiraIssues(gitlabMr as GitlabMergeRequest, allJiraTickets);
-        currentMap.set(gid, enriched);
-      }
+    newJiraTickets.forEach(ticket => {
+      currentJiraIssues.set(ticket.key, ticket);
     });
 
     return new AllMrsState({
       mrsByGid: currentMap,
-      timestamp: state.timestamp // Keep original timestamp for Jira enrichment
+      jiraIssuesByKey: currentJiraIssues,
+      timestamp: state.timestamp // Keep original timestamp
     });
   }
 
@@ -268,12 +240,7 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelev
       // Project GitLab MRs from the event
       const gitlabMrs = projectGitlabUserMrsFetchedEvent(event)
 
-      // Enrich with existing Jira data from state
-      const jiraTickets = state._tag === "Fetched"
-        ? state.data.flatMap(mr => mr.jiraIssues)
-        : []
       const enrichedMrs = gitlabMrs
-        .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
       return new MrStateFetched({ data: enrichedMrs, timestamp: new Date() })
@@ -289,12 +256,7 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelev
       // Project GitLab MRs from the event
       const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
 
-      // Enrich with existing Jira data from state
-      const jiraTickets = state._tag === "Fetched"
-        ? state.data.flatMap(mr => mr.jiraIssues)
-        : []
       const enrichedMrs = gitlabMrs
-        .map(mr => enrichMrWithJiraIssues(mr, jiraTickets))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 
       return new MrStateFetched({ data: enrichedMrs, timestamp: new Date() })
@@ -303,25 +265,10 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelev
 
   // Handle JiraIssuesFetchedEvent - enrich existing MRs
   if (event.type === 'jira-issues-fetched-event') {
-    // Only enrich if we have fetched MRs
-    if (state._tag === "NotFetched") {
-      return state
-    }
-
-    const newJiraTickets = projectJiraIssuesFetchedEvent(event)
-
-    // Get all Jira tickets (existing + new)
-    const existingJiraTickets = state.data.flatMap(mr => mr.jiraIssues)
-    const allJiraTickets = [...existingJiraTickets, ...newJiraTickets]
-
-    // Re-enrich all MRs with updated Jira data
-    const enrichedMrs = state.data.map(mr => {
-      // Get raw GitLab MR data (without jiraIssues)
-      const { jiraIssues, ...gitlabMr } = mr
-      return enrichMrWithJiraIssues(gitlabMr as GitlabMergeRequest, allJiraTickets)
-    })
-
-    return new MrStateFetched({ data: enrichedMrs, timestamp: state.timestamp })
+    // Since we don't enrich anymore, we just return the state as is,
+    // but we might want to update the timestamp if that's important.
+    // However, the state.data only contains MRs without jiraIssues now.
+    return state
   }
 
   // Event not relevant to this key, return state unchanged

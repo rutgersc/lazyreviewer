@@ -18,9 +18,10 @@ import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom } from "../store/appAtoms";
 import { getSingleMr } from "../gitlab/gitlab-graphql";
 import { Effect, Runtime } from "effect";
+import type { JiraIssue } from "../jira/jira-schema";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -151,7 +152,7 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
   );
 };
 
-const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }> }) => {
+const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap, jiraIssuesMap }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue> }) => {
   const currentUser = useAtomValue(currentUserAtom);
   const seenMergeRequestsResult = useAtomValue(seenMergeRequestsAtom);
   const seenMergeRequests: Set<string> = Result.match(seenMergeRequestsResult, {
@@ -164,6 +165,11 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
   const isSeen = seenMergeRequests.has(mr.id);
   const projectColor = repoColor || Colors.SUCCESS;
   const branchDifference = branchDifferenceMap.get(mr.id);
+
+  const jiraIssues = mr.jiraIssueKeys.flatMap(key => {
+    const issue = jiraIssuesMap.get(key);
+    return issue ? [issue] : [];
+  });
 
   return (
     <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
@@ -230,24 +236,24 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
       <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
         <text
           style={{
-            fg: mr.jiraIssues.length > 0
-              ? getJiraStatusColor(mr.jiraIssues[0]?.fields.status.name)
+            fg: jiraIssues.length > 0
+              ? getJiraStatusColor(jiraIssues[0]?.fields.status.name)
               : Colors.PRIMARY,
             attributes:
-              mr.jiraIssues.length > 0
-                ? (getJiraStatusColor(mr.jiraIssues[0]?.fields.status.name) === Colors.PRIMARY ? TextAttributes.DIM : undefined)
+              jiraIssues.length > 0
+                ? (getJiraStatusColor(jiraIssues[0]?.fields.status.name) === Colors.PRIMARY ? TextAttributes.DIM : undefined)
                 : TextAttributes.DIM,
           }}
           wrapMode='none'
         >
-          {mr.jiraIssues.length > 0
-            ? mr.jiraIssues[0]?.fields.status.name
+          {jiraIssues.length > 0
+            ? jiraIssues[0]?.fields.status.name
             : "<no jira ticket>"}
         </text>
         {(() => {
-          if (mr.jiraIssues.length === 0) return null;
+          if (jiraIssues.length === 0) return null;
 
-          const statusName = mr.jiraIssues[0]?.fields.status.name;
+          const statusName = jiraIssues[0]?.fields.status.name;
           const statusLower = statusName?.toLowerCase() || '';
           const isMergeRequested = statusLower.includes('merge requested') || statusLower.includes('ready for merge');
           const isBehind = branchDifference && branchDifference.behind > 0;
@@ -446,6 +452,13 @@ export default function MergeRequestPane({}: {}) {
   const [filterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
   const currentUser = useAtomValue(currentUserAtom);
 
+  const allJiraIssuesResult = useAtomValue(allJiraIssuesAtom);
+  const jiraIssuesMap = Result.match(allJiraIssuesResult, {
+    onInitial: () => new Map<string, JiraIssue>(),
+    onSuccess: (success) => success.value,
+    onFailure: () => new Map<string, JiraIssue>()
+  });
+
   const toggleIgnoreMergeRequest = useAtomSet(toggleIgnoreMergeRequestAtom);
   const toggleSeenMergeRequest = useAtomSet(toggleSeenMergeRequestAtom);
   const ignoredMergeRequestsResult = useAtomValue(ignoredMergeRequestsAtom);
@@ -492,13 +505,19 @@ export default function MergeRequestPane({}: {}) {
   // Get the selected MR's Jira ticket info
   const selectedMrJiraInfo = useMemo(() => {
     const selectedMr = mergeRequests[selectedIndex];
+    const issues = selectedMr?.jiraIssueKeys.flatMap(k => {
+        const i = jiraIssuesMap.get(k);
+        return i ? [i] : [];
+    }) || [];
+    const issue = issues[0];
+
     return {
-      ticketKey: selectedMr?.jiraIssues[0]?.key || null,
-      ticketSummary: selectedMr?.jiraIssues[0]?.fields.summary || null,
-      parentKey: selectedMr?.jiraIssues[0]?.fields.parent?.key || null,
-      parentSummary: selectedMr?.jiraIssues[0]?.fields.parent?.fields.summary || null
+      ticketKey: issue?.key || null,
+      ticketSummary: issue?.fields.summary || null,
+      parentKey: issue?.fields.parent?.key || null,
+      parentSummary: issue?.fields.parent?.fields.summary || null
     };
-  }, [mergeRequests, selectedIndex]);
+  }, [mergeRequests, selectedIndex, jiraIssuesMap]);
 
   // Function to determine background color and shared ticket info for an MR item
   const getMrHighlightInfo = (mr: MergeRequest, index: number): { backgroundColor: string; sharedTicket: { key: string; summary: string } | null } => {
@@ -634,12 +653,17 @@ export default function MergeRequestPane({}: {}) {
   // Get shared ticket info for the selected MR
   const selectedMrSharedTicket = useMemo(() => {
     const selectedMr = mergeRequests[selectedIndex];
-    if (!selectedMr?.jiraIssues?.[0]) return null;
+    const selectedIssues = selectedMr?.jiraIssueKeys.flatMap(k => {
+        const i = jiraIssuesMap.get(k);
+        return i ? [i] : [];
+    }) || [];
 
-    const selectedTicketKey = selectedMr.jiraIssues[0].key;
-    const selectedTicketSummary = selectedMr.jiraIssues[0].fields.summary;
-    const selectedParentKey = selectedMr.jiraIssues[0].fields.parent?.key;
-    const selectedParentSummary = selectedMr.jiraIssues[0].fields.parent?.fields.summary;
+    if (!selectedIssues[0]) return null;
+
+    const selectedTicketKey = selectedIssues[0].key;
+    const selectedTicketSummary = selectedIssues[0].fields.summary;
+    const selectedParentKey = selectedIssues[0].fields.parent?.key;
+    const selectedParentSummary = selectedIssues[0].fields.parent?.fields.summary;
 
     // Find if any other MR shares the same ticket or parent
     for (let i = 0; i < mergeRequests.length; i++) {
@@ -648,8 +672,13 @@ export default function MergeRequestPane({}: {}) {
       const mr = mergeRequests[i];
       if (!mr) continue;
 
-      const mrTicketKey = mr.jiraIssues?.[0]?.key;
-      const mrParentKey = mr.jiraIssues?.[0]?.fields.parent?.key;
+      const mrIssues = mr.jiraIssueKeys.flatMap(k => {
+        const issue = jiraIssuesMap.get(k);
+        return issue ? [issue] : [];
+      });
+
+      const mrTicketKey = mrIssues[0]?.key;
+      const mrParentKey = mrIssues[0]?.fields.parent?.key;
 
       // Check if they share the same direct ticket
       if (selectedTicketKey && mrTicketKey === selectedTicketKey) {
@@ -663,7 +692,7 @@ export default function MergeRequestPane({}: {}) {
     }
 
     return null;
-  }, [mergeRequests, selectedIndex]);
+  }, [mergeRequests, selectedIndex, jiraIssuesMap]);
 
   const sharedTicketDisplay = selectedMrSharedTicket ? (
     <box
@@ -779,7 +808,7 @@ export default function MergeRequestPane({}: {}) {
               ) : (
                 <>
                   <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} />
-                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} />
+                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} />
                 </>
               )}
             </box>
