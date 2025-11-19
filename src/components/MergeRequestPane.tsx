@@ -495,31 +495,7 @@ export default function MergeRequestPane({}: {}) {
       return { backgroundColor: Colors.TRACK, sharedTicket: null };
     }
 
-    const mrTicketKey = mr.jiraIssues[0]?.key;
-    const mrParentKey = mr.jiraIssues[0]?.fields.parent?.key;
-
-    // Highlight if same Jira ticket
-    if (selectedMrJiraInfo.ticketKey && mrTicketKey === selectedMrJiraInfo.ticketKey) {
-      return {
-        backgroundColor: Colors.SELECTED,
-        sharedTicket: {
-          key: selectedMrJiraInfo.ticketKey,
-          summary: selectedMrJiraInfo.ticketSummary || ''
-        }
-      };
-    }
-
-    // Highlight if same parent ticket
-    if (selectedMrJiraInfo.parentKey && mrParentKey === selectedMrJiraInfo.parentKey) {
-      return {
-        backgroundColor: Colors.SELECTED,
-        sharedTicket: {
-          key: selectedMrJiraInfo.parentKey,
-          summary: selectedMrJiraInfo.parentSummary || ''
-        }
-      };
-    }
-
+    // No more related highlighting (see git history)
     return { backgroundColor: "transparent", sharedTicket: null };
   };
 
