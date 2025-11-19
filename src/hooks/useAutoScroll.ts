@@ -2,46 +2,44 @@ import { useRef } from 'react';
 import { ScrollBoxRenderable } from '@opentui/core';
 
 interface UseAutoScrollOptions {
-  itemHeight: number;
   lookahead?: number;
 }
 
-export function useAutoScroll({ itemHeight, lookahead = 3 }: UseAutoScrollOptions) {
+export function useAutoScroll({ lookahead = 2 }: UseAutoScrollOptions = {}) {
   const scrollBoxRef = useRef<ScrollBoxRenderable | null>(null);
 
   const scrollToItem = (index: number) => {
     if (!scrollBoxRef.current) return;
 
-    const targetY = index * itemHeight;
+    const scrollBox = scrollBoxRef.current;
+    const children = scrollBox.content.getChildren();
+    const targetChild = children[index];
 
-    // Get current viewport info
-    const viewportHeight = scrollBoxRef.current.viewport?.height || 10;
-    const currentScrollTop = scrollBoxRef.current.scrollTop || 0;
+    if (!targetChild) return;
 
-    // Calculate viewport boundaries
+    // Use computed layout for accuracy
+    const itemLayout = targetChild.getLayoutNode().getComputedLayout();
+    const itemTop = itemLayout.top;
+    const itemHeight = itemLayout.height;
+
+    const viewportLayout = scrollBox.viewport.getLayoutNode().getComputedLayout();
+    const viewportHeight = viewportLayout.height;
+    const currentScrollTop = scrollBox.scrollTop;
+
     const viewportTop = currentScrollTop;
     const viewportBottom = currentScrollTop + viewportHeight;
 
-    // Calculate lookahead boundaries (scroll before reaching edge)
-    const lookaheadDistance = lookahead * itemHeight;
-    const itemTop = targetY;
-    const itemBottom = targetY + itemHeight;
-
-    // Check if we need to scroll up (when item + lookahead would be above viewport)
-    const upScrollThreshold = viewportTop + lookaheadDistance;
-    if (itemTop < upScrollThreshold) {
-      // Scroll up to keep the item + lookahead visible
-      const newScrollTop = Math.max(0, itemTop - lookaheadDistance);
-      scrollBoxRef.current.scrollTo(newScrollTop);
+    // Check if we need to scroll up
+    if (itemTop < viewportTop + lookahead) {
+      const newScrollTop = Math.max(0, itemTop - lookahead);
+      scrollBox.scrollTo(newScrollTop);
       return;
     }
 
-    // Check if we need to scroll down (when item + lookahead would be below viewport)
-    const downScrollThreshold = viewportBottom - lookaheadDistance;
-    if (itemBottom > downScrollThreshold) {
-      // Scroll down to keep the item + lookahead visible
-      const newScrollTop = itemBottom + lookaheadDistance - viewportHeight;
-      scrollBoxRef.current.scrollTo(newScrollTop);
+    // Check if we need to scroll down
+    if (itemTop + itemHeight > viewportBottom - lookahead) {
+      const newScrollTop = itemTop + itemHeight - viewportHeight + lookahead;
+      scrollBox.scrollTo(newScrollTop);
     }
   };
 

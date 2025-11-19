@@ -458,7 +458,6 @@ export default function MergeRequestPane({}: {}) {
   const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
-    itemHeight: 2,
     lookahead: 2,
   });
 
