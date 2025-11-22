@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import type { UserSelectionEntry } from '../userselection/userSelection';
@@ -11,14 +11,12 @@ import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { openUrl } from '../system/open-url';
 import path from 'path';
 import { selectedUserSelectionEntryIdAtom } from '../settings/settings-atom';
-import { loadSettings } from '../settings/settings';
 
 interface UserSelectionPaneProps {
 }
 
-let once = false;
-
 export default function UserSelectionPane({ }: UserSelectionPaneProps) {
+  const hasInitialized = useRef(false);
   const activePane = useAtomValue(activePaneAtom);
   const [selectedUserSelectionEntryId, setSelectedUserSelectionEntryId] = useAtom(selectedUserSelectionEntryIdAtom);
   const userSelections = useAtomValue(userSelectionsAtom);
@@ -31,11 +29,11 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
   });
 
   useEffect(() => {
-    if (!once && selectedEntry !== undefined) {
+    if (!hasInitialized.current && selectedEntry !== undefined) {
       const index = userSelections.indexOf(selectedEntry);
       setHighlightIndex(index);
       scrollToItem(index);
-      once = true;
+      hasInitialized.current = true;
     }
   }, [selectedUserSelectionEntryId, selectedEntry]);
 
