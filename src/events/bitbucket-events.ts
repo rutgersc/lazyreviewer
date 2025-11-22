@@ -1,39 +1,10 @@
 import { Schema } from "effect"
-import type { BitbucketPullRequestsResponse, BitbucketCommentsResponse, BitbucketPullRequest } from "../bitbucket/bitbucketapi";
-
-export type BitbucketEvent =
-    | BitbucketPrsFetchedEvent
-    | BitbucketSinglePrFetchedEvent
-    | BitbucketPrCommentsFetchedEvent
-
-export interface BitbucketPrsFetchedEvent {
-    type: 'bitbucket-prs-fetched-event',
-    prsResponse: BitbucketPullRequestsResponse,
-    forWorkspace: string,
-    forRepoSlug: string,
-    forState: 'opened' | 'merged' | 'closed' | 'all' | 'locked'
-}
-
-export interface BitbucketSinglePrFetchedEvent {
-    type: 'bitbucket-single-pr-fetched-event',
-    pr: BitbucketPullRequest,
-    forWorkspace: string,
-    forRepoSlug: string,
-    forPrId: number
-}
-
-export interface BitbucketPrCommentsFetchedEvent {
-    type: 'bitbucket-pr-comments-fetched-event',
-    commentsResponse: BitbucketCommentsResponse,
-    forWorkspace: string,
-    forRepoSlug: string,
-    forPrId: number
-}
+import { BitbucketPullRequestsResponseSchema, BitbucketPullRequestSchema, BitbucketCommentsResponseSchema } from "../bitbucket/bitbucket-schema";
 
 // Bitbucket event schemas
 const BitbucketPrsFetchedEventSchema = Schema.Struct({
   type: Schema.Literal('bitbucket-prs-fetched-event'),
-  prsResponse: Schema.Unknown,
+  prsResponse: BitbucketPullRequestsResponseSchema,
   forWorkspace: Schema.String,
   forRepoSlug: Schema.String,
   forState: Schema.Union(
@@ -45,24 +16,32 @@ const BitbucketPrsFetchedEventSchema = Schema.Struct({
   )
 })
 
+export type BitbucketPrsFetchedEvent = Schema.Schema.Type<typeof BitbucketPrsFetchedEventSchema>
+
 const BitbucketSinglePrFetchedEventSchema = Schema.Struct({
   type: Schema.Literal('bitbucket-single-pr-fetched-event'),
-  pr: Schema.Unknown,
+  pr: BitbucketPullRequestSchema,
   forWorkspace: Schema.String,
   forRepoSlug: Schema.String,
   forPrId: Schema.Number
 })
 
+export type BitbucketSinglePrFetchedEvent = Schema.Schema.Type<typeof BitbucketSinglePrFetchedEventSchema>
+
 const BitbucketPrCommentsFetchedEventSchema = Schema.Struct({
   type: Schema.Literal('bitbucket-pr-comments-fetched-event'),
-  commentsResponse: Schema.Unknown,
+  commentsResponse: BitbucketCommentsResponseSchema,
   forWorkspace: Schema.String,
   forRepoSlug: Schema.String,
   forPrId: Schema.Number
 })
+
+export type BitbucketPrCommentsFetchedEvent = Schema.Schema.Type<typeof BitbucketPrCommentsFetchedEventSchema>
 
 export const BitbucketEventSchema = Schema.Union(
   BitbucketPrsFetchedEventSchema,
   BitbucketSinglePrFetchedEventSchema,
   BitbucketPrCommentsFetchedEventSchema
 )
+
+export type BitbucketEvent = Schema.Schema.Type<typeof BitbucketEventSchema>
