@@ -6,10 +6,11 @@ import { ActivePane } from '../userselection/userSelection';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 import { Colors } from '../colors';
-import { selectedUserSelectionEntryAtom, activePaneAtom, userSelectionsAtom } from '../store/appAtoms';
+import { activePaneAtom, userSelectionsAtom } from '../store/appAtoms';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { openUrl } from '../system/open-url';
 import path from 'path';
+import { selectedUserSelectionEntryAtom } from '../settings/settings-atom';
 
 interface UserSelectionPaneProps {
 }

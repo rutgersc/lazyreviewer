@@ -22,6 +22,7 @@ import { Effect, Console, Stream, Chunk } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../mergerequests/hooks/useRepositoryBranches";
+import { selectedUserSelectionEntryAtom } from "../settings/settings-atom";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 import { LogStorage, type LogEntry } from "../logging/logStorage";
 import { loadJobLog } from '../mergerequests/pipelinejob-log-effects';
@@ -59,7 +60,6 @@ export const selectedMrAtom = Atom.make(get =>  {
 })
 
 export const userSelectionsAtom = Atom.make<UserSelectionEntry[]>(mockUserSelections);
-export const selectedUserSelectionEntryAtom = Atom.make<number>(0);
 
 // Phase 3: Static/Simple Data
 export const groupsAtom = Atom.make(groups);

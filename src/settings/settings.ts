@@ -11,6 +11,7 @@ export interface Settings {
   ignoredMergeRequests: string[];
   seenMergeRequests: string[];
   pipelineJobImportance: Record<string, Record<string, JobImportance>>;
+  selectedUserSelectionEntry: number;
 }
 
 export const defaultSettings: Settings = {
@@ -18,7 +19,8 @@ export const defaultSettings: Settings = {
   repositoryColors: {},
   ignoredMergeRequests: [],
   seenMergeRequests: [],
-  pipelineJobImportance: {}
+  pipelineJobImportance: {},
+  selectedUserSelectionEntry: 0
 };
 
 // Color palette for repository colors - Dracula-compatible colors

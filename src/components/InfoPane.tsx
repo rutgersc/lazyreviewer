@@ -9,7 +9,8 @@ import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { useScrollBox } from '../hooks/useScrollBox';
 import { useAtom, useAtomSet, useAtomValue, Result } from '@effect-atom/atom-react';
-import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, selectedDiscussionIndexAtom, selectedActivityIndexAtom, selectedPipelineJobIndexAtom, selectedMrAtom, selectedUserSelectionEntryAtom, userSelectionsAtom, allJiraIssuesAtom, type InfoPaneTab } from '../store/appAtoms';
+import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, selectedDiscussionIndexAtom, selectedActivityIndexAtom, selectedPipelineJobIndexAtom, selectedMrAtom, userSelectionsAtom, allJiraIssuesAtom, type InfoPaneTab } from '../store/appAtoms';
+import { selectedUserSelectionEntryAtom } from '../settings/settings-atom';
 
 interface InfoPaneProps {
   activePane: ActivePane;

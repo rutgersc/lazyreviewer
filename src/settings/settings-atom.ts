@@ -84,4 +84,19 @@ export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) 
   })
 );
 
+export const selectedUserSelectionEntryAtom = Atom.writable(
+  (get) => {
+    return Result.match(get(settingsAtom), {
+      onInitial: () => 0,
+      onSuccess: ({ value }) => value.selectedUserSelectionEntry,
+      onFailure: () => 0
+    });
+  },
+  (ctx, newValue: number) => {
+    const settings = loadSettings();
+    settings.selectedUserSelectionEntry = newValue;
+    saveSettings(settings);
+  }
+);
+
 
