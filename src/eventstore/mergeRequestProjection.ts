@@ -1,96 +1,182 @@
 import { Effect, Stream } from "effect"
-import type { MergeRequest } from "../mergerequests/mergerequest-schema"
-import type { GitlabMergeRequest } from "../gitlab/gitlab-schema"
+import type { GitlabRawMergeRequest } from "../gitlab/gitlab-raw-schema"
+import type { BitbucketPullRequest } from "../bitbucket/bitbucketapi"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import type { Event } from "../events/events"
 import type { MergeRequestsCompactedEvent } from "../events/event-compaction-events"
 import { EventStorage } from "./eventStorage"
-import {
-  projectGitlabUserMrsFetchedEvent,
-  projectGitlabProjectMrsFetchedEvent,
-  projectGitlabSingleMrFetchedEvent
-} from "../gitlab/gitlab-projections"
 import type {
   GitlabUserMergeRequestsFetchedEvent,
   GitlabprojectMergeRequestsFetchedEvent,
   GitlabSingleMrFetchedEvent
 } from "../events/gitlab-events"
+import type {
+  BitbucketPrsFetchedEvent,
+  BitbucketSinglePrFetchedEvent
+} from "../events/bitbucket-events"
 
 export type CompactedMergeRequestsDependentEvents =
   | GitlabUserMergeRequestsFetchedEvent
   | GitlabprojectMergeRequestsFetchedEvent
   | GitlabSingleMrFetchedEvent
+  | BitbucketPrsFetchedEvent
+  | BitbucketSinglePrFetchedEvent
 
 export interface CompactedMergeRequestEntry {
-  mr: MergeRequest
+  mr: GitlabRawMergeRequest | BitbucketPullRequest
   forUsernames: string[]
-  forState: MergeRequestState
+  forState: MergeRequestState | 'opened' | 'merged' | 'closed' | 'all' | 'locked' // Update to include Bitbucket states
   forProjectPath: string
-  forIid: string
+  forIid: string | number
 }
 
 export type CompactedMergeRequestsState = Map<string, CompactedMergeRequestEntry>
 
-const getMrKey = (projectPath: string, mrId: string): string =>
+const getMrKey = (projectPath: string, mrId: string | number): string =>
   `${projectPath}::${mrId}`
+
+// Helpers to convert Query nodes to GitlabRawMergeRequest
+
+// 1. For GitlabUserMergeRequestsFetchedEvent (MRsQuery)
+// The type is deeply nested: MRsQuery['users']['nodes'][number]['authoredMergeRequests']['nodes'][number]
+// We can extract this type or define it. Since we want type safety from the event type:
+type UserMrNode = NonNullable<
+  NonNullable<
+    NonNullable<
+      NonNullable<GitlabUserMergeRequestsFetchedEvent['mrs']['users']>['nodes']
+    >[number]
+  >['authoredMergeRequests']
+>['nodes'] extends (infer U)[] | readonly (infer U)[] | null | undefined ? NonNullable<U> : never
+
+const mapUserMrToRaw = (node: UserMrNode): GitlabRawMergeRequest => {
+  // User MR nodes already have 'name' (not title) so they match GitlabRawMergeRequest structure closely
+  // We just need to cast it because of strict null checks or minor mismatches if any.
+  // In MRsQuery: name is 'name', in GitlabRawMergeRequest: name is 'name'.
+  return node satisfies GitlabRawMergeRequest as GitlabRawMergeRequest
+}
+
+// 2. For GitlabprojectMergeRequestsFetchedEvent (ProjectMRsQuery)
+// Type: ProjectMRsQuery['project']['mergeRequests']['nodes'][number]
+type ProjectMrNode = NonNullable<
+  NonNullable<
+    NonNullable<GitlabprojectMergeRequestsFetchedEvent['mrs']['project']>['mergeRequests']
+  >['nodes']
+>[number]
+
+const mapProjectMrToRaw = (node: ProjectMrNode): GitlabRawMergeRequest => {
+  if (!node) throw new Error("Project MR node is null")
+  const { title, ...rest } = node
+  return {
+    ...rest,
+    name: title, // Map title to name
+  } satisfies GitlabRawMergeRequest as GitlabRawMergeRequest
+}
+
+// 3. For GitlabSingleMrFetchedEvent (SingleMrQuery)
+// Type: SingleMrQuery['project']['mergeRequest']
+type SingleMrNode = NonNullable<
+  NonNullable<GitlabSingleMrFetchedEvent['mr']['project']>['mergeRequest']
+>
+
+const mapSingleMrToRaw = (node: SingleMrNode): GitlabRawMergeRequest => {
+  const { title, ...rest } = node
+  return {
+    ...rest,
+    name: title, // Map title to name
+  } satisfies GitlabRawMergeRequest
+}
 
 export const projectMergeRequests = (
   state: CompactedMergeRequestsState,
   event: CompactedMergeRequestsDependentEvents
 ): CompactedMergeRequestsState => {
-  const newState = new Map(state)
-
   switch (event.type) {
     case 'gitlab-user-mrs-fetched-event': {
-      const gitlabMrs = projectGitlabUserMrsFetchedEvent(event)
-
-      gitlabMrs.forEach(gitlabMr => {
-        const key = getMrKey(gitlabMr.project.fullPath, gitlabMr.iid)
-        newState.set(key, {
-          mr: ((gitlabMr: GitlabMergeRequest): MergeRequest => gitlabMr)(gitlabMr),
-          forUsernames: event.forUsernames,
-          forState: event.forState,
-          forProjectPath: gitlabMr.project.fullPath,
-          forIid: gitlabMr.iid
+      const newState = new Map(state)
+      const users = event.mrs.users?.nodes || []
+      users.forEach(user => {
+        if (!user) return
+        const mrs = user.authoredMergeRequests?.nodes || []
+        mrs.forEach(mr => {
+          if (!mr) return
+          const rawMr = mapUserMrToRaw(mr)
+          const key = getMrKey(rawMr.project.fullPath, rawMr.iid)
+          newState.set(key, {
+            mr: rawMr,
+            forUsernames: [...event.forUsernames],
+            forState: event.forState,
+            forProjectPath: rawMr.project.fullPath,
+            forIid: rawMr.iid
+          })
         })
       })
-
       return newState
     }
 
     case 'gitlab-project-mrs-fetched-event': {
-      const gitlabMrs = projectGitlabProjectMrsFetchedEvent(event)
-
-      gitlabMrs.forEach(gitlabMr => {
-        const key = getMrKey(gitlabMr.project.fullPath, gitlabMr.iid)
+      const newState = new Map(state)
+      const mrs = event.mrs.project?.mergeRequests?.nodes || []
+      mrs.forEach(mr => {
+        if (!mr) return
+        const rawMr = mapProjectMrToRaw(mr)
+        const key = getMrKey(rawMr.project.fullPath, rawMr.iid)
         newState.set(key, {
-          mr: ((gitlabMr: GitlabMergeRequest): MergeRequest => gitlabMr)(gitlabMr),
-          forUsernames: [gitlabMr.author],
+          mr: rawMr,
+          forUsernames: [rawMr.author?.name || ''],
           forState: event.forState,
           forProjectPath: event.forProjectPath,
-          forIid: gitlabMr.iid
+          forIid: rawMr.iid
         })
       })
-
       return newState
     }
 
     case 'gitlab-single-mr-fetched-event': {
-      const gitlabMr = projectGitlabSingleMrFetchedEvent(event)
+      const newState = new Map(state)
+      const mr = event.mr.project?.mergeRequest
+      if (!mr) return newState
 
-      if (!gitlabMr) {
-        return newState
-      }
-
-      const key = getMrKey(gitlabMr.project.fullPath, gitlabMr.iid)
+      const rawMr = mapSingleMrToRaw(mr)
+      const key = getMrKey(rawMr.project.fullPath, rawMr.iid)
       newState.set(key, {
-        mr: ((gitlabMr: GitlabMergeRequest): MergeRequest => gitlabMr)(gitlabMr),
-        forUsernames: [gitlabMr.author],
-        forState: 'all',
+        mr: rawMr,
+        forUsernames: [rawMr.author?.name || ''],
+        forState: 'all', // Single fetch implies specific targeting
         forProjectPath: event.forProjectPath,
         forIid: event.forIid
       })
+      return newState
+    }
 
+    case 'bitbucket-prs-fetched-event': {
+      const newState = new Map(state)
+      const prs = event.prsResponse.values
+      prs.forEach(pr => {
+        const repoFullName = pr.destination.repository.full_name
+        const key = getMrKey(repoFullName, pr.id)
+        newState.set(key, {
+          mr: pr,
+          forUsernames: [pr.author.display_name],
+          forState: event.forState,
+          forProjectPath: repoFullName,
+          forIid: pr.id
+        })
+      })
+      return newState
+    }
+
+    case 'bitbucket-single-pr-fetched-event': {
+      const newState = new Map(state)
+      const pr = event.pr
+      const repoFullName = pr.destination.repository.full_name
+      const key = getMrKey(repoFullName, pr.id)
+      newState.set(key, {
+        mr: pr,
+        forUsernames: [pr.author.display_name],
+        forState: 'all',
+        forProjectPath: repoFullName,
+        forIid: pr.id
+      })
       return newState
     }
   }
@@ -99,7 +185,9 @@ export const projectMergeRequests = (
 const isCompactedMergeRequestsDependentEvent = (event: Event): event is CompactedMergeRequestsDependentEvents =>
   event.type === 'gitlab-user-mrs-fetched-event' ||
   event.type === 'gitlab-project-mrs-fetched-event' ||
-  event.type === 'gitlab-single-mr-fetched-event'
+  event.type === 'gitlab-single-mr-fetched-event' ||
+  event.type === 'bitbucket-prs-fetched-event' ||
+  event.type === 'bitbucket-single-pr-fetched-event'
 
 export const buildCompactedStateFromFirst10Events = Effect.gen(function* () {
   const eventStorage = yield* EventStorage
