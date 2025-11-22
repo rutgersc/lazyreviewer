@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import type { UserSelectionEntry } from '../userselection/userSelection';
@@ -6,27 +6,38 @@ import { ActivePane } from '../userselection/userSelection';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 import { Colors } from '../colors';
-import { activePaneAtom, userSelectionsAtom } from '../store/appAtoms';
+import { activePaneAtom, userSelectionsAtom, selectedUserSelectionEntryAtom } from '../store/appAtoms';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { openUrl } from '../system/open-url';
 import path from 'path';
-import { selectedUserSelectionEntryAtom } from '../settings/settings-atom';
+import { selectedUserSelectionEntryIdAtom } from '../settings/settings-atom';
+import { loadSettings } from '../settings/settings';
 
 interface UserSelectionPaneProps {
 }
 
+let once = false;
+
 export default function UserSelectionPane({ }: UserSelectionPaneProps) {
   const activePane = useAtomValue(activePaneAtom);
-  const [selectedUserSelectionEntry] = useAtom(selectedUserSelectionEntryAtom);
+  const [selectedUserSelectionEntryId, setSelectedUserSelectionEntryId] = useAtom(selectedUserSelectionEntryIdAtom);
   const userSelections = useAtomValue(userSelectionsAtom);
+  const selectedEntry = useAtomValue(selectedUserSelectionEntryAtom);
 
   const isActive = activePane === ActivePane.UserSelection;
-  const [highlightIndex, setHighlightIndex] = useState(selectedUserSelectionEntry);
+  const [highlightIndex, setHighlightIndex] = useState(0);
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
     lookahead: 2,
   });
 
-  const setSelectedUserSelectionEntry = useAtomSet(selectedUserSelectionEntryAtom)
+  useEffect(() => {
+    if (!once && selectedEntry !== undefined) {
+      const index = userSelections.indexOf(selectedEntry);
+      setHighlightIndex(index);
+      scrollToItem(index);
+      once = true;
+    }
+  }, [selectedUserSelectionEntryId, selectedEntry]);
 
   const handleTitleClick = useDoubleClick<void>({
     onDoubleClick: () => {
@@ -62,9 +73,13 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
         scrollToItem(newIndex);
         break;
       }
-      case 'space':
-        setSelectedUserSelectionEntry(highlightIndex)
+      case 'space': {
+        const selectedEntry = userSelections[highlightIndex];
+        if (selectedEntry) {
+          setSelectedUserSelectionEntryId(selectedEntry.userSelectionEntryId);
+        }
         break;
+      }
 
       case 'return': {
         // const highlightedItem = getItemByIndex(navState, highlightIndex);
@@ -84,7 +99,7 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
 
   const renderItem = (item: UserSelectionEntry, index: number) => {
     const isHighlighted = index === highlightIndex;
-    const isSelected = index === selectedUserSelectionEntry;
+    const isSelected = item.userSelectionEntryId === selectedUserSelectionEntryId;
     const prefix = isSelected ? '* ' : '  ';
 
     const icon = item.selection.length > 1
@@ -102,7 +117,7 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
         key={`${item.userSelectionEntryId}`}
         onMouseDown={() => {
           setHighlightIndex(index);
-          setSelectedUserSelectionEntry(index);
+          setSelectedUserSelectionEntryId(item.userSelectionEntryId);
         }}
         style={{
           backgroundColor: isHighlighted ? '#191a21' : 'transparent'

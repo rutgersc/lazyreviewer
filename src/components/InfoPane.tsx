@@ -8,9 +8,8 @@ import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { useScrollBox } from '../hooks/useScrollBox';
-import { useAtom, useAtomSet, useAtomValue, Result } from '@effect-atom/atom-react';
-import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, selectedDiscussionIndexAtom, selectedActivityIndexAtom, selectedPipelineJobIndexAtom, selectedMrAtom, userSelectionsAtom, allJiraIssuesAtom, type InfoPaneTab } from '../store/appAtoms';
-import { selectedUserSelectionEntryAtom } from '../settings/settings-atom';
+import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedDiscussionIndexAtom, selectedActivityIndexAtom, selectedPipelineJobIndexAtom, selectedMrAtom, selectedUserSelectionEntryAtom, allJiraIssuesAtom, type InfoPaneTab } from '../store/appAtoms';
 
 interface InfoPaneProps {
   activePane: ActivePane;
@@ -32,9 +31,7 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
   const [selectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
 
   const selectedMergeRequest = useAtomValue(selectedMrAtom);
-  const [selectedUserSelectionEntryIndex] = useAtom(selectedUserSelectionEntryAtom);
-  const userSelections = useAtomValue(userSelectionsAtom);
-  const selectedUserSelectionEntry = userSelections[selectedUserSelectionEntryIndex];
+  const selectedUserSelectionEntry = useAtomValue(selectedUserSelectionEntryAtom);
 
   const scrollBoxRef = useScrollBox('infoPane', { scrollAmount: 3 });
 

@@ -22,7 +22,7 @@ import { Effect, Console, Stream, Chunk } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { loadSettings, saveSettings } from "../settings/settings";
 import type { BranchDifference } from "../mergerequests/hooks/useRepositoryBranches";
-import { selectedUserSelectionEntryAtom } from "../settings/settings-atom";
+import { selectedUserSelectionEntryIdAtom } from "../settings/settings-atom";
 import { refetchMrPipeline } from '../mergerequests/mergerequests-effects';
 import { LogStorage, type LogEntry } from "../logging/logStorage";
 import { loadJobLog } from '../mergerequests/pipelinejob-log-effects';
@@ -61,6 +61,19 @@ export const selectedMrAtom = Atom.make(get =>  {
 
 export const userSelectionsAtom = Atom.make<UserSelectionEntry[]>(mockUserSelections);
 
+// Derived: Map for O(1) lookup by ID
+export const userSelectionsByIdAtom = Atom.map(
+  userSelectionsAtom,
+  (selections) => new Map(selections.map(s => [s.userSelectionEntryId, s]))
+);
+
+// Derived: Selected user selection entry
+export const selectedUserSelectionEntryAtom = Atom.make((get) => {
+  const selectedId = get(selectedUserSelectionEntryIdAtom);
+  const byId = get(userSelectionsByIdAtom);
+  return selectedId ? byId.get(selectedId) : undefined;
+});
+
 // Phase 3: Static/Simple Data
 export const groupsAtom = Atom.make(groups);
 export const usersAtom = Atom.make(users);
@@ -79,17 +92,15 @@ export const jobHistoryLimitAtom = Atom.make<number>(15);
 export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
   Effect.gen(function* () {
     const mergeRequests = yield* Result.toExit(get(mergeRequestsAtom));
-    const selectedMrIndex = get(selectedMrIndexAtom);
-    const userSelections = get(userSelectionsAtom);
-    const selectedUserSelectionEntry = get(selectedUserSelectionEntryAtom);
 
+    const selectedMrIndex = get(selectedMrIndexAtom);
     const selectedMr = mergeRequests[selectedMrIndex];
     if (!selectedMr) {
       yield* Console.log('[Pipeline] No MR selected');
       return;
     }
 
-    const selectionEntry = userSelections[selectedUserSelectionEntry];
+    const selectionEntry = get(selectedUserSelectionEntryAtom);
     if (!selectionEntry) {
       yield* Console.log('[Pipeline] No selection entry found');
       return;
@@ -237,7 +248,7 @@ const filterMrsByCacheKey = (allMrs: ReadonlyMap<string, MergeRequest>, cacheKey
 
 // Filtered MRs based on current user selection and state
 export const filteredMrsAtom = Atom.make((get) => {
-  const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
+  const selectionEntry = get(selectedUserSelectionEntryAtom);
   if (!selectionEntry) {
     return [];
   }
@@ -284,7 +295,7 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     return Effect.gen(function* () {
-      const selectionEntry = get(userSelectionsAtom)[get(selectedUserSelectionEntryAtom)];
+      const selectionEntry = get(selectedUserSelectionEntryAtom);
       if (!selectionEntry) {
         return;
       }
