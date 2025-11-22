@@ -6,7 +6,6 @@ import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
-import type { UserSelectionEntry } from '../userselection/userSelection';
 import { copyToClipboard } from '../system/clipboard';
 import { formatDiscussionsForClipboard } from '../gitlab/display/gitlabDiscussionFormatter';
 import { useAtom, useAtomValue } from '@effect-atom/atom-react';
@@ -15,23 +14,22 @@ import { infoPaneTabAtom, selectedDiscussionIndexAtom, activeModalAtom } from '.
 interface OverviewProps {
   activePane: ActivePane;
   selectedMergeRequest: MergeRequest | undefined;
-  selectedUserSelectionEntry: UserSelectionEntry | undefined;
 }
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
-import { useEffect } from 'react';
 import { openUrl } from '../system/open-url';
+import { selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
 
 export default function Overview({
   activePane,
   selectedMergeRequest,
-  selectedUserSelectionEntry
 }: OverviewProps) {
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const activeModal = useAtomValue(activeModalAtom);
   const [selectedDiscussionIndex, setSelectedDiscussionIndex] = useAtom(selectedDiscussionIndexAtom);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+  const selectedUserSelectionEntry = useAtomValue(selectedUserSelectionEntryAtom);
 
   const handleSelectDiscussion = (index: number) => {
       setSelectedDiscussionIndex(index);
