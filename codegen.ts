@@ -15,7 +15,7 @@ const config: CodegenConfig = {
   ],
   documents: ['src/graphql/**/*.graphql'],
   generates: {
-    // TypeScript types generation
+    // TypeScript types generation - files next to .graphql files
     'src/graphql/': {
       preset: 'near-operation-file',
       presetConfig: {
@@ -40,19 +40,19 @@ const config: CodegenConfig = {
         },
       },
     },
-    // Effect Schema generation
-    // @ts-ignore - GraphQL Codegen allows duplicate keys for same path with different presets
-    'src/graphql/': {
+    // Effect Schema generation - files in schemas/ subdirectory
+    'src/graphql/schemas/': {
       preset: 'near-operation-file',
       presetConfig: {
         extension: '.schema.ts',
-        baseTypesPath: 'generated/gitlab-base-types.schema',
+        baseTypesPath: '../generated/gitlab-base-types.schema',
+        folder: 'schemas',
       },
       plugins: [
         './codegen-plugin-effect-schema.ts',
       ],
       config: {
-        baseTypesPath: './generated/gitlab-base-types.schema',
+        baseTypesPath: '../generated/gitlab-base-types.schema',
       },
     },
     // Base types (TypeScript)

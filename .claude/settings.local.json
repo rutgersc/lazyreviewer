@@ -18,7 +18,12 @@
       "Bash(git show:*)",
       "Bash(bun --print:*)",
       "Bash(mkdir:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(nul)",
+      "Bash(rm:*)",
+      "Bash(bunx graphql-codegen:*)",
+      "WebFetch(domain:the-guild.dev)",
+      "WebFetch(domain:www.graphql-code-generator.com)"
     ],
     "deny": [],
     "ask": []

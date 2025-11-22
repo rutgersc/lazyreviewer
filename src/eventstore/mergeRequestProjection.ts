@@ -26,15 +26,10 @@ export interface CompactedMergeRequestEntry {
   forUsernames: string[]
   forState: MergeRequestState
   forProjectPath: string
-  forMrId: string
+  forIid: string
 }
 
 export type CompactedMergeRequestsState = Map<string, CompactedMergeRequestEntry>
-
-const gitlabMergeRequestToMergeRequest = (gitlabMr: GitlabMergeRequest): MergeRequest => ({
-  ...gitlabMr,
-  jiraIssues: []
-})
 
 const getMrKey = (projectPath: string, mrId: string): string =>
   `${projectPath}::${mrId}`
@@ -52,11 +47,11 @@ export const projectMergeRequests = (
       gitlabMrs.forEach(gitlabMr => {
         const key = getMrKey(gitlabMr.project.fullPath, gitlabMr.iid)
         newState.set(key, {
-          mr: gitlabMergeRequestToMergeRequest(gitlabMr),
+          mr: ((gitlabMr: GitlabMergeRequest): MergeRequest => gitlabMr)(gitlabMr),
           forUsernames: event.forUsernames,
           forState: event.forState,
           forProjectPath: gitlabMr.project.fullPath,
-          forMrId: gitlabMr.iid
+          forIid: gitlabMr.iid
         })
       })
 
@@ -69,11 +64,11 @@ export const projectMergeRequests = (
       gitlabMrs.forEach(gitlabMr => {
         const key = getMrKey(gitlabMr.project.fullPath, gitlabMr.iid)
         newState.set(key, {
-          mr: gitlabMergeRequestToMergeRequest(gitlabMr),
+          mr: ((gitlabMr: GitlabMergeRequest): MergeRequest => gitlabMr)(gitlabMr),
           forUsernames: [gitlabMr.author],
           forState: event.forState,
           forProjectPath: event.forProjectPath,
-          forMrId: gitlabMr.iid
+          forIid: gitlabMr.iid
         })
       })
 
@@ -89,11 +84,11 @@ export const projectMergeRequests = (
 
       const key = getMrKey(gitlabMr.project.fullPath, gitlabMr.iid)
       newState.set(key, {
-        mr: gitlabMergeRequestToMergeRequest(gitlabMr),
+        mr: ((gitlabMr: GitlabMergeRequest): MergeRequest => gitlabMr)(gitlabMr),
         forUsernames: [gitlabMr.author],
         forState: 'all',
         forProjectPath: event.forProjectPath,
-        forMrId: event.forMrId
+        forIid: event.forIid
       })
 
       return newState

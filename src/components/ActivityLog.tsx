@@ -8,8 +8,8 @@ import type { PipelineJob } from "../gitlab/gitlab-graphql";
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
-import { useAtom, useAtomValue, useAtomSet } from "@effect-atom/atom-react";
-import { infoPaneTabAtom, selectedActivityIndexAtom, activeModalAtom, loadJobLogAtom } from "../store/appAtoms";
+import { useAtom, useAtomValue, useAtomSet, Result } from "@effect-atom/atom-react";
+import { infoPaneTabAtom, selectedActivityIndexAtom, activeModalAtom, loadJobLogAtom, allJiraIssuesAtom } from "../store/appAtoms";
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useEffect } from 'react';
 
@@ -162,7 +162,14 @@ const extractEvents = (mr: MergeRequest): Event[] => {
     }
   }
 
-  mr.jiraIssues.forEach(issue => {
+  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
+
+  const jiraIssues = mr?.jiraIssueKeys.flatMap(k => {
+    const i = jiraIssuesMap.get(k);
+    return i ? [i] : [];
+  }) || [];
+
+  jiraIssues.forEach(issue => {
     issue.fields.comment.comments.forEach(comment => {
       // Convert Jira API URL to browse URL with focused comment
       // issue.self is like "https://scisure.atlassian.net/rest/api/3/issue/66048"

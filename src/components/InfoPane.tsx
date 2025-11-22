@@ -43,13 +43,7 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
         stage.jobs.map((job: PipelineJob) => ({ stage, job }))
       );
 
-  const allJiraIssuesResult = useAtomValue(allJiraIssuesAtom);
-
-  const jiraIssuesMap = Result.match(allJiraIssuesResult, {
-    onInitial: () => new Map(),
-    onSuccess: (success) => success.value,
-    onFailure: () => new Map()
-  });
+  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
 
   const jiraIssues = selectedMergeRequest?.jiraIssueKeys.flatMap(key => {
     const issue = jiraIssuesMap.get(key);

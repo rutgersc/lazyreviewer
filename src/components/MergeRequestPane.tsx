@@ -18,10 +18,13 @@ import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, activePaneAtom, activeModalAtom, currentUserAtom, ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom } from "../store/appAtoms";
+import { filterMrStateAtom, selectedMrIndexAtom, activePaneAtom, activeModalAtom, currentUserAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom } from "../store/appAtoms";
 import { getSingleMr } from "../gitlab/gitlab-graphql";
 import { Effect, Runtime } from "effect";
 import type { JiraIssue } from "../jira/jira-schema";
+import { missingMrsDiffAtom, isReconcilingAtom } from "../mergerequests/mr-diff-tracking";
+import { useReconcileMissingMrs } from "../mergerequests/mr-reconciliation";
+import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom } from "../settings/settings-atom";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -154,15 +157,10 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
 
 const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap, jiraIssuesMap }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue> }) => {
   const currentUser = useAtomValue(currentUserAtom);
-  const seenMergeRequestsResult = useAtomValue(seenMergeRequestsAtom);
-  const seenMergeRequests: Set<string> = Result.match(seenMergeRequestsResult, {
-    onInitial: () => new Set<string>(),
-    onSuccess: (success) => success.value as Set<string>,
-    onFailure: () => new Set<string>()
-  });
+  const seenMergeRequests = useAtomValue(seenMergeRequestsAtom);
+  const isSeen = seenMergeRequests.has(mr.id);
   const isApprovedByMe = mr.approvedBy.some(approver => approver.username === currentUser);
   const isMyMr = mr.author === currentUser;
-  const isSeen = seenMergeRequests.has(mr.id);
   const projectColor = repoColor || Colors.SUCCESS;
   const branchDifference = branchDifferenceMap.get(mr.id);
 
@@ -452,23 +450,25 @@ export default function MergeRequestPane({}: {}) {
   const [filterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
   const currentUser = useAtomValue(currentUserAtom);
 
-  const allJiraIssuesResult = useAtomValue(allJiraIssuesAtom);
-  const jiraIssuesMap = Result.match(allJiraIssuesResult, {
-    onInitial: () => new Map<string, JiraIssue>(),
-    onSuccess: (success) => success.value,
-    onFailure: () => new Map<string, JiraIssue>()
-  });
+  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
 
   const toggleIgnoreMergeRequest = useAtomSet(toggleIgnoreMergeRequestAtom);
   const toggleSeenMergeRequest = useAtomSet(toggleSeenMergeRequestAtom);
-  const ignoredMergeRequestsResult = useAtomValue(ignoredMergeRequestsAtom);
-  const ignoredMergeRequests: Set<string> = Result.match(ignoredMergeRequestsResult, {
-    onInitial: () => new Set<string>(),
-    onSuccess: (success) => success.value as Set<string>,
-    onFailure: () => new Set<string>()
-  });
+  const ignoredMergeRequests = useAtomValue(ignoredMergeRequestsAtom);
   const refetchSelectedMrPipeline = useAtomSet(refetchSelectedMrPipelineAtom, { mode: 'promiseExit' });
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
+  const { missingIds, reconcile, isReconciling } = useReconcileMissingMrs();
+
+  const allMrs = useAtomValue(allMrsAtom);
+  const openMrs = useAtomValue(missingMrsDiffAtom);
+
+  if (Result.isSuccess(openMrs) && Result.isSuccess(allMrs)){
+    const missingNames = Array.from(openMrs.value.detectedMissingMrIds).map(id => {
+      const mr = allMrs.value.mrsByGid.get(id);
+      return mr ? mr.title : id;
+    });
+    console.log("detectedMissingMrIds", missingNames);
+  }
 
   const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -744,9 +744,26 @@ export default function MergeRequestPane({}: {}) {
               fg: Colors.INFO
              }}
              wrapMode='none'
-          >
+           >
               {" >> refresh <<"}
           </text>
+          {missingIds.length > 0 && !isReconciling && (
+             <text
+                onMouseDown={() => reconcile()}
+                style={{ fg: Colors.WARNING }}
+                wrapMode='none'
+             >
+                {` >> reconcile (${missingIds.length}) << `}
+             </text>
+          )}
+          {isReconciling && (
+            <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+              <Spinner />
+              <text style={{ fg: Colors.ERROR }} wrapMode='none'>
+                Syncing updated MRs...
+              </text>
+            </box>
+          )}
         </box>
       )}
 

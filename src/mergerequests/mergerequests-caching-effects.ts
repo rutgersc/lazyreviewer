@@ -5,15 +5,20 @@ import { type MergeRequest } from "./mergerequest-schema"
 import { fetchMergeRequestsByProject, fetchMergeRequests } from "./mergerequests-effects"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import { EventStorage, type Event } from "../events/events"
-import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent } from "../events/gitlab-events"
+import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent } from "../events/gitlab-events"
 import type { JiraIssuesFetchedEvent } from "../events/jira-events"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
 import type { SearchJiraIssuesError, JiraIssue } from "../jira/jira-service"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
-import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent } from "../gitlab/gitlab-graphql"
+import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getSingleMrAsEvent } from "../gitlab/gitlab-graphql"
 import { loadJiraTicketsAsEvent, projectJiraIssuesFetchedEvent } from "../jira/jira-service"
 import type { GitlabMergeRequest } from "../gitlab/gitlab-schema"
-import { projectGitlabProjectMrsFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
+import { projectGitlabProjectMrsFetchedEvent, projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent } from "../gitlab/gitlab-projections"
+
+import { projectOpenMrsAndDetectMissing, OpenMrsTrackingState, initialOpenMrsTrackingState, missingMrsDiffAtom, isReconcilingAtom } from "./mr-diff-tracking"
+
+// State for tracking open MRs per context to detect missing (closed/merged) MRs
+export { OpenMrsTrackingState, initialOpenMrsTrackingState, projectOpenMrsAndDetectMissing, missingMrsDiffAtom, isReconcilingAtom } from "./mr-diff-tracking"
 
 export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
   readonly usernames: readonly string[]
@@ -96,13 +101,21 @@ const findLatestProjectMrsEvent = (
 }
 
 // CQRS: Command side - ensures events exist
-export const decideFetchUserMrs = (usernames: string[], state: MergeRequestState): Effect.Effect<
+export const decideFetchUserMrs = (
+  usernames: string[],
+  state: MergeRequestState,
+  options?: {
+    trackingState: OpenMrsTrackingState,
+    resolveMrInfo: (id: string) => { projectPath: string, iid: string } | undefined
+  }
+): Effect.Effect<
   void,
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
   // Fetch new MR event
   const mrEvent = yield* getGitlabMrsAsEvent(usernames, state)
+
   yield* EventStorage.appendEvent(mrEvent)
 
   // Fetch Jira events
@@ -113,13 +126,21 @@ export const decideFetchUserMrs = (usernames: string[], state: MergeRequestState
 })
 
 // CQRS: Command side - ensures events exist
-export const decideFetchProjectMrs = (projectPath: string, state: MergeRequestState): Effect.Effect<
+export const decideFetchProjectMrs = (
+  projectPath: string,
+  state: MergeRequestState,
+  options?: {
+    trackingState: OpenMrsTrackingState,
+    resolveMrInfo: (id: string) => { projectPath: string, iid: string } | undefined
+  }
+): Effect.Effect<
   void,
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
   // Fetch new MR event
   const mrEvent = yield* getGitlabMrsByProjectAsEvent(projectPath, state);
+
   yield* EventStorage.appendEvent(mrEvent)
 
   // Fetch Jira events
@@ -162,6 +183,7 @@ export type MrRelevantEvent =
   | GitlabUserMergeRequestsFetchedEvent
   | GitlabprojectMergeRequestsFetchedEvent
   | JiraIssuesFetchedEvent
+  | GitlabSingleMrFetchedEvent
 
 // Global MR state - all MRs indexed by ID
 export class AllMrsState extends Data.TaggedClass("AllMrsState")<{
@@ -185,6 +207,18 @@ export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMr
       currentMap.set(gitlabMr.id, gitlabMr);
     });
 
+    return new AllMrsState({
+      mrsByGid: currentMap,
+      jiraIssuesByKey: currentJiraIssues,
+      timestamp: new Date()
+    });
+  }
+
+  if (event.type === 'gitlab-single-mr-fetched-event') {
+    const gitlabMr = projectGitlabSingleMrFetchedEvent(event);
+    if (gitlabMr) {
+      currentMap.set(gitlabMr.id, gitlabMr);
+    }
     return new AllMrsState({
       mrsByGid: currentMap,
       jiraIssuesByKey: currentJiraIssues,

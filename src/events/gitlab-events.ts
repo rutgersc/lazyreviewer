@@ -5,7 +5,7 @@ import type { MRsQuery } from "../graphql/mrs.generated";
 import type { ProjectMRsQuery } from "../graphql/project-mrs.generated";
 import type { SingleMrQuery } from "../graphql/single-mr.generated";
 import type { ProjectPipelinesJobHistoryQuery } from "../graphql/project-pipelines-job-history.generated";
-import { MRsQuerySchema } from "../graphql/mrs.schema";
+import { MRsQuerySchema } from "../graphql/schemas/mrs.schema";
 
 export type GitlabEvent =
     | GitlabUserMergeRequestsFetchedEvent
@@ -33,7 +33,7 @@ export interface GitlabSingleMrFetchedEvent {
     type: 'gitlab-single-mr-fetched-event',
     mr: SingleMrQuery,
     forProjectPath: string,
-    forMrId: string
+    forIid: string
 }
 
 export interface GitlabJobTraceFetchedEvent {

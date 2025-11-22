@@ -248,10 +248,14 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
     const fileName = sourceFileName || toKebabCase(queryType.replace('Query', ''));
     // Normalize the query type name to match GraphQL Codegen's normalization
     const normalizedQueryType = normalizeOperationName(queryType);
-    const localImports = [`import type { ${normalizedQueryType} } from "./${fileName}.generated"`];
+
+    // Derive the relative path prefix from baseTypesPath (e.g., '../' if baseTypesPath starts with '../')
+    const baseTypesPath = config.baseTypesPath || './generated/gitlab-base-types.schema';
+    const relativePrefix = baseTypesPath.startsWith('../') ? '../' : './';
+
+    const localImports = [`import type { ${normalizedQueryType} } from "${relativePrefix}${fileName}.generated"`];
 
     if (enumImports.length > 0) {
-      const baseTypesPath = config.baseTypesPath || './generated/gitlab-base-types.schema';
       const enumSchemas = enumImports.map((e: string) => `${e}Schema`).join(', ');
       localImports.push(`import { ${enumSchemas} } from "${baseTypesPath}"`);
     }

@@ -39,13 +39,7 @@ export default function App() {
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
-  const allJiraIssuesResult = useAtomValue(allJiraIssuesAtom);
-
-  const jiraIssuesMap = Result.match(allJiraIssuesResult, {
-    onInitial: () => new Map(),
-    onSuccess: (success) => success.value,
-    onFailure: () => new Map()
-  });
+  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
 
   const selectedMrJiraIssues = mergeRequests[selectedIndex]?.jiraIssueKeys.flatMap(key => {
     const issue = jiraIssuesMap.get(key);

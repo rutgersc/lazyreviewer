@@ -3,6 +3,8 @@ import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { Colors } from "../colors";
 import { formatCompactTime } from "../utils/formatting";
 import { extractTextFromJiraComment } from "../jira/jira-service";
+import { useAtomValue } from "@effect-atom/atom-react";
+import { allJiraIssuesAtom } from "../store/appAtoms";
 
 type EventType =
   | 'mr_created'
@@ -137,8 +139,15 @@ const extractEvents = (mr: MergeRequest): Event[] => {
     }
   }
 
+  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
+
+  const jiraIssues = mr?.jiraIssueKeys.flatMap(k => {
+    const i = jiraIssuesMap.get(k);
+    return i ? [i] : [];
+  }) || [];
+
   // Jira comments
-  mr.jiraIssues.forEach(issue => {
+  jiraIssues.forEach(issue => {
     issue.fields.comment.comments.forEach(comment => {
       events.push({
         timestamp: new Date(comment.created),

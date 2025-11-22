@@ -13,7 +13,7 @@ export interface Settings {
   pipelineJobImportance: Record<string, Record<string, JobImportance>>;
 }
 
-const defaultSettings: Settings = {
+export const defaultSettings: Settings = {
   repositoryPaths: {},
   repositoryColors: {},
   ignoredMergeRequests: [],

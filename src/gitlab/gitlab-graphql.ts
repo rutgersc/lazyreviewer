@@ -249,7 +249,8 @@ export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(functi
     try: () => sdk.ProjectPipelinesJobHistory({
       projectPath,
       jobName,
-      first: limit
+      first: limit,
+      after: null
     }),
     catch: cause => new FetchJobHistoryError({ cause })
   });
@@ -280,7 +281,7 @@ export const getSingleMrAsEvent = Effect.fn("getSingleMrAsEvent")(function* (pro
     type: 'gitlab-single-mr-fetched-event',
     mr: data,
     forProjectPath: projectPath,
-    forMrId: iid
+    forIid: iid
   };
 
   return event;

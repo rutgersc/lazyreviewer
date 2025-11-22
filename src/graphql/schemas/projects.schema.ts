@@ -1,7 +1,7 @@
-import * as Types from './generated/gitlab-base-types';
+import * as Types from '../generated/gitlab-base-types';
 
 import { Schema } from "effect"
-import type { ProjectsQuery } from "./projects.generated"
+import type { ProjectsQuery } from "../projects.generated"
 
 export const ProjectsQuerySchema: Schema.Schema<ProjectsQuery> = Schema.Struct({
   projects: Schema.NullOr(Schema.Struct({

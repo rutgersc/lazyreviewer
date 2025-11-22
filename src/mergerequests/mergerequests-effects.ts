@@ -14,13 +14,11 @@ import type { MRCacheKey, ProjectMRCacheKey } from "./mergerequests-caching-effe
 import { EventStorage } from "../events/events";
 import { projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections";
 
-function processMrsWithJira(mrs: GitlabMergeRequest[]): MergeRequest[] {
+function processMrs(mrs: GitlabMergeRequest[]): MergeRequest[] {
+  // TODO: move to own subscription
   ensurePipelineJobsInSettings(mrs);
 
   return mrs
-    .map((mr): MergeRequest => ({
-      ...mr
-    }))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 }
 
@@ -32,7 +30,7 @@ export const fetchMergeRequests = Effect.fn("getGitlabMrs")(function* (
 
   const mrs =  projectGitlabUserMrsFetchedEvent(yield* getGitlabMrsAsEvent(selectedUsernames as string[], state));
 
-  return processMrsWithJira(mrs);
+  return processMrs(mrs);
 });
 
 export class FetchMergeRequestsByProjectError extends Data.TaggedError("FetchMergeRequestsByProjectError")<{
@@ -55,7 +53,7 @@ export const fetchMergeRequestsByProject = Effect.fn("fetchMergeRequestsByProjec
 
   yield* Console.log(`Fetched ${mrs.length} merge requests`);
 
-  return processMrsWithJira(mrs);
+  return processMrs(mrs);
 })
 
 export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (

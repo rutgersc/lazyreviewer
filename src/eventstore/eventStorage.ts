@@ -75,7 +75,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
           }).pipe(
             Effect.catchAll((error) =>
               Effect.gen(function* () {
-                yield* Effect.logError(`Failed to load event file ${parsed.filename}: ${error}`)
+                yield* console.log(`Failed to load event file ${parsed.filename}: ${error}`)
                 return null
               })
             )

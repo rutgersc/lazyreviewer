@@ -3,7 +3,19 @@ import type { MergeRequest } from "../mergerequests/mergerequest-schema";
 import type { UserSelectionEntry } from "../userselection/userSelection";
 import { ActivePane, extractSelectionData } from "../userselection/userSelection";
 import { groups, mockUserSelections, users } from "../data/usersAndGroups";
-import { type CacheKey, type MrRelevantEvent, AllMrsState, projectAllMrs, decideFetchUserMrs, decideFetchProjectMrs } from "../mergerequests/mergerequests-caching-effects";
+import {
+  type CacheKey,
+  type MrRelevantEvent,
+  AllMrsState,
+  projectAllMrs,
+  decideFetchUserMrs,
+  decideFetchProjectMrs
+} from "../mergerequests/mergerequests-caching-effects";
+import {
+  initialOpenMrsTrackingState,
+  projectOpenMrsAndDetectMissing,
+  OpenMrsTrackingState
+} from "../mergerequests/mr-diff-tracking";
 import { EventStorage, type Event } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console, Stream, Chunk } from "effect";
@@ -54,15 +66,6 @@ export const groupsAtom = Atom.make(groups);
 export const usersAtom = Atom.make(users);
 export const currentUserAtom = Atom.make<string>('r.schoorstra');
 
-// Phase 4: Persisted Sets with Settings Integration
-export const ignoredMergeRequestsAtom = appAtomRuntime.atom(
-  Effect.sync(() => new Set<string>(loadSettings().ignoredMergeRequests))
-);
-
-export const seenMergeRequestsAtom = appAtomRuntime.atom(
-  Effect.sync(() => new Set<string>(loadSettings().seenMergeRequests))
-);
-
 // Phase 5: Branch Differences
 export const branchDifferencesAtom = Atom.make<Map<string, BranchDifference>>(new Map());
 
@@ -109,56 +112,6 @@ export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
 // Phase 8: Git State
 export const lastTargetBranchAtom = Atom.make<string | null>(null);
 
-export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
-  Effect.gen(function* () {
-    const currentIgnoredResult = get(ignoredMergeRequestsAtom);
-    const currentIgnored = Result.match(currentIgnoredResult, {
-      onInitial: () => new Set<string>(),
-      onSuccess: (success) => success.value,
-      onFailure: () => new Set<string>()
-    });
-
-    const newIgnored = new Set(currentIgnored);
-
-    if (newIgnored.has(mrId)) {
-      newIgnored.delete(mrId);
-    } else {
-      newIgnored.add(mrId);
-    }
-
-    yield* Effect.sync(() => {
-      const settings = loadSettings();
-      settings.ignoredMergeRequests = Array.from(newIgnored);
-      saveSettings(settings);
-    });
-  })
-);
-
-export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
-  Effect.gen(function* () {
-    const currentSeenResult = get(seenMergeRequestsAtom);
-    const currentSeen = Result.match(currentSeenResult, {
-      onInitial: () => new Set<string>(),
-      onSuccess: (success) => success.value,
-      onFailure: () => new Set<string>()
-    });
-
-    const newSeen = new Set(currentSeen);
-
-    if (newSeen.has(mrId)) {
-      newSeen.delete(mrId);
-    } else {
-      newSeen.add(mrId);
-    }
-
-    yield* Effect.sync(() => {
-      const settings = loadSettings();
-      settings.seenMergeRequests = Array.from(newSeen);
-      saveSettings(settings);
-    });
-  })
-);
-
 export const filterMrStateAtom = Atom.make<MergeRequestState>('opened');
 
 // Phase 1: UI Navigation State
@@ -188,7 +141,7 @@ export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 export const selectedActivityIndexAtom = Atom.make<number>(0);
 export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
-import { JiraIssue } from "../jira/jira-service";
+import type { JiraIssue } from "../jira/jira-service";
 
 export const allMrsAtom = appAtomRuntime.atom(
   Stream.unwrap(
@@ -199,6 +152,7 @@ export const allMrsAtom = appAtomRuntime.atom(
       const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
         return event.type === 'gitlab-user-mrs-fetched-event' ||
                event.type === 'gitlab-project-mrs-fetched-event' ||
+               event.type === 'gitlab-single-mr-fetched-event' ||
                event.type === 'jira-issues-fetched-event';
       };
 
@@ -218,9 +172,40 @@ export const allMrsAtom = appAtomRuntime.atom(
 
 export const allJiraIssuesAtom = Atom.map(
   allMrsAtom,
-  (result) => Result.map(result, (state: AllMrsState) => state.jiraIssuesByKey)
+  (result) =>
+    Result.match(result, {
+      onInitial: () => new Map<string, JiraIssue>(),
+      onSuccess: (success) => success.value.jiraIssuesByKey,
+      onFailure: () => new Map<string, JiraIssue>()
+    })
 );
 
+// Removed duplicate openMrsTrackingAtom as it is now in mr-diff-tracking.ts and used there.
+// Consumers should import from there or we can re-export if needed, but it seems
+// the intention was to move it entirely.
+
+export const openMrsTrackingAtom = appAtomRuntime.atom(
+  Stream.unwrap(
+    Effect.gen(function* () {
+
+      const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
+        return event.type === 'gitlab-user-mrs-fetched-event' ||
+               event.type === 'gitlab-project-mrs-fetched-event' ||
+               event.type === 'gitlab-single-mr-fetched-event';
+      };
+
+      return (yield* EventStorage.eventsStream).pipe(
+        Stream.filter(isMrRelevantEvent),
+        Stream.scan(
+          initialOpenMrsTrackingState,
+          (state: OpenMrsTrackingState, event) =>
+            projectOpenMrsAndDetectMissing(state, event)
+        )
+      );
+    })
+  ),
+  { initialValue: initialOpenMrsTrackingState }
+).pipe(Atom.keepAlive);
 
 // Filter MRs based on CacheKey criteria
 const filterMrsByCacheKey = (allMrs: ReadonlyMap<string, MergeRequest>, cacheKey: CacheKey): readonly MergeRequest[] => {
@@ -307,6 +292,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
       const groupsList = get(groupsAtom);
       const filterMrState = get(filterMrStateAtom);
       const cacheKey = extractSelectionData(selectionEntry, groupsList, filterMrState);
+
       if (cacheKey._tag === "UserMRs") {
         yield* decideFetchUserMrs(cacheKey.usernames as string[], cacheKey.state)
       } else {

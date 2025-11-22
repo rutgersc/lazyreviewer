@@ -1,8 +1,8 @@
-import * as Types from './generated/gitlab-base-types';
+import * as Types from '../generated/gitlab-base-types';
 
 import { Schema } from "effect"
-import type { ProjectMRsQuery } from "./project-mrs.generated"
-import { MergeRequestStateSchema, CiJobStatusSchema } from "./generated/gitlab-base-types.schema"
+import type { ProjectMRsQuery } from "../project-mrs.generated"
+import { MergeRequestStateSchema, CiJobStatusSchema } from "../generated/gitlab-base-types.schema"
 
 export const ProjectMRsQuerySchema: Schema.Schema<ProjectMRsQuery> = Schema.Struct({
   project: Schema.NullOr(Schema.Struct({

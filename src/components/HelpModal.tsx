@@ -7,10 +7,11 @@ import { openSettingsFile } from '../settings/settings';
 import { copyToClipboard } from '../system/clipboard';
 import { openUrl } from '../system/open-url';
 import { getScroller } from '../hooks/useScrollBox';
-import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, toggleIgnoreMergeRequestAtom, type InfoPaneTab, refetchSelectedMrPipelineAtom, refreshMergeRequestsAtom, mergeRequestsAtom } from '../store/appAtoms';
+import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, type InfoPaneTab, refreshMergeRequestsAtom } from '../store/appAtoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { appAtomRuntime, appLayer, consoleLoggedLayer } from '../appLayerRuntime';
 import { Console, Effect, Layer } from 'effect';
+import { toggleIgnoreMergeRequestAtom } from '../settings/settings-atom';
 
 interface HelpModalProps {
   isVisible: boolean;
@@ -116,7 +117,6 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
     case ActivePane.Console:
       return [];
   }
-  return [];
 };
 
 const buildGlobalKeys = (actions: HelpModalActions): KeyBinding[] => [

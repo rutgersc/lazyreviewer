@@ -26,6 +26,7 @@ const eventStorageLayer = EventStorage.Default.pipe(
 export const appLayer = Layer.mergeAll(
   consoleLoggedLayer,
   logStorageLayer,
-  eventStorageLayer
+  eventStorageLayer,
+  fileSystemLayer
 )
 export const appAtomRuntime = Atom.runtime(appLayer)
