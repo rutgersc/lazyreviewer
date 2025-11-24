@@ -41,10 +41,11 @@ export interface UserSelectionState {
  * Active pane indices for the four pane system
  */
 export enum ActivePane {
-  MergeRequests = 0,
-  UserSelection = 1,
-  InfoPane = 2,
-  Console = 3
+  Facts = 0,
+  MergeRequests = 1,
+  UserSelection = 2,
+  InfoPane = 3,
+  Console = 4
 }
 
 export const extractSelectionData = (

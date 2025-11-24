@@ -117,6 +117,8 @@ const buildPaneKeys = (activePane: ActivePane, infoPaneTab: InfoPaneTab, actions
       ];
     case ActivePane.Console:
       return [];
+    default:
+      return [];
   }
 };
 
@@ -185,6 +187,8 @@ const getPaneTitle = (pane: ActivePane, infoPaneTab?: InfoPaneTab): string => {
     case ActivePane.UserSelection: return 'User Selection Pane';
     case ActivePane.Console: return 'Console Pane';
   }
+
+  return '';
 };
 
 export default function HelpModal({ isVisible, setCopyNotification }: HelpModalProps) {

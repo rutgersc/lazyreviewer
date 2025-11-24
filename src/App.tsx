@@ -4,6 +4,7 @@ import UserSelectionPane from "./components/UserSelectionPane";
 import MergeRequestPane from "./components/MergeRequestPane";
 import InfoPane from "./components/InfoPane";
 import ConsolePane from "./components/ConsolePane";
+import FactsPane from "./components/FactsPane";
 import MrStateFilterModal from "./components/MrStateFilterModal";
 import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal from "./components/HelpModal";
@@ -135,32 +136,63 @@ export default function App() {
       case 'h':
       case 'left':
         if (activePane === ActivePane.InfoPane) {
-          cycleInfoPaneTab('prev');
-        } else if (activePane === ActivePane.MergeRequests) {
           setActivePane(ActivePane.UserSelection);
-        } else {
+        } else if (activePane === ActivePane.UserSelection) {
           setActivePane(ActivePane.MergeRequests);
+        } else if (activePane === ActivePane.MergeRequests) {
+          setActivePane(ActivePane.Facts);
         }
         break;
       case 'l':
       case 'right':
-        if (activePane === ActivePane.InfoPane) {
-          cycleInfoPaneTab('next');
+        if (activePane === ActivePane.Facts) {
+          setActivePane(ActivePane.MergeRequests);
         } else if (activePane === ActivePane.MergeRequests) {
           setActivePane(ActivePane.UserSelection);
-        } else {
-          setActivePane(ActivePane.MergeRequests);
+        } else if (activePane === ActivePane.UserSelection) {
+          setActivePane(ActivePane.InfoPane);
         }
         break;
     }
   });
 
+  const factsActive = activePane === ActivePane.Facts;
+  const infoActive = activePane === ActivePane.InfoPane;
+
+  let factsWidthStr: `${number}%` = "8%";
+  let middleWidthStr: `${number}%` = "47%";
+  let rightWidthStr: `${number}%` = "45%";
+
+  if (factsActive) {
+      factsWidthStr = "25%";
+      middleWidthStr = "35%";
+      rightWidthStr = "40%";
+  } else if (infoActive) {
+      factsWidthStr = "8%";
+      middleWidthStr = "32%";
+      rightWidthStr = "60%";
+  }
+
   return (
     <box style={{ flexDirection: "column", height: "100%", backgroundColor: '#282a36' }}>
       {/* Main content area - horizontal layout */}
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
-        {/* Left panel - two stacked panes */}
-        <box style={{ flexDirection: "column", width: activePane === ActivePane.InfoPane ? "40%" : "55%" }}>
+
+        {/* Facts Pane */}
+        <box
+            style={{
+              flexDirection: "column",
+              border: true,
+              borderColor: activePane === ActivePane.Facts ? "#50fa7b" : "#6272a4",
+              width: factsWidthStr,
+              backgroundColor: '#282a36'
+            }}
+        >
+            <FactsPane />
+        </box>
+
+        {/* Middle panel - two stacked panes */}
+        <box style={{ flexDirection: "column", width: middleWidthStr }}>
           {/* Merge Request Pane (top) */}
           <box
             style={{
@@ -196,7 +228,7 @@ export default function App() {
         <box
           style={{
             flexDirection: "column",
-            width: activePane === ActivePane.InfoPane ? "60%" : "45%",
+            width: rightWidthStr,
             backgroundColor: '#282a36'
           }}
         >

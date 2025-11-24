@@ -1,16 +1,11 @@
 import { TextAttributes } from '@opentui/core';
 import { useAtomValue } from '@effect-atom/atom-react';
-import { Result } from '@effect-atom/atom-react';
 import { consoleLogsAtom, type LogEntry } from '../logging/logging-atom';
+import { resultToArray } from '../utils/result-helpers';
 
 export default function ConsolePane({ isActive }: { isActive: boolean }) {
   const logsResult = useAtomValue(consoleLogsAtom);
-
-  const logs = Result.match(logsResult, {
-    onInitial: () => [],
-    onSuccess: (success) => success.value,
-    onFailure: () => []
-  });
+  const logs = resultToArray(logsResult);
 
   const getLogColor = (level: LogEntry['level']) => {
     switch (level) {

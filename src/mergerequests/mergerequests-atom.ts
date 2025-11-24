@@ -15,6 +15,7 @@ import {
   OpenMrsTrackingState
 } from "./mr-diff-tracking";
 import { EventStorage, type Event } from "../events/events";
+import { selectedEventIndexAtom } from "../events/events-atom";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console, Stream, Chunk } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
@@ -25,6 +26,7 @@ import { join } from 'path';
 import type { JiraIssue } from "../jira/jira-service";
 import { selectedUserSelectionEntryAtom, userSelectionsAtom } from "../userselection/userselection-atom";
 import { groupsAtom } from "../data/data-atom";
+import { resultToArray, resultOr } from "../utils/result-helpers";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -50,29 +52,38 @@ export const filterMrStateAtom = Atom.make<MergeRequestState>('opened');
 export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 
 export const allMrsAtom = appAtomRuntime.atom(
-  Stream.unwrap(
-    Effect.gen(function* () {
-      const stream = yield* EventStorage.eventsStream;
+  (get) => {
+    const selectedIndex = get(selectedEventIndexAtom);
 
-      // Filter to only MR-relevant events
-      const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
-        return event.type === 'gitlab-user-mrs-fetched-event' ||
-               event.type === 'gitlab-project-mrs-fetched-event' ||
-               event.type === 'gitlab-single-mr-fetched-event' ||
-               event.type === 'jira-issues-fetched-event';
-      };
+    return Stream.unwrap(
+      Effect.gen(function* () {
+        const baseStream = yield* EventStorage.eventsStream;
 
-      return stream.pipe(
-        Stream.filter(isMrRelevantEvent),
-        Stream.groupedWithin(100, "0.1 seconds"),
-        Stream.scan(
-          new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() }),
-          (state: AllMrsState, events) =>
-            Chunk.reduce(events, state, (currentState, event) => projectAllMrs(currentState, event))
-        )
-      );
-    })
-  ),
+        // Apply time-travel limit if needed
+        const stream = selectedIndex === null
+          ? baseStream
+          : baseStream.pipe(Stream.take(selectedIndex + 1));
+
+        // Filter to only MR-relevant events
+        const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
+          return event.type === 'gitlab-user-mrs-fetched-event' ||
+                 event.type === 'gitlab-project-mrs-fetched-event' ||
+                 event.type === 'gitlab-single-mr-fetched-event' ||
+                 event.type === 'jira-issues-fetched-event';
+        };
+
+        return stream.pipe(
+          Stream.filter(isMrRelevantEvent),
+          Stream.groupedWithin(100, "0.1 seconds"),
+          Stream.scan(
+            new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() }),
+            (state: AllMrsState, events) =>
+              Chunk.reduce(events, state, (currentState, event) => projectAllMrs(currentState, event))
+          )
+        );
+      })
+    );
+  },
   { initialValue: new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() }) }
 ).pipe(Atom.keepAlive);
 
@@ -87,25 +98,35 @@ export const allJiraIssuesAtom = Atom.map(
 );
 
 export const openMrsTrackingAtom = appAtomRuntime.atom(
-  Stream.unwrap(
-    Effect.gen(function* () {
+  (get) => {
+    const selectedIndex = get(selectedEventIndexAtom);
 
-      const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
-        return event.type === 'gitlab-user-mrs-fetched-event' ||
-               event.type === 'gitlab-project-mrs-fetched-event' ||
-               event.type === 'gitlab-single-mr-fetched-event';
-      };
+    return Stream.unwrap(
+      Effect.gen(function* () {
+        const baseStream = yield* EventStorage.eventsStream;
 
-      return (yield* EventStorage.eventsStream).pipe(
-        Stream.filter(isMrRelevantEvent),
-        Stream.scan(
-          initialOpenMrsTrackingState,
-          (state: OpenMrsTrackingState, event) =>
-            projectOpenMrsAndDetectMissing(state, event)
-        )
-      );
-    })
-  ),
+        // Apply time-travel limit if needed
+        const stream = selectedIndex === null
+          ? baseStream
+          : baseStream.pipe(Stream.take(selectedIndex + 1));
+
+        const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
+          return event.type === 'gitlab-user-mrs-fetched-event' ||
+                 event.type === 'gitlab-project-mrs-fetched-event' ||
+                 event.type === 'gitlab-single-mr-fetched-event';
+        };
+
+        return stream.pipe(
+          Stream.filter(isMrRelevantEvent),
+          Stream.scan(
+            initialOpenMrsTrackingState,
+            (state: OpenMrsTrackingState, event) =>
+              projectOpenMrsAndDetectMissing(state, event)
+          )
+        );
+      })
+    );
+  },
   { initialValue: initialOpenMrsTrackingState }
 ).pipe(Atom.keepAlive);
 
@@ -152,8 +173,8 @@ export const filteredMrsAtom = Atom.make((get) => {
 
   return Result.match(allMrsResult, {
     onInitial: () => [] as readonly MergeRequest[],
-    onFailure: () => [] as readonly MergeRequest[],
-    onSuccess: (state) => filterMrsByCacheKey(state.value.mrsByGid, cacheKey)
+    onSuccess: (state) => filterMrsByCacheKey(state.value.mrsByGid, cacheKey),
+    onFailure: () => [] as readonly MergeRequest[]
   });
 });
 

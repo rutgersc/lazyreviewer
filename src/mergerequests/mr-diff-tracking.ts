@@ -1,6 +1,7 @@
 import { Data, Stream, Effect } from "effect";
-import { Atom } from "@effect-atom/atom-react";
+import { Atom, Result } from "@effect-atom/atom-react";
 import { EventStorage, type Event } from "../events/events";
+import { selectedEventIndexAtom } from "../events/events-atom";
 import { appAtomRuntime } from "../appLayerRuntime";
 import type { MrRelevantEvent } from "./mergerequests-caching-effects";
 
@@ -137,26 +138,35 @@ export const projectOpenMrsAndDetectMissing = (
 }
 
 export const missingMrsDiffAtom = appAtomRuntime.atom(
-  Stream.unwrap(
-    Effect.gen(function* () {
-      const stream = yield* EventStorage.eventsStream;
+  (get) => {
+    const selectedIndex = get(selectedEventIndexAtom);
 
-      const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
-        return event.type === 'gitlab-user-mrs-fetched-event' ||
-               event.type === 'gitlab-project-mrs-fetched-event' ||
-               event.type === 'gitlab-single-mr-fetched-event';
-      };
+    return Stream.unwrap(
+      Effect.gen(function* () {
+        const baseStream = yield* EventStorage.eventsStream;
 
-      return stream.pipe(
-        Stream.filter(isMrRelevantEvent),
-        Stream.scan(
-          initialOpenMrsTrackingState,
-          (state: OpenMrsTrackingState, event) =>
-            projectOpenMrsAndDetectMissing(state, event)
-        )
-      );
-    })
-  ),
+        // Apply time-travel limit if needed
+        const stream = selectedIndex === null
+          ? baseStream
+          : baseStream.pipe(Stream.take(selectedIndex + 1));
+
+        const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
+          return event.type === 'gitlab-user-mrs-fetched-event' ||
+                 event.type === 'gitlab-project-mrs-fetched-event' ||
+                 event.type === 'gitlab-single-mr-fetched-event';
+        };
+
+        return stream.pipe(
+          Stream.filter(isMrRelevantEvent),
+          Stream.scan(
+            initialOpenMrsTrackingState,
+            (state: OpenMrsTrackingState, event) =>
+              projectOpenMrsAndDetectMissing(state, event)
+          )
+        );
+      })
+    );
+  },
   { initialValue: initialOpenMrsTrackingState }
 ).pipe(Atom.keepAlive);
 

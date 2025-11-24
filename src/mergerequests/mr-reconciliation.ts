@@ -48,9 +48,9 @@ export const useReconcileMissingMrs = () => {
     const reconcileAction = useAtomSet(reconcileMrsAtom, { mode: 'promise' });
 
     const missingIds = Result.match(stateResult, {
+        onInitial: () => [] as string[],
         onSuccess: (success) => Array.from(success.value.detectedMissingMrIds),
-        onFailure: () => [] as string[],
-        onInitial: () => [] as string[]
+        onFailure: () => [] as string[]
     });
 
     const reconcile = () => {
