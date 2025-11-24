@@ -35,28 +35,6 @@ export type CompactedMergeRequestsState = Map<string, CompactedMergeRequestEntry
 const getMrKey = (projectPath: string, mrId: string | number): string =>
   `${projectPath}::${mrId}`
 
-// Helpers to convert Query nodes to GitlabRawMergeRequest
-
-// 1. For GitlabUserMergeRequestsFetchedEvent (MRsQuery)
-// The type is deeply nested: MRsQuery['users']['nodes'][number]['authoredMergeRequests']['nodes'][number]
-// We can extract this type or define it. Since we want type safety from the event type:
-type UserMrNode = NonNullable<
-  NonNullable<
-    NonNullable<
-      NonNullable<GitlabUserMergeRequestsFetchedEvent['mrs']['users']>['nodes']
-    >[number]
-  >['authoredMergeRequests']
->['nodes'] extends (infer U)[] | readonly (infer U)[] | null | undefined ? NonNullable<U> : never
-
-const mapUserMrToRaw = (node: UserMrNode): GitlabRawMergeRequest => {
-  // User MR nodes already have 'name' (not title) so they match GitlabRawMergeRequest structure closely
-  // We just need to cast it because of strict null checks or minor mismatches if any.
-  // In MRsQuery: name is 'name', in GitlabRawMergeRequest: name is 'name'.
-  return node satisfies GitlabRawMergeRequest as GitlabRawMergeRequest
-}
-
-// 2. For GitlabprojectMergeRequestsFetchedEvent (ProjectMRsQuery)
-// Type: ProjectMRsQuery['project']['mergeRequests']['nodes'][number]
 type ProjectMrNode = NonNullable<
   NonNullable<
     NonNullable<GitlabprojectMergeRequestsFetchedEvent['mrs']['project']>['mergeRequests']
@@ -69,11 +47,9 @@ const mapProjectMrToRaw = (node: ProjectMrNode): GitlabRawMergeRequest => {
   return {
     ...rest,
     name: title, // Map title to name
-  } satisfies GitlabRawMergeRequest as GitlabRawMergeRequest
+  } satisfies GitlabRawMergeRequest
 }
 
-// 3. For GitlabSingleMrFetchedEvent (SingleMrQuery)
-// Type: SingleMrQuery['project']['mergeRequest']
 type SingleMrNode = NonNullable<
   NonNullable<GitlabSingleMrFetchedEvent['mr']['project']>['mergeRequest']
 >
@@ -99,7 +75,7 @@ export const projectMergeRequests = (
         const mrs = user.authoredMergeRequests?.nodes || []
         mrs.forEach(mr => {
           if (!mr) return
-          const rawMr = mapUserMrToRaw(mr)
+          const rawMr = mr // no mapping needed
           const key = getMrKey(rawMr.project.fullPath, rawMr.iid)
           newState.set(key, {
             mr: rawMr,
