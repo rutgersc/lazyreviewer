@@ -2,7 +2,8 @@ import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { Colors } from "../colors";
 import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { selectedMrIndexAtom, unwrappedMergeRequestsAtom, lastTargetBranchAtom } from '../store/appAtoms';
+import { selectedMrIndexAtom, unwrappedMergeRequestsAtom } from '../mergerequests/mergerequests-atom';
+import { lastTargetBranchAtom } from '../git/git-atom';
 
 interface RetargetModalProps {
   isVisible: boolean;

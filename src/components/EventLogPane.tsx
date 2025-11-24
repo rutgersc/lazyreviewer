@@ -4,7 +4,7 @@ import { Colors } from "../colors";
 import { formatCompactTime } from "../utils/formatting";
 import { extractTextFromJiraComment } from "../jira/jira-service";
 import { useAtomValue } from "@effect-atom/atom-react";
-import { allJiraIssuesAtom } from "../store/appAtoms";
+import { allJiraIssuesAtom } from "../mergerequests/mergerequests-atom";
 
 type EventType =
   | 'mr_created'

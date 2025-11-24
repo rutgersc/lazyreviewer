@@ -2,7 +2,7 @@ import { Effect, Console } from "effect";
 import { Result } from "@effect-atom/atom-react";
 import { useAtomValue, useAtomSet, useAtom } from "@effect-atom/atom-react";
 import { appAtomRuntime } from "../appLayerRuntime";
-import { allMrsAtom } from "../store/appAtoms";
+import { allMrsAtom } from "../mergerequests/mergerequests-atom";
 import { getSingleMrAsEvent } from "../gitlab/gitlab-graphql";
 import { EventStorage } from "../events/events";
 import { missingMrsDiffAtom, isReconcilingAtom } from "./mr-diff-tracking";

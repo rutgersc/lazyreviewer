@@ -5,7 +5,9 @@ import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { ActivePane } from '../userselection/userSelection';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, activeModalAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryLimitAtom } from '../store/appAtoms';
+import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
+import { selectedPipelineJobIndexAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryLimitAtom } from '../mergerequests/job-atom';
+import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';

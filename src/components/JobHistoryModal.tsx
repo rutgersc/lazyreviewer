@@ -3,7 +3,7 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
 import { Colors } from '../colors';
-import { jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, jobHistoryLimitAtom, incrementJobHistoryLimitAtom, fetchJobHistoryAtom } from '../store/appAtoms';
+import { jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, jobHistoryLimitAtom, incrementJobHistoryLimitAtom, fetchJobHistoryAtom } from '../mergerequests/job-atom';
 import { useAtomValue, useAtomSet, useAtom } from '@effect-atom/atom-react';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 

@@ -8,7 +8,9 @@ import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
-import { activePaneAtom, activeModalAtom, infoPaneTabAtom, selectedPipelineJobIndexAtom, selectedMrAtom, allJiraIssuesAtom, type InfoPaneTab } from '../store/appAtoms';
+import { activePaneAtom, activeModalAtom, infoPaneTabAtom, type InfoPaneTab } from '../ui/navigation-atom';
+import { selectedPipelineJobIndexAtom } from '../mergerequests/job-atom';
+import { selectedMrAtom, allJiraIssuesAtom } from '../mergerequests/mergerequests-atom';
 
 interface InfoPaneProps {
   activePane: ActivePane;

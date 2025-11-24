@@ -9,7 +9,10 @@ import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
 import { useAtom, useAtomValue, useAtomSet, Result } from "@effect-atom/atom-react";
-import { infoPaneTabAtom, selectedActivityIndexAtom, activeModalAtom, loadJobLogAtom, allJiraIssuesAtom } from "../store/appAtoms";
+import { infoPaneTabAtom, activeModalAtom } from "../ui/navigation-atom";
+import { selectedActivityIndexAtom } from "../components/activity-atom";
+import { loadJobLogAtom } from "../mergerequests/job-atom";
+import { allJiraIssuesAtom } from "../mergerequests/mergerequests-atom";
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useEffect } from 'react';
 

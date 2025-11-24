@@ -7,7 +7,8 @@ import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom, activeModalAtom } from '../store/appAtoms';
+import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
+import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../jira/jira-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';

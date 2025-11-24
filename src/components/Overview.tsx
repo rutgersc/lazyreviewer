@@ -9,7 +9,8 @@ import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { copyToClipboard } from '../system/clipboard';
 import { formatDiscussionsForClipboard } from '../gitlab/display/gitlabDiscussionFormatter';
 import { useAtom, useAtomValue } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, selectedDiscussionIndexAtom, activeModalAtom } from '../store/appAtoms';
+import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
+import { selectedDiscussionIndexAtom } from '../mergerequests/mergerequests-atom';
 
 interface OverviewProps {
   activePane: ActivePane;

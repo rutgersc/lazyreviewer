@@ -1,7 +1,7 @@
 import { TextAttributes } from '@opentui/core';
 import { useAtomValue } from '@effect-atom/atom-react';
 import { Result } from '@effect-atom/atom-react';
-import { consoleLogsAtom, type LogEntry } from '../store/appAtoms';
+import { consoleLogsAtom, type LogEntry } from '../logging/logging-atom';
 
 export default function ConsolePane({ isActive }: { isActive: boolean }) {
   const logsResult = useAtomValue(consoleLogsAtom);
