@@ -14,7 +14,7 @@ import {
   projectOpenMrsAndDetectMissing,
   OpenMrsTrackingState
 } from "./mr-diff-tracking";
-import { EventStorage, type Event } from "../events/events";
+import { EventStorage, type LazyReviewerEvent } from "../events/events";
 import { selectedEventIndexAtom } from "../events/events-atom";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console, Stream, Chunk } from "effect";
@@ -65,7 +65,7 @@ export const allMrsAtom = appAtomRuntime.atom(
           : baseStream.pipe(Stream.take(selectedIndex + 1));
 
         // Filter to only MR-relevant events
-        const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
+        const isMrRelevantEvent = (event: LazyReviewerEvent): event is MrRelevantEvent => {
           return event.type === 'gitlab-user-mrs-fetched-event' ||
                  event.type === 'gitlab-project-mrs-fetched-event' ||
                  event.type === 'gitlab-single-mr-fetched-event' ||
@@ -110,7 +110,7 @@ export const openMrsTrackingAtom = appAtomRuntime.atom(
           ? baseStream
           : baseStream.pipe(Stream.take(selectedIndex + 1));
 
-        const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
+        const isMrRelevantEvent = (event: LazyReviewerEvent): event is MrRelevantEvent => {
           return event.type === 'gitlab-user-mrs-fetched-event' ||
                  event.type === 'gitlab-project-mrs-fetched-event' ||
                  event.type === 'gitlab-single-mr-fetched-event';

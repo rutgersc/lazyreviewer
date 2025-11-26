@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { useAtom, useAtomValue } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
-import { Result } from '@effect-atom/atom-react';
 import { activePaneAtom } from '../ui/navigation-atom';
-import { materializedEventsAtom, selectedEventIndexAtom } from '../events/events-atom';
+import { allEventsAtom, selectedEventIndexAtom } from '../events/events-atom';
+import { resultToArray } from '../utils/result-helpers';
 
 export default function FactsPane() {
   const [activePane] = useAtom(activePaneAtom);
-  const events = useAtomValue(materializedEventsAtom);
+  const events = resultToArray(useAtomValue(allEventsAtom));
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useAtom(selectedEventIndexAtom);
 
@@ -103,8 +103,6 @@ export default function FactsPane() {
                             wrapMode="word"
                         >
                              {` | ${event.type}`}
-                             {selectedIndex === null && isSelected ? ' (LIVE)' : ''}
-                             {selectedIndex === originalIndex ? ' [TIME-TRAVEL]' : ''}
                         </text>
                     )}
                 </box>

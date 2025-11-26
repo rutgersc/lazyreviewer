@@ -1,6 +1,6 @@
 import { FileSystem, Path } from "@effect/platform"
 import { Effect, Schema, Stream, PubSub, Console } from "effect"
-import { EventSchema, type Event } from "../events/events"
+import { EventSchema, type LazyReviewerEvent } from "../events/events"
 
 const EVENTS_DIR = "storage/events"
 
@@ -13,7 +13,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
     const eventsDir = path.join(EVENTS_DIR)
 
-    const eventsPubSub = yield* PubSub.unbounded<Event>()
+    const eventsPubSub = yield* PubSub.unbounded<LazyReviewerEvent>()
 
     // Ensure events directory exists
     yield* fs.makeDirectory(eventsDir, { recursive: true }).pipe(
@@ -71,7 +71,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
             })
             const event = yield* Schema.decodeUnknown(EventSchema)(jsonData)
 
-            return event as Event
+            return event as LazyReviewerEvent
           }).pipe(
             Effect.catchAll((error) =>
               Effect.gen(function* () {
@@ -84,10 +84,10 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
         { concurrency: "unbounded" }
       )
 
-      return events.filter((event): event is Event => event !== null)
+      return events.filter((event): event is LazyReviewerEvent => event !== null)
     })
 
-    const appendEvent = (event: Event) => Effect.gen(function* () {
+    const appendEvent = (event: LazyReviewerEvent) => Effect.gen(function* () {
       const files = yield* fs.readDirectory(eventsDir);
 
       const eventNumbers = files

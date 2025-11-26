@@ -62,10 +62,12 @@ const getCreatedDateColor = (createdAt: Date): string => {
 
 const TimeColumnAuthorTitle = ({
   mr,
-  isMyMr
+  isMyMr,
+  isOutOfDate
 }: {
   mr: MergeRequest;
   isMyMr: boolean;
+  isOutOfDate: boolean;
 }) => (
   <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
     <box style={{ width: 3 }}>
@@ -85,7 +87,7 @@ const TimeColumnAuthorTitle = ({
 
     <box style={{ flexGrow: 1 }}>
       <text
-        style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }}
+        style={{ fg: isOutOfDate ? Colors.WARNING : Colors.PRIMARY, attributes: TextAttributes.BOLD }}
         wrapMode='none'
       >
         {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
@@ -812,6 +814,7 @@ export default function MergeRequestPane({}: {}) {
           const highlightInfo = getMrHighlightInfo(mr, index);
           const repoColor = settings.repositoryColors[mr.project.fullPath];
           const isMyMr = mr.author === currentUser;
+          const isOutOfDate = missingIds.includes(mr.id);
 
           return (
             <box
@@ -826,7 +829,7 @@ export default function MergeRequestPane({}: {}) {
                 <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} isMyMr={isMyMr} />
               ) : (
                 <>
-                  <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} />
+                  <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} />
                   <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} />
                 </>
               )}

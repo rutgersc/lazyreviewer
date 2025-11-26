@@ -1,6 +1,6 @@
 import { Data, Stream, Effect } from "effect";
 import { Atom, Result } from "@effect-atom/atom-react";
-import { EventStorage, type Event } from "../events/events";
+import { EventStorage, type LazyReviewerEvent } from "../events/events";
 import { selectedEventIndexAtom } from "../events/events-atom";
 import { appAtomRuntime } from "../appLayerRuntime";
 import type { MrRelevantEvent } from "./mergerequests-caching-effects";
@@ -150,7 +150,7 @@ export const missingMrsDiffAtom = appAtomRuntime.atom(
           ? baseStream
           : baseStream.pipe(Stream.take(selectedIndex + 1));
 
-        const isMrRelevantEvent = (event: Event): event is MrRelevantEvent => {
+        const isMrRelevantEvent = (event: LazyReviewerEvent): event is MrRelevantEvent => {
           return event.type === 'gitlab-user-mrs-fetched-event' ||
                  event.type === 'gitlab-project-mrs-fetched-event' ||
                  event.type === 'gitlab-single-mr-fetched-event';

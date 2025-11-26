@@ -4,7 +4,7 @@ import { BitbucketEventSchema, type BitbucketEvent } from "./bitbucket-events";
 import { CompactionEventSchema, type MergeRequestsCompactedEvent } from "./event-compaction-events";
 import { Schema } from "effect";
 
-export type Event =
+export type LazyReviewerEvent =
     | GitlabEvent
     | JiraEvent
     | BitbucketEvent

@@ -157,7 +157,6 @@ export default function App() {
   });
 
   const factsActive = activePane === ActivePane.Facts;
-  const infoActive = activePane === ActivePane.InfoPane;
 
   let factsWidthStr: RenderableOptions['width'] = factsActive ? 45 : 10;
   let middleWidthStr: RenderableOptions['width'] = factsActive ? "35%" : "47%";

@@ -4,7 +4,7 @@ import type { ParseError } from "effect/ParseResult"
 import { type MergeRequest } from "./mergerequest-schema"
 import { fetchMergeRequestsByProject, fetchMergeRequests } from "./mergerequests-effects"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
-import { EventStorage, type Event } from "../events/events"
+import { EventStorage, type LazyReviewerEvent } from "../events/events"
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent } from "../events/gitlab-events"
 import type { JiraIssuesFetchedEvent } from "../events/jira-events"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
@@ -58,7 +58,7 @@ const toProjectCacheKeyString = (key: ProjectMRCacheKey): string => {
 // Helper functions for event projection
 
 const findLatestUserMrsEvent = (
-  events: readonly Event[],
+  events: readonly LazyReviewerEvent[],
   usernames: readonly string[],
   state: MergeRequestState
 ): Option.Option<GitlabUserMergeRequestsFetchedEvent> => {
@@ -80,7 +80,7 @@ const findLatestUserMrsEvent = (
 }
 
 const findLatestProjectMrsEvent = (
-  events: readonly Event[],
+  events: readonly LazyReviewerEvent[],
   projectPath: string,
   state: MergeRequestState
 ): Option.Option<GitlabprojectMergeRequestsFetchedEvent> => {
@@ -152,7 +152,7 @@ export const decideFetchProjectMrs = (
 
 // CQRS: Query side - projects data from events
 export const queryProjectMRsFromEvents = (
-  allEvents: readonly Event[],
+  allEvents: readonly LazyReviewerEvent[],
   key: ProjectMRCacheKey
 ): MrState => {
   const cachedMrEvent = findLatestProjectMrsEvent(allEvents, key.projectPath, key.state)
