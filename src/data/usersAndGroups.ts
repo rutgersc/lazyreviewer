@@ -5,6 +5,7 @@ const menno = { type: 'userId', id: 'MennoGerbens'  } satisfies UserId;
 const kimberley = { type: 'userId', id: 'kimberley'  } satisfies UserId;
 const rp = { type: 'userId', id: 'Rinze-PieterJonker'  } satisfies UserId;
 const martin = { type: 'userId', id: 'm.bures'  } satisfies UserId;
+const heiner = { type: 'userId', id: 'h.behrends'  } satisfies UserId;
 const arjen = { type: 'userId', id: 'ArjenPost'  } satisfies UserId;
 const chen = { type: 'userId', id: 'c.zrubavel'  } satisfies UserId;
 const harold = { type: 'userId', id: 'h.harkema'  } satisfies UserId;
@@ -16,6 +17,7 @@ const dbSplitterRepo = { type: 'repositoryId', id: 'elab/db-splitter'  } satisfi
 const bitbucketCoreIamRepo = { type: 'repositoryId', id: 'bitbucket:raftdev/core.iam'  } satisfies RepositoryId;
 export const users: UserSelection[] = [
   { type: 'user', id: rutger },
+  { type: 'user', id: heiner },
   { type: 'user', id: menno },
   { type: 'user', id: kimberley },
   { type: 'user', id: rp },
@@ -43,7 +45,7 @@ export const groups: UserGroup[] = [
   { type: 'group',
     name: 'Florence FE',
     id: florenceFEId,
-    children: [ kimberley, rp, martin ]
+    children: [ kimberley, rp, martin, heiner ]
   },
   { type: 'group',
     name: 'Florence',

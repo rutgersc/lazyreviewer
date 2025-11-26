@@ -79,7 +79,9 @@ export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) 
       newSeen.add(mrId);
     }
 
-    settings.ignoredMergeRequests = Array.from(newSeen);
+    console.log("toggleSeenMergeRequestAtom", { seenMergeRequests: settings.seenMergeRequests, newSeen })
+
+    settings.seenMergeRequests = Array.from(newSeen);
     saveSettings(settings);
   })
 );
