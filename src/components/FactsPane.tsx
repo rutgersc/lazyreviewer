@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useKeyboard } from '@opentui/react';
-import { useAtom, useAtomValue } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom } from '../ui/navigation-atom';
-import { allEventsAtom, selectedEventIndexAtom } from '../events/events-atom';
+import { allEventsAtom, selectedEventIndexAtom, compactStateUpToSelectedEventAtom } from '../events/events-atom';
 import { resultToArray } from '../utils/result-helpers';
 
 export default function FactsPane() {
@@ -11,6 +11,8 @@ export default function FactsPane() {
   const events = resultToArray(useAtomValue(allEventsAtom));
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useAtom(selectedEventIndexAtom);
+  const [compactionMessage, setCompactionMessage] = useState<string | null>(null);
+  const compactState = useAtomSet(compactStateUpToSelectedEventAtom, { mode: 'promise' });
 
   const isActive = activePane === ActivePane.Facts;
 
@@ -18,7 +20,7 @@ export default function FactsPane() {
   const reversedEvents = [...events].reverse();
   const displayEvents = reversedEvents.slice(0, 100);
 
-  useKeyboard((key) => {
+  useKeyboard(async (key) => {
     if (!isActive) return;
 
     if (key.name === 'j' || key.name === 'down') {
@@ -53,11 +55,30 @@ export default function FactsPane() {
              // g - top (visually) -> Newest -> Live -> null
              setHighlightedIndex(null);
         }
+    } else if (key.name === 'c') {
+        // c - compact state up to selected event
+        const indexToCompact = selectedIndex !== null ? selectedIndex : highlightedIndex;
+        setCompactionMessage('Compacting...');
+        try {
+            const result = await compactState(indexToCompact);
+            setCompactionMessage(result.message);
+            setTimeout(() => setCompactionMessage(null), 3000);
+        } catch (error) {
+            setCompactionMessage(`Compaction failed: ${error}`);
+            setTimeout(() => setCompactionMessage(null), 3000);
+        }
     }
   });
 
   return (
     <box flexDirection="column" height="100%" width="100%">
+        {compactionMessage && (
+            <box height={1} width="100%" flexDirection="row">
+                <text fg="#ffb86c" wrapMode="word">
+                    {compactionMessage}
+                </text>
+            </box>
+        )}
         {displayEvents.map((event, reversedIndex) => {
             const originalIndex = events.length - 1 - reversedIndex;
 

@@ -163,6 +163,10 @@ const projectMergeRequests = (
       })
       return newState
     }
+
+    default:
+        const _: never = event;
+        throw new Error("unexpected non-exhaustive match")
   }
 }
 
@@ -178,8 +182,6 @@ export const compactedStateStream = Effect.gen(function* () {
 
 export const persistCompactedState = (state: CompactedMergeRequestsState) =>
   Effect.gen(function* () {
-    const eventStorage = yield* EventStorage
-
     const mrs = Array.from(state.values()).map(entry => entry.mr)
 
     const compactedEvent: MergeRequestsCompactedEvent = {
@@ -187,7 +189,7 @@ export const persistCompactedState = (state: CompactedMergeRequestsState) =>
       mrs
     }
 
-    yield* eventStorage.appendEvent(compactedEvent)
+    yield* EventStorage.appendEvent(compactedEvent)
 
     return mrs.length
   })
