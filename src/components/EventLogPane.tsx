@@ -249,10 +249,7 @@ interface EventLogPaneProps {
 }
 
 export default function EventLogPane({ mergeRequests, onClose }: EventLogPaneProps) {
-  // Extract events from all MRs
   const allEvents = mergeRequests.flatMap(mr => extractEvents(mr));
-
-  // Sort by timestamp, newest first
   const events = allEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   return (

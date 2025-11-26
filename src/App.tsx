@@ -1,5 +1,5 @@
 import { useKeyboard, useRenderer } from '@opentui/react';
-import { TextAttributes, type ParsedKey } from '@opentui/core';
+import { TextAttributes, type ParsedKey, type RenderableOptions } from '@opentui/core';
 import UserSelectionPane from "./components/UserSelectionPane";
 import MergeRequestPane from "./components/MergeRequestPane";
 import InfoPane from "./components/InfoPane";
@@ -159,19 +159,9 @@ export default function App() {
   const factsActive = activePane === ActivePane.Facts;
   const infoActive = activePane === ActivePane.InfoPane;
 
-  let factsWidthStr: `${number}%` = "8%";
-  let middleWidthStr: `${number}%` = "47%";
-  let rightWidthStr: `${number}%` = "45%";
-
-  if (factsActive) {
-      factsWidthStr = "25%";
-      middleWidthStr = "35%";
-      rightWidthStr = "40%";
-  } else if (infoActive) {
-      factsWidthStr = "8%";
-      middleWidthStr = "32%";
-      rightWidthStr = "60%";
-  }
+  let factsWidthStr: RenderableOptions['width'] = factsActive ? 45 : 10;
+  let middleWidthStr: RenderableOptions['width'] = factsActive ? "35%" : "47%";
+  let rightWidthStr: RenderableOptions['width'] = factsActive ? "40%" : "60%";
 
   return (
     <box style={{ flexDirection: "column", height: "100%", backgroundColor: '#282a36' }}>

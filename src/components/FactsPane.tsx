@@ -87,9 +87,6 @@ export default function FactsPane() {
             // Only show index if not active, show type/details if active
             const displayIndex = originalIndex.toString().padStart(4, ' ');
 
-            // Show status indicators
-            const statusIndicator = isSelected ? '●' : (isHighlighted ? '○' : ' ');
-
             return (
                 <box key={originalIndex} height={1} width="100%" flexDirection="row">
                     <text
@@ -97,7 +94,7 @@ export default function FactsPane() {
                         bg={backgroundColor}
                         wrapMode="word"
                     >
-                        {statusIndicator} {displayIndex}
+                        {displayIndex}
                     </text>
                     {isActive && (
                         <text
