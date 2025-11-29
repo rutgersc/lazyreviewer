@@ -3,7 +3,7 @@ import { useKeyboard } from '@opentui/react';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom } from '../ui/navigation-atom';
-import { allEventsAtom, selectedEventIndexAtom, compactStateUpToSelectedEventAtom } from '../events/events-atom';
+import { allEventsAtom, selectedEventIndexAtom, compactAllEventsAtom } from '../events/events-atom';
 import { resultToArray } from '../utils/result-helpers';
 
 export default function FactsPane() {
@@ -12,7 +12,7 @@ export default function FactsPane() {
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useAtom(selectedEventIndexAtom);
   const [compactionMessage, setCompactionMessage] = useState<string | null>(null);
-  const compactState = useAtomSet(compactStateUpToSelectedEventAtom, { mode: 'promise' });
+  const compactState = useAtomSet(compactAllEventsAtom, { mode: 'promise' });
 
   const isActive = activePane === ActivePane.Facts;
 
@@ -56,11 +56,10 @@ export default function FactsPane() {
              setHighlightedIndex(null);
         }
     } else if (key.name === 'c') {
-        // c - compact state up to selected event
-        const indexToCompact = selectedIndex !== null ? selectedIndex : highlightedIndex;
+        // c - compact all events
         setCompactionMessage('Compacting...');
         try {
-            const result = await compactState(indexToCompact);
+            const result = await compactState();
             setCompactionMessage(result.message);
             setTimeout(() => setCompactionMessage(null), 3000);
         } catch (error) {

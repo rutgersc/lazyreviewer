@@ -2,7 +2,7 @@ import { Stream, Effect } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { EventStorage, type LazyReviewerEvent } from "./events";
 import { Atom } from "@effect-atom/atom-react";
-import { compactedStateStream, persistCompactedState } from "../mergerequests/mergerequest-compaction-projection";
+import { persistCompactedState, projectEvent, isCompactedMergeRequestsEvent, type CompactedMergeRequestEntry } from "../mergerequests/mergerequest-compaction-projection";
 
 export const allEventsAtom = appAtomRuntime.atom(
   Stream.unwrap(EventStorage.eventsStream).pipe(
@@ -13,25 +13,22 @@ export const allEventsAtom = appAtomRuntime.atom(
 
 export const selectedEventIndexAtom = Atom.make<number | null>(null);
 
-export const compactStateUpToSelectedEventAtom = appAtomRuntime.fn((selectedIndex: number | null) =>
+export const compactAllEventsAtom = appAtomRuntime.fn(() =>
   Effect.gen(function* () {
-    if (selectedIndex === null) {
-      return { success: false, message: "No event selected" };
-    }
+    // Project all events to get final state
+    const finalState = (yield* EventStorage.loadEvents)
+      .filter(isCompactedMergeRequestsEvent)
+      .reduce(
+        (state, event) => projectEvent(state, event),
+        new Map<string, CompactedMergeRequestEntry>()
+      );
 
-    const stateStream = yield* compactedStateStream;
-    const states = yield* Stream.runCollect(
-      stateStream.pipe(Stream.take(selectedIndex + 1))
-    );
-
-    const finalState = states.pipe((chunk) => Array.from(chunk).pop());
-
-    if (!finalState) {
-      return { success: false, message: "No compacted state available" };
+    if (finalState.size === 0) {
+      return { success: false, message: "No events to compact" };
     }
 
     const count = yield* persistCompactedState(finalState);
 
-    return { success: true, message: `Compacted ${count} MRs up to event ${selectedIndex}` };
+    return { success: true, message: `Compacted all events into ${count} MRs` };
   })
 );

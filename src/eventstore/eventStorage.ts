@@ -58,9 +58,24 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
         .filter((parsed): parsed is NonNullable<typeof parsed> => parsed !== null)
         .sort((a, b) => a.eventNumber - b.eventNumber)
 
+      // Find the LAST compaction event (highest event number)
+      const lastCompactionIndex = parsedFiles.findLastIndex(
+        parsed => parsed.eventType === 'mergerequests-compacted-event'
+      )
+
+      // Load only from last compaction onwards (or all if no compaction exists)
+      const eventsToLoad = lastCompactionIndex >= 0
+        ? parsedFiles.slice(lastCompactionIndex)
+        : parsedFiles
+
+      yield* console.log(
+        `[EventStorage] Found ${parsedFiles.length} total events, ` +
+        `loading ${eventsToLoad.length} from ${lastCompactionIndex >= 0 ? 'last compaction' : 'beginning'}`
+      )
+
       // Load and parse each event file with Schema validation
       const events = yield* Effect.all(
-        parsedFiles.map(parsed =>
+        eventsToLoad.map(parsed =>
           Effect.gen(function* () {
             const filePath = path.join(eventsDir, parsed.filename)
             const content = yield* fs.readFileString(filePath)
