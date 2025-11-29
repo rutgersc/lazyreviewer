@@ -11,9 +11,10 @@ import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/
 import type { SearchJiraIssuesError, JiraIssue } from "../jira/jira-service"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
 import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getSingleMrAsEvent } from "../gitlab/gitlab-graphql"
-import { loadJiraTicketsAsEvent, projectJiraIssuesFetchedEvent } from "../jira/jira-service"
+import { loadJiraTicketsAsEvent, projectJiraIssuesFetchedEvent, extractElabTicketsFromTitle } from "../jira/jira-service"
 import type { GitlabMergeRequest } from "../gitlab/gitlab-schema"
-import { projectGitlabProjectMrsFetchedEvent, projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent } from "../gitlab/gitlab-projections"
+import { projectGitlabProjectMrsFetchedEvent, projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, mapRawMrToGitlabMr } from "../gitlab/gitlab-projections"
+import { mapBitbucketToGitlabMergeRequest } from "../bitbucket/bitbucket-projections"
 
 import { projectOpenMrsAndDetectMissing, OpenMrsTrackingState, initialOpenMrsTrackingState, missingMrsDiffAtom, isReconcilingAtom } from "./mr-diff-tracking"
 
@@ -179,11 +180,14 @@ export class MrStateFetched extends Data.TaggedClass("Fetched")<{
 export type MrState = MrStateNotFetched | MrStateFetched
 
 // Events that are relevant for MR state projection
+import type { MergeRequestsCompactedEvent } from "../events/event-compaction-events";
+
 export type MrRelevantEvent =
   | GitlabUserMergeRequestsFetchedEvent
   | GitlabprojectMergeRequestsFetchedEvent
   | JiraIssuesFetchedEvent
   | GitlabSingleMrFetchedEvent
+  | MergeRequestsCompactedEvent
 
 // Global MR state - all MRs indexed by ID
 export class AllMrsState extends Data.TaggedClass("AllMrsState")<{
@@ -254,6 +258,31 @@ export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMr
       mrsByGid: currentMap,
       jiraIssuesByKey: currentJiraIssues,
       timestamp: state.timestamp // Keep original timestamp
+    });
+  }
+
+  // Handle compacted MRs - replace entire MR state
+  if (event.type === 'mergerequests-compacted-event') {
+    const newMap = new Map<string, MergeRequest>();
+
+    event.mrs.forEach(rawMr => {
+      if ('iid' in rawMr && 'project' in rawMr) {
+        const mr = mapRawMrToGitlabMr(rawMr);
+        newMap.set(mr.id, mr);
+      } else {
+        const fullPath = rawMr.destination.repository.full_name;
+        const [workspace = '', repoSlug = ''] = fullPath.split('/');
+        const mr = mapBitbucketToGitlabMergeRequest(rawMr, workspace, repoSlug);
+        newMap.set(mr.id, mr);
+      }
+    });
+
+    console.log("mapping stuff!", { count: newMap.size })
+
+    return new AllMrsState({
+      mrsByGid: newMap,
+      jiraIssuesByKey: currentJiraIssues,
+      timestamp: new Date()
     });
   }
 

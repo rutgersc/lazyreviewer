@@ -5,14 +5,25 @@ import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom } from '../ui/navigation-atom';
 import { allEventsAtom, selectedEventIndexAtom, compactAllEventsAtom } from '../events/events-atom';
 import { resultToArray } from '../utils/result-helpers';
+import { appAtomRuntime } from '../appLayerRuntime';
+import { EventStorage } from '../eventstore/eventStorage';
+
+const allEventsIncludingCompactedAtom = appAtomRuntime.atom(EventStorage.loadAllEvents, { initialValue: [] });
 
 export default function FactsPane() {
   const [activePane] = useAtom(activePaneAtom);
-  const events = resultToArray(useAtomValue(allEventsAtom));
+  const allEvents = resultToArray(useAtomValue(allEventsIncludingCompactedAtom));
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useAtom(selectedEventIndexAtom);
   const [compactionMessage, setCompactionMessage] = useState<string | null>(null);
   const compactState = useAtomSet(compactAllEventsAtom, { mode: 'promise' });
+
+  // Find last compaction event index
+  const lastCompactionIndex = allEvents.findLastIndex(
+    event => event.type === 'mergerequests-compacted-event'
+  );
+
+  const events = allEvents;
 
   const isActive = activePane === ActivePane.Facts;
 
@@ -87,10 +98,23 @@ export default function FactsPane() {
             // Check if this event is selected (time-travel active point)
             const isSelected = selectedIndex === originalIndex || (selectedIndex === null && originalIndex === events.length - 1);
 
+            // Determine if this event is compacted (before last compaction event)
+            const isCompacted = lastCompactionIndex >= 0 && originalIndex < lastCompactionIndex;
+            const isCompactionEvent = event.type === 'mergerequests-compacted-event';
+
             // Determine colors based on state
             let color = '#f8f8f2'; // default white
             let backgroundColor = undefined;
 
+            if (isCompacted) {
+                // Events before last compaction - grey
+                color = '#6272a4'; // grey (compacted/historical)
+            } else if (isCompactionEvent) {
+                // Compaction event itself - orange
+                color = '#ffb86c'; // orange
+            }
+
+            // Override with selection/highlight colors
             if (isSelected && isHighlighted) {
                 // Both selected and highlighted - most prominent
                 color = '#50fa7b'; // green

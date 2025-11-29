@@ -3,6 +3,7 @@ import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest, JobHistoryEntry } from "./gitlab-schema";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent } from "../events/gitlab-events";
 import type { MRsQuery } from "../graphql/mrs.generated";
+import type { GitlabRawMergeRequest } from "./gitlab-raw-schema";
 
 const mapMrFromQuery = (
   username: string,
@@ -94,6 +95,80 @@ const mapMrFromQuery = (
     pipeline: pipeline
   } satisfies GitlabMergeRequest;
 }
+
+// Map GitlabRawMergeRequest to GitlabMergeRequest (for compacted events)
+export const mapRawMrToGitlabMr = (rawMr: GitlabRawMergeRequest): GitlabMergeRequest => {
+  // Process pipeline
+  const pipeline = rawMr.headPipeline ? {
+    stage: (rawMr.headPipeline.stages?.nodes || []).map(stage => ({
+      name: stage?.name || '',
+      jobs: (stage?.jobs?.nodes || []).map(job => ({
+        id: String(job?.id || ''),
+        localId: Number(String(job?.id || '').split('/').pop() || '0'),
+        name: job?.name || '',
+        status: job?.status || 'CREATED',
+        failureMessage: job?.failureMessage || null,
+        webPath: job?.webPath || null,
+        startedAt: job?.startedAt || '',
+        duration: job?.duration ?? null
+      })).sort((a, b) => a.startedAt.localeCompare(b.startedAt))
+    }))
+  } : { stage: [] };
+
+  // Process discussions
+  const rawDiscussions = rawMr.discussions?.nodes || [];
+  const discussions: Discussion[] = rawDiscussions.map(d => ({
+    id: String(d?.id || ''),
+    resolved: d?.resolved || false,
+    resolvable: d?.resolvable || false,
+    notes: (d?.notes?.nodes || []).map(note => ({
+      id: String(note?.id || ''),
+      body: note?.body || '',
+      author: note?.author?.name || '',
+      createdAt: new Date(note?.createdAt || ''),
+      resolvable: note?.resolvable || false,
+      resolved: note?.resolved || false,
+      position: note?.position ? {
+        filePath: note.position.filePath || null,
+        newLine: note.position.newLine || null,
+        oldLine: note.position.oldLine || null,
+        oldPath: note.position.oldPath || null,
+      } : null,
+    }))
+  }));
+
+  const totalDiscussions = discussions.length;
+  const resolvableDiscussions = discussions.filter(d => d.resolvable).length;
+  const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved === true).length;
+  const unresolvedDiscussions = resolvableDiscussions - resolvedDiscussions;
+
+  return {
+    id: rawMr.id,
+    iid: rawMr.iid,
+    title: rawMr.name || '',
+    jiraIssueKeys: extractElabTicketsFromTitle(rawMr.name || ''),
+    webUrl: rawMr.webUrl || '',
+    sourcebranch: rawMr.sourceBranch,
+    targetbranch: rawMr.targetBranch,
+    project: rawMr.project,
+    author: rawMr.author?.name || '',
+    avatarUrl: rawMr.author?.avatarUrl || null,
+    createdAt: new Date(rawMr.createdAt),
+    updatedAt: new Date(rawMr.updatedAt),
+    state: rawMr.state,
+    approvedBy: (rawMr.approvedBy?.nodes || []).map(n => ({
+      id: String(n?.id || n?.name),
+      name: n?.name || '',
+      username: n?.username || ''
+    })),
+    resolvableDiscussions,
+    resolvedDiscussions,
+    unresolvedDiscussions,
+    totalDiscussions,
+    discussions,
+    pipeline
+  } satisfies GitlabMergeRequest;
+};
 
 export const projectGitlabUserMrsFetchedEvent = (event: GitlabUserMergeRequestsFetchedEvent): GitlabMergeRequest[] => {
   const res = event.mrs.users!.nodes!.flatMap(user => {

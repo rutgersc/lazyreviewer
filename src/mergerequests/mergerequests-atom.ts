@@ -69,7 +69,8 @@ export const allMrsAtom = appAtomRuntime.atom(
           return event.type === 'gitlab-user-mrs-fetched-event' ||
                  event.type === 'gitlab-project-mrs-fetched-event' ||
                  event.type === 'gitlab-single-mr-fetched-event' ||
-                 event.type === 'jira-issues-fetched-event';
+                 event.type === 'jira-issues-fetched-event' ||
+                 event.type === 'mergerequests-compacted-event';
         };
 
         return stream.pipe(
@@ -113,7 +114,8 @@ export const openMrsTrackingAtom = appAtomRuntime.atom(
         const isMrRelevantEvent = (event: LazyReviewerEvent): event is MrRelevantEvent => {
           return event.type === 'gitlab-user-mrs-fetched-event' ||
                  event.type === 'gitlab-project-mrs-fetched-event' ||
-                 event.type === 'gitlab-single-mr-fetched-event';
+                 event.type === 'gitlab-single-mr-fetched-event' ||
+                 event.type === 'mergerequests-compacted-event';
         };
 
         return stream.pipe(

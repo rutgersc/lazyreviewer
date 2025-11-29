@@ -471,7 +471,7 @@ export default function MergeRequestPane({}: {}) {
       const mr = allMrs.value.mrsByGid.get(id);
       return mr ? mr.title : id;
     });
-    console.log("detectedMissingMrIds", missingNames);
+    console.log("detectedMissingMrIds", { count: allMrs.value, missingNames} );
   }
 
   const isActive = activePane === ActivePane.MergeRequests;

@@ -44,8 +44,8 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       }
     }
 
-    const loadEvents = Effect.gen(function* () {
-      yield* console.log("[EventStorage] loading all events..")
+    const loadEventsImpl = (fromLastCompaction: boolean) => Effect.gen(function* () {
+      yield* console.log(`[EventStorage] loading ${fromLastCompaction ? 'from last compaction' : 'all events'}..`)
 
       // Read directory
       const files = yield* fs.readDirectory(eventsDir).pipe(
@@ -63,14 +63,14 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
         parsed => parsed.eventType === 'mergerequests-compacted-event'
       )
 
-      // Load only from last compaction onwards (or all if no compaction exists)
-      const eventsToLoad = lastCompactionIndex >= 0
+      // Load only from last compaction onwards if requested
+      const eventsToLoad = fromLastCompaction && lastCompactionIndex >= 0
         ? parsedFiles.slice(lastCompactionIndex)
         : parsedFiles
 
       yield* console.log(
         `[EventStorage] Found ${parsedFiles.length} total events, ` +
-        `loading ${eventsToLoad.length} from ${lastCompactionIndex >= 0 ? 'last compaction' : 'beginning'}`
+        `loading ${eventsToLoad.length}`
       )
 
       // Load and parse each event file with Schema validation
@@ -101,6 +101,9 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
       return events.filter((event): event is LazyReviewerEvent => event !== null)
     })
+
+    const loadEvents = loadEventsImpl(true)
+    const loadAllEvents = loadEventsImpl(false)
 
     const appendEvent = (event: LazyReviewerEvent) => Effect.gen(function* () {
       const files = yield* fs.readDirectory(eventsDir);
@@ -149,6 +152,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
     return {
       loadEvents,
+      loadAllEvents,
       appendEvent,
       eventsStream
     } as const

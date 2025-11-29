@@ -78,7 +78,7 @@ export const isCompactedMergeRequestsEvent = (event: LazyReviewerEvent): event i
 const isGitlabMr = (mr: GitlabRawMergeRequest | BitbucketPullRequest): mr is GitlabRawMergeRequest =>
   'iid' in mr && 'project' in mr
 
-export const projectEvent = (
+export const projectToCompactedMergeRequestsState = (
   state: CompactedMergeRequestsState,
   event: CompactedMergeRequestsEvent
 ): CompactedMergeRequestsState => {
@@ -204,16 +204,6 @@ export const projectEvent = (
         throw new Error("unexpected non-exhaustive match")
   }
 }
-
-export const compactedStateStream = Effect.gen(function* () {
-  return (yield* EventStorage.eventsStream).pipe(
-    Stream.filter(isCompactedMergeRequestsEvent),
-    Stream.scan(
-      new Map<string, CompactedMergeRequestEntry>(),
-      (state, event) => projectEvent(state, event)
-    ),
-  )
-})
 
 export const persistCompactedState = (state: CompactedMergeRequestsState) =>
   Effect.gen(function* () {

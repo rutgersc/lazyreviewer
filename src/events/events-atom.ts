@@ -2,7 +2,7 @@ import { Stream, Effect } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { EventStorage, type LazyReviewerEvent } from "./events";
 import { Atom } from "@effect-atom/atom-react";
-import { persistCompactedState, projectEvent, isCompactedMergeRequestsEvent, type CompactedMergeRequestEntry } from "../mergerequests/mergerequest-compaction-projection";
+import { persistCompactedState, projectToCompactedMergeRequestsState, isCompactedMergeRequestsEvent, type CompactedMergeRequestEntry } from "../mergerequests/mergerequest-compaction-projection";
 
 export const allEventsAtom = appAtomRuntime.atom(
   Stream.unwrap(EventStorage.eventsStream).pipe(
@@ -19,7 +19,7 @@ export const compactAllEventsAtom = appAtomRuntime.fn(() =>
     const finalState = (yield* EventStorage.loadEvents)
       .filter(isCompactedMergeRequestsEvent)
       .reduce(
-        (state, event) => projectEvent(state, event),
+        (state, event) => projectToCompactedMergeRequestsState(state, event),
         new Map<string, CompactedMergeRequestEntry>()
       );
 
