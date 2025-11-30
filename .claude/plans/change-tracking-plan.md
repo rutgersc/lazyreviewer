@@ -2,13 +2,12 @@
 
 ## Overview
 
-Create an event-sourcing projection system that tracks important changes across merge requests and Jira issues by diffing consecutive events. The system will detect:
-1. New MRs
-2. New comments/discussions on MY MRs (where I'm the author)
-3. New replies to MY comments on any MR
-4. Jira status changes for MRs
+Create an event-sourcing projection system that detects new comments on merge requests by diffing consecutive events. The system will detect:
+1. New comments/discussions on MRs
 
 Changes will be console-logged for now (no UI integration yet).
+
+**Note**: This is a focused MVP. Future iterations can add detection for new MRs, replies to my comments, and Jira status changes.
 
 ## Prerequisites
 
@@ -62,132 +61,254 @@ Remove line 6 from `data-atom.ts` and update all imports to use `currentUserAtom
 ### Task 1.1: Define Change Event Types
 **Files:** `src/events/change-tracking-events.ts` (new)
 
-Create schemas for change events using Effect Schema:
+Create schema for new comment change events using Effect Schema - just IDs:
 
 ```typescript
-export type ChangeType =
-  | 'new-mr'
-  | 'new-comment-on-my-mr'
-  | 'new-reply-to-my-comment'
-  | 'jira-status-change'
+export type ChangeType = 'new-mr-comment'
 
-// Individual schemas
-const NewMrChangeSchema = Schema.Struct({
-  changeType: Schema.Literal('new-mr'),
+const NewMrCommentChangeSchema = Schema.Struct({
+  changeType: Schema.Literal('new-mr-comment'),
   mrId: Schema.String,
-  mrIid: Schema.String,
-  mrTitle: Schema.String,
-  author: Schema.String,
-  projectPath: Schema.String,
-  detectedAt: Schema.Date
+  noteId: Schema.String
 })
 
-// ... similar for other change types
-
-export const ChangeEventSchema = Schema.Union(
-  NewMrChangeSchema,
-  NewCommentOnMyMrChangeSchema,
-  NewReplyToMyCommentChangeSchema,
-  JiraStatusChangeSchema
-)
+export const ChangeEventSchema = NewMrCommentChangeSchema
+export type ChangeEvent = Schema.Schema.Type<typeof ChangeEventSchema>
 ```
+
+**Key principle**: Change events contain ONLY IDs. Display fields are looked up from existing read model projections.
 
 ### Task 1.2: Define Projection State Types
 **Files:** `src/changetracking/change-tracking-state.ts` (new)
 
-Define types for tracking last seen state:
+Define minimal state for tracking seen comment IDs:
 
 ```typescript
-export interface MrDiscussionSnapshot {
-  mrId: string
-  mrIid: string
-  author: string
-  discussions: Discussion[]
-  timestamp: Date
-}
-
-export interface JiraSnapshot {
-  jiraKey: string
-  status: string
-  summary: string
-  updated: string
-  timestamp: Date
-}
-
 export interface ChangeTrackingState {
-  mrSnapshots: Map<string, MrDiscussionSnapshot>
-  jiraSnapshots: Map<string, JiraSnapshot>
+  // Map from mrId to Set of noteIds we've seen
+  mrCommentIds: Map<string, Set<string>>
+}
+
+export const initialChangeTrackingState: ChangeTrackingState = {
+  mrCommentIds: new Map()
 }
 ```
 
+**Key principle**: State contains ONLY the IDs needed to calculate diffs. No extra metadata.
+
 ---
 
-## Phase 2: Individual Change Projections
+## Phase 2: Comment Detection Projection
 
-### Task 2.1: New MR Projection
-**Files:** `src/changetracking/new-mr-projection.ts` (new)
+### Task 2.1: Define Diff Info Types
+**Files:** `src/changetracking/mr-comments-projection.ts` (new)
 
-Filter and projection functions:
-- `isNewMrRelevantEvent()` - type guard for MR events
-- `detectNewMrs(state, event, currentUser)` - detect MRs not in snapshots
+Define types for the diff computation:
 
-Logic:
-1. Extract MRs from event using existing projection functions
-2. Compare against `state.mrSnapshots`
-3. Emit `NewMrChange` for MRs not in map
-4. Update snapshots with all MRs from event
+```typescript
+import type { GitlabMergeRequest, DiscussionNote } from '../gitlab/gitlab-schema'
+import type { ChangeTrackingState } from './change-tracking-state'
+import type { ChangeEvent } from '../events/change-tracking-events'
+import type { LazyReviewerEvent } from '../events/events'
+import type {
+  GitlabUserMergeRequestsFetchedEvent,
+  GitlabprojectMergeRequestsFetchedEvent,
+  GitlabSingleMrFetchedEvent
+} from '../events/gitlab-events'
+import {
+  projectGitlabUserMrsFetchedEvent,
+  projectGitlabProjectMrsFetchedEvent,
+  projectGitlabSingleMrFetchedEvent
+} from '../gitlab/gitlab-projections'
 
-### Task 2.2: New Comments on MY MRs Projection
-**Files:** `src/changetracking/my-mr-comments-projection.ts` (new)
+/**
+ * Union of events that contain MR discussions
+ */
+type MrDiscussionsEvent =
+  | GitlabUserMergeRequestsFetchedEvent
+  | GitlabprojectMergeRequestsFetchedEvent
+  | GitlabSingleMrFetchedEvent
 
-Projection function: `detectNewCommentsOnMyMrs(state, event, currentUser)`
+/**
+ * Represents an MR with all its discussions
+ */
+// flattened from discussions
+type MrDiscussionsByMrId = Map<string, Set<string>>
 
-Logic:
-1. Filter to MRs where `mr.author === currentUser`
-2. Build set of previously seen note IDs from snapshot
-3. Find notes in current event not in previous set
-4. Emit `NewCommentOnMyMrChange` for each new note
-5. Update snapshots
+/**
+ * Diff information for a single MR - only what changed
+ */
+interface MrCommentDiff {
+  mrId: string
+  newNoteIds: Set<string>   // Only the IDs that are new (not in previous state)
+}
 
-### Task 2.3: New Replies to MY Comments Projection
-**Files:** `src/changetracking/my-comment-replies-projection.ts` (new)
+/**
+ * Result of the projection, containing detected changes and updated state
+ */
+interface CommentDetectionResult {
+  changes: ChangeEvent[]                    // New comment change events to emit
+  updatedCommentIds: Map<string, Set<string>>  // Updated mrId -> noteIds to merge into state
+}
+```
 
-Projection function: `detectNewRepliesToMyComments(state, event, currentUser)`
+### Task 2.2: Implement Comments Detection Projection
+**Files:** `src/changetracking/mr-comments-projection.ts` (new)
 
-Logic:
-1. For each MR, find discussions where I have a comment
-2. Build set of previously seen note IDs
-3. Find new notes in those discussions where `note.author !== currentUser`
-4. Emit `NewReplyToMyCommentChange`
-5. Update snapshots
+Main projection function with helper functions:
 
-### Task 2.4: Jira Status Change Projection
-**Files:** `src/changetracking/jira-status-projection.ts` (new)
+```typescript
+/**
+ * Type guard for events that contain MR discussions
+ */
+function isRelevantEvent(event: LazyReviewerEvent): event is MrDiscussionsEvent {
+  return event.type === 'gitlab-user-mrs-fetched-event' ||
+         event.type === 'gitlab-project-mrs-fetched-event' ||
+         event.type === 'gitlab-single-mr-fetched-event'
+}
 
-Filter and projection:
-- `isJiraRelevantEvent()` - type guard for jira-issues-fetched-event
-- `detectJiraStatusChanges(state, event)` - compare status against snapshot
+/**
+ * Extract ALL MRs with flattened notes from an event using existing projection functions
+ */
+function extractMrsWithNotes(
+  event: MrDiscussionsEvent
+): MrDiscussionsByMrId {
+  let gitlabMrs: GitlabMergeRequest[] = []
 
-Logic:
-1. Extract Jira issues from event
-2. Compare `issue.fields.status.name` against snapshot
-3. If different, emit `JiraStatusChange`
-4. Update snapshots
+  if (event.type === 'gitlab-user-mrs-fetched-event') {
+    gitlabMrs = projectGitlabUserMrsFetchedEvent(event)
+  } else if (event.type === 'gitlab-project-mrs-fetched-event') {
+    gitlabMrs = projectGitlabProjectMrsFetchedEvent(event)
+  } else if (event.type === 'gitlab-single-mr-fetched-event') {
+    const mr = projectGitlabSingleMrFetchedEvent(event)
+    gitlabMrs = mr ? [mr] : []
+  }
+
+  const result = new Map<string, Set<string>>()
+
+  for (const mr of gitlabMrs) {
+    const noteIds = new Set(mr.discussions.flatMap(d => d.notes).map(n => n.id))
+    result.set(mr.id, noteIds)
+  }
+
+  return result
+}
+
+/**
+ * Pure diff function: takes two Sets, returns elements in current not in previous
+ */
+function diffNoteIds(
+  previous: Set<string>,
+  current: Set<string>
+): Set<string> {
+  return new Set([...current].filter(id => !previous.has(id)))
+}
+
+/**
+ * Compute diff for a single MR - takes two Sets of the same type, returns only what's new
+ */
+function computeMrDiff(
+  currentNoteIds: Set<string>,
+  previousNoteIds: Set<string> | undefined,
+  mrId: string
+): MrCommentDiff {
+  const previous = previousNoteIds ?? new Set<string>()
+  const newIds = diffNoteIds(previous, currentNoteIds)
+
+  return {
+    mrId,
+    newNoteIds: newIds
+  }
+}
+
+/**
+ * Convert diff to change events - just IDs
+ */
+function diffToChangeEvents(
+  diff: MrCommentDiff
+): ChangeEvent[] {
+  return [...diff.newNoteIds].map(noteId => ({
+    changeType: 'new-mr-comment' as const,
+    mrId: diff.mrId,
+    noteId: noteId
+  }))
+}
+
+/**
+ * Main projection: detect new comments on ALL MRs
+ */
+export function detectNewMrComments(
+  state: ChangeTrackingState,
+  event: LazyReviewerEvent
+): CommentDetectionResult {
+  // Early return if not relevant event
+  if (!isRelevantEvent(event)) {
+    return { changes: [], updatedCommentIds: new Map() }
+  }
+
+  const mrDiscussionsByMrId = extractMrsWithNotes(event)
+
+  const changes: ChangeEvent[] = []
+  const updatedCommentIds = new Map<string, Set<string>>()
+
+  for (const [mrId, currentCommentIds] of mrDiscussionsByMrId) {
+    const previousCommentIds = state.mrCommentIds.get(mrId)
+    const diff = computeMrDiff(currentCommentIds, previousCommentIds, mrId)
+
+    // Only emit changes if there are new notes
+    if (diff.newNoteIds.size > 0) {
+      const newChanges = diffToChangeEvents(diff)
+      changes.push(...newChanges)
+    }
+
+    // Always update state with current note IDs
+    updatedCommentIds.set(mrId, currentCommentIds)
+  }
+
+  return { changes, updatedCommentIds }
+}
+```
 
 ---
 
 ## Phase 3: State Management
 
-### Task 3.1: Create Unified Change Tracking Projection
+### Task 3.1: Create Change Tracking Projection Coordinator
 **Files:** `src/changetracking/change-tracking-projection.ts` (new)
 
-Main projection function: `projectChangeTracking(state, event, currentUser)`
+Main projection function that applies comment detection and updates state:
 
-Logic:
-1. Route events to appropriate detectors
-2. Apply detectors sequentially (each updates state)
-3. Aggregate all changes
-4. Return `{ changes, newState }`
+```typescript
+import type { ChangeTrackingState } from './change-tracking-state'
+import type { ChangeEvent } from '../events/change-tracking-events'
+import type { LazyReviewerEvent } from '../events/events'
+import { detectNewMrComments } from './mr-comments-projection'
+
+interface ProjectionResult {
+  changes: ChangeEvent[]
+  newState: ChangeTrackingState
+}
+
+export function projectChangeTracking(
+  state: ChangeTrackingState,
+  event: LazyReviewerEvent
+): ProjectionResult {
+  const result = detectNewMrComments(state, event)
+
+  // Merge updated comment IDs into state
+  const newState: ChangeTrackingState = {
+    mrCommentIds: new Map([
+      ...state.mrCommentIds,
+      ...result.updatedCommentIds
+    ])
+  }
+
+  return {
+    changes: result.changes,
+    newState
+  }
+}
+```
 
 ### Task 3.2: Create Change Tracking Atom
 **Files:** `src/changetracking/change-tracking-atom.ts` (new)
@@ -195,15 +316,20 @@ Logic:
 Atom that:
 1. Consumes `EventStorage.eventsStream`
 2. Uses `Stream.scan` to apply `projectChangeTracking` to each event
-3. Depends on `currentUserAtom` for current user
-4. Accumulates changes and maintains state
-5. Logs changes to console as detected
+3. Accumulates changes and maintains state
+4. Logs changes to console as detected
 
 ```typescript
+import { Atom } from '@effect-atom/atom-react'
+import { Effect, Stream } from 'effect'
+import { appAtomRuntime } from '../appLayerRuntime'
+import { EventStorage } from '../events/events'
+import { initialChangeTrackingState } from './change-tracking-state'
+import { projectChangeTracking } from './change-tracking-projection'
+import { formatChange } from './change-formatters'
+
 export const changeTrackingAtom = appAtomRuntime.atom(
   (get) => {
-    const currentUser = get(currentUserAtom)
-
     return Stream.unwrap(
       Effect.gen(function* () {
         const baseStream = yield* EventStorage.eventsStream
@@ -212,10 +338,13 @@ export const changeTrackingAtom = appAtomRuntime.atom(
           Stream.scan(
             { state: initialChangeTrackingState, allChanges: [] },
             (acc, event) => {
-              const result = projectChangeTracking(acc.state, event, currentUser)
+              const result = projectChangeTracking(acc.state, event)
 
               if (result.changes.length > 0) {
-                // Console log here
+                // Console log each change
+                result.changes.forEach(change => {
+                  console.log(formatChange(change, get))
+                })
               }
 
               return {
@@ -236,20 +365,56 @@ export const changeTrackingAtom = appAtomRuntime.atom(
 
 ## Phase 4: Integration & Console Output
 
-### Task 4.1: Add Console Logging Formatters
+### Task 4.1: Add Console Logging Formatter
 **Files:** `src/changetracking/change-formatters.ts` (new)
 
-Helper functions to format each change type:
-- `formatNewMr(change)` - "[NEW MR] !123 - 'Title' by author in project"
-- `formatNewCommentOnMyMr(change)` - "[NEW COMMENT ON MY MR] !123 - user commented: '...'"
-- `formatNewReplyToMyComment(change)` - "[REPLY TO MY COMMENT] !123 - user replied: '...'"
-- `formatJiraStatusChange(change)` - "[JIRA STATUS] ELAB-123 - 'Summary' changed from 'X' to 'Y'"
-- `formatChange(change)` - switch on changeType
+Helper function to format new comment changes - looks up data from `allMrsAtom`:
+
+```typescript
+import { Result } from '@effect-atom/atom-react'
+import type { ChangeEvent } from '../events/change-tracking-events'
+import type { Atom } from '@effect-atom/atom-react'
+import { allMrsAtom } from '../mergerequests/mergerequests-atom'
+
+export function formatChange(change: ChangeEvent, get: Atom.Get): string {
+  // Look up MR from allMrsAtom read model using change.mrId
+  const allMrsResult = get(allMrsAtom)
+  const allMrsState = Result.match(allMrsResult, {
+    onInitial: () => null,
+    onFailure: () => null,
+    onSuccess: (state) => state.value
+  })
+
+  if (!allMrsState) {
+    return `[NEW MR COMMENT] MR: ${change.mrId}, Note: ${change.noteId} (allMrs not loaded)`
+  }
+
+  const mr = allMrsState.mrsByGid.get(change.mrId)
+  if (!mr) {
+    return `[NEW MR COMMENT] MR: ${change.mrId}, Note: ${change.noteId} (MR not found)`
+  }
+
+  // Find note in MR discussions
+  const note = mr.discussions
+    .flatMap(d => d.notes)
+    .find(n => n.id === change.noteId)
+
+  if (!note) {
+    return `[NEW MR COMMENT] !${mr.iid} - ${mr.title} - Note: ${change.noteId} (note not found)`
+  }
+
+  const preview = note.body.length > 100
+    ? note.body.substring(0, 100) + '...'
+    : note.body
+
+  return `[NEW MR COMMENT] !${mr.iid} - ${mr.title} - ${note.author} commented: "${preview}"`
+}
+```
 
 ### Task 4.2: Update Change Tracking Atom with Formatted Logging
 **Files:** `src/changetracking/change-tracking-atom.ts`
 
-Import and use formatters in the Stream.scan logging section.
+Already included in Task 3.2 - the atom imports and uses `formatChange` from `./change-formatters`.
 
 ### Task 4.3: Initialize Change Tracking in App
 **Files:** Main app file (App.tsx or similar)
@@ -268,11 +433,11 @@ useEffect(() => {
 ### Task 4.4: Testing and Validation
 
 Test scenarios:
-1. Fetch MRs - verify new MR detection
-2. Add comments via GitLab - verify comment detection
-3. Update Jira status - verify Jira change detection
-4. Verify changes only detected once
-5. Verify currentUser filtering works
+1. Fetch MRs with discussions
+2. Add comments via GitLab to any MR
+3. Re-fetch MRs - verify comment detection in console
+4. Verify changes only detected once (not on subsequent fetches with same data)
+5. Verify ALL new comments are detected (on any MR, not filtered by author)
 
 ---
 
@@ -280,14 +445,14 @@ Test scenarios:
 
 1. **Phase 0** (all tasks) - Prerequisites for user identification
 2. **Phase 1** (all tasks) - Foundation types and state
-3. **Phase 2** - Implement projections (can be done in parallel):
-   - Task 2.1 (New MR) - foundational, others depend on this
-   - Tasks 2.2, 2.3, 2.4 (other projections)
+3. **Phase 2** (sequential):
+   - Task 2.1 (Define diff info types)
+   - Task 2.2 (Implement projection)
 4. **Phase 3** (sequential):
-   - Task 3.1 (Unified projection)
+   - Task 3.1 (Projection coordinator)
    - Task 3.2 (Atom)
 5. **Phase 4** (sequential):
-   - Task 4.1 (Formatters)
+   - Task 4.1 (Formatter)
    - Task 4.2 (Update atom)
    - Task 4.3 (Initialize)
    - Task 4.4 (Test)
@@ -296,19 +461,29 @@ Test scenarios:
 
 ## Key Design Decisions
 
-1. **Event-to-event diffing**: Each projection maintains snapshots of entities (MRs, Jira issues) and diffs new events against previous snapshots
-2. **Separate projection files**: Each change type has its own file following existing patterns
-3. **Unified coordinator**: `change-tracking-projection.ts` orchestrates all detectors
-4. **Stateful stream scanning**: Use Effect Stream.scan to maintain state across events
-5. **Console output only**: No UI integration yet - just formatted console logs
-6. **No change event persistence**: Changes are ephemeral notifications, not stored as events
+1. **Minimal state**: State contains ONLY the IDs needed for diff computation - `Map<mrId, Set<noteId>>`. No extra metadata.
+2. **Minimal change events**: Change events contain ONLY IDs (`mrId`, `noteId`). All display data is looked up from `allMrsAtom` read model when needed for formatting.
+3. **Record only what changed**: Diff types (`MrCommentDiff`) contain only `mrId` and `newNoteIds` - we don't track "previous" state in the diff, just what's new.
+4. **Separation of diff and display**: No display fields in state, diff types, or change events. Display formatting uses existing read model projections.
+5. **Pure diff function**: The core `diffNoteIds(previous: Set<string>, current: Set<string>): Set<string>` function takes two parameters of the same type and returns the difference.
+6. **Event-to-event diffing**: Maintains note IDs in state and diffs new events against previous snapshots using Set-based comparison
+7. **Uses existing projections**: Leverages existing projection functions (`projectGitlabUserMrsFetchedEvent`, etc.) and types (`GitlabMergeRequest`, `DiscussionNote`) from the codebase
+8. **Focused MVP scope**: Starting with only "new comments on MRs" to validate the approach before expanding to other change types
+9. **No filtering by author**: Detect new comments on ALL MRs, not filtered to specific authors
+10. **Stateful stream scanning**: Use Effect `Stream.scan` to maintain state across events from `EventStorage.eventsStream`
+11. **Console output only**: No UI integration yet - just formatted console logs using `allMrsAtom` for display data
+12. **No change event persistence**: Changes are ephemeral notifications, not stored as events
+13. **Future extensibility**: The projection structure allows easy addition of new change types (new MRs, replies to my comments, Jira changes) later
 
 ---
 
 ## Critical Files
 
 - `src/settings/settings.ts` - Add currentUser field
-- `src/changetracking/change-tracking-projection.ts` - Core coordination logic
-- `src/changetracking/my-mr-comments-projection.ts` - Example discussion diffing
-- `src/changetracking/change-tracking-atom.ts` - Event stream consumption
-- `src/events/change-tracking-events.ts` - Change event type definitions
+- `src/settings/settings-atom.ts` - Export currentUserAtom from settings
+- `src/events/change-tracking-events.ts` - Change event type definition (NewMrCommentChange)
+- `src/changetracking/change-tracking-state.ts` - Minimal state type (Map<mrId, Set<noteId>>)
+- `src/changetracking/mr-comments-projection.ts` - Diff info types and comment detection logic
+- `src/changetracking/change-tracking-projection.ts` - Projection coordinator
+- `src/changetracking/change-tracking-atom.ts` - Event stream consumption with Stream.scan
+- `src/changetracking/change-formatters.ts` - Console log formatting

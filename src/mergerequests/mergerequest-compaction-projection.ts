@@ -1,7 +1,6 @@
 import { Effect, Stream } from "effect"
 import type { MergeRequestsCompactedEvent } from "../events/event-compaction-events"
 import { EventStorage } from "../eventstore/eventStorage"
-// import { type CompactedMergeRequestsDependentEvents, type CompactedMergeRequestEntry, type CompactedMergeRequestsState } from "../eventstore/mergeRequestProjection"
 import type { LazyReviewerEvent } from "../events/events"
 import type { MergeRequestFieldsFragment } from "../graphql/mrs.generated"
 import type { BitbucketPullRequest } from "../bitbucket/bitbucketapi"

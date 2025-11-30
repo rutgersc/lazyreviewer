@@ -3,12 +3,9 @@ import type { MergeRequest } from "./mergerequest-schema";
 import { extractSelectionData } from "../userselection/userSelection";
 import {
   type CacheKey,
-  type MrRelevantEvent,
-  AllMrsState,
-  projectAllMrs,
   decideFetchUserMrs,
   decideFetchProjectMrs
-} from "./mergerequests-caching-effects";
+} from "./decide-fetch-mrs";
 import {
   initialOpenMrsTrackingState,
   projectOpenMrsAndDetectMissing,
@@ -26,7 +23,7 @@ import { join } from 'path';
 import type { JiraIssue } from "../jira/jira-service";
 import { selectedUserSelectionEntryAtom, userSelectionsAtom } from "../userselection/userselection-atom";
 import { groupsAtom } from "../data/data-atom";
-import { resultToArray, resultOr } from "../utils/result-helpers";
+import { AllMrsState, projectAllMrs, type MrRelevantEvent } from "./all-mergerequests-projection";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 

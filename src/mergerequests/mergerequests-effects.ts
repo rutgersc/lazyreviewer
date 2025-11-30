@@ -8,7 +8,7 @@ import { getSdk as getUpdateMrTargetBranchSdk } from "../graphql/update-mr-targe
 import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
 import { Effect, Console, Data } from "effect";
-import type { ProjectMRCacheKey } from "./mergerequests-caching-effects";
+import type { ProjectMRCacheKey } from "./decide-fetch-mrs";
 import { EventStorage } from "../events/events";
 import { projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections";
 

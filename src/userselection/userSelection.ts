@@ -1,5 +1,5 @@
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
-import { MRCacheKey, ProjectMRCacheKey, type CacheKey } from "../mergerequests/mergerequests-caching-effects";
+import { MRCacheKey, ProjectMRCacheKey, type CacheKey } from "../mergerequests/decide-fetch-mrs";
 
 export type UserId =
   | { type: 'userId', id: string }

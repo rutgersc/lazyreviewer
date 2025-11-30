@@ -24,6 +24,7 @@ import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navi
 import { Console, Effect } from 'effect';
 import { consoleLoggedLayer } from './appLayerRuntime';
 import { Result } from '@effect-atom/atom-react';
+import { changeTrackingAtom } from './changetracking/change-tracking-atom';
 
 export default function App() {
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
@@ -47,6 +48,9 @@ export default function App() {
     const issue = jiraIssuesMap.get(key);
     return issue ? [issue] : [];
   }) || [];
+
+  // Initialize change tracking atom
+  useAtomValue(changeTrackingAtom);
 
   useEffect(() => {
       // renderer.console.toggle();

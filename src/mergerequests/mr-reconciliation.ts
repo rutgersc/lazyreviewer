@@ -6,7 +6,7 @@ import { allMrsAtom } from "../mergerequests/mergerequests-atom";
 import { getSingleMrAsEvent } from "../gitlab/gitlab-graphql";
 import { EventStorage } from "../events/events";
 import { missingMrsDiffAtom, isReconcilingAtom } from "./mr-diff-tracking";
-import { AllMrsState } from "./mergerequests-caching-effects";
+import type { AllMrsState } from "./all-mergerequests-projection";
 
 export const reconcileMrsAtom = appAtomRuntime.fn((missingIds: string[], get) =>
   Effect.gen(function* () {

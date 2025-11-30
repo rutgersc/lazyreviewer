@@ -3,7 +3,7 @@ import { Atom, Result } from "@effect-atom/atom-react";
 import { EventStorage, type LazyReviewerEvent } from "../events/events";
 import { selectedEventIndexAtom } from "../events/events-atom";
 import { appAtomRuntime } from "../appLayerRuntime";
-import type { MrRelevantEvent } from "./mergerequests-caching-effects";
+import type { MrRelevantEvent } from "./all-mergerequests-projection";
 
 export class OpenMrsTrackingState extends Data.TaggedClass("OpenMrsTrackingState")<{
   readonly knownMrsById: ReadonlyMap<string, {
