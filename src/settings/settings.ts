@@ -1,5 +1,7 @@
 import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { spawn } from 'child_process';
+import { openFileInEditor } from '../utils/open-file';
+import { Effect } from 'effect';
+import { appLayer } from '../appLayerRuntime';
 
 const SETTINGS_FILE = 'lazygitlab-settings.json';
 
@@ -136,19 +138,13 @@ export const ensurePipelineJobsInSettings = (mergeRequests: Array<{
   return settings;
 };
 
-export const openSettingsFile = (): void => {
+export const openSettingsFile = async (): Promise<void> => {
   if (!existsSync(SETTINGS_FILE)) {
     saveSettings(defaultSettings);
   }
 
-  const isWindows = process.platform === 'win32';
-  const isMac = process.platform === 'darwin';
-
-  if (isWindows) {
-    spawn('cmd', ['/c', 'start', '""', SETTINGS_FILE], { detached: true, stdio: 'ignore' });
-  } else if (isMac) {
-    spawn('open', [SETTINGS_FILE], { detached: true, stdio: 'ignore' });
-  } else {
-    spawn('xdg-open', [SETTINGS_FILE], { detached: true, stdio: 'ignore' });
-  }
+  await openFileInEditor(SETTINGS_FILE).pipe(
+    Effect.provide(appLayer),
+    Effect.runPromise
+  );
 };

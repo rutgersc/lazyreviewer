@@ -3,12 +3,12 @@ import { useKeyboard } from '@opentui/react';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom } from '../ui/navigation-atom';
-import { allEventsAtom, selectedEventIndexAtom, compactAllEventsAtom } from '../events/events-atom';
+import { allEventsIncludingCompactedAtom, selectedEventIndexAtom, compactAllEventsAtom } from '../events/events-atom';
 import { resultToArray } from '../utils/result-helpers';
-import { appAtomRuntime } from '../appLayerRuntime';
 import { EventStorage } from '../eventstore/eventStorage';
-
-const allEventsIncludingCompactedAtom = appAtomRuntime.atom(EventStorage.loadAllEvents, { initialValue: [] });
+import { openFileInEditor } from '../utils/open-file';
+import { appLayer } from '../appLayerRuntime';
+import { Effect } from 'effect';
 
 export default function FactsPane() {
   const [activePane] = useAtom(activePaneAtom);
@@ -75,6 +75,27 @@ export default function FactsPane() {
             setTimeout(() => setCompactionMessage(null), 3000);
         } catch (error) {
             setCompactionMessage(`Compaction failed: ${error}`);
+            setTimeout(() => setCompactionMessage(null), 3000);
+        }
+    } else if (key.name === 'e') {
+        // e - open event in editor
+        const eventIndex = highlightedIndex ?? events.length - 1;
+        setCompactionMessage('Opening event in editor...');
+        try {
+            const filePath = await EventStorage.getEventFilePath(eventIndex).pipe(
+                Effect.provide(appLayer),
+                Effect.runPromise
+            );
+
+            await openFileInEditor(filePath).pipe(
+                Effect.provide(appLayer),
+                Effect.runPromise
+            );
+
+            setCompactionMessage(`Opened: ${filePath}`);
+            setTimeout(() => setCompactionMessage(null), 3000);
+        } catch (error) {
+            setCompactionMessage(`Failed to open: ${error}`);
             setTimeout(() => setCompactionMessage(null), 3000);
         }
     }

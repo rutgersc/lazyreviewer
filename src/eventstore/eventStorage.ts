@@ -150,11 +150,50 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       })
     )
 
+    const allEventsStream = Stream.unwrapScoped(
+      Effect.gen(function* () {
+        yield* console.log("[EventStorage] new all-events subscriber initializing..")
+
+        const historicalEvents = yield* loadAllEvents
+
+        const newEventsStream = Stream.fromPubSub(eventsPubSub)
+
+        return Stream.concat(
+          Stream.fromIterable(historicalEvents),
+          newEventsStream
+        )
+      })
+    )
+
+    const getEventFilePath = (eventIndex: number) => Effect.gen(function* () {
+      const files = yield* fs.readDirectory(eventsDir).pipe(
+        Effect.catchAll(() => Effect.succeed([]))
+      )
+
+      const parsedFiles = files
+        .map(filename => ({ filename, parsed: parseFilename(filename) }))
+        .filter(({ parsed }) => parsed !== null)
+        .sort((a, b) => a.parsed!.eventNumber - b.parsed!.eventNumber)
+
+      if (eventIndex < 0 || eventIndex >= parsedFiles.length) {
+        return yield* Effect.fail(new Error(`Event index ${eventIndex} out of range`))
+      }
+
+      const file = parsedFiles[eventIndex]
+      if (!file) {
+        return yield* Effect.fail(new Error(`Event file not found at index ${eventIndex}`))
+      }
+
+      return path.join(eventsDir, file.filename)
+    })
+
     return {
       loadEvents,
       loadAllEvents,
       appendEvent,
-      eventsStream
+      eventsStream,
+      allEventsStream,
+      getEventFilePath
     } as const
   })
 }) {}

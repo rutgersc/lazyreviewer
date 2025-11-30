@@ -11,6 +11,13 @@ export const allEventsAtom = appAtomRuntime.atom(
   { initialValue: [] }
 )
 
+export const allEventsIncludingCompactedAtom = appAtomRuntime.atom(
+  Stream.unwrap(EventStorage.allEventsStream).pipe(
+    Stream.scan([] as LazyReviewerEvent[], (acc, event) => [...acc, event])
+  ),
+  { initialValue: [] }
+)
+
 export const selectedEventIndexAtom = Atom.make<number | null>(null);
 
 export const compactAllEventsAtom = appAtomRuntime.fn(() =>

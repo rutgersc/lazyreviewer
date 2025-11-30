@@ -220,9 +220,9 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
         Effect.runPromise
       );
     },
-    onOpenSettings: () => {
+    onOpenSettings: async () => {
       setActiveModal('none');
-      openSettingsFile();
+      await openSettingsFile();
     },
     onToggleConsole: () => {
       setActiveModal('none');
