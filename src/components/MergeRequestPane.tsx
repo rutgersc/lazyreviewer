@@ -20,7 +20,7 @@ import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
 import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom } from "../mergerequests/mergerequests-atom";
 import { activePaneAtom, activeModalAtom } from "../ui/navigation-atom";
-import { currentUserAtom } from "../data/data-atom";
+import { currentUserAtom } from "../settings/settings-atom";
 import { getSingleMr } from "../gitlab/gitlab-graphql";
 import { Effect, Runtime } from "effect";
 import type { JiraIssue } from "../jira/jira-schema";

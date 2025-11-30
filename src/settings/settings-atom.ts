@@ -102,4 +102,12 @@ export const selectedUserSelectionEntryIdAtom = Atom.writable(
   }
 );
 
+export const currentUserAtom = Atom.make(get => {
+  return Result.match(get(settingsAtom), {
+    onInitial: () => 'r.schoorstra',
+    onSuccess: ({ value }) => value.currentUser,
+    onFailure: () => 'r.schoorstra'
+  });
+});
+
 

@@ -3,4 +3,3 @@ import { groups, users } from "./usersAndGroups";
 
 export const groupsAtom = Atom.make(groups);
 export const usersAtom = Atom.make(users);
-export const currentUserAtom = Atom.make<string>('r.schoorstra');
