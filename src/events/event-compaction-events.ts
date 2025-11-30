@@ -1,11 +1,10 @@
 import { Schema } from "effect"
-import { GitlabRawMergeRequestSchema, type GitlabRawMergeRequest } from "../gitlab/gitlab-raw-schema";
 import { BitbucketPullRequestSchema } from "../bitbucket/bitbucket-schema";
-import type { BitbucketPullRequest } from "../bitbucket/bitbucketapi";
+import { MergeRequestFieldsFragmentSchema } from "../graphql/schemas/mrs.schema";
 
 const MergeRequestsCompactedEventSchema = Schema.Struct({
   type: Schema.Literal('mergerequests-compacted-event'),
-  mrs: Schema.Array(Schema.Union(GitlabRawMergeRequestSchema, BitbucketPullRequestSchema))
+  mrs: Schema.Array(Schema.Union(MergeRequestFieldsFragmentSchema, BitbucketPullRequestSchema))
 })
 
 export interface MergeRequestsCompactedEvent extends Schema.Schema.Type<typeof MergeRequestsCompactedEventSchema> {}

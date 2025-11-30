@@ -88,7 +88,7 @@ export default function App() {
         break;
       case 's':
         if (key.ctrl) {
-          openSettingsFile();
+          // openSettingsFile();
         } else {
           const mr = await refreshMergeRequests();
           Console.Console.pipe(

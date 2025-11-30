@@ -3,7 +3,7 @@ import type { MergeRequestsCompactedEvent } from "../events/event-compaction-eve
 import { EventStorage } from "../eventstore/eventStorage"
 // import { type CompactedMergeRequestsDependentEvents, type CompactedMergeRequestEntry, type CompactedMergeRequestsState } from "../eventstore/mergeRequestProjection"
 import type { LazyReviewerEvent } from "../events/events"
-import type { GitlabRawMergeRequest } from "../gitlab/gitlab-raw-schema"
+import type { MergeRequestFieldsFragment } from "../graphql/mrs.generated"
 import type { BitbucketPullRequest } from "../bitbucket/bitbucketapi"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import type {
@@ -28,7 +28,7 @@ export type CompactedMergeRequestsEvent =
   | MergeRequestsCompactedEvent
 
 export interface CompactedMergeRequestEntry {
-  mr: GitlabRawMergeRequest | BitbucketPullRequest
+  mr: MergeRequestFieldsFragment | BitbucketPullRequest
   forUsernames: string[]
   forState: MergeRequestState | 'opened' | 'merged' | 'closed' | 'all' | 'locked' // Update to include Bitbucket states
   forProjectPath: string
@@ -46,25 +46,23 @@ type ProjectMrNode = NonNullable<
   >['nodes']
 >[number]
 
-const mapProjectMrToRaw = (node: ProjectMrNode): GitlabRawMergeRequest => {
+const mapProjectMrToFragment = (node: ProjectMrNode): MergeRequestFieldsFragment => {
   if (!node) throw new Error("Project MR node is null")
-  const { title, ...rest } = node
   return {
-    ...rest,
-    name: title, // Map title to name
-  } satisfies GitlabRawMergeRequest
+    ...node,
+    name: node.title, // Ensure both name and title are present
+  } satisfies MergeRequestFieldsFragment
 }
 
 type SingleMrNode = NonNullable<
   NonNullable<GitlabSingleMrFetchedEvent['mr']['project']>['mergeRequest']
 >
 
-const mapSingleMrToRaw = (node: SingleMrNode): GitlabRawMergeRequest => {
-  const { title, ...rest } = node
+const mapSingleMrToFragment = (node: SingleMrNode): MergeRequestFieldsFragment => {
   return {
-    ...rest,
-    name: title, // Map title to name
-  } satisfies GitlabRawMergeRequest
+    ...node,
+    name: node.title, // Ensure both name and title are present
+  } satisfies MergeRequestFieldsFragment
 }
 
 export const isCompactedMergeRequestsEvent = (event: LazyReviewerEvent): event is CompactedMergeRequestsEvent =>
@@ -75,7 +73,7 @@ export const isCompactedMergeRequestsEvent = (event: LazyReviewerEvent): event i
   event.type === 'bitbucket-single-pr-fetched-event' ||
   event.type === 'mergerequests-compacted-event'
 
-const isGitlabMr = (mr: GitlabRawMergeRequest | BitbucketPullRequest): mr is GitlabRawMergeRequest =>
+const isGitlabMr = (mr: MergeRequestFieldsFragment | BitbucketPullRequest): mr is MergeRequestFieldsFragment =>
   'iid' in mr && 'project' in mr
 
 export const projectToCompactedMergeRequestsState = (
@@ -137,14 +135,14 @@ export const projectToCompactedMergeRequestsState = (
       const mrs = event.mrs.project?.mergeRequests?.nodes || []
       mrs.forEach(mr => {
         if (!mr) return
-        const rawMr = mapProjectMrToRaw(mr)
-        const key = getMrKey(rawMr.project.fullPath, rawMr.iid)
+        const fragmentMr = mapProjectMrToFragment(mr)
+        const key = getMrKey(fragmentMr.project.fullPath, fragmentMr.iid)
         newState.set(key, {
-          mr: rawMr,
-          forUsernames: [rawMr.author?.name || ''],
+          mr: fragmentMr,
+          forUsernames: [fragmentMr.author?.name || ''],
           forState: event.forState,
           forProjectPath: event.forProjectPath,
-          forIid: rawMr.iid
+          forIid: fragmentMr.iid
         })
       })
       return newState
@@ -155,11 +153,11 @@ export const projectToCompactedMergeRequestsState = (
       const mr = event.mr.project?.mergeRequest
       if (!mr) return newState
 
-      const rawMr = mapSingleMrToRaw(mr)
-      const key = getMrKey(rawMr.project.fullPath, rawMr.iid)
+      const fragmentMr = mapSingleMrToFragment(mr)
+      const key = getMrKey(fragmentMr.project.fullPath, fragmentMr.iid)
       newState.set(key, {
-        mr: rawMr,
-        forUsernames: [rawMr.author?.name || ''],
+        mr: fragmentMr,
+        forUsernames: [fragmentMr.author?.name || ''],
         forState: 'all', // Single fetch implies specific targeting
         forProjectPath: event.forProjectPath,
         forIid: event.forIid

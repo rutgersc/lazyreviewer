@@ -1235,6 +1235,8 @@ export type AutocompletedUser = Todoable & User & {
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Gitpod is enabled at the user level. */
   readonly gitpodEnabled: Maybe<Scalars['Boolean']['output']>;
+  /** User callouts that belong to the user per group. */
+  readonly groupCallouts: Maybe<UserGroupCalloutConnection>;
   /** Group count for the user. */
   readonly groupCount: Maybe<Scalars['Int']['output']>;
   /** Group memberships of the user. */
@@ -1446,6 +1448,15 @@ export type AutocompletedUserEmailsArgs = {
 
 
 /** Core representation of a GitLab user. */
+export type AutocompletedUserGroupCalloutsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Core representation of a GitLab user. */
 export type AutocompletedUserGroupMembershipsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -1575,6 +1586,7 @@ export type AutocompletedUserSnippetsArgs = {
 
 /** Core representation of a GitLab user. */
 export type AutocompletedUserStarredProjectsArgs = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
@@ -2383,7 +2395,7 @@ export type CiCatalogResource = {
   /** ID of the catalog resource. */
   readonly id: Scalars['ID']['output'];
   /**
-   * Number of projects that used a component from this catalog resource in a pipeline, by using `include:component`, in the last 30 days. Introduced in GitLab 17.0: **Status**: Experiment.
+   * Number of projects that used a component fromthis catalog resource in a pipeline, by using `include:component` in the last 30 days. Introduced in GitLab 17.0: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.0.
    */
   readonly last30DayUsageCount: Scalars['Int']['output'];
@@ -3284,6 +3296,89 @@ export type CiJobPreviousStageJobsOrNeedsArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
+
+/** CI/CD job analytics data */
+export type CiJobAnalytics = {
+  /** Average duration of jobs in seconds. */
+  readonly meanDurationInSeconds: Maybe<Scalars['Float']['output']>;
+  /** Job name. */
+  readonly name: Maybe<Scalars['String']['output']>;
+  /** 95th percentile duration of jobs in seconds. */
+  readonly p95DurationInSeconds: Maybe<Scalars['Float']['output']>;
+  /** Percentage of canceled jobs. */
+  readonly rateOfCanceled: Maybe<Scalars['Float']['output']>;
+  /** Percentage of failed jobs. */
+  readonly rateOfFailed: Maybe<Scalars['Float']['output']>;
+  /** Percentage of successful jobs. */
+  readonly rateOfSuccess: Maybe<Scalars['Float']['output']>;
+  /** Stage information. */
+  readonly stage: Maybe<CiStage>;
+};
+
+/** Aggregation functions available for CI/CD job analytics */
+export type CiJobAnalyticsAggregation =
+  /** Average duration of jobs in seconds. */
+  | 'MEAN_DURATION_IN_SECONDS'
+  /** 95th percentile duration of jobs in seconds. */
+  | 'P95_DURATION_IN_SECONDS'
+  /** Percentage of canceled jobs. */
+  | 'RATE_OF_CANCELED'
+  /** Percentage of failed jobs. */
+  | 'RATE_OF_FAILED'
+  /** Percentage of successful jobs. */
+  | 'RATE_OF_SUCCESS';
+
+/** The connection type for CiJobAnalytics. */
+export type CiJobAnalyticsConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<CiJobAnalyticsEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<CiJobAnalytics>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** An edge in a connection. */
+export type CiJobAnalyticsEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<CiJobAnalytics>;
+};
+
+/** Fields available for selection in CI/CD job analytics */
+export type CiJobAnalyticsField =
+  /** Job name. */
+  | 'NAME'
+  /** Stage. */
+  | 'STAGE';
+
+/** Values for sorting CI/CD job analytics */
+export type CiJobAnalyticsSort =
+  /** Sort by canceled rate in ascending order. */
+  | 'CANCELED_RATE_ASC'
+  /** Sort by canceled rate in descending order. */
+  | 'CANCELED_RATE_DESC'
+  /** Sort by failed rate in ascending order. */
+  | 'FAILED_RATE_ASC'
+  /** Sort by failed rate in descending order. */
+  | 'FAILED_RATE_DESC'
+  /** Sort by mean duration in ascending order. */
+  | 'MEAN_DURATION_ASC'
+  /** Sort by mean duration in descending order. */
+  | 'MEAN_DURATION_DESC'
+  /** Sort by name in ascending order. */
+  | 'NAME_ASC'
+  /** Sort by name in descending order. */
+  | 'NAME_DESC'
+  /** Sort by 95th percentile duration in ascending order. */
+  | 'P95_DURATION_ASC'
+  /** Sort by 95th percentile duration in descending order. */
+  | 'P95_DURATION_DESC'
+  /** Sort by success rate in ascending order. */
+  | 'SUCCESS_RATE_ASC'
+  /** Sort by success rate in descending order. */
+  | 'SUCCESS_RATE_DESC';
 
 export type CiJobArtifact = {
   /** URL for downloading the artifact's file. */
@@ -6144,10 +6239,7 @@ export type CurrentUser = Todoable & User & {
   readonly activity: Maybe<ActivityStream>;
   /** Merge requests assigned to the user. */
   readonly assignedMergeRequests: Maybe<MergeRequestConnection>;
-  /**
-   * Merge requests the current user is an assignee or a reviewer of.Ignored if `merge_request_dashboard` feature flag is disabled. Introduced in GitLab 17.4: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.4.
-   */
+  /** Merge requests the current user is an assignee or a reviewer of. */
   readonly assigneeOrReviewerMergeRequests: Maybe<MergeRequestConnection>;
   /** Merge requests authored by the user. */
   readonly authoredMergeRequests: Maybe<MergeRequestConnection>;
@@ -6178,6 +6270,8 @@ export type CurrentUser = Todoable & User & {
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Gitpod is enabled at the user level. */
   readonly gitpodEnabled: Maybe<Scalars['Boolean']['output']>;
+  /** User callouts that belong to the user per group. */
+  readonly groupCallouts: Maybe<UserGroupCalloutConnection>;
   /** Group count for the user. */
   readonly groupCount: Maybe<Scalars['Int']['output']>;
   /** Group memberships of the user. */
@@ -6457,6 +6551,15 @@ export type CurrentUserEmailsArgs = {
 
 
 /** The currently authenticated GitLab user. */
+export type CurrentUserGroupCalloutsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** The currently authenticated GitLab user. */
 export type CurrentUserGroupMembershipsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -6600,6 +6703,7 @@ export type CurrentUserSnippetsArgs = {
 
 /** The currently authenticated GitLab user. */
 export type CurrentUserStarredProjectsArgs = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
@@ -8100,9 +8204,9 @@ export type DiffPositionInput = {
   readonly baseSha: InputMaybe<Scalars['String']['input']>;
   /** SHA of the HEAD at the time the comment was made. */
   readonly headSha: Scalars['String']['input'];
-  /** Line on HEAD SHA that was changed. Please see the [REST API Documentation](https://docs.gitlab.com/ee/api/discussions.html#create-a-new-thread-in-the-merge-request-diff) for more information on how to use this field. */
+  /** Line on HEAD SHA that was changed. Please see the [REST API Documentation](https://docs.gitlab.com/api/discussions/#create-a-new-thread-in-the-merge-request-diff) for more information on how to use this field. */
   readonly newLine: InputMaybe<Scalars['Int']['input']>;
-  /** Line on start SHA that was changed. Please see the [REST API Documentation](https://docs.gitlab.com/ee/api/discussions.html#create-a-new-thread-in-the-merge-request-diff) for more information on how to use this field. */
+  /** Line on start SHA that was changed. Please see the [REST API Documentation](https://docs.gitlab.com/api/discussions/#create-a-new-thread-in-the-merge-request-diff) for more information on how to use this field. */
   readonly oldLine: InputMaybe<Scalars['Int']['input']>;
   /** The paths of the file that was changed. Both of the properties of this input are optional, but at least one of them is required */
   readonly paths: DiffPathsInput;
@@ -8946,6 +9050,8 @@ export type Group = GroupInterface & Todoable & {
   readonly milestones: Maybe<MilestoneConnection>;
   /** Name of the group. */
   readonly name: Maybe<Scalars['String']['output']>;
+  /** Namespace settings for the namespace. */
+  readonly namespaceSettings: Maybe<NamespaceSettings>;
   /**
    * Path for editing group at the organization level. Introduced in GitLab 17.1: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.1.
@@ -9192,6 +9298,7 @@ export type GroupGroupMembersArgs = {
   before: InputMaybe<Scalars['String']['input']>;
   enterprise: InputMaybe<Scalars['Boolean']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['ID']['input']>>;
   last: InputMaybe<Scalars['Int']['input']>;
   relations?: InputMaybe<ReadonlyArray<GroupMemberRelation>>;
   search: InputMaybe<Scalars['String']['input']>;
@@ -9903,6 +10010,8 @@ export type GroupUpdateInput = {
   readonly path: InputMaybe<Scalars['String']['input']>;
   /** Shared runners availability for the namespace and its descendants. */
   readonly sharedRunnersSetting: InputMaybe<SharedRunnersSetting>;
+  /** OAuth provider required for step-up authentication. */
+  readonly stepUpAuthRequiredOauthProvider: InputMaybe<Scalars['String']['input']>;
   /** Visibility of the namespace. */
   readonly visibility: InputMaybe<VisibilityLevelsEnum>;
 };
@@ -11981,7 +12090,7 @@ export type MergeRequest = CurrentUserTodos & NoteableInterface & Todoable & {
   readonly sourceProject: Maybe<Project>;
   /** ID of the merge request source project. */
   readonly sourceProjectId: Maybe<Scalars['Int']['output']>;
-  /** Indicates if the merge request is set to be squashed when merged. [Project settings](https://docs.gitlab.com/ee/user/project/merge_requests/squash_and_merge.html#configure-squash-options-for-a-project) may override this value. Use `squash_on_merge` instead to take project squash options into account. */
+  /** Indicates if the merge request is set to be squashed when merged. [Project settings](https://docs.gitlab.com/user/project/merge_requests/squash_and_merge/#configure-squash-options-for-a-project) may override this value. Use `squash_on_merge` instead to take project squash options into account. */
   readonly squash: Scalars['Boolean']['output'];
   /** Indicates if the merge request will be squashed when merged. */
   readonly squashOnMerge: Scalars['Boolean']['output'];
@@ -12238,6 +12347,8 @@ export type MergeRequestAssignee = Todoable & User & {
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Gitpod is enabled at the user level. */
   readonly gitpodEnabled: Maybe<Scalars['Boolean']['output']>;
+  /** User callouts that belong to the user per group. */
+  readonly groupCallouts: Maybe<UserGroupCalloutConnection>;
   /** Group count for the user. */
   readonly groupCount: Maybe<Scalars['Int']['output']>;
   /** Group memberships of the user. */
@@ -12449,6 +12560,15 @@ export type MergeRequestAssigneeEmailsArgs = {
 
 
 /** A user assigned to a merge request. */
+export type MergeRequestAssigneeGroupCalloutsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** A user assigned to a merge request. */
 export type MergeRequestAssigneeGroupMembershipsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -12572,6 +12692,7 @@ export type MergeRequestAssigneeSnippetsArgs = {
 
 /** A user assigned to a merge request. */
 export type MergeRequestAssigneeStarredProjectsArgs = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
@@ -12681,6 +12802,8 @@ export type MergeRequestAuthor = Todoable & User & {
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Gitpod is enabled at the user level. */
   readonly gitpodEnabled: Maybe<Scalars['Boolean']['output']>;
+  /** User callouts that belong to the user per group. */
+  readonly groupCallouts: Maybe<UserGroupCalloutConnection>;
   /** Group count for the user. */
   readonly groupCount: Maybe<Scalars['Int']['output']>;
   /** Group memberships of the user. */
@@ -12892,6 +13015,15 @@ export type MergeRequestAuthorEmailsArgs = {
 
 
 /** The author of the merge request. */
+export type MergeRequestAuthorGroupCalloutsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** The author of the merge request. */
 export type MergeRequestAuthorGroupMembershipsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -13015,6 +13147,7 @@ export type MergeRequestAuthorSnippetsArgs = {
 
 /** The author of the merge request. */
 export type MergeRequestAuthorStarredProjectsArgs = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
@@ -13173,6 +13306,8 @@ export type MergeRequestParticipant = Todoable & User & {
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Gitpod is enabled at the user level. */
   readonly gitpodEnabled: Maybe<Scalars['Boolean']['output']>;
+  /** User callouts that belong to the user per group. */
+  readonly groupCallouts: Maybe<UserGroupCalloutConnection>;
   /** Group count for the user. */
   readonly groupCount: Maybe<Scalars['Int']['output']>;
   /** Group memberships of the user. */
@@ -13384,6 +13519,15 @@ export type MergeRequestParticipantEmailsArgs = {
 
 
 /** A user participating in a merge request. */
+export type MergeRequestParticipantGroupCalloutsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** A user participating in a merge request. */
 export type MergeRequestParticipantGroupMembershipsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -13507,6 +13651,7 @@ export type MergeRequestParticipantSnippetsArgs = {
 
 /** A user participating in a merge request. */
 export type MergeRequestParticipantStarredProjectsArgs = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
@@ -13655,6 +13800,8 @@ export type MergeRequestReviewer = Todoable & User & {
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Gitpod is enabled at the user level. */
   readonly gitpodEnabled: Maybe<Scalars['Boolean']['output']>;
+  /** User callouts that belong to the user per group. */
+  readonly groupCallouts: Maybe<UserGroupCalloutConnection>;
   /** Group count for the user. */
   readonly groupCount: Maybe<Scalars['Int']['output']>;
   /** Group memberships of the user. */
@@ -13866,6 +14013,15 @@ export type MergeRequestReviewerEmailsArgs = {
 
 
 /** A user assigned to a merge request as a reviewer. */
+export type MergeRequestReviewerGroupCalloutsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** A user assigned to a merge request as a reviewer. */
 export type MergeRequestReviewerGroupMembershipsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -13989,6 +14145,7 @@ export type MergeRequestReviewerSnippetsArgs = {
 
 /** A user assigned to a merge request as a reviewer. */
 export type MergeRequestReviewerStarredProjectsArgs = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
@@ -15567,6 +15724,7 @@ export type Mutation = {
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.3. */
   readonly userAchievementsUpdate: Maybe<UserAchievementsUpdatePayload>;
   readonly userCalloutCreate: Maybe<UserCalloutCreatePayload>;
+  readonly userGroupCalloutCreate: Maybe<UserGroupCalloutCreatePayload>;
   readonly userPreferencesUpdate: Maybe<UserPreferencesUpdatePayload>;
   readonly userSetNamespaceCommitEmail: Maybe<UserSetNamespaceCommitEmailPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.1. */
@@ -16822,6 +16980,11 @@ export type MutationUserCalloutCreateArgs = {
 };
 
 
+export type MutationUserGroupCalloutCreateArgs = {
+  input: UserGroupCalloutCreateInput;
+};
+
+
 export type MutationUserPreferencesUpdateArgs = {
   input: UserPreferencesUpdateInput;
 };
@@ -16999,6 +17162,8 @@ export type Namespace = Todoable & {
   readonly mergeRequestsEnabled: Scalars['Boolean']['output'];
   /** Name of the namespace. */
   readonly name: Scalars['String']['output'];
+  /** Namespace settings for the namespace. */
+  readonly namespaceSettings: Maybe<NamespaceSettings>;
   /** Package settings for the namespace. */
   readonly packageSettings: Maybe<PackageSettings>;
   /** List of the namespaces's Pages Deployments. */
@@ -17437,6 +17602,12 @@ export type NamespaceProjectStatistics = {
   readonly wikiSize: Maybe<Scalars['Float']['output']>;
 };
 
+/** Settings for the namespace */
+export type NamespaceSettings = {
+  /** OAuth provider required for step-up authentication. */
+  readonly stepUpAuthRequiredOauthProvider: Maybe<Scalars['String']['output']>;
+};
+
 /** Autogenerated input type of NamespaceSettingsUpdate */
 export type NamespaceSettingsUpdateInput = {
   /** A unique identifier for the client performing the mutation. */
@@ -17852,6 +18023,11 @@ export type Organization = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
    */
   readonly projects: ProjectConnection;
+  /**
+   * Root path in the context of the organization. Introduced in GitLab 18.5: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.5.
+   */
+  readonly rootPath: Scalars['String']['output'];
   /**
    * Web URL of the organization. Introduced in GitLab 16.6: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 16.6.
@@ -18729,6 +18905,8 @@ export type PackageTagEdge = {
 };
 
 export type PackageTypeEnum =
+  /** Packages from the Cargo package manager */
+  | 'CARGO'
   /** Packages from the Composer package manager */
   | 'COMPOSER'
   /** Packages from the Conan package manager */
@@ -18965,6 +19143,10 @@ export type Pipeline = PipelineInterface & {
   readonly failureReason: Maybe<Scalars['String']['output']>;
   /** Timestamp of the pipeline's completion. */
   readonly finishedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicates if the pipeline has manual actions. */
+  readonly hasManualActions: Scalars['Boolean']['output'];
+  /** Indicates if the pipeline has scheduled actions. */
+  readonly hasScheduledActions: Scalars['Boolean']['output'];
   /** ID of the pipeline. */
   readonly id: Scalars['ID']['output'];
   /** Internal ID of the pipeline. */
@@ -19490,8 +19672,8 @@ export type PipelineScheduleCreateInput = {
   /** Cron expression of the pipeline schedule. */
   readonly cron: Scalars['String']['input'];
   /**
-   *                     Cron time zone supported by ActiveSupport::TimeZone.
-   *                     For example: "Pacific Time (US & Canada)" (default: "UTC").
+   *                     Cron time zone supported by `ActiveSupport::TimeZone`.
+   *                     For example: `Pacific Time (US & Canada)` (default: `UTC`).
    *
    */
   readonly cronTimezone: InputMaybe<Scalars['String']['input']>;
@@ -19631,8 +19813,8 @@ export type PipelineScheduleUpdateInput = {
   /** Cron expression of the pipeline schedule. */
   readonly cron: InputMaybe<Scalars['String']['input']>;
   /**
-   *                     Cron time zone supported by ActiveSupport::TimeZone.
-   *                     For example: "Pacific Time (US & Canada)" (default: "UTC").
+   *                     Cron time zone supported by `ActiveSupport::TimeZone`.
+   *                     For example: `Pacific Time (US & Canada)` (default: `UTC`).
    *
    */
   readonly cronTimezone: InputMaybe<Scalars['String']['input']>;
@@ -19999,7 +20181,10 @@ export type Project = ProjectInterface & Todoable & {
   readonly forksCount: Scalars['Int']['output'];
   /** Full path of the project. */
   readonly fullPath: Scalars['ID']['output'];
-  /** Grafana integration details for the project. */
+  /**
+   * Grafana integration details for the project. Deprecated in GitLab 18.3: Feature was removed in 16.0. Always returns null.
+   * @deprecated Feature was removed in 16.0. Always returns null. Deprecated in GitLab 18.3.
+   */
   readonly grafanaIntegration: Maybe<GrafanaIntegration>;
   /** Group of the project. */
   readonly group: Maybe<Group>;
@@ -20050,6 +20235,11 @@ export type Project = ProjectInterface & Todoable & {
   readonly jiraImports: Maybe<JiraImportConnection>;
   /** One job belonging to the project, selected by ID. */
   readonly job: Maybe<CiJob>;
+  /**
+   * CI/CD job analytics for the project. Returns an error if ClickHouse is not configured. Introduced in GitLab 18.5: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.5.
+   */
+  readonly jobAnalytics: Maybe<CiJobAnalyticsConnection>;
   /** Jobs of a project. This field can only be resolved for one project in any single request. */
   readonly jobs: Maybe<CiJobConnection>;
   /** Indicates if CI/CD pipeline jobs are enabled for the current user. */
@@ -20649,6 +20839,22 @@ export type ProjectJobArgs = {
 };
 
 
+export type ProjectJobAnalyticsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  aggregations?: ReadonlyArray<CiJobAnalyticsAggregation>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  fromTime: InputMaybe<Scalars['Time']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  nameSearch: InputMaybe<Scalars['String']['input']>;
+  ref: InputMaybe<Scalars['String']['input']>;
+  selectFields?: ReadonlyArray<CiJobAnalyticsField>;
+  sort: InputMaybe<CiJobAnalyticsSort>;
+  source: InputMaybe<CiPipelineSources>;
+  toTime: InputMaybe<Scalars['Time']['input']>;
+};
+
+
 export type ProjectJobsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -20870,6 +21076,7 @@ export type ProjectProjectMembersArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['ID']['input']>>;
   last: InputMaybe<Scalars['Int']['input']>;
   relations?: InputMaybe<ReadonlyArray<ProjectMemberRelation>>;
   search: InputMaybe<Scalars['String']['input']>;
@@ -22191,6 +22398,7 @@ export type QueryOrganizationsArgs = {
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -23045,6 +23253,7 @@ export type RepositoryBlob = {
 
 export type RepositoryBlobBlameArgs = {
   fromLine?: InputMaybe<Scalars['Int']['input']>;
+  ignoreRevs?: InputMaybe<Scalars['Boolean']['input']>;
   toLine?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -24486,8 +24695,8 @@ export type SubmoduleEdge = {
 };
 
 export type Subscription = {
-  /** Triggered when a job is created. */
-  readonly ciJobCreated: Maybe<CiJob>;
+  /** Triggered when a job changes state. */
+  readonly ciJobProcessed: Maybe<CiJob>;
   /** Triggered when a job status is updated. */
   readonly ciJobStatusUpdated: Maybe<CiJob>;
   /**
@@ -24552,8 +24761,9 @@ export type Subscription = {
 };
 
 
-export type SubscriptionCiJobCreatedArgs = {
+export type SubscriptionCiJobProcessedArgs = {
   projectId: Scalars['ProjectID']['input'];
+  withArtifacts: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
@@ -26523,6 +26733,8 @@ export type User = {
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Gitpod is enabled at the user level. */
   readonly gitpodEnabled: Maybe<Scalars['Boolean']['output']>;
+  /** User callouts that belong to the user per group. */
+  readonly groupCallouts: Maybe<UserGroupCalloutConnection>;
   /** Group count for the user. */
   readonly groupCount: Maybe<Scalars['Int']['output']>;
   /** Group memberships of the user. */
@@ -26732,6 +26944,15 @@ export type UserEmailsArgs = {
 
 
 /** Representation of a GitLab user. */
+export type UserGroupCalloutsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Representation of a GitLab user. */
 export type UserGroupMembershipsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -26855,6 +27076,7 @@ export type UserSnippetsArgs = {
 
 /** Representation of a GitLab user. */
 export type UserStarredProjectsArgs = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
@@ -27087,6 +27309,8 @@ export type UserCalloutFeatureNameEnum =
   | 'DUO_AMAZON_Q_ALERT'
   /** Callout feature name for duo_chat_callout. */
   | 'DUO_CHAT_CALLOUT'
+  /** Callout feature name for email_otp_enrollment_callout. */
+  | 'EMAIL_OTP_ENROLLMENT_CALLOUT'
   /** Callout feature name for explore_duo_core_banner. */
   | 'EXPLORE_DUO_CORE_BANNER'
   /** Callout feature name for feature_flags_new_version. */
@@ -27105,6 +27329,8 @@ export type UserCalloutFeatureNameEnum =
   | 'JOINING_A_PROJECT_ALERT'
   /** Callout feature name for merge_request_dashboard_display_preferences_popover. */
   | 'MERGE_REQUEST_DASHBOARD_DISPLAY_PREFERENCES_POPOVER'
+  /** Callout feature name for merge_request_dashboard_show_drafts. */
+  | 'MERGE_REQUEST_DASHBOARD_SHOW_DRAFTS'
   /** Callout feature name for namespace_over_storage_users_combined_alert. */
   | 'NAMESPACE_OVER_STORAGE_USERS_COMBINED_ALERT'
   /** Callout feature name for namespace_storage_limit_alert_alert_threshold. */
@@ -27241,6 +27467,8 @@ export type UserCore = Todoable & User & {
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Gitpod is enabled at the user level. */
   readonly gitpodEnabled: Maybe<Scalars['Boolean']['output']>;
+  /** User callouts that belong to the user per group. */
+  readonly groupCallouts: Maybe<UserGroupCalloutConnection>;
   /** Group count for the user. */
   readonly groupCount: Maybe<Scalars['Int']['output']>;
   /** Group memberships of the user. */
@@ -27450,6 +27678,15 @@ export type UserCoreEmailsArgs = {
 
 
 /** Core representation of a GitLab user. */
+export type UserCoreGroupCalloutsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Core representation of a GitLab user. */
 export type UserCoreGroupMembershipsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -27573,6 +27810,7 @@ export type UserCoreSnippetsArgs = {
 
 /** Core representation of a GitLab user. */
 export type UserCoreStarredProjectsArgs = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
@@ -27646,6 +27884,108 @@ export type UserCoreEdge = {
   /** The item at the end of the edge. */
   readonly node: Maybe<UserCore>;
 };
+
+export type UserGroupCallout = {
+  /** Date when the callout was dismissed. */
+  readonly dismissedAt: Scalars['Time']['output'];
+  /** Name of the feature that the callout is for. */
+  readonly featureName: UserGroupCalloutFeatureName;
+  /** Group id that the callout applies. */
+  readonly groupId: Scalars['ID']['output'];
+};
+
+/** The connection type for UserGroupCallout. */
+export type UserGroupCalloutConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<UserGroupCalloutEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<UserGroupCallout>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** Autogenerated input type of UserGroupCalloutCreate */
+export type UserGroupCalloutCreateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Feature name you want to dismiss the callout for. */
+  readonly featureName: Scalars['String']['input'];
+  /** Group for the callout. */
+  readonly groupId: Scalars['GroupID']['input'];
+};
+
+/** Autogenerated return type of UserGroupCalloutCreate. */
+export type UserGroupCalloutCreatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** User group callout dismissed. */
+  readonly userGroupCallout: UserGroupCallout;
+};
+
+/** An edge in a connection. */
+export type UserGroupCalloutEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<UserGroupCallout>;
+};
+
+/** Name of the feature that the callout is for. */
+export type UserGroupCalloutFeatureName =
+  /** Callout feature name for all_seats_used_alert. */
+  | 'ALL_SEATS_USED_ALERT'
+  /** Callout feature name for approaching_seat_count_threshold. */
+  | 'APPROACHING_SEAT_COUNT_THRESHOLD'
+  /** Callout feature name for ci_minutes_limit_alert_danger_stage. */
+  | 'CI_MINUTES_LIMIT_ALERT_DANGER_STAGE'
+  /** Callout feature name for ci_minutes_limit_alert_exceeded_stage. */
+  | 'CI_MINUTES_LIMIT_ALERT_EXCEEDED_STAGE'
+  /** Callout feature name for ci_minutes_limit_alert_warning_stage. */
+  | 'CI_MINUTES_LIMIT_ALERT_WARNING_STAGE'
+  /** Callout feature name for compliance_framework_settings_moved_callout. */
+  | 'COMPLIANCE_FRAMEWORK_SETTINGS_MOVED_CALLOUT'
+  /** Callout feature name for duo_agent_platform_requested. */
+  | 'DUO_AGENT_PLATFORM_REQUESTED'
+  /** Callout feature name for enforcement_at_limit_alert. */
+  | 'ENFORCEMENT_AT_LIMIT_ALERT'
+  /** Callout feature name for expired_duo_enterprise_trial_widget. */
+  | 'EXPIRED_DUO_ENTERPRISE_TRIAL_WIDGET'
+  /** Callout feature name for expired_duo_pro_trial_widget. */
+  | 'EXPIRED_DUO_PRO_TRIAL_WIDGET'
+  /** Callout feature name for expired_trial_status_widget. */
+  | 'EXPIRED_TRIAL_STATUS_WIDGET'
+  /** Callout feature name for free_group_limited_alert. */
+  | 'FREE_GROUP_LIMITED_ALERT'
+  /** Callout feature name for invite_members_banner. */
+  | 'INVITE_MEMBERS_BANNER'
+  /** Callout feature name for namespace_over_storage_users_combined_alert. */
+  | 'NAMESPACE_OVER_STORAGE_USERS_COMBINED_ALERT'
+  /** Callout feature name for namespace_storage_limit_alert_alert_threshold. */
+  | 'NAMESPACE_STORAGE_LIMIT_ALERT_ALERT_THRESHOLD'
+  /** Callout feature name for namespace_storage_limit_alert_error_threshold. */
+  | 'NAMESPACE_STORAGE_LIMIT_ALERT_ERROR_THRESHOLD'
+  /** Callout feature name for namespace_storage_limit_alert_warning_threshold. */
+  | 'NAMESPACE_STORAGE_LIMIT_ALERT_WARNING_THRESHOLD'
+  /** Callout feature name for namespace_storage_pre_enforcement_banner. */
+  | 'NAMESPACE_STORAGE_PRE_ENFORCEMENT_BANNER'
+  /** Callout feature name for namespace_user_cap_reached_alert. */
+  | 'NAMESPACE_USER_CAP_REACHED_ALERT'
+  /** Callout feature name for preview_usage_quota_free_plan_alert. */
+  | 'PREVIEW_USAGE_QUOTA_FREE_PLAN_ALERT'
+  /** Callout feature name for preview_user_over_limit_free_plan_alert. */
+  | 'PREVIEW_USER_OVER_LIMIT_FREE_PLAN_ALERT'
+  /** Callout feature name for project_repository_limit_alert_warning_threshold. */
+  | 'PROJECT_REPOSITORY_LIMIT_ALERT_WARNING_THRESHOLD'
+  /** Callout feature name for unlimited_members_during_trial_alert. */
+  | 'UNLIMITED_MEMBERS_DURING_TRIAL_ALERT'
+  /** Callout feature name for usage_quota_trial_alert. */
+  | 'USAGE_QUOTA_TRIAL_ALERT'
+  /** Callout feature name for user_reached_limit_free_plan_alert. */
+  | 'USER_REACHED_LIMIT_FREE_PLAN_ALERT'
+  /** Callout feature name for web_hook_disabled. */
+  | 'WEB_HOOK_DISABLED';
 
 /**
  * Information about a merge request given a specific user.
@@ -27867,8 +28207,6 @@ export type UserType =
   | 'HUMAN'
   /** Import user */
   | 'IMPORT_USER'
-  /** Llm bot */
-  | 'LLM_BOT'
   /** Migration bot */
   | 'MIGRATION_BOT'
   /** Placeholder */
@@ -27883,8 +28221,6 @@ export type UserType =
   | 'SERVICE_ACCOUNT'
   /** Service user */
   | 'SERVICE_USER'
-  /** Suggested reviewers bot */
-  | 'SUGGESTED_REVIEWERS_BOT'
   /** Support bot */
   | 'SUPPORT_BOT'
   /** Visual review bot */

@@ -13,8 +13,9 @@ import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, Bi
 import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getSingleMrAsEvent } from "../gitlab/gitlab-graphql"
 import { loadJiraTicketsAsEvent, projectJiraIssuesFetchedEvent, extractElabTicketsFromTitle } from "../jira/jira-service"
 import type { GitlabMergeRequest } from "../gitlab/gitlab-schema"
-import { projectGitlabProjectMrsFetchedEvent, projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, mapRawMrToGitlabMr } from "../gitlab/gitlab-projections"
+import { projectGitlabProjectMrsFetchedEvent, projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, mapMrFragment } from "../gitlab/gitlab-projections"
 import { mapBitbucketToGitlabMergeRequest } from "../bitbucket/bitbucket-projections"
+import type { MRsQuery } from "../graphql/mrs.generated"
 
 import { projectOpenMrsAndDetectMissing, OpenMrsTrackingState, initialOpenMrsTrackingState, missingMrsDiffAtom, isReconcilingAtom } from "./mr-diff-tracking"
 
@@ -181,6 +182,7 @@ export type MrState = MrStateNotFetched | MrStateFetched
 
 // Events that are relevant for MR state projection
 import type { MergeRequestsCompactedEvent } from "../events/event-compaction-events";
+import { MRsQuerySchema } from "../graphql/schemas/mrs.schema"
 
 export type MrRelevantEvent =
   | GitlabUserMergeRequestsFetchedEvent
@@ -263,21 +265,31 @@ export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMr
 
   // Handle compacted MRs - replace entire MR state
   if (event.type === 'mergerequests-compacted-event') {
-    const newMap = new Map<string, MergeRequest>();
-
-    event.mrs.forEach(rawMr => {
-      if ('iid' in rawMr && 'project' in rawMr) {
-        const mr = mapRawMrToGitlabMr(rawMr);
-        newMap.set(mr.id, mr);
-      } else {
-        const fullPath = rawMr.destination.repository.full_name;
-        const [workspace = '', repoSlug = ''] = fullPath.split('/');
-        const mr = mapBitbucketToGitlabMergeRequest(rawMr, workspace, repoSlug);
-        newMap.set(mr.id, mr);
-      }
+    console.log('[ProjectAllMrs] Processing compacted event', {
+      mrsCount: event.mrs.length,
+      firstMrKeys: event.mrs.slice(0, 2).map(mr => Object.keys(mr)),
+      firstMr: event.mrs[0]
     });
 
-    console.log("mapping stuff!", { count: newMap.size })
+    const newMap = new Map<string, MergeRequest>();
+
+    event.mrs.forEach((rawMr, index) => {
+  // Discriminate by checking for Bitbucket-specific fields (source/destination)
+  // GitLab MRs have 'project', Bitbucket PRs have 'source' and 'destination'
+  if ("source" in rawMr && "destination" in rawMr) {
+    // Bitbucket PR
+    const fullPath = rawMr.destination.repository.full_name;
+    const [workspace = '', repoSlug = ''] = fullPath.split('/');
+    const mr = mapBitbucketToGitlabMergeRequest(rawMr, workspace, repoSlug);
+    newMap.set(mr.id, mr);
+  } else if ("iid" in rawMr && "project" in rawMr) {
+    // GitLab MR (MergeRequestFieldsFragment)
+    const mr = mapMrFragment(rawMr);
+    newMap.set(mr.id, mr);
+  }
+    });
+
+    console.log("[ProjectAllMrs] Mapped compacted MRs", { count: newMap.size })
 
     return new AllMrsState({
       mrsByGid: newMap,
