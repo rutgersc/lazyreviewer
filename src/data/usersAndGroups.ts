@@ -69,6 +69,10 @@ const userSelectionData = [
     name: 'r.schoorstra',
     selection: [ rutger ]
   },
+    {
+    name: 'menno',
+    selection: [ menno ]
+  },
   {
     name: 'florenceBE',
     selection: [ florenceBEId ]
