@@ -140,7 +140,8 @@ export default function App() {
       case 'h':
       case 'left':
         if (activePane === ActivePane.InfoPane) {
-          setActivePane(ActivePane.UserSelection);
+          // When in InfoPane, navigate between tabs
+          cycleInfoPaneTab('prev');
         } else if (activePane === ActivePane.UserSelection) {
           setActivePane(ActivePane.MergeRequests);
         } else if (activePane === ActivePane.MergeRequests) {
@@ -149,12 +150,13 @@ export default function App() {
         break;
       case 'l':
       case 'right':
-        if (activePane === ActivePane.Facts) {
+        if (activePane === ActivePane.InfoPane) {
+          // When in InfoPane, navigate between tabs
+          cycleInfoPaneTab('next');
+        } else if (activePane === ActivePane.Facts) {
           setActivePane(ActivePane.MergeRequests);
         } else if (activePane === ActivePane.MergeRequests) {
           setActivePane(ActivePane.UserSelection);
-        } else if (activePane === ActivePane.UserSelection) {
-          setActivePane(ActivePane.InfoPane);
         }
         break;
     }
