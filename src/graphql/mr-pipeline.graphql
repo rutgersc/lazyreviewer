@@ -1,0 +1,31 @@
+query MRPipeline($projectPath: ID!, $iid: String!) {
+  project(fullPath: $projectPath) {
+    mergeRequest(iid: $iid) {
+      id
+      iid
+      headPipeline {
+        active
+        iid
+        stages {
+          __typename
+          nodes {
+            id
+            name
+            jobs {
+              nodes {
+                id
+                webPath
+                name
+                status
+                failureMessage
+                startedAt
+                duration
+              }
+            }
+            status
+          }
+        }
+      }
+    }
+  }
+}

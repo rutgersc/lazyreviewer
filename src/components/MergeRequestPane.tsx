@@ -1,43 +1,94 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
-import { type JiraIssue } from "../services/jiraService";
-import { type GitlabMergeRequest, type PipelineStage, type PipelineJob } from "../gitlabgraphql";
-import { formatCompactTime } from "../formatting";
-import { copyToClipboard } from "../utils/clipboard";
-import { openUrl } from "../utils/url";
-import { getJobStatusDisplay } from "../utils/jobStatus";
-import { useAppStore } from "../store/appStore";
-import { ActivePane } from "../types/userSelection";
+import { type MergeRequest } from "../mergerequests/mergerequest-schema";
+import { type PipelineStage, type PipelineJob } from "../gitlab/gitlab-schema";
+import { formatCompactTime } from "../utils/formatting";
+import { copyToClipboard } from "../system/clipboard";
+import { openUrl } from "../system/open-url";
+import { getJobStatusDisplay } from "../gitlab/display/jobStatus";
+import { ActivePane } from "../userselection/userSelection";
 import { useAutoScroll } from "../hooks/useAutoScroll";
-import { Colors } from "../constants/colors";
-import { useRepositoryBranches } from "../hooks/useRepositoryBranches";
+import { useDoubleClick } from "../hooks/useDoubleClick";
+import { Colors } from "../colors";
+import { useRepositoryBranches } from "../mergerequests/hooks/useRepositoryBranches";
+import { loadSettings } from "../settings/settings";
+import MrStateTabs from "./MrStateTabs";
+import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
+import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
+import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
+import { Result } from "@effect-atom/atom-react";
+import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom } from "../mergerequests/mergerequests-atom";
+import { activePaneAtom, activeModalAtom } from "../ui/navigation-atom";
+import { currentUserAtom } from "../settings/settings-atom";
+import { getSingleMr } from "../gitlab/gitlab-graphql";
+import { Effect, Runtime } from "effect";
+import type { JiraIssue } from "../jira/jira-schema";
+import { missingMrsDiffAtom, isReconcilingAtom } from "../mergerequests/mr-diff-tracking";
+import { useReconcileMissingMrs } from "../mergerequests/mr-reconciliation";
+import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom } from "../settings/settings-atom";
+
+const getJiraStatusColor = (statusName: string | undefined): string => {
+  if (!statusName) return Colors.PRIMARY;
+
+  const status = statusName.toLowerCase();
+
+  if (status.includes('merge requested') || status.includes('ready for merge')) {
+    return Colors.SUCCESS;
+  }
+
+  if (status.includes('test in progress') || status.includes('testing')) {
+    return Colors.WARNING;
+  }
+
+  if (status.includes('in code review')) {
+    return Colors.INFO;
+  }
+
+  return Colors.PRIMARY;
+};
+
+const getCreatedDateColor = (createdAt: Date): string => {
+  const now = new Date();
+  const ageInMs = now.getTime() - createdAt.getTime();
+  const ageInDays = ageInMs / (1000 * 60 * 60 * 24);
+
+  if (ageInDays < 1) return '#f5f3bf';
+  if (ageInDays < 3) return Colors.PRIMARY;
+  if (ageInDays < 7) return Colors.SECONDARY;
+  if (ageInDays < 14) return Colors.WARNING;
+  return Colors.ERROR;
+};
 
 const TimeColumnAuthorTitle = ({
-  mr
+  mr,
+  isMyMr,
+  isOutOfDate
 }: {
   mr: MergeRequest;
+  isMyMr: boolean;
+  isOutOfDate: boolean;
 }) => (
   <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
     <box style={{ width: 3 }}>
       <text
         style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
-        wrap={false}
+        wrapMode='none'
       >
         {formatCompactTime(mr.updatedAt)}
       </text>
     </box>
 
     <box style={{ width: 15 }}>
-      <text style={{ fg: Colors.NEUTRAL }} wrap={false}>
+      <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL }} wrapMode='none'>
         {mr.author}
       </text>
     </box>
 
     <box style={{ flexGrow: 1 }}>
       <text
-        style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }}
-        wrap={false}
+        style={{ fg: isOutOfDate ? Colors.WARNING : Colors.PRIMARY, attributes: TextAttributes.BOLD }}
+        wrapMode='none'
       >
         {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
       </text>
@@ -46,6 +97,13 @@ const TimeColumnAuthorTitle = ({
 );
 
 const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
+  const settings = loadSettings();
+  const filteredData = filterPipelineJobs(
+    mr.pipeline?.stage || [],
+    mr.project.fullPath,
+    settings.pipelineJobImportance
+  );
+
   const PipelineJobComponent = (props: { job: PipelineJob; key?: string | number }) => {
     const statusDisplay = getJobStatusDisplay(props.job.status);
     return (
@@ -54,7 +112,7 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
           fg: statusDisplay.color,
           attributes: TextAttributes.DIM,
         }}
-        wrap={false}
+        wrapMode='none'
       >
         {statusDisplay.symbol}
       </text>
@@ -71,52 +129,70 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
     </box>
   );
 
+  const pipelineTextColor = filteredData.highPriorityStatus === 'failed'
+    ? Colors.ERROR
+    : Colors.NEUTRAL;
+
   return (
-    <box style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
-      {mr.pipeline && mr.pipeline.stage && mr.pipeline.stage.length > 0 ? (
-        mr.pipeline.stage.map((stage: PipelineStage, stageIndex: number) => (
-          <PipelineStageComponent key={stageIndex} stage={stage} />
-        ))
-      ) : (
-        <text
-          style={{
-            fg: Colors.NEUTRAL,
-            attributes: TextAttributes.DIM,
-          }}
-          wrap={false}
-        >
-          ○
-        </text>
-      )}
+    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+      <text style={{ fg: pipelineTextColor }} wrapMode='none'>
+        pipeline:
+      </text>
+      <box style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
+        {filteredData.stages.length > 0 ? (
+          filteredData.stages.map((stage: PipelineStage, stageIndex: number) => (
+            <PipelineStageComponent key={stageIndex} stage={stage} />
+          ))
+        ) : (
+          <text
+            style={{
+              fg: Colors.NEUTRAL,
+              attributes: TextAttributes.DIM,
+            }}
+            wrapMode='none'
+          >
+            ○
+          </text>
+        )}
+      </box>
     </box>
   );
 };
 
-const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date }) => {
-  const currentUser = useAppStore((state) => state.currentUser);
+const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap, jiraIssuesMap }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue> }) => {
+  const currentUser = useAtomValue(currentUserAtom);
+  const seenMergeRequests = useAtomValue(seenMergeRequestsAtom);
+  const isSeen = seenMergeRequests.has(mr.id);
   const isApprovedByMe = mr.approvedBy.some(approver => approver.username === currentUser);
   const isMyMr = mr.author === currentUser;
+  const projectColor = repoColor || Colors.SUCCESS;
+  const branchDifference = branchDifferenceMap.get(mr.id);
+
+  const jiraIssues = mr.jiraIssueKeys.flatMap(key => {
+    const issue = jiraIssuesMap.get(key);
+    return issue ? [issue] : [];
+  });
 
   return (
     <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
       <box style={{ width: 3 }}>
         <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
+          style={{ fg: getCreatedDateColor(createdAt), attributes: TextAttributes.DIM }}
+          wrapMode='none'
         >
           {formatCompactTime(createdAt)}
         </text>
       </box>
 
-      <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? Colors.SUCCESS : "transparent" }}>
+      <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? projectColor : "transparent" }}>
         <text
           style={{
-            fg: isActiveInLocalRepo ? Colors.BACKGROUND : Colors.SUCCESS,
+            fg: isActiveInLocalRepo ? Colors.BACKGROUND : projectColor,
             attributes: TextAttributes.DIM
           }}
-          wrap={false}
+          wrapMode='none'
         >
-          {mr.project.name}
+         {mr.project.name}
         </text>
       </box>
 
@@ -124,13 +200,19 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt }: { mr: MergeRe
         <box>
           <text
             style={{
-              fg: mr.approvedBy.length > 0 ? Colors.SUCCESS : Colors.PRIMARY,
-              attributes: (isApprovedByMe || isMyMr) ? TextAttributes.BOLD : TextAttributes.DIM
+              fg: isSeen
+                ? Colors.ERROR
+                : mr.approvedBy.length > 0 ? Colors.SUCCESS : Colors.PRIMARY,
+              attributes: (isApprovedByMe || isMyMr || isSeen)
+                ? TextAttributes.BOLD
+                : mr.approvedBy.length > 0
+                ? undefined
+                : TextAttributes.DIM
             }}
-            wrap={false}
+            wrapMode='none'
           >
-            {isMyMr
-              ? `🟢 ${mr.approvedBy.length}`
+            {isSeen
+              ? `❓ ${mr.approvedBy.length}`
               : isApprovedByMe
               ? `✅ ${mr.approvedBy.length}`
               : `👍 ${mr.approvedBy.length}`}
@@ -147,29 +229,53 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt }: { mr: MergeRe
               : Colors.PRIMARY,
             attributes: mr.unresolvedDiscussions > 0 ? TextAttributes.BOLD : mr.resolvableDiscussions > 0 ? undefined : TextAttributes.DIM,
           }}
-          wrap={false}
+          wrapMode='none'
         >
           {`💬 ${mr.resolvedDiscussions}/${mr.resolvableDiscussions}`}
         </text>
       </box>
 
-      <box>
+      <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
         <text
           style={{
-            fg:
-              mr.jiraIssues.length > 0 &&
-              mr.jiraIssues[0]?.fields.status.name === "Merge Requested"
-                ? Colors.SUCCESS
-                : Colors.WARNING,
+            fg: jiraIssues.length > 0
+              ? getJiraStatusColor(jiraIssues[0]?.fields.status.name)
+              : Colors.PRIMARY,
             attributes:
-              mr.jiraIssues.length > 0 ? undefined : TextAttributes.DIM,
+              jiraIssues.length > 0
+                ? (getJiraStatusColor(jiraIssues[0]?.fields.status.name) === Colors.PRIMARY ? TextAttributes.DIM : undefined)
+                : TextAttributes.DIM,
           }}
-          wrap={false}
+          wrapMode='none'
         >
-          {mr.jiraIssues.length > 0
-            ? mr.jiraIssues[0]?.fields.status.name
+          {jiraIssues.length > 0
+            ? jiraIssues[0]?.fields.status.name
             : "<no jira ticket>"}
         </text>
+        {(() => {
+          if (jiraIssues.length === 0) return null;
+
+          const statusName = jiraIssues[0]?.fields.status.name;
+          const statusLower = statusName?.toLowerCase() || '';
+          const isMergeRequested = statusLower.includes('merge requested') || statusLower.includes('ready for merge');
+          const isBehind = branchDifference && branchDifference.behind > 0;
+
+          if (isMergeRequested && isBehind) {
+            return (
+              <text
+                style={{
+                  fg: Colors.ERROR,
+                  attributes: TextAttributes.BOLD,
+                }}
+                wrapMode='none'
+              >
+                (BEHIND)
+              </text>
+            );
+          }
+
+          return null;
+        })()}
       </box>
 
       <PipelineStagesWithJobStatuses mr={mr} />
@@ -188,19 +294,19 @@ const BranchInformation = ({ mr, branchDifferenceMap }: { mr: MergeRequest; bran
       <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
         <text
           style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
+          wrapMode='none'
         >
           {mr.targetbranch}
         </text>
         <text
           style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
+          wrapMode='none'
         >
           ←
         </text>
         <text
           style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
+          wrapMode='none'
         >
           {mr.sourcebranch}
         </text>
@@ -210,7 +316,7 @@ const BranchInformation = ({ mr, branchDifferenceMap }: { mr: MergeRequest; bran
               fg: difference.behind > 0 ? Colors.WARNING : Colors.SUCCESS,
               attributes: TextAttributes.DIM
             }}
-            wrap={false}
+            wrapMode='none'
           >
             {difference.behind > 0 ? ` (-${difference.behind})` : ` (up to date)`}
           </text>
@@ -222,87 +328,70 @@ const BranchInformation = ({ mr, branchDifferenceMap }: { mr: MergeRequest; bran
 
 const IgnoredMergeRequestRow = ({
   mr,
-  isActiveInLocalRepo
+  isActiveInLocalRepo,
+  repoColor,
+  isMyMr
 }: {
   mr: MergeRequest;
   isActiveInLocalRepo: boolean;
-}) => (
-  <>
-    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-      <box style={{ width: 3 }}>
-        <text
-          style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {formatCompactTime(mr.updatedAt)}
-        </text>
-      </box>
+  repoColor?: string;
+  isMyMr: boolean;
+}) => {
+  const projectColor = repoColor || Colors.SUCCESS;
 
-      <box style={{ width: 15 }}>
-        <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={false}>
-          {mr.author}
-        </text>
-      </box>
+  return (
+    <>
+      <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+        <box style={{ width: 3 }}>
+          <text
+            style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
+            wrapMode='none'
+          >
+            {formatCompactTime(mr.updatedAt)}
+          </text>
+        </box>
 
-      <box style={{ flexGrow: 1 }}>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
-        </text>
-      </box>
-    </box>
+        <box style={{ width: 15 }}>
+          <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
+            {mr.author}
+          </text>
+        </box>
 
-    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-      <box style={{ width: 3 }}>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {formatCompactTime(mr.createdAt)}
-        </text>
+        <box style={{ flexGrow: 1 }}>
+          <text
+            style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
+            wrapMode='none'
+          >
+            {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
+          </text>
+        </box>
       </box>
-
-      <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? Colors.SUCCESS : "transparent" }}>
-        <text
-          style={{
-            fg: isActiveInLocalRepo ? Colors.BACKGROUND : Colors.SUCCESS,
-            attributes: TextAttributes.DIM
-          }}
-          wrap={false}
-        >
-          {mr.project.name}
-        </text>
-      </box>
-    </box>
-
-    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-      <box style={{ width: 19 }}></box>
 
       <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {mr.targetbranch}
-        </text>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          ←
-        </text>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrap={false}
-        >
-          {mr.sourcebranch}
-        </text>
-      </box>
+        <box style={{ width: 3 }}>
+          <text
+            style={{ fg: getCreatedDateColor(mr.createdAt), attributes: TextAttributes.DIM }}
+            wrapMode='none'
+          >
+            {formatCompactTime(mr.createdAt)}
+          </text>
+        </box>
+
+        <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? projectColor : "transparent" }}>
+          <text
+            style={{
+              fg: isActiveInLocalRepo ? Colors.BACKGROUND : projectColor,
+              attributes: TextAttributes.DIM
+            }}
+            wrapMode='none'
+          >
+            {mr.project.name}
+          </text>
+        </box>
     </box>
   </>
 );
+};
 
 const CopyNotificationPopup = ({
   notification,
@@ -324,46 +413,86 @@ const CopyNotificationPopup = ({
     >
       <text
         style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }}
-        wrap={false}
+        wrapMode='none'
       >
         {notification}
       </text>
     </box>
   ) : null;
 
-export type MergeRequest = GitlabMergeRequest & {
-  jiraIssues: JiraIssue[];
+export type { MergeRequest } from "../mergerequests/mergerequest-schema"
+
+const Spinner = () => {
+  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrameIndex((prev) => (prev + 1) % frames.length);
+    }, 80);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }}>
+      {frames[frameIndex]}
+    </text>
+  );
 };
 
 export default function MergeRequestPane({}: {}) {
-  const setSelectedMergeRequest = useAppStore(
-    (state) => state.setSelectedMergeRequest
-  );
-  const selectedIndex = useAppStore((state) => state.selectedMergeRequest);
-  const mergeRequests = useAppStore((state) => state.mergeRequests);
-  const fetchMrs = useAppStore((state) => state.fetchMrs);
+  const [getSelectedMRIndex, setSelectedMRIndex] = useAtom(selectedMrIndexAtom);
+  const setSelectedMergeRequest = setSelectedMRIndex;
+  const selectedIndex = getSelectedMRIndex;
 
-  const activePane = useAppStore((state) => state.activePane);
-  const mrState = useAppStore((state) => state.mrState);
-  const showFilterModal = useAppStore((state) => state.showMrFilterModal);
-  const setShowFilterModal = useAppStore((state) => state.setShowMrFilterModal);
-  const setShowGitSwitchModal = useAppStore((state) => state.setShowGitSwitchModal);
-  const showHelpModal = useAppStore((state) => state.showHelpModal);
-  const setShowHelpModal = useAppStore((state) => state.setShowHelpModal);
-  const showJiraModal = useAppStore((state) => state.showJiraModal);
-  const setShowJiraModal = useAppStore((state) => state.setShowJiraModal);
-  const toggleIgnoreMergeRequest = useAppStore((state) => state.toggleIgnoreMergeRequest);
-  const ignoredMergeRequests = useAppStore((state) => state.ignoredMergeRequests);
+  const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
+  const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
+  const lastRefreshTimestamp = useAtomValue(unwrappedLastRefreshTimestampAtom);
+
+  const [activePane, setActivePane] = useAtom(activePaneAtom);
+  const [activeModal, setActiveModal] = useAtom(activeModalAtom);
+  const [filterMrState, setfilterMrState] = useAtom(filterMrStateAtom);
+  const currentUser = useAtomValue(currentUserAtom);
+
+  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
+
+  const toggleIgnoreMergeRequest = useAtomSet(toggleIgnoreMergeRequestAtom);
+  const toggleSeenMergeRequest = useAtomSet(toggleSeenMergeRequestAtom);
+  const ignoredMergeRequests = useAtomValue(ignoredMergeRequestsAtom);
+  const refetchSelectedMrPipeline = useAtomSet(refetchSelectedMrPipelineAtom, { mode: 'promiseExit' });
+  const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
+  const { missingIds, reconcile, isReconciling } = useReconcileMissingMrs();
+
+  const allMrs = useAtomValue(allMrsAtom);
+  const openMrs = useAtomValue(missingMrsDiffAtom);
+
+  if (Result.isSuccess(openMrs) && Result.isSuccess(allMrs)){
+    const missingNames = Array.from(openMrs.value.detectedMissingMrIds).map(id => {
+      const mr = allMrs.value.mrsByGid.get(id);
+      return mr ? mr.title : id;
+    });
+  }
 
   const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
-    itemHeight: 3,
     lookahead: 2,
   });
 
+  const handleMrClick = useDoubleClick<number>({
+      onSingleClick: (index) => {
+          setSelectedMRIndex(index);
+      },
+      onDoubleClick: (index) => {
+          if (mergeRequests[index]) {
+              openUrl(mergeRequests[index].webUrl);
+          }
+      }
+  });
+
   const repositoryBranches = useRepositoryBranches(mergeRequests);
-  const branchDifferences = useAppStore((state) => state.branchDifferences);
+  const branchDifferences = useAtomValue(branchDifferencesAtom);
+  const settings = loadSettings();
 
   // Create a map of project path to current branch
   const projectBranchMap = useMemo(() => {
@@ -379,33 +508,29 @@ export default function MergeRequestPane({}: {}) {
   // Get the selected MR's Jira ticket info
   const selectedMrJiraInfo = useMemo(() => {
     const selectedMr = mergeRequests[selectedIndex];
-    return {
-      ticketKey: selectedMr?.jiraIssues[0]?.key || null,
-      parentKey: selectedMr?.jiraIssues[0]?.fields.parent?.key || null
-    };
-  }, [mergeRequests, selectedIndex]);
+    const issues = selectedMr?.jiraIssueKeys.flatMap(k => {
+        const i = jiraIssuesMap.get(k);
+        return i ? [i] : [];
+    }) || [];
+    const issue = issues[0];
 
-  // Function to determine background color for an MR item
-  const getBackgroundColor = (mr: MergeRequest, index: number): string => {
+    return {
+      ticketKey: issue?.key || null,
+      ticketSummary: issue?.fields.summary || null,
+      parentKey: issue?.fields.parent?.key || null,
+      parentSummary: issue?.fields.parent?.fields.summary || null
+    };
+  }, [mergeRequests, selectedIndex, jiraIssuesMap]);
+
+  // Function to determine background color and shared ticket info for an MR item
+  const getMrHighlightInfo = (mr: MergeRequest, index: number): { backgroundColor: string; sharedTicket: { key: string; summary: string } | null } => {
     // Current selection gets priority
     if (index === selectedIndex) {
-      return Colors.TRACK;
+      return { backgroundColor: Colors.TRACK, sharedTicket: null };
     }
 
-    const mrTicketKey = mr.jiraIssues[0]?.key;
-    const mrParentKey = mr.jiraIssues[0]?.fields.parent?.key;
-
-    // Highlight if same Jira ticket
-    if (selectedMrJiraInfo.ticketKey && mrTicketKey === selectedMrJiraInfo.ticketKey) {
-      return Colors.SELECTED;
-    }
-
-    // Highlight if same parent ticket
-    if (selectedMrJiraInfo.parentKey && mrParentKey === selectedMrJiraInfo.parentKey) {
-      return Colors.SELECTED;
-    }
-
-    return "transparent";
+    // No more related highlighting (see git history)
+    return { backgroundColor: "transparent", sharedTicket: null };
   };
 
 
@@ -413,28 +538,50 @@ export default function MergeRequestPane({}: {}) {
     // Only handle keys when this pane is active
     if (!isActive) return;
 
-    if (showHelpModal || showJiraModal || showFilterModal) {
-      if (key.name === "escape") {
-        setShowHelpModal(false);
-        setShowJiraModal(false);
-        setShowFilterModal(false);
-      }
+    // Don't handle keys when modals are open (handled globally)
+    if (activeModal !== 'none') {
       return;
     }
 
-    // console.log("key", key)
     switch (key.name) {
-      case 'f':
-        setShowFilterModal(true);
+      case 'return':
+        setActivePane(ActivePane.InfoPane);
         break;
-      case 's':
-        fetchMrs();
+      case 'escape':
+        setActivePane(ActivePane.Facts);
+        break;
+      case 'f':
+        setActiveModal('mrFilter');
+        break;
+      case 'h':
+      case 'left': {
+        break;
+      }
+      case 'l':
+      case 'right': {
+        break;
+      }
+      case '1':
+        setfilterMrState('opened');
+        break;
+      case '2':
+        setfilterMrState('merged');
+        break;
+      case '3':
+        setfilterMrState('closed');
+        break;
+      case '4':
+        setfilterMrState('locked');
+        break;
+      case '5':
+        setfilterMrState('all');
         break;
       case "j":
       case "down":
         if (mergeRequests.length > 0) {
           const newIndex = selectedIndex < mergeRequests.length - 1 ? selectedIndex + 1 : 0;
           setSelectedMergeRequest(newIndex);
+          setSelectedMRIndex(newIndex);
           scrollToItem(newIndex);
         }
         break;
@@ -443,6 +590,7 @@ export default function MergeRequestPane({}: {}) {
         if (mergeRequests.length > 0) {
           const newIndex = selectedIndex > 0 ? selectedIndex - 1 : mergeRequests.length - 1;
           setSelectedMergeRequest(newIndex);
+          setSelectedMRIndex(newIndex);
           scrollToItem(newIndex);
         }
         break;
@@ -466,39 +614,183 @@ export default function MergeRequestPane({}: {}) {
         }
         break;
       case 'g':
-        setShowGitSwitchModal(true);
+        setActiveModal('gitSwitch');
         break;
       case 't':
-        setShowJiraModal(true);
+        setActiveModal('jira');
         break;
-      case 'i':
+      case 'r':
+        setActiveModal('retarget');
+        break;
+      case 'backspace':
         if (mergeRequests[selectedIndex]) {
           toggleIgnoreMergeRequest(mergeRequests[selectedIndex].id);
         }
         break;
-      case '?':
-        setShowHelpModal(true);
+      case 'p':
+        if (mergeRequests[selectedIndex]) {
+          const mr = mergeRequests[selectedIndex];
+          const projectPath = mr.project.fullPath;
+          const iid = mr.iid;
+
+          Effect.runPromise(getSingleMr(projectPath, iid)).then((refreshedMr) => {
+            if (refreshedMr) {
+              setCopyNotification(`MR refreshed: ${refreshedMr.title}`);
+              console.log('[SingleMR] Refreshed:', refreshedMr);
+            } else {
+              setCopyNotification('MR refresh failed!');
+            }
+            setTimeout(() => setCopyNotification(null), 3000);
+          }).catch((error: unknown) => {
+            setCopyNotification('MR refresh error!');
+            console.error('[SingleMR] Error:', error);
+            setTimeout(() => setCopyNotification(null), 3000);
+          });
+        }
         break;
-      case 'q':
-      case 'ctrl+c':
-        process.exit();
+      case 'a':
+        if (mergeRequests[selectedIndex]) {
+          toggleSeenMergeRequest(mergeRequests[selectedIndex].id);
+        }
+        break;
     }
   });
 
-  return (
-    <box style={{ flexDirection: "column", height: "100%" }}>
-      <text
-        style={{
-          fg: Colors.PRIMARY,
-          marginBottom: 1,
-          attributes: TextAttributes.BOLD,
-        }}
-        wrap={false}
-      >
-        {`Merge Requests - ${
-          mrState.charAt(0).toUpperCase() + mrState.slice(1)
-        } (${mergeRequests.length})`}
+  // Get shared ticket info for the selected MR
+  const selectedMrSharedTicket = useMemo(() => {
+    const selectedMr = mergeRequests[selectedIndex];
+    const selectedIssues = selectedMr?.jiraIssueKeys.flatMap(k => {
+        const i = jiraIssuesMap.get(k);
+        return i ? [i] : [];
+    }) || [];
+
+    if (!selectedIssues[0]) return null;
+
+    const selectedTicketKey = selectedIssues[0].key;
+    const selectedTicketSummary = selectedIssues[0].fields.summary;
+    const selectedParentKey = selectedIssues[0].fields.parent?.key;
+    const selectedParentSummary = selectedIssues[0].fields.parent?.fields.summary;
+
+    // Find if any other MR shares the same ticket or parent
+    for (let i = 0; i < mergeRequests.length; i++) {
+      if (i === selectedIndex) continue;
+
+      const mr = mergeRequests[i];
+      if (!mr) continue;
+
+      const mrIssues = mr.jiraIssueKeys.flatMap(k => {
+        const issue = jiraIssuesMap.get(k);
+        return issue ? [issue] : [];
+      });
+
+      const mrTicketKey = mrIssues[0]?.key;
+      const mrParentKey = mrIssues[0]?.fields.parent?.key;
+
+      // Check if they share the same direct ticket
+      if (selectedTicketKey && mrTicketKey === selectedTicketKey) {
+        return { key: selectedTicketKey, summary: selectedTicketSummary };
+      }
+
+      // Check if they share the same parent ticket
+      if (selectedParentKey && mrParentKey === selectedParentKey) {
+        return { key: selectedParentKey, summary: selectedParentSummary || '' };
+      }
+    }
+
+    return null;
+  }, [mergeRequests, selectedIndex, jiraIssuesMap]);
+
+  const sharedTicketDisplay = selectedMrSharedTicket ? (
+    <box
+      style={{
+        backgroundColor: Colors.INFO,
+        flexDirection: "row",
+        gap: 1,
+        alignItems: "center"
+      }}
+    >
+      <text style={{ fg: Colors.BACKGROUND, attributes: TextAttributes.BOLD }} wrapMode='none'>
+        🔗 {selectedMrSharedTicket.key}:
       </text>
+      <text style={{ fg: Colors.BACKGROUND }} wrapMode='none'>
+        {selectedMrSharedTicket.summary}
+      </text>
+    </box>
+  ) : (
+    <text wrapMode='none'>{""}</text>
+  );
+
+  return (
+    <box
+      style={{ flexDirection: "column", padding: 1, height: "100%" }}
+      onMouseDown={() => setActivePane(ActivePane.MergeRequests)}
+    >
+      <MrStateTabs
+        currentState={filterMrState}
+        onStateChange={(newState: MergeRequestState) => {
+          setfilterMrState(newState);
+        }}
+        isActive={isActive}
+      />
+
+      {isLoading && (
+        <box style={{ flexDirection: "row", alignItems: "center", gap: 1,  marginTop: 1 }}>
+          <Spinner />
+          <text style={{ fg: Colors.INFO }}>
+            Loading merge requests...
+          </text>
+        </box>
+      )}
+
+      {!isLoading && lastRefreshTimestamp && (
+        <box style={{ flexDirection: "row", alignItems: "center", gap: 1, marginTop: 1 }}>
+          <text style={{ fg: Colors.SUPPORTING }} wrapMode="none">
+            Last refreshed: {formatCompactTime(lastRefreshTimestamp)} ago
+          </text>
+          <text
+             onMouseDown={() => refreshMergeRequests()}
+             style={{
+              fg: Colors.INFO
+             }}
+             wrapMode='none'
+           >
+              {" >> refresh <<"}
+          </text>
+          {missingIds.length > 0 && !isReconciling && (
+             <text
+                onMouseDown={() => reconcile()}
+                style={{ fg: Colors.WARNING }}
+                wrapMode='none'
+             >
+                {` >> reconcile (${missingIds.length}) << `}
+             </text>
+          )}
+          {isReconciling && (
+            <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+              <Spinner />
+              <text style={{ fg: Colors.ERROR }} wrapMode='none'>
+                Syncing updated MRs...
+              </text>
+            </box>
+          )}
+        </box>
+      )}
+
+      {!isLoading && mergeRequests.length === 0 && (
+        <box style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", flexGrow: 1, gap: 1 }}>
+          <text style={{ fg: Colors.SUPPORTING }}>
+            No merge requests found
+          </text>
+          <text style={{ fg: Colors.NEUTRAL }}>
+            Try changing the filter or refresh to fetch new data
+          </text>
+        </box>
+      )}
+
+
+      {/* <box style={{ flexDirection: "row", alignItems: "center", gap: 0, marginBottom: 0 }}>
+        {sharedTicketDisplay}
+      </box> */}
 
       <scrollbox
         ref={scrollBoxRef}
@@ -521,25 +813,29 @@ export default function MergeRequestPane({}: {}) {
         focused={false}
       >
         {mergeRequests.map((mr, index) => {
-          const currentBranch = projectBranchMap.get(mr.project.path);
+          const currentBranch = projectBranchMap.get(mr.project.fullPath);
           const isActiveInLocalRepo = currentBranch === mr.sourcebranch;
           const isIgnored = ignoredMergeRequests.has(mr.id);
+          const highlightInfo = getMrHighlightInfo(mr, index);
+          const repoColor = settings.repositoryColors[mr.project.fullPath];
+          const isMyMr = mr.author === currentUser;
+          const isOutOfDate = missingIds.includes(mr.id);
 
           return (
             <box
               key={mr.id}
+              onMouseDown={(e) => handleMrClick(index)}
               style={{
                 flexDirection: "column",
-                backgroundColor: getBackgroundColor(mr, index),
+                backgroundColor: highlightInfo.backgroundColor,
               }}
             >
               {isIgnored ? (
-                <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} />
+                <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} isMyMr={isMyMr} />
               ) : (
                 <>
-                  <TimeColumnAuthorTitle mr={mr} />
-                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} />
-                  <BranchInformation mr={mr} branchDifferenceMap={branchDifferences} />
+                  <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} />
+                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} />
                 </>
               )}
             </box>
@@ -561,7 +857,7 @@ export default function MergeRequestPane({}: {}) {
                   fg: repo.localPath ? (repo.currentBranch ? Colors.INFO : Colors.NEUTRAL) : Colors.WARNING,
                   attributes: TextAttributes.DIM,
                 }}
-                wrap={false}
+                wrapMode='none'
               >
                 {repo.projectName}:{repo.localPath ? (repo.currentBranch || "?") : "<no path set> (press ctrl+s to configure)"}
               </text>

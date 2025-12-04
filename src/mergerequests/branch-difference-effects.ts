@@ -1,7 +1,7 @@
-import { getBranchDifference } from '../utils/git';
-import { loadSettings } from '../utils/settings';
-import type { MergeRequest } from '../components/MergeRequestPane';
-import type { BranchDifference } from '../hooks/useRepositoryBranches';
+import { getBranchDifference } from '../git/git-effects';
+import { loadSettings } from '../settings/settings';
+import type { MergeRequest } from './mergerequest-schema';
+import type { BranchDifference } from './hooks/useRepositoryBranches';
 
 export async function fetchBranchDifferences(mergeRequests: MergeRequest[]): Promise<Map<string, BranchDifference>> {
   const settings = loadSettings();

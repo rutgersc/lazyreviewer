@@ -1,61 +1,11 @@
-import { useState, useEffect } from 'react';
 import { TextAttributes } from '@opentui/core';
-
-interface LogEntry {
-  timestamp: string;
-  level: 'info' | 'warn' | 'error' | 'debug';
-  message: string;
-}
+import { useAtomValue } from '@effect-atom/atom-react';
+import { consoleLogsAtom, type LogEntry } from '../logging/logging-atom';
+import { resultToArray } from '../utils/result-helpers';
 
 export default function ConsolePane({ isActive }: { isActive: boolean }) {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-
-  useEffect(() => {
-    // Capture console.log, console.warn, console.error
-    const originalLog = console.log;
-    const originalWarn = console.warn;
-    const originalError = console.error;
-
-    const addLog = (level: LogEntry['level'], args: any[]) => {
-      const message = args.map(arg =>
-        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-      ).join(' ');
-
-      const logEntry: LogEntry = {
-        timestamp: new Date().toLocaleTimeString(),
-        level,
-        message
-      };
-
-      setLogs(prevLogs => {
-        const newLogs = [...prevLogs, logEntry];
-        // Keep only last 100 log entries
-        return newLogs.slice(-100);
-      });
-    };
-
-    console.log = (...args) => {
-      originalLog(...args);
-      addLog('info', args);
-    };
-
-    console.warn = (...args) => {
-      originalWarn(...args);
-      addLog('warn', args);
-    };
-
-    console.error = (...args) => {
-      originalError(...args);
-      addLog('error', args);
-    };
-
-    // Cleanup on unmount
-    return () => {
-      console.log = originalLog;
-      console.warn = originalWarn;
-      console.error = originalError;
-    };
-  }, []);
+  const logsResult = useAtomValue(consoleLogsAtom);
+  const logs = resultToArray(logsResult);
 
   const getLogColor = (level: LogEntry['level']) => {
     switch (level) {
@@ -68,8 +18,8 @@ export default function ConsolePane({ isActive }: { isActive: boolean }) {
   };
 
   return (
-    <box style={{ flexDirection: "column", height: "100%", padding: 1 }}>
-      <text style={{ fg: '#f8f8f2', marginBottom: 1, attributes: TextAttributes.BOLD }} wrap={false}>
+    <box style={{ flexDirection: "column", height: "100%", paddingLeft: 1 }}>
+      <text style={{ fg: '#f8f8f2', marginBottom: 1, attributes: TextAttributes.BOLD }} wrapMode='none'>
         Console Output (~)
       </text>
 
@@ -93,19 +43,19 @@ export default function ConsolePane({ isActive }: { isActive: boolean }) {
         focused={isActive}
       >
         {logs.length === 0 ? (
-          <text style={{ fg: '#bd93f9', padding: 1 }} wrap={false}>
+          <text style={{ fg: '#bd93f9', padding: 1 }} wrapMode='none'>
             No console output yet...
           </text>
         ) : (
           logs.map((log, index) => (
             <box key={index} style={{ flexDirection: "row", gap: 1, paddingLeft: 1, paddingRight: 1 }}>
-              <text style={{ fg: '#bd93f9' }} wrap={false}>
+              <text style={{ fg: '#bd93f9' }} wrapMode='none'>
                 {`[${log.timestamp}]`}
               </text>
-              <text style={{ fg: getLogColor(log.level), attributes: TextAttributes.BOLD }} wrap={false}>
+              <text style={{ fg: getLogColor(log.level), attributes: TextAttributes.BOLD }} wrapMode='none'>
                 {`[${log.level.toUpperCase()}]`}
               </text>
-              <text style={{ fg: '#f8f8f2' }} wrap={false}>
+              <text style={{ fg: '#f8f8f2' }} wrapMode='none'>
                 {log.message}
               </text>
             </box>

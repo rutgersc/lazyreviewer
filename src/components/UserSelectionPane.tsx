@@ -1,34 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
-import type { UserSelection, UserSelectionEntry } from '../types/userSelection';
-import { ActivePane } from '../types/userSelection';
-import { useAppStore } from '../store/appStore';
+import type { UserSelectionEntry } from '../userselection/userSelection';
+import { ActivePane } from '../userselection/userSelection';
+import { useAutoScroll } from '../hooks/useAutoScroll';
+import { useDoubleClick } from '../hooks/useDoubleClick';
+import { Colors } from '../colors';
+import { activePaneAtom } from '../ui/navigation-atom';
+import { userSelectionsAtom, selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
+import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { openUrl } from '../system/open-url';
+import path from 'path';
+import { selectedUserSelectionEntryIdAtom } from '../settings/settings-atom';
 
 interface UserSelectionPaneProps {
 }
 
-interface LocalNavigationState {
-  currentItems: UserSelection[];
-}
-
 export default function UserSelectionPane({ }: UserSelectionPaneProps) {
-  const {
-    activePane,
-    setSelectedUserSelectionEntry,
-    selectedUserSelectionEntry,
-    userSelections,
-    fetchMrs,
-    loadMrs } = useAppStore();
+  const hasInitialized = useRef(false);
+  const activePane = useAtomValue(activePaneAtom);
+  const [selectedUserSelectionEntryId, setSelectedUserSelectionEntryId] = useAtom(selectedUserSelectionEntryIdAtom);
+  const userSelections = useAtomValue(userSelectionsAtom);
+  const selectedEntry = useAtomValue(selectedUserSelectionEntryAtom);
 
   const isActive = activePane === ActivePane.UserSelection;
-  const [navState, setNavState] = useState<LocalNavigationState>(() =>
-  ({
-    breadcrumb: [],
-    currentItems: []
-    })
-  );
-  const [highlightIndex, setHighlightIndex] = useState(selectedUserSelectionEntry);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const { scrollBoxRef, scrollToItem } = useAutoScroll({
+    lookahead: 2,
+  });
+
+  useEffect(() => {
+    if (!hasInitialized.current && selectedEntry !== undefined) {
+      const index = userSelections.indexOf(selectedEntry);
+      setHighlightIndex(index);
+      scrollToItem(index);
+      hasInitialized.current = true;
+    }
+  }, [selectedUserSelectionEntryId, selectedEntry]);
+
+  const handleTitleClick = useDoubleClick<void>({
+    onDoubleClick: () => {
+      // We're assuming the process is running from the project root, or we can find the file relative to it.
+      // For simplicity in this environment, we'll try to open the file directly.
+      // Since 'openUrl' opens URLs, for local files we might need a 'file://' prefix or just the path depending on the system/implementation.
+      // However, user asked to open `src\data\usersAndGroups.ts`.
+      // Let's try constructing a file URI.
+      const filePath = path.resolve('src', 'data', 'usersAndGroups.ts');
+      openUrl(filePath); // openUrl usually handles file paths if the system supports it or if we implement it that way.
+                         // If openUrl is strict about URLs, we might need `file://${filePath}`.
+                         // Given previous context of `openUrl`, it seems to invoke `open` command which handles files.
+    }
+  });
 
   useKeyboard((key: ParsedKey) => {
     if (!isActive) {
@@ -37,17 +59,27 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
 
     switch (key.name) {
       case 'j':
-      case 'down':
-        setHighlightIndex(Math.min(highlightIndex + 1, userSelections.length - 1));
+      case 'down': {
+        const newIndex = Math.min(highlightIndex + 1, userSelections.length - 1);
+        setHighlightIndex(newIndex);
+        scrollToItem(newIndex);
         break;
+      }
       case 'k':
-      case 'up':
-        setHighlightIndex(Math.max(highlightIndex - 1, 0));
+      case 'up': {
+        const newIndex = Math.max(highlightIndex - 1, 0);
+        setHighlightIndex(newIndex);
+        scrollToItem(newIndex);
         break;
-      case 'space':
-        setSelectedUserSelectionEntry(highlightIndex);
-        loadMrs();
+      }
+      case 'space': {
+        const selectedEntry = userSelections[highlightIndex];
+        if (selectedEntry) {
+          setSelectedUserSelectionEntryId(selectedEntry.userSelectionEntryId);
+        }
         break;
+      }
+
       case 'return': {
         // const highlightedItem = getItemByIndex(navState, highlightIndex);
         // if (highlightedItem && highlightedItem.type === 'group') {
@@ -58,18 +90,15 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
         break;
       }
       case 'escape':
-        // setNavState(prevState => navigateUp(prevState));
+        // Reset highlight
         setHighlightIndex(0);
-        break;
-      case 's':
-        fetchMrs();
         break;
     }
   });
 
   const renderItem = (item: UserSelectionEntry, index: number) => {
     const isHighlighted = index === highlightIndex;
-    const isSelected = index === selectedUserSelectionEntry;
+    const isSelected = item.userSelectionEntryId === selectedUserSelectionEntryId;
     const prefix = isSelected ? '* ' : '  ';
 
     const icon = item.selection.length > 1
@@ -85,13 +114,17 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
     return (
       <box
         key={`${item.userSelectionEntryId}`}
+        onMouseDown={() => {
+          setHighlightIndex(index);
+          setSelectedUserSelectionEntryId(item.userSelectionEntryId);
+        }}
         style={{
           backgroundColor: isHighlighted ? '#191a21' : 'transparent'
         }}
       >
         <text
           style={{ fg: '#8be9fd' }}
-          wrap={false}
+          wrapMode='none'
         >
           {`${prefix}${icon} ${item.name}`}
         </text>
@@ -101,16 +134,54 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
 
   return (
     <>
-      <text
-        style={{ fg: '#f8f8f2', marginBottom: 1, attributes: TextAttributes.BOLD }}
-        wrap={false}
-      >
-        User Selection
-      </text>
-
-      <box style={{ flexDirection: "column", gap: 0, flexGrow: 1 }}>
-        {userSelections.map((item, index) => renderItem(item, index))}
+      <box style={{ flexDirection: "row", alignItems: "center", marginBottom: 1, gap: 2 }}>
+        <text
+            onMouseDown={() => handleTitleClick()}
+            style={{ fg: '#f8f8f2', attributes: TextAttributes.BOLD }}
+            wrapMode='none'
+        >
+            User Selection
+        </text>
+        <box
+            onMouseDown={() => {
+                const filePath = path.resolve('src', 'data', 'usersAndGroups.ts');
+                openUrl(filePath);
+            }}
+            style={{
+                backgroundColor: Colors.PRIMARY,
+                paddingLeft: 1,
+                paddingRight: 1,
+            }}
+        >
+            <text style={{ fg: Colors.BACKGROUND, attributes: TextAttributes.BOLD }} wrapMode='none'>
+                Edit
+            </text>
+        </box>
       </box>
+
+      <scrollbox
+        ref={scrollBoxRef}
+        style={{
+          flexGrow: 1,
+          height: '70%',
+          contentOptions: {
+            backgroundColor: Colors.BACKGROUND,
+          },
+          viewportOptions: {
+            backgroundColor: Colors.BACKGROUND,
+          },
+          scrollbarOptions: {
+            width: 1,
+            trackOptions: {
+              foregroundColor: Colors.NEUTRAL,
+              backgroundColor: Colors.TRACK,
+            },
+          },
+        }}
+        focused={false}
+      >
+        {userSelections.map((item, index) => renderItem(item, index))}
+      </scrollbox>
 
     </>
   );

@@ -1,189 +1,214 @@
 import { useKeyboard, useRenderer } from '@opentui/react';
-import { TextAttributes, type ParsedKey } from '@opentui/core';
+import { TextAttributes, type ParsedKey, type RenderableOptions } from '@opentui/core';
 import UserSelectionPane from "./components/UserSelectionPane";
 import MergeRequestPane from "./components/MergeRequestPane";
-import MergeRequestDetailsPane from "./components/MergeRequestDetailsPane";
 import InfoPane from "./components/InfoPane";
 import ConsolePane from "./components/ConsolePane";
+import FactsPane from "./components/FactsPane";
 import MrStateFilterModal from "./components/MrStateFilterModal";
 import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal from "./components/HelpModal";
 import JiraModal from "./components/JiraModal";
+import RetargetModal from "./components/RetargetModal";
+import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
-import { ActivePane } from "./types/userSelection";
-import { useAppStore } from "./store/appStore";
-import { useEffect } from 'react';
-import { startJobMonitoring, stopJobMonitoring } from "./services/jobMonitor";
-import { type MergeRequestState } from "./generated/gitlab-sdk";
-import { openSettingsFile } from "./utils/settings";
-import { useRepositoryBranches } from "./hooks/useRepositoryBranches";
-import { useState } from 'react';
+import { ActivePane } from "./userselection/userSelection";
+import { useEffect, useState } from 'react';
+import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
+import { openSettingsFile } from "./settings/settings";
+import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
+import { getScroller } from "./hooks/useScrollBox";
+import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom, allJiraIssuesAtom } from './mergerequests/mergerequests-atom';
+import { toggleNotificationsAtom, notificationSettingsAtom } from './settings/settings-atom';
+import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
+import { Console, Effect } from 'effect';
+import { consoleLoggedLayer } from './appLayerRuntime';
+import { Result } from '@effect-atom/atom-react';
+import { changeTrackingAtom } from './changetracking/change-tracking-atom';
+import { backgroundFetchAtom, notificationStreamAtom } from './notifications/notification-sync-atom';
+import { clearUnreadCount } from './notifications/title-indicator';
 
 export default function App() {
-  const renderer = useRenderer();
-  const { activePane, setActivePane, loadMrs, scrollInfoPane } = useAppStore();
-  const showFilterModal = useAppStore(state => state.showMrFilterModal);
-  const setShowFilterModal = useAppStore(state => state.setShowMrFilterModal);
-  const showGitSwitchModal = useAppStore(state => state.showGitSwitchModal);
-  const setShowGitSwitchModal = useAppStore(state => state.setShowGitSwitchModal);
-  const mrState = useAppStore(state => state.mrState);
-  const setMrState = useAppStore(state => state.setMrState);
-  const fetchMrs = useAppStore(state => state.fetchMrs);
-  const mergeRequests = useAppStore(state => state.mergeRequests);
-  const selectedIndex = useAppStore(state => state.selectedMergeRequest);
-  const showHelpModal = useAppStore(state => state.showHelpModal);
-  const setShowHelpModal = useAppStore(state => state.setShowHelpModal);
-  const showJiraModal = useAppStore(state => state.showJiraModal);
-  const setShowJiraModal = useAppStore(state => state.setShowJiraModal);
-  const showEventLogPane = useAppStore(state => state.showEventLogPane);
-  const setShowEventLogPane = useAppStore(state => state.setShowEventLogPane);
+  const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
+  const dumpAllMrs = useAtomSet(dumpAllMrsToFileAtom, { mode: 'promiseExit' });
+  const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
+  const notificationSettings = useAtomValue(notificationSettingsAtom);
 
-  const repositoryBranches = useRepositoryBranches(mergeRequests);
+  const renderer = useRenderer();
+  const [activePane, setActivePane] = useAtom(activePaneAtom);
+  const [activeModal, setActiveModal] = useAtom(activeModalAtom);
+  const cycleInfoPaneTab = useAtomSet(cycleInfoPaneTabAtom);
+
+  const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
+  const [selectedIndex] = useAtom(selectedMrIndexAtom);
+
+  const repositoryBranches = useRepositoryBranches([...mergeRequests]);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
+  const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
+  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
+
+  const selectedMrJiraIssues = mergeRequests[selectedIndex]?.jiraIssueKeys.flatMap(key => {
+    const issue = jiraIssuesMap.get(key);
+    return issue ? [issue] : [];
+  }) || [];
+
+  useAtomValue(backgroundFetchAtom);
+  useAtomValue(notificationStreamAtom);
+
   useEffect(() => {
-    // On app start, load MRs using the persisted selection entry
-    loadMrs();
-
-    // Start job monitoring service
-    const monitoringInterval = startJobMonitoring();
-
-    // Setup global error handlers to show console on fatal errors
-    const errorHandler = (error: Error) => {
-      renderer.console.show();
-    };
-    process.on('uncaughtException', errorHandler);
-    process.on('unhandledRejection', errorHandler);
-
-    // Cleanup on app exit
-    return () => {
-      stopJobMonitoring(monitoringInterval);
-      process.off('uncaughtException', errorHandler);
-      process.off('unhandledRejection', errorHandler);
-    };
-  }, []);
+    const onFocus = () => clearUnreadCount();
+    renderer.on('focus', onFocus);
+    return () => { renderer.off('focus', onFocus); };
+  }, [renderer]);
 
   const handleStateSelect = async (newState: MergeRequestState) => {
-    if (newState !== mrState) {
-      setMrState(newState);
-      // Automatically refresh data when state changes
-      await fetchMrs();
-    }
+    setFilterMrState(newState);
   };
 
-  useKeyboard((key: ParsedKey) => {
-    // Handle escape in event log pane
-    if (showEventLogPane && key.name === 'escape') {
-      setShowEventLogPane(false);
+  useKeyboard(async (key: ParsedKey) => {
+    // Handle escape - close any active modal
+    if (key.name === 'escape') {
+      if (activeModal !== 'none') {
+        setActiveModal('none');
+        return;
+      }
+      // If no modals open, let pane-level handlers process escape
       return;
     }
 
-    // Don't handle other keys when event log is open
-    if (showEventLogPane) {
+    // Don't handle other keys when a modal is open
+    if (activeModal !== 'none') {
       return;
     }
 
     switch (key.name) {
-      // case 'd':
-      //   console.log("debug")
-      //   break;
       case 'q':
       case 'ctrl+c':
         process.exit();
 
       case '~':
+      case 'z':
         renderer.console.toggle();
         break;
       case 'o':
         if (mergeRequests.length > 0) {
-          setShowEventLogPane(true);
+          setActiveModal('eventLog');
         }
         break;
       case 's':
         if (key.ctrl) {
-          openSettingsFile();
+          // openSettingsFile();
+        } else {
+          const mr = await refreshMergeRequests();
+          Console.Console.pipe(
+            Effect.flatMap(_ => _.log(mr)),
+            Effect.provide(consoleLoggedLayer),
+            Effect.runPromise
+          );
         }
         break;
+      case '?':
+        setActiveModal('help');
+        break;
+      case '0':
+        await dumpAllMrs();
+        setCopyNotification('State dumped to debug/');
+        setTimeout(() => setCopyNotification(null), 2000);
+        break;
+      case 'n':
+        await toggleNotifications();
+        setCopyNotification(notificationSettings.enabled ? 'Notifications disabled' : 'Notifications enabled');
+        setTimeout(() => setCopyNotification(null), 2000);
+        break;
+      case '[':
+        cycleInfoPaneTab('prev');
+        break;
+      case ']':
+        cycleInfoPaneTab('next');
+        break;
+      case 'tab':
       case 'd':
-        if (key.ctrl) {
-          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.MergeRequestDetails) {
-            scrollInfoPane('down');
+      case ';':
+        if (key.ctrl && key.name === 'd') {
+          // Ctrl+D for scrolling (works when MR or Info pane is active)
+          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
+            getScroller('infoPane')?.('down');
           }
+        } else if (key.name === 'tab' || key.name === 'd' || key.name === ';') {
+          // Tab or ; for cycling tabs
+          cycleInfoPaneTab('next');
         }
         break;
       case 'u':
         if (key.ctrl) {
-          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.MergeRequestDetails) {
-            scrollInfoPane('up');
+          // Ctrl+U for scrolling (works when MR or Info pane is active)
+          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
+            getScroller('infoPane')?.('up');
           }
         }
         break;
       case 'h':
       case 'left':
-        if (activePane === ActivePane.Console) {
-          setActivePane(ActivePane.UserSelection);
+        if (activePane === ActivePane.InfoPane) {
+          // When in InfoPane, navigate between tabs
+          cycleInfoPaneTab('prev');
         } else if (activePane === ActivePane.UserSelection) {
           setActivePane(ActivePane.MergeRequests);
         } else if (activePane === ActivePane.MergeRequests) {
-          setActivePane(ActivePane.MergeRequestDetails);
-        } else {
-          setActivePane(ActivePane.Console);
+          setActivePane(ActivePane.Facts);
         }
         break;
       case 'l':
       case 'right':
-        if (activePane === ActivePane.MergeRequestDetails) {
+        if (activePane === ActivePane.InfoPane) {
+          // When in InfoPane, navigate between tabs
+          cycleInfoPaneTab('next');
+        } else if (activePane === ActivePane.Facts) {
           setActivePane(ActivePane.MergeRequests);
         } else if (activePane === ActivePane.MergeRequests) {
           setActivePane(ActivePane.UserSelection);
-        } else if (activePane === ActivePane.UserSelection) {
-          setActivePane(ActivePane.Console);
-        } else {
-          setActivePane(ActivePane.MergeRequestDetails);
         }
         break;
     }
   });
 
+  const factsActive = activePane === ActivePane.Facts;
+
+  let factsWidthStr: RenderableOptions['width'] = factsActive ? 45 : 45;
+  let middleWidthStr: RenderableOptions['width'] = factsActive ? "35%" : "47%";
+  let rightWidthStr: RenderableOptions['width'] = factsActive ? "40%" : "60%";
+
   return (
     <box style={{ flexDirection: "column", height: "100%", backgroundColor: '#282a36' }}>
-      {/* Header */}
-      {/* <box style={{ padding: 0, border: true, borderColor: "#6272a4", backgroundColor: '#44475a' }}>
-        <text style={{ fg: '#f8f8f2' }}>
-          🚀 LazyGitLab - Merge Requests
-        </text>
-      </box> */}
-
       {/* Main content area - horizontal layout */}
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
-        {/* Left panel - three stacked panes */}
-        <box style={{ flexDirection: "column", width: "55%" }}>
-          {/* MR Details Pane (top) */}
-          <box
+
+        {/* Facts Pane */}
+        <box
             style={{
               flexDirection: "column",
               border: true,
-              borderColor: activePane === ActivePane.MergeRequestDetails ? "#50fa7b" : "#6272a4",
-              height: "30%",
-              minHeight: "30%",
-              maxHeight: "30%",
+              borderColor: activePane === ActivePane.Facts ? "#50fa7b" : "#6272a4",
+              width: factsWidthStr,
               backgroundColor: '#282a36'
             }}
-          >
-            <MergeRequestDetailsPane
-              isActive={activePane === ActivePane.MergeRequestDetails}
-            />
-          </box>
+        >
+            <FactsPane />
+        </box>
 
-          {/* Merge Request Pane (middle) */}
+        {/* Middle panel - two stacked panes */}
+        <box style={{ flexDirection: "column", width: middleWidthStr }}>
+          {/* Merge Request Pane (top) */}
           <box
             style={{
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.MergeRequests ? "#50fa7b" : "#6272a4",
-              height: "50%",
-              minHeight: "50%",
-              maxHeight: "50%",
+              height: activePane === ActivePane.InfoPane ? "85%" : "80%",
+              minHeight: activePane === ActivePane.InfoPane ? "85%" : "80%",
+              maxHeight: activePane === ActivePane.InfoPane ? "85%" : "80%",
               backgroundColor: '#282a36'
             }}
           >
@@ -196,9 +221,9 @@ export default function App() {
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.UserSelection ? "#50fa7b" : "#6272a4",
-              height: "20%",
-              minHeight: "20%",
-              maxHeight: "20%",
+              height: activePane === ActivePane.InfoPane ? "15%" : "20%",
+              minHeight: activePane === ActivePane.InfoPane ? "15%" : "20%",
+              maxHeight: activePane === ActivePane.InfoPane ? "15%" : "20%",
               backgroundColor: '#282a36'
             }}
           >
@@ -210,7 +235,7 @@ export default function App() {
         <box
           style={{
             flexDirection: "column",
-            width: "45%",
+            width: rightWidthStr,
             backgroundColor: '#282a36'
           }}
         >
@@ -219,14 +244,12 @@ export default function App() {
             style={{
               flexDirection: "column",
               border: true,
-              borderColor: "#6272a4",
-              height: "70%",
-              minHeight: "70%",
-              maxHeight: "70%",
+              borderColor: activePane === ActivePane.InfoPane ? "#50fa7b" : "#6272a4",
+              height: "80%",
               backgroundColor: '#282a36'
             }}
           >
-            <InfoPane />
+            <InfoPane activePane={activePane} />
           </box>
 
           {/* Console Pane */}
@@ -235,9 +258,7 @@ export default function App() {
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.Console ? "#50fa7b" : "#6272a4",
-              height: "30%",
-              minHeight: "30%",
-              maxHeight: "30%",
+              height: "20%",
               backgroundColor: '#282a36'
             }}
           >
@@ -248,41 +269,99 @@ export default function App() {
 
       {/* MR State Filter Modal - rendered at app level to cover entire screen */}
       <MrStateFilterModal
-        isVisible={showFilterModal}
-        currentState={mrState}
+        isVisible={activeModal === 'mrFilter'}
+        currentState={filterMrState}
         onStateSelect={handleStateSelect}
-        onClose={() => setShowFilterModal(false)}
+        onClose={() => setActiveModal('none')}
       />
 
       {/* Git Switch Modal - rendered at app level to cover entire screen */}
       <GitSwitchModal
-        isVisible={showGitSwitchModal}
+        isVisible={activeModal === 'gitSwitch'}
         branchName={mergeRequests[selectedIndex]?.sourcebranch || ""}
-        repoPath={repositoryBranches.find(r => r.projectPath === mergeRequests[selectedIndex]?.project.path)?.localPath || null}
-        onClose={() => setShowGitSwitchModal(false)}
+        repoPath={repositoryBranches.find(r => r.projectPath === mergeRequests[selectedIndex]?.project.fullPath)?.localPath || null}
+        onClose={() => setActiveModal('none')}
         onSuccess={() => {
           setCopyNotification('Branch switched!');
           setTimeout(() => setCopyNotification(null), 2000);
-          fetchMrs();
         }}
       />
 
       {/* Help Modal - rendered at app level to cover entire screen */}
-      <HelpModal isVisible={showHelpModal} />
+      <HelpModal isVisible={activeModal === 'help'} setCopyNotification={setCopyNotification} />
 
       {/* Jira Modal - rendered at app level to cover entire screen */}
       <JiraModal
-        isVisible={showJiraModal}
-        jiraIssues={mergeRequests[selectedIndex]?.jiraIssues || []}
-        onClose={() => setShowJiraModal(false)}
+        isVisible={activeModal === 'jira'}
+        jiraIssues={selectedMrJiraIssues}
+        onClose={() => setActiveModal('none')}
+      />
+
+      {/* Retarget Modal - rendered at app level to cover entire screen */}
+      <RetargetModal
+        isVisible={activeModal === 'retarget'}
+        onClose={() => setActiveModal('none')}
+        onSuccess={() => {
+          setCopyNotification('MR retargeted successfully!');
+          setTimeout(() => setCopyNotification(null), 2000);
+        }}
+      />
+
+      {/* Job History Modal - rendered at app level to cover entire screen */}
+      <JobHistoryModal
+        isVisible={activeModal === 'jobHistory'}
+        onClose={() => setActiveModal('none')}
       />
 
       {/* Event Log Pane - fullscreen overlay */}
-      {showEventLogPane && (
+      {activeModal === 'eventLog' && (
         <EventLogPane
-          mergeRequests={mergeRequests}
-          onClose={() => setShowEventLogPane(false)}
+          mergeRequests={[...mergeRequests]}
+          onClose={() => setActiveModal('none')}
         />
+      )}
+
+      {/* Notification Status Indicator */}
+      <box
+        style={{
+          position: "absolute",
+          bottom: 1,
+          right: 2,
+          backgroundColor: '#282a36',
+          zIndex: 100,
+        }}
+      >
+        <text
+          style={{
+            fg: notificationSettings.enabled ? '#50fa7b' : '#6272a4',
+          }}
+          wrapMode='none'
+        >
+          {notificationSettings.enabled ? '🔔' : '🔕'}
+        </text>
+      </box>
+
+      {/* Copy Notification - from help modal actions */}
+      {copyNotification && (
+        <box
+          style={{
+            position: "absolute",
+            top: 3,
+            right: 3,
+            padding: 1,
+            border: true,
+            borderColor: '#50fa7b',
+            backgroundColor: '#282a36',
+            zIndex: 1000,
+          }}
+        >
+          <text
+            style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD }}
+            wrapMode='none'
+          >
+            {copyNotification}
+          </text>
+        </box>
       )}
     </box>
   );

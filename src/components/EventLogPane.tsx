@@ -1,8 +1,10 @@
 import { TextAttributes } from "@opentui/core";
-import { type MergeRequest } from "./MergeRequestPane";
-import { Colors } from "../constants/colors";
-import { formatCompactTime } from "../formatting";
-import { extractTextFromJiraComment } from "../services/jiraService";
+import { type MergeRequest } from "../mergerequests/mergerequest-schema";
+import { Colors } from "../colors";
+import { formatCompactTime } from "../utils/formatting";
+import { extractTextFromJiraComment } from "../jira/jira-service";
+import { useAtomValue } from "@effect-atom/atom-react";
+import { allJiraIssuesAtom } from "../mergerequests/mergerequests-atom";
 
 type EventType =
   | 'mr_created'
@@ -137,8 +139,15 @@ const extractEvents = (mr: MergeRequest): Event[] => {
     }
   }
 
+  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
+
+  const jiraIssues = mr?.jiraIssueKeys.flatMap(k => {
+    const i = jiraIssuesMap.get(k);
+    return i ? [i] : [];
+  }) || [];
+
   // Jira comments
-  mr.jiraIssues.forEach(issue => {
+  jiraIssues.forEach(issue => {
     issue.fields.comment.comments.forEach(comment => {
       events.push({
         timestamp: new Date(comment.created),
@@ -240,10 +249,7 @@ interface EventLogPaneProps {
 }
 
 export default function EventLogPane({ mergeRequests, onClose }: EventLogPaneProps) {
-  // Extract events from all MRs
   const allEvents = mergeRequests.flatMap(mr => extractEvents(mr));
-
-  // Sort by timestamp, newest first
   const events = allEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   return (
@@ -261,7 +267,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
     >
       {/* Header */}
       <box style={{ padding: 1, border: true, borderColor: Colors.INFO }}>
-        <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrap={false}>
+        <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
           Event Log - All Merge Requests
         </text>
       </box>
@@ -303,7 +309,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
                 style={{
                   fg: event.mrColor,
                 }}
-                wrap={false}
+                wrapMode='none'
               >
                 {formatted.prefix}
               </text>
@@ -313,7 +319,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
                   fg: eventTypeColor,
                   width: 15,
                 }}
-                wrap={false}
+                wrapMode='none'
               >
                 {` ${formatted.typeLabel}`}
               </text>
@@ -323,7 +329,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
                   fg: eventTypeColor,
                   attributes: isComment ? TextAttributes.BOLD : undefined,
                 }}
-                wrap={false}
+                wrapMode='none'
               >
                 {formatted.suffix}
               </text>
@@ -334,7 +340,7 @@ export default function EventLogPane({ mergeRequests, onClose }: EventLogPanePro
 
       {/* Footer */}
       <box style={{ padding: 1, border: true, borderColor: Colors.TRACK }}>
-        <text style={{ fg: Colors.PRIMARY }} wrap={false}>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
           Press ESC to close • {events.length} events
         </text>
       </box>

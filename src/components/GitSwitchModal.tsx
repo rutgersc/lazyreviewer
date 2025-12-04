@@ -1,6 +1,6 @@
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
-import { Colors } from "../constants/colors";
+import { Colors } from "../colors";
 import { execSync } from "child_process";
 
 interface GitSwitchModalProps {
@@ -43,7 +43,6 @@ export default function GitSwitchModal({
     if (!isVisible) return;
 
     switch (key.name) {
-      case 'escape':
       case 'n':
         onClose();
         break;
@@ -84,14 +83,14 @@ export default function GitSwitchModal({
             fg: Colors.PRIMARY,
             attributes: TextAttributes.BOLD,
           }}
-          wrap={false}
+          wrapMode='none'
         >
           Git Switch Branch
         </text>
 
         {!repoPath ? (
           <>
-            <text style={{ fg: Colors.ERROR }} wrap={true}>
+            <text style={{ fg: Colors.ERROR }} wrapMode='word'>
               No local repository path configured. Press Ctrl+S to configure settings.
             </text>
             <box style={{ marginTop: 1 }}>
@@ -102,10 +101,10 @@ export default function GitSwitchModal({
           </>
         ) : (
           <>
-            <text style={{ fg: Colors.NEUTRAL }} wrap={true}>
+            <text style={{ fg: Colors.NEUTRAL }} wrapMode='word'>
               Switch to branch: {branchName}
             </text>
-            <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrap={true}>
+            <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='word'>
               Repository: {repoPath}
             </text>
 

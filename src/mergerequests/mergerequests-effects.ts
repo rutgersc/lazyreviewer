@@ -1,109 +1,112 @@
-import type { MergeRequest } from "../components/MergeRequestPane";
-import { getGitlabMrs, getGitlabMrsByProject, type GitlabMergeRequest } from "../gitlabgraphql";
-import { loadJiraTickets, type JiraIssue } from "../services/jiraService";
-import { loadCache, saveCache } from "../utils/diskCache";
-import { type MergeRequestState } from "../generated/gitlab-sdk";
+import type { MergeRequest } from "./mergerequest-schema";
+import type { GitlabMergeRequest } from "../gitlab/gitlab-schema";
+import { getGitlabMrsAsEvent, getGitlabMrsByProject, getMrPipelineAsEvent } from "../gitlab/gitlab-graphql";
+import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
+import { parseRepositoryId } from "./repositoryParser";
+import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
+import { getSdk as getUpdateMrTargetBranchSdk } from "../graphql/update-mr-target-branch.generated";
+import { ensurePipelineJobsInSettings } from "../settings/settings";
+import { GraphQLClient } from "graphql-request";
+import { Effect, Console, Data } from "effect";
+import type { ProjectMRCacheKey } from "./decide-fetch-mrs";
+import { EventStorage } from "../events/events";
+import { projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections";
 
-function buildCacheKeys(selectedUserSelectionEntry: string, state: MergeRequestState) {
-  const fixedEntry = selectedUserSelectionEntry.replace(' ', '-');
-  return `mrs_${state}_${fixedEntry}`;
-}
+function processMrs(mrs: GitlabMergeRequest[]): MergeRequest[] {
+  // TODO: move to own subscription
+  ensurePipelineJobsInSettings(mrs);
 
-function processMrsWithJira(mrs: GitlabMergeRequest[], tickets: JiraIssue[]): MergeRequest[] {
   return mrs
-    .map((mr): MergeRequest => ({
-      ...mr,
-      jiraIssues: mr.jiraIssueKeys.flatMap((jiraKey) =>
-        tickets.filter((t) => t.key === jiraKey)
-      ),
-    }))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 }
 
-function getMrCacheFile(key: string) {
-  return `debug/${key}_gitlab.json`;
-}
-
-function getJiraCacheFile(key: string) {
-  return `debug/${key}_jira.json`;
-}
-
-export async function fetchMergeRequests(
-  selectedUserSelectionEntry: string,
-  selectedUsernames: string[],
-  state: MergeRequestState = 'opened'
-): Promise<MergeRequest[]> {
+export const fetchMergeRequests = Effect.fn("getGitlabMrs")(function* (
+  selectedUsernames: readonly string[],
+  state: MergeRequestState = "opened"
+) {
   if (selectedUsernames.length === 0) return [];
 
-  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-  const mrCacheFile = getMrCacheFile(mrKey);
-  const jiraCacheFile = getJiraCacheFile(mrKey);
+  const mrs =  projectGitlabUserMrsFetchedEvent(yield* getGitlabMrsAsEvent(selectedUsernames as string[], state));
 
-  const mrs = await getGitlabMrs(selectedUsernames, state);
-  const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
-  const tickets = await loadJiraTickets(jiraKeys);
+  return processMrs(mrs);
+});
 
-  saveCache(mrCacheFile, mrs);
-  saveCache(jiraCacheFile, tickets);
+export class FetchMergeRequestsByProjectError extends Data.TaggedError("FetchMergeRequestsByProjectError")<{
+  cause: unknown;
+}> { }
 
-  return processMrsWithJira(mrs, tickets);
-}
+export const fetchMergeRequestsByProject = Effect.fn("fetchMergeRequestsByProject")(function* (
+  { projectPath, state }: ProjectMRCacheKey
+) {
+  const parsed = parseRepositoryId(projectPath);
+  let mrs: GitlabMergeRequest[];
 
-export async function fetchMergeRequestsByProject(
+  if (parsed.provider === 'bitbucket') {
+    yield* Console.log(`Fetching from BitBucket: ${parsed.workspace}/${parsed.repo}`);
+    mrs = yield* getBitbucketPrs(parsed.workspace, parsed.repo, state);
+  } else {
+    yield* Console.log(`Fetching from GitLab: ${projectPath}`);
+    mrs = yield* getGitlabMrsByProject(projectPath, state);
+  }
+
+  yield* Console.log(`Fetched ${mrs.length} merge requests`);
+
+  return processMrs(mrs);
+})
+
+export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (
   selectedUserSelectionEntry: string,
+  mrId: string,
   projectPath: string,
+  iid: string,
   state: MergeRequestState = 'opened'
-): Promise<MergeRequest[]> {
-  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-  const mrCacheFile = getMrCacheFile(mrKey);
-  const jiraCacheFile = getJiraCacheFile(mrKey);
+) {
+  yield* Console.log(`[Pipeline] Refetching pipeline for MR ${iid} (${mrId})`);
 
-  const mrs = await getGitlabMrsByProject(projectPath, state);
-  const jiraKeys = Array.from(new Set(mrs.flatMap((mr) => mr.jiraIssueKeys)));
-  const tickets = await loadJiraTickets(jiraKeys);
+  const eventStorage = yield* EventStorage;
+  const pipelineEvent = yield* getMrPipelineAsEvent(projectPath, iid);
 
-  saveCache(mrCacheFile, mrs);
-  saveCache(jiraCacheFile, tickets);
+  yield* eventStorage.appendEvent(pipelineEvent);
+  yield* Console.log(`[Pipeline] Pipeline event appended for MR ${iid}`);
+})
 
-  return processMrsWithJira(mrs, tickets);
-}
+export class RetargetMergeRequestError extends Data.TaggedError("RetargetMergeRequestError")<{
+  cause: unknown;
+}> { }
 
-export async function loadMergeRequests(
+export const retargetMergeRequest = Effect.fn("retargetMergeRequest")(function* (
   selectedUserSelectionEntry: string,
+  mrId: string,
+  projectPath: string,
+  iid: string,
+  newTargetBranch: string,
   state: MergeRequestState = 'opened'
-): Promise<MergeRequest[]> {
-  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-  const mrCacheFile = getMrCacheFile(mrKey);
-  const jiraCacheFile = getJiraCacheFile(mrKey);
+) {
+  yield* Console.log(`[Retarget] Updating MR ${iid} to target branch: ${newTargetBranch}`);
 
-  const mrs = loadCache<GitlabMergeRequest[]>(mrCacheFile) ?? [];
-  const tickets = loadCache<JiraIssue[]>(jiraCacheFile) ?? [];
+  const endpoint = `https://git.elabnext.com/api/graphql`;
+  const token = process.env.GITLAB_TOKEN;
+  const client = new GraphQLClient(endpoint, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-  return processMrsWithJira(mrs, tickets);
-}
+  const sdk = getUpdateMrTargetBranchSdk(client);
 
-export function getCachedMergeRequests(
-  selectedUserSelectionEntry: string,
-  state: MergeRequestState = 'opened'
-): MergeRequest[] {
+  const result = yield* Effect.tryPromise({
+    try: () => sdk.UpdateMRTargetBranch({
+      projectPath,
+      iid,
+      targetBranch: newTargetBranch
+    }),
+    catch: cause => new RetargetMergeRequestError({ cause })
+  });
 
-  const mrKey = buildCacheKeys(selectedUserSelectionEntry, state);
-  const mrCacheFile = getMrCacheFile(mrKey);
-
-  const cachedMrs = loadCache<GitlabMergeRequest[]>(mrCacheFile);
-  if (!cachedMrs) {
-    console.log(`[MR] No cache found for key: ${mrKey}`);
-    return [];
+  if (result.mergeRequestUpdate?.errors && result.mergeRequestUpdate.errors.length > 0) {
+    const errorMsg = result.mergeRequestUpdate.errors.join(', ');
+    yield* Console.error(`[Retarget] Failed to update MR ${iid}:`, errorMsg);
+    return { success: false, error: errorMsg };
   }
 
-  const jiraKeys = Array.from(new Set(cachedMrs.flatMap((mr) => mr.jiraIssueKeys)));
-  let cachedTickets: JiraIssue[] = [];
-  if (jiraKeys.length > 0) {
-    const jiraCacheFile = getJiraCacheFile(mrKey);
-    cachedTickets = loadCache<JiraIssue[]>(jiraCacheFile) ?? [];
-  }
-
-  const result = processMrsWithJira(cachedMrs, cachedTickets);
-  console.log(`[MR] Loaded ${result.length} MRs from cache for key: ${mrKey}`);
-  return result;
-}
+  yield* Console.log(`[Retarget] Successfully updated target branch for MR ${iid} to ${newTargetBranch}`);
+  return { success: true };
+})

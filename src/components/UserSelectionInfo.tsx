@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextAttributes } from '@opentui/core';
-import type { UserSelectionEntry } from '../types/userSelection';
+import type { UserSelectionEntry } from '../userselection/userSelection';
 
 interface UserSelectionInfoProps {
   userSelection: UserSelectionEntry;
@@ -11,7 +11,7 @@ export default function UserSelectionInfo({ userSelection }: UserSelectionInfoPr
     <box style={{ flexDirection: "column", gap: 1 }}>
       <text
         style={{ fg: '#f8f8f2', attributes: TextAttributes.BOLD, marginBottom: 1 }}
-        wrap={false}
+        wrapMode='none'
       >
         User Selection Details
       </text>
@@ -19,14 +19,14 @@ export default function UserSelectionInfo({ userSelection }: UserSelectionInfoPr
       <box style={{ flexDirection: "column" }}>
         <text
           style={{ fg: '#f8f8f2', marginBottom: 1 }}
-          wrap={false}
+          wrapMode='none'
         >
           {`Name: ${userSelection.name}`}
         </text>
 
         <text
           style={{ fg: '#bd93f9', attributes: TextAttributes.BOLD }}
-          wrap={false}
+          wrapMode='none'
         >
           Selection:
         </text>
@@ -35,7 +35,7 @@ export default function UserSelectionInfo({ userSelection }: UserSelectionInfoPr
           <text
             key={index}
             style={{ fg: '#8be9fd' }}
-            wrap={false}
+            wrapMode='none'
           >
             {`  ${item.type === 'userId' ? 'User' : 'Group'}: ${item.id}`}
           </text>

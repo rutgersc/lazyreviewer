@@ -5,26 +5,33 @@
   "private": true,
   "scripts": {
     "start": "bun run build.ts && bun run dist/",
-    "codegen": "graphql-codegen --config codegen.yml",
+    "codegen": "graphql-codegen --config codegen.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",
     "@graphql-codegen/introspection": "^4.0.3",
+    "@graphql-codegen/near-operation-file-preset": "^3.1.0",
     "@graphql-codegen/typescript": "^4.1.6",
     "@graphql-codegen/typescript-graphql-request": "^6.3.0",
     "@graphql-codegen/typescript-operations": "^4.6.1",
     "@types/bun": "latest",
+    "@types/node-notifier": "^8.0.5",
     "@types/react": "^19.0.0",
     "graphql": "^16.11.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@opentui/core": "^0.1.25",
-    "@opentui/react": "^0.1.25",
-    "dotenv": "^17.2.2",
-    "react": "^19.0.0",
-    "superjson": "^2.2.2",
-    "zustand": "^5.0.8"
+    "@effect-atom/atom-react": "^0.3.4",
+    "@effect/language-service": "^0.48.0",
+    "@effect/platform": "^0.92.1",
+    "@effect/platform-node": "^0.98.4",
+    "@effect/schema": "^0.75.5",
+    "@opentui/core": "^0.1.50",
+    "@opentui/react": "^0.1.50",
+    "dotenv": "^17.2.3",
+    "effect": "^3.18.4",
+    "node-notifier": "^10.0.1",
+    "react": "^19.0.0"
   }
 }

@@ -37,12 +37,17 @@ bun install
 ## Development Notes
 
 !IMPORTANT!: UI RENDERER SOURCE AVAILABLE AT (windows=F:\GitRepos\opentui, osx=/Users/rutgerschoorstra/Gitrepos/opentui)
+!IMPORTANT!: effect-atom SOURCECODE AVAILABLE AT /Users/rutgerschoorstra/Gitrepos/effect-atom
+!IMPORTANT!: effect-atom SOURCE AVAILABLE AT F:\GitRepos\effect-atom\packages
+!IMPORTANT!: effect-ts AVAILABLE AT F:\GitRepos\effect
+!IMPORTANT!: effect-ts-examples AVAILABLE AT /Users/rutgerschoorstra/Gitrepos/effect-examples/examples
 
 ### Type-Driven Development Approach
 
 **ALWAYS start with types before making code changes:**
 **AVOID typing anything in typescript with `any`. Any shuts off typing, so don't ever use `any` at all. Absolutely never use any as a type to fix type errors.**
 **REPEAT: Avoid typing with `any`. any is NOT recommended**
+**NEVER use type assertions (`as TypeName`) to satisfy the compiler - it disables type checking and masks real type errors. Always fix the underlying type issue instead.**
 
 1. **Examine existing types first**: Before modifying any code, read and understand the type definitions involved:
    - Check interface definitions (e.g., `JiraIssue`, `GitlabMergeRequest`)
@@ -78,6 +83,44 @@ bun install
    - **Use existing state directly**: If state exists elsewhere (store, parent), use it directly - never copy
    - Don't bundle up state into an interface unless all of it is within the scope of one file. Prefer tracking individual properties regardless.
 
+
+### State Update Crash Prevention
+
+**CRITICAL: Clear-Delay-Set Pattern for State Updates**
+
+When updating large state objects (especially `mergeRequests`), directly overwriting the data can cause crashes. To prevent this:
+
+**Always use the clear-delay-set pattern:**
+1. Clear the state to empty values (`[]`, `new Map()`, etc.)
+2. Add a 100ms delay (`await new Promise(resolve => setTimeout(resolve, 100))`)
+3. Set the new state values
+
+**Example implementation:**
+```typescript
+// ✅ CORRECT: Clear-delay-set pattern
+async switchUserSelection(entry: number) {
+  // 1. Clear state first
+  set({ mergeRequests: [], branchDifferences: new Map() });
+
+  // 2. Delay to prevent crashes
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // 3. Set new values
+  set({ selectedUserSelectionEntry: entry, selectedMergeRequest: 0 });
+  // ... load new data
+}
+```
+
+**When to use this pattern:**
+- Switching between user selections
+- Fetching/refreshing merge requests
+- Any operation that replaces large arrays or maps in the store
+- Any state update that previously caused intermittent crashes
+
+**Why this works:**
+- Gives the UI renderer time to process the empty state before new data arrives
+- Prevents race conditions between state updates and rendering
+- Avoids memory/rendering issues from rapid state replacements
 
 ### Plan-Driven Development for Complex Features
 
@@ -149,6 +192,45 @@ After completing any coding session, ALWAYS:
 2. **Simplification opportunities**: Check if complex code can be simplified without losing functionality
 3. **Refactor proactively**: Extract common patterns into hooks, utilities, or shared functions
 4. **Consolidate similar functions**: If multiple functions do similar things, consider unifying them with parameters
+
+**Code Reuse and Deduplication:**
+
+**CRITICAL: Always check for code duplication BEFORE and AFTER making changes.**
+
+Less code is better. When implementing features:
+
+1. **Before implementing**: Scan for existing similar patterns
+   - Are there functions/atoms that do something similar?
+   - Can existing code be extended instead of duplicated?
+   - Is there a parallel pattern that suggests abstraction?j
+
+2. **After implementing**: Review for unification opportunities
+   - Look for code that reads from the same source multiple times
+   - Identify separate state tracking the same underlying data
+   - Spot parallel implementations that differ only in parameters. Extract the common part to a parameterized function.
+
+3. **Apply the Single Source of Truth principle**:
+   - ❌ BAD: Multiple atoms/functions accessing the same cache/state separately
+   - ✅ GOOD: One unified source, derive specialized views from it
+   - ❌ BAD: Separate loading states for initial load vs refresh
+   - ✅ GOOD: Single loading atom that covers all loading scenarios
+
+**Real example from this codebase:**
+```typescript
+// ❌ BEFORE: Double cache access
+fetchUserMRsWithCache() → returns data only
+getLastRefreshTimestamp() → reads same cache for timestamp only
+mrsByKeyAtomFamily → for data
+lastRefreshTimestampByKeyAtomFamily → for timestamp
+
+// ✅ AFTER: Single cache access
+fetchUserMRsWithCache() → returns { data, timestamp }
+mrsCacheByKeyAtomFamily → single source
+mergeRequestsAtom → derives .data
+lastRefreshTimestampAtom → derives .timestamp
+```
+
+**Rule of thumb**: If you're reading the same data twice or tracking the same concept in multiple places, consolidate into one source and derive views from it.
 
 **Comment Policy:**
 - **NEVER add excessive comments** - code should be self-documenting

@@ -1,52 +1,82 @@
-import { useRef } from 'react';
-import { ScrollBoxRenderable } from '@opentui/core';
+import { useRef, type RefObject } from 'react';
+import { ScrollBoxRenderable, Renderable } from '@opentui/core';
 
 interface UseAutoScrollOptions {
-  itemHeight: number;
   lookahead?: number;
 }
 
-export function useAutoScroll({ itemHeight, lookahead = 3 }: UseAutoScrollOptions) {
-  const scrollBoxRef = useRef<ScrollBoxRenderable | null>(null);
+export function useAutoScroll(
+  { lookahead = 2 }: UseAutoScrollOptions = {},
+  providedRef?: RefObject<ScrollBoxRenderable | null>
+) {
+  const internalRef = useRef<ScrollBoxRenderable | null>(null);
+  const scrollBoxRef = providedRef || internalRef;
+
+  const calculateScroll = (itemTop: number, itemHeight: number, scrollBox: ScrollBoxRenderable) => {
+    const viewportLayout = scrollBox.viewport.getLayoutNode().getComputedLayout();
+    const viewportHeight = viewportLayout.height;
+    const currentScrollTop = scrollBox.scrollTop;
+
+    const viewportTop = currentScrollTop;
+    const viewportBottom = currentScrollTop + viewportHeight;
+
+    // Check if we need to scroll up
+    if (itemTop < viewportTop + lookahead) {
+      const newScrollTop = Math.max(0, itemTop - lookahead);
+      scrollBox.scrollTo(newScrollTop);
+      return;
+    }
+
+    // Check if we need to scroll down
+    if (itemTop + itemHeight > viewportBottom - lookahead) {
+       if (itemHeight > viewportHeight) {
+           scrollBox.scrollTo(itemTop - lookahead);
+       } else {
+           const newScrollTop = itemTop + itemHeight - viewportHeight + lookahead;
+           scrollBox.scrollTo(newScrollTop);
+       }
+    }
+  };
 
   const scrollToItem = (index: number) => {
     if (!scrollBoxRef.current) return;
 
-    const targetY = index * itemHeight;
+    const scrollBox = scrollBoxRef.current;
+    const children = scrollBox.content.getChildren();
+    const targetChild = children[index];
 
-    // Get current viewport info
-    const viewportHeight = scrollBoxRef.current.viewport?.height || 10;
-    const currentScrollTop = scrollBoxRef.current.scrollTop || 0;
+    if (!targetChild) return;
 
-    // Calculate viewport boundaries
-    const viewportTop = currentScrollTop;
-    const viewportBottom = currentScrollTop + viewportHeight;
+    const itemLayout = targetChild.getLayoutNode().getComputedLayout();
+    calculateScroll(itemLayout.top, itemLayout.height, scrollBox);
+  };
 
-    // Calculate lookahead boundaries (scroll before reaching edge)
-    const lookaheadDistance = lookahead * itemHeight;
-    const itemTop = targetY;
-    const itemBottom = targetY + itemHeight;
+  const scrollToId = (id: string) => {
+    if (!scrollBoxRef.current) return;
+    const scrollBox = scrollBoxRef.current;
 
-    // Check if we need to scroll up (when item + lookahead would be above viewport)
-    const upScrollThreshold = viewportTop + lookaheadDistance;
-    if (itemTop < upScrollThreshold) {
-      // Scroll up to keep the item + lookahead visible
-      const newScrollTop = Math.max(0, itemTop - lookaheadDistance);
-      scrollBoxRef.current.scrollTo(newScrollTop);
-      return;
+    const target = scrollBox.content.findDescendantById(id);
+    if (!target) return;
+
+    let current = target as Renderable;
+    let accumulatedTop = 0;
+
+    while (current && current !== scrollBox.content) {
+        const layout = current.getLayoutNode().getComputedLayout();
+        accumulatedTop += layout.top;
+        // @ts-ignore
+        current = current.parent as Renderable;
     }
 
-    // Check if we need to scroll down (when item + lookahead would be below viewport)
-    const downScrollThreshold = viewportBottom - lookaheadDistance;
-    if (itemBottom > downScrollThreshold) {
-      // Scroll down to keep the item + lookahead visible
-      const newScrollTop = itemBottom + lookaheadDistance - viewportHeight;
-      scrollBoxRef.current.scrollTo(newScrollTop);
-    }
+    if (current !== scrollBox.content) return;
+
+    const itemHeight = (target as Renderable).getLayoutNode().getComputedLayout().height;
+    calculateScroll(accumulatedTop, itemHeight, scrollBox);
   };
 
   return {
     scrollBoxRef,
-    scrollToItem
+    scrollToItem,
+    scrollToId
   };
 }
