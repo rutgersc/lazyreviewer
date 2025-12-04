@@ -15,7 +15,6 @@ import EventLogPane from "./components/EventLogPane";
 import { ActivePane } from "./userselection/userSelection";
 import { useEffect, useState } from 'react';
 import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
-import { openSettingsFile } from "./settings/settings";
 import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
@@ -24,8 +23,6 @@ import { toggleNotificationsAtom, notificationSettingsAtom } from './settings/se
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { Console, Effect } from 'effect';
 import { consoleLoggedLayer } from './appLayerRuntime';
-import { Result } from '@effect-atom/atom-react';
-import { changeTrackingAtom } from './changetracking/change-tracking-atom';
 import { backgroundFetchAtom, notificationStreamAtom } from './notifications/notification-sync-atom';
 import { clearUnreadCount } from './notifications/title-indicator';
 
@@ -174,11 +171,11 @@ export default function App() {
     }
   });
 
-  const factsActive = activePane === ActivePane.Facts;
+  const infoActive = activePane === ActivePane.InfoPane;
 
-  let factsWidthStr: RenderableOptions['width'] = factsActive ? 45 : 45;
-  let middleWidthStr: RenderableOptions['width'] = factsActive ? "35%" : "47%";
-  let rightWidthStr: RenderableOptions['width'] = factsActive ? "40%" : "60%";
+  let factsWidthStr: RenderableOptions['width'] = infoActive ? 40 : 40;
+  let middleWidthStr: RenderableOptions['width'] = infoActive ? "45%" : "55%";
+  let rightWidthStr: RenderableOptions['width'] = infoActive ? "55%" : "45%";
 
   return (
     <box style={{ flexDirection: "column", height: "100%", backgroundColor: '#282a36' }}>

@@ -91,11 +91,3 @@ export const changesStream = Effect.fn(function* (get: Atom.Context) {
     })
   );
 });
-
-export const changeTrackingAtom = appAtomRuntime.atom(
-  (get) => {
-    const eff = changesStream(get);
-    return Stream.unwrap(eff);
-  },
-  { initialValue: initialState }
-).pipe(Atom.keepAlive)

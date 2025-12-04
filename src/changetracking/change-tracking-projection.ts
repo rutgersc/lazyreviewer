@@ -4,22 +4,27 @@ import type {
   GitlabprojectMergeRequestsFetchedEvent,
   GitlabSingleMrFetchedEvent
 } from '../events/gitlab-events'
+import type { MergeRequestsCompactedEvent } from '../events/event-compaction-events'
 import {
   projectGitlabUserMrsFetchedEvent,
   projectGitlabProjectMrsFetchedEvent,
-  projectGitlabSingleMrFetchedEvent
+  projectGitlabSingleMrFetchedEvent,
+  mapMrFragment
 } from '../gitlab/gitlab-projections'
+import { mapBitbucketToGitlabMergeRequest } from '../bitbucket/bitbucket-projections'
 import type { GitlabMergeRequest } from '../gitlab/gitlab-schema'
 
 type MrChangeTrackingRelevantEvent =
   | GitlabUserMergeRequestsFetchedEvent
   | GitlabprojectMergeRequestsFetchedEvent
   | GitlabSingleMrFetchedEvent
+  | MergeRequestsCompactedEvent
 
 export function isChangeTrackingRelevantEvent(event: LazyReviewerEvent): event is MrChangeTrackingRelevantEvent {
   return event.type === 'gitlab-user-mrs-fetched-event' ||
          event.type === 'gitlab-project-mrs-fetched-event' ||
-         event.type === 'gitlab-single-mr-fetched-event'
+         event.type === 'gitlab-single-mr-fetched-event' ||
+         event.type === 'mergerequests-compacted-event'
 }
 
 // The minimal subset of fields of an MR that is needed to calculate the diff
@@ -105,6 +110,19 @@ const detectChanges =
     };
   };
 
+const projectCompactedEventMrs = (event: MergeRequestsCompactedEvent): GitlabMergeRequest[] => {
+  return event.mrs.flatMap((rawMr) => {
+    if ("source" in rawMr && "destination" in rawMr) {
+      const fullPath = rawMr.destination.repository.full_name;
+      const [workspace = "", repoSlug = ""] = fullPath.split("/");
+      return [mapBitbucketToGitlabMergeRequest(rawMr, workspace, repoSlug)];
+    } else if ("iid" in rawMr && "project" in rawMr) {
+      return [mapMrFragment(rawMr)];
+    }
+    return [];
+  });
+};
+
 // projection functions always have the form (state, event) -> state.
 export function projectChangeTracking(
   state: ChangeTrackingStates,
@@ -118,6 +136,8 @@ export function projectChangeTracking(
   } else if (event.type === "gitlab-single-mr-fetched-event") {
     const mr = projectGitlabSingleMrFetchedEvent(event);
     return detectChanges(state)(mr ? [mr] : []);
+  } else if (event.type === "mergerequests-compacted-event") {
+    return detectChanges(state)(projectCompactedEventMrs(event));
   }
 
   throw new Error("non-exhaustive match");

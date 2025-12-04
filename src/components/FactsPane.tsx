@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { useAtom, useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
-import { activePaneAtom } from '../ui/navigation-atom';
+import { activePaneAtom, infoPaneTabAtom } from '../ui/navigation-atom';
+import { targetNoteIdAtom } from './activity-atom';
 import { allEventsIncludingCompactedAtom, selectedEventIndexAtom, compactAllEventsAtom } from '../events/events-atom';
 import { resultToArray } from '../utils/result-helpers';
 import { EventStorage } from '../eventstore/eventStorage';
@@ -11,7 +12,6 @@ import { appLayer } from '../appLayerRuntime';
 import { Effect } from 'effect';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { loadSettings } from '../settings/settings';
 import { allMrsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, filterMrStateAtom } from '../mergerequests/mergerequests-atom';
 import type { MergeRequestState } from '../graphql/generated/gitlab-base-types';
 import { userSelectionsAtom } from '../userselection/userselection-atom';
@@ -36,8 +36,8 @@ interface MrChange {
   author: string;
   isNew: boolean;
   stateChange: string | null;
-  commentsOnMyMr: number;
-  commentsOnMyThread: number;
+  newComments: number;
+  noteIds: string[];
 }
 
 interface ChangeSummary {
@@ -49,8 +49,7 @@ interface ChangeSummary {
 
 function getChangesForEvent(
   event: { timestamp: string; type: string } | undefined,
-  allMrsState: { mrsByGid: ReadonlyMap<string, any> } | null,
-  currentUser: string
+  allMrsState: { mrsByGid: ReadonlyMap<string, any> } | null
 ): ChangeSummary {
   if (!event) return { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
 
@@ -69,41 +68,27 @@ function getChangesForEvent(
     for (const [mrId, mrData] of Object.entries(data.mrs)) {
       const mr = allMrsState?.mrsByGid.get(mrId);
       const author = mr?.author ?? 'Unknown';
-      const mrAuthor = mr?.author;
 
       const isNew = mrData.stateDelta === 'opened';
       const stateChange = mrData.stateDelta && mrData.stateDelta !== 'opened'
         ? mrData.stateDelta
         : null;
 
-      let commentsOnMyMr = 0;
-      let commentsOnMyThread = 0;
+      const newComments = mrData.commentsDelta.length;
 
       if (isNew) newMrs++;
       if (stateChange) stateChanges++;
+      comments += newComments;
 
-      if (mrData.commentsDelta.length > 0 && mrAuthor === currentUser) {
-        commentsOnMyMr = mrData.commentsDelta.length;
-        comments += commentsOnMyMr;
-      }
-
-      if (mrData.commentsDelta.length > 0 && mr && mrAuthor !== currentUser) {
-        const myNotes = mr.discussions.flatMap((d: any) => d.notes).filter((n: any) => n.author === currentUser);
-        if (myNotes.length > 0) {
-          commentsOnMyThread = mrData.commentsDelta.length;
-          comments += commentsOnMyThread;
-        }
-      }
-
-      if (isNew || stateChange || commentsOnMyMr > 0 || commentsOnMyThread > 0) {
+      if (isNew || stateChange || newComments > 0) {
         mrChanges.push({
           mrId,
           mrName: mrData.name,
           author,
           isNew,
           stateChange,
-          commentsOnMyMr,
-          commentsOnMyThread
+          newComments,
+          noteIds: mrData.commentsDelta
         });
       }
     }
@@ -140,7 +125,7 @@ function groupMrChangesByType(mrChanges: MrChange[]): GroupedMrChanges {
       grouped.closed.push(mrChange);
     } else if (mrChange.stateChange === 'reopened') {
       grouped.reopened.push(mrChange);
-    } else if (mrChange.commentsOnMyMr > 0 || mrChange.commentsOnMyThread > 0) {
+    } else if (mrChange.newComments > 0) {
       grouped.comments.push(mrChange);
     }
   }
@@ -238,6 +223,8 @@ export default function FactsPane() {
   const groups = useAtomValue(groupsAtom);
   const setSelectedUserSelectionEntryId = useAtomSet(selectedUserSelectionEntryIdAtom);
   const setFilterMrState = useAtomSet(filterMrStateAtom);
+  const setInfoPaneTab = useAtomSet(infoPaneTabAtom);
+  const setTargetNoteId = useAtomSet(targetNoteIdAtom);
 
   const lastCompactionIndex = allEvents.findLastIndex(
     event => event.type === 'mergerequests-compacted-event'
@@ -245,8 +232,6 @@ export default function FactsPane() {
 
   const events = allEvents;
   const isActive = activePane === ActivePane.Facts;
-  const currentUser = useMemo(() => loadSettings().currentUser, []);
-
   const allMrsState = useMemo(() =>
     Result.match(allMrsResult, {
       onInitial: () => null,
@@ -259,9 +244,9 @@ export default function FactsPane() {
   const currentEvent = events[currentEventIndex];
   const currentSummary = useMemo(() =>
     currentEvent && 'timestamp' in currentEvent
-      ? getChangesForEvent(currentEvent as { timestamp: string; type: string }, allMrsState, currentUser)
+      ? getChangesForEvent(currentEvent as { timestamp: string; type: string }, allMrsState)
       : { newMrs: 0, comments: 0, mrChanges: [] },
-    [currentEvent, allMrsState, currentUser]
+    [currentEvent, allMrsState]
   );
 
   // We want to display newest events at the top.
@@ -286,7 +271,7 @@ export default function FactsPane() {
       if (!event) continue;
 
       const summary = 'timestamp' in event
-        ? getChangesForEvent(event as { timestamp: string; type: string }, allMrsState, currentUser)
+        ? getChangesForEvent(event as { timestamp: string; type: string }, allMrsState)
         : { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
       const hasSummary = summary.newMrs > 0 || summary.comments > 0 || summary.stateChanges > 0;
 
@@ -298,7 +283,7 @@ export default function FactsPane() {
         } else if (lastGroup && lastGroup.type === 'single' && lastGroup.startIndex === originalIndex + 1) {
           // Check if the last single event also has no summary
           const lastSummary = 'timestamp' in lastGroup.event
-            ? getChangesForEvent(lastGroup.event as { timestamp: string; type: string }, allMrsState, currentUser)
+            ? getChangesForEvent(lastGroup.event as { timestamp: string; type: string }, allMrsState)
             : { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
           const lastHasSummary = lastSummary.newMrs > 0 || lastSummary.comments > 0 || lastSummary.stateChanges > 0;
 
@@ -317,14 +302,21 @@ export default function FactsPane() {
       }
     }
     return grouped;
-  }, [displayEvents, events.length, allMrsState, currentUser]);
+  }, [displayEvents, events.length, allMrsState]);
 
   // Helper to select MR and show suggestion if not in filtered list
-  const selectMrById = (mrId: string, mrName: string) => {
+  // If noteId is provided, also navigate to activity tab and select that note
+  const selectMrById = (mrId: string, mrName: string, noteId?: string) => {
     const mrIndex = filteredMrs.findIndex(mr => mr.id === mrId);
     if (mrIndex >= 0) {
       setSelectedMrIndex(mrIndex);
       setSuggestion(null);
+
+      // If a specific note is requested, navigate to activity tab
+      if (noteId) {
+        setInfoPaneTab('activity');
+        setTargetNoteId(noteId);
+      }
     } else {
       // MR not in filtered list - show suggestion with author and state
       const mr = allMrsState?.mrsByGid.get(mrId);
@@ -343,7 +335,9 @@ export default function FactsPane() {
       const selectMrAtIndex = (idx: number) => {
         const mrChange = currentSummary.mrChanges[idx];
         if (mrChange) {
-          selectMrById(mrChange.mrId, mrChange.mrName);
+          // Pass first note ID if this is a comment change
+          const noteId = mrChange.noteIds.length > 0 ? mrChange.noteIds[0] : undefined;
+          selectMrById(mrChange.mrId, mrChange.mrName, noteId);
         }
       };
 
@@ -405,7 +399,8 @@ export default function FactsPane() {
             // Select first MR
             const mrChange = currentSummary.mrChanges[0];
             if (mrChange) {
-              selectMrById(mrChange.mrId, mrChange.mrName);
+              const noteId = mrChange.noteIds.length > 0 ? mrChange.noteIds[0] : undefined;
+              selectMrById(mrChange.mrId, mrChange.mrName, noteId);
             }
         }
     } else if (key.name === 'g' && !key.shift) {
@@ -471,6 +466,7 @@ export default function FactsPane() {
         >
             {suggestion ? (
                 <box
+                    key="suggestion-box"
                     width="100%"
                     flexDirection="column"
                     style={{
@@ -514,7 +510,7 @@ export default function FactsPane() {
                     )}
                 </box>
             ) : (
-                <box width="100%" height={5} flexDirection="column" style={{ justifyContent: 'center' }}>
+                <box key="logo-box" width="100%" height={6} flexDirection="column" style={{ justifyContent: 'center', backgroundColor: '#282a36' }}>
                     <text fg="#44475a" wrapMode="none">{'  ╭─────────────────────╮'}</text>
                     <text fg="#44475a" wrapMode="none">{'  │    LazyGitLab 🦊    │'}</text>
                     <text fg="#44475a" wrapMode="none">{'  │     Event Log       │'}</text>
@@ -623,7 +619,7 @@ export default function FactsPane() {
 
             const displayIndex = originalIndex.toString().padStart(4, ' ');
             const summary = 'timestamp' in event
-                ? getChangesForEvent(event as { timestamp: string; type: string }, allMrsState, currentUser)
+                ? getChangesForEvent(event as { timestamp: string; type: string }, allMrsState)
                 : { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
             const hasSummary = summary.newMrs > 0 || summary.comments > 0 || summary.stateChanges > 0;
             const stateChangeSummary = summary.stateChanges > 0 ? formatStateChangeSummary(summary.mrChanges) : '';
@@ -633,7 +629,8 @@ export default function FactsPane() {
                 setSublistFocused(false);
                 const mrChange = summary.mrChanges[0];
                 if (mrChange) {
-                    selectMrById(mrChange.mrId, mrChange.mrName);
+                    const noteId = mrChange.noteIds.length > 0 ? mrChange.noteIds[0] : undefined;
+                    selectMrById(mrChange.mrId, mrChange.mrName, noteId);
                 } else {
                     setSuggestion(null);
                 }
@@ -642,7 +639,8 @@ export default function FactsPane() {
             const handleSublistClick = (i: number, mrChange: MrChange) => {
                 setSublistFocused(true);
                 setSublistIndex(i);
-                selectMrById(mrChange.mrId, mrChange.mrName);
+                const noteId = mrChange.noteIds.length > 0 ? mrChange.noteIds[0] : undefined;
+                selectMrById(mrChange.mrId, mrChange.mrName, noteId);
             };
 
             return (
@@ -714,15 +712,12 @@ export default function FactsPane() {
                             } else if (mrChange.stateChange === 'reopened') {
                                 badge = '↻';
                                 badgeColor = '#ffb86c';
-                            } else if (mrChange.commentsOnMyMr > 0 || mrChange.commentsOnMyThread > 0) {
+                            } else if (mrChange.newComments > 0) {
                                 badge = '💬';
                                 badgeColor = '#ffb86c';
                             }
 
-                            const commentCount = mrChange.commentsOnMyMr > 0
-                                ? mrChange.commentsOnMyMr
-                                : mrChange.commentsOnMyThread;
-                            const commentText = commentCount > 0 ? ` - ${commentCount} comments` : '';
+                            const commentText = mrChange.newComments > 0 ? ` - ${mrChange.newComments} comments` : '';
 
                             return (
                                 <box key={i} height={1} width="100%" onMouseDown={() => handleSublistClick(i, mrChange)}>

@@ -10,7 +10,7 @@ import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
 import { useAtom, useAtomValue, useAtomSet, Result } from "@effect-atom/atom-react";
 import { infoPaneTabAtom, activeModalAtom } from "../ui/navigation-atom";
-import { selectedActivityIndexAtom } from "../components/activity-atom";
+import { selectedActivityIndexAtom, targetNoteIdAtom } from "../components/activity-atom";
 import { loadJobLogAtom } from "../mergerequests/job-atom";
 import { allJiraIssuesAtom } from "../mergerequests/mergerequests-atom";
 import { useAutoScroll } from '../hooks/useAutoScroll';
@@ -37,6 +37,7 @@ export interface Event {
     url?: string;
     job?: PipelineJob;
     discussionId?: string;
+    noteId?: string;
   };
 }
 
@@ -110,7 +111,7 @@ const extractEvents = (mr: MergeRequest): Event[] => {
           mrColor,
           repoPath,
           data: { author: note.author, body: note.body },
-          actionData: { url: discussionUrl, discussionId: discussion.id }
+          actionData: { url: discussionUrl, discussionId: discussion.id, noteId: note.id }
         });
       } else if (note.resolvable) {
         events.push({
@@ -120,7 +121,7 @@ const extractEvents = (mr: MergeRequest): Event[] => {
           mrColor,
           repoPath,
           data: { author: note.author, body: note.body },
-          actionData: { url: discussionUrl, discussionId: discussion.id }
+          actionData: { url: discussionUrl, discussionId: discussion.id, noteId: note.id }
         });
       } else {
         events.push({
@@ -130,7 +131,7 @@ const extractEvents = (mr: MergeRequest): Event[] => {
           mrColor,
           repoPath,
           data: { author: note.author, body: note.body },
-          actionData: { url: discussionUrl, discussionId: discussion.id }
+          actionData: { url: discussionUrl, discussionId: discussion.id, noteId: note.id }
         });
       }
     });
@@ -248,10 +249,24 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
   const activeModal = useAtomValue(activeModalAtom);
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const [selectedActivityIndex, setSelectedActivityIndex] = useAtom(selectedActivityIndexAtom);
+  const [targetNoteId, setTargetNoteId] = useAtom(targetNoteIdAtom);
   const runLoadJobLog = useAtomSet(loadJobLogAtom);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
 
   const events = extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+  // When targetNoteId is set, find and select the matching event
+  useEffect(() => {
+    if (!targetNoteId) return;
+
+    const eventIndex = events.findIndex(e => e.actionData?.noteId === targetNoteId);
+    if (eventIndex >= 0) {
+      setSelectedActivityIndex(eventIndex);
+      scrollToId(`activity-${eventIndex}`);
+    }
+    // Clear the target after processing
+    setTargetNoteId(null);
+  }, [targetNoteId, events, setSelectedActivityIndex, setTargetNoteId, scrollToId]);
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'activity') return;
