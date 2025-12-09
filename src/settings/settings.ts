@@ -11,16 +11,7 @@ export interface NotificationSettings {
   enabled: boolean;
   syncIntervalSeconds: number;
   syncUserSelectionEntryId?: string;
-  /**
-   * TODO: Using timestamp as event identifier is not ideal
-   * A more appropriate identifier would be:
-   * - A monotonically incrementing event index/sequence number stored in the event store
-   * - A UUID generated for each event at creation time
-   *
-   * For now, we use timestamp since events already have this field and we don't
-   * have a proper event ID system in place yet.
-   */
-  lastProcessedEventTimestamp?: string;
+  lastProcessedEventId?: string;
 }
 
 export interface Settings {

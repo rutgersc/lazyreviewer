@@ -6,7 +6,8 @@
   "scripts": {
     "start": "bun run build.ts && bun run dist/",
     "codegen": "graphql-codegen --config codegen.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "migrate:add-eventid": "bun run scripts/migrate-add-eventid.ts"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",

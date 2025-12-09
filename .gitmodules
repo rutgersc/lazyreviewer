@@ -1,0 +1,16 @@
+[submodule "vendor/opentui"]
+	path = vendor/opentui
+	url = https://github.com/sst/opentui.git
+	shallow = true
+[submodule "vendor/effect-atom"]
+	path = vendor/effect-atom
+	url = https://github.com/tim-smart/effect-atom.git
+	shallow = true
+[submodule "vendor/effect"]
+	path = vendor/effect
+	url = https://github.com/Effect-TS/effect.git
+	shallow = true
+[submodule "vendor/effect-examples"]
+	path = vendor/effect-examples
+	url = https://github.com/Effect-TS/examples.git
+	shallow = true

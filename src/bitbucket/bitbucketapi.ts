@@ -2,6 +2,7 @@ import { Console, Data, Effect } from "effect";
 import type { GitlabMergeRequest } from "../gitlab/gitlab-graphql";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import { projectBitbucketPrsFetchedEvent, projectBitbucketPrCommentsFetchedEvent, projectBitbucketSinglePrFetchedEvent } from "./bitbucket-projections";
+import { generateEventId } from "../events/event-id";
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -312,13 +313,16 @@ export const getBitbucketPrsAsEvent = Effect.fn("getBitbucketPrsAsEvent")(functi
   fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
   yield* Console.log(`BitBucket response written to: ${outputPath}`);
 
+  const timestamp = new Date().toISOString();
+  const type = 'bitbucket-prs-fetched-event' as const;
   const event: BitbucketPrsFetchedEvent = {
-    type: 'bitbucket-prs-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     prsResponse: data,
     forWorkspace: workspace,
     forRepoSlug: repoSlug,
     forState: state,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;
@@ -347,13 +351,16 @@ export const fetchBitbucketCommentsAsEvent = Effect.fn("fetchBitbucketCommentsAs
     const emptyResponse: BitbucketCommentsResponse = {
       values: []
     };
+    const timestamp = new Date().toISOString();
+    const type = 'bitbucket-pr-comments-fetched-event' as const;
     const event: BitbucketPrCommentsFetchedEvent = {
-      type: 'bitbucket-pr-comments-fetched-event',
+      eventId: generateEventId(timestamp, type),
+      type,
       commentsResponse: emptyResponse,
       forWorkspace: workspace,
       forRepoSlug: repoSlug,
       forPrId: prId,
-      timestamp: new Date().toISOString()
+      timestamp
     };
     return event;
   }
@@ -363,13 +370,16 @@ export const fetchBitbucketCommentsAsEvent = Effect.fn("fetchBitbucketCommentsAs
     catch: cause => new BitbucketCommentsJsonParseError({ cause })
   });
 
+  const timestamp = new Date().toISOString();
+  const type = 'bitbucket-pr-comments-fetched-event' as const;
   const event: BitbucketPrCommentsFetchedEvent = {
-    type: 'bitbucket-pr-comments-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     commentsResponse: data,
     forWorkspace: workspace,
     forRepoSlug: repoSlug,
     forPrId: prId,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;
@@ -422,13 +432,16 @@ export const getSingleBitbucketPrAsEvent = Effect.fn("getSingleBitbucketPrAsEven
     catch: (cause) => new BitbucketPrsJsonParseError({ cause })
   });
 
+  const timestamp = new Date().toISOString();
+  const type = 'bitbucket-single-pr-fetched-event' as const;
   const event: BitbucketSinglePrFetchedEvent = {
-    type: 'bitbucket-single-pr-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     pr: data,
     forWorkspace: workspace,
     forRepoSlug: repoSlug,
     forPrId: prId,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;

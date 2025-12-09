@@ -1,6 +1,6 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
@@ -11,6 +11,7 @@ import { formatDiscussionsForClipboard } from '../gitlab/display/gitlabDiscussio
 import { useAtom, useAtomValue } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
 import { selectedDiscussionIndexAtom } from '../mergerequests/mergerequests-atom';
+import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
 
 interface OverviewProps {
   activePane: ActivePane;
@@ -38,6 +39,34 @@ export default function Overview({
   };
 
   const unresolvedDiscussions = selectedMergeRequest?.discussions.filter(d => d.resolvable && !d.resolved) || [];
+
+  // Store current values in refs for the scroll handler to access
+  const unresolvedDiscussionsRef = useRef(unresolvedDiscussions);
+  unresolvedDiscussionsRef.current = unresolvedDiscussions;
+  const scrollToIdRef = useRef(scrollToId);
+  scrollToIdRef.current = scrollToId;
+  const setSelectedDiscussionIndexRef = useRef(setSelectedDiscussionIndex);
+  setSelectedDiscussionIndexRef.current = setSelectedDiscussionIndex;
+
+  // Register scroll handler once - uses refs to access current values
+  // Returns true if discussion was found and scrolled to, false otherwise
+  const { registerHandler } = useDiscussionScroll();
+  const handlerRegistered = useRef(false);
+  if (!handlerRegistered.current) {
+    handlerRegistered.current = true;
+    registerHandler(({ noteId }) => {
+      const discussions = unresolvedDiscussionsRef.current;
+      const discussionIndex = discussions.findIndex(discussion =>
+        discussion.notes.some(note => note.id === noteId)
+      );
+      if (discussionIndex >= 0) {
+        setSelectedDiscussionIndexRef.current(discussionIndex);
+        scrollToIdRef.current(`discussion-${discussionIndex}`);
+        return true;
+      }
+      return false; // Discussion not found yet - MR data may not be ready
+    });
+  }
 
   const handleOpenDiscussion = (index: number) => {
       const discussion = unresolvedDiscussions[index];

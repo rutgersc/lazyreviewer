@@ -1,167 +1,89 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { useAtom, useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom, infoPaneTabAtom } from '../ui/navigation-atom';
-import { targetNoteIdAtom } from './activity-atom';
-import { allEventsIncludingCompactedAtom, selectedEventIndexAtom, compactAllEventsAtom } from '../events/events-atom';
+import { targetNoteIdAtom } from './ActivityLog';
+import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
+import { allEventsIncludingCompactedAtom, compactAllEventsAtom } from '../events/events-atom';
 import { resultToArray } from '../utils/result-helpers';
 import { EventStorage } from '../eventstore/eventStorage';
 import { openFileInEditor } from '../utils/open-file';
 import { appLayer } from '../appLayerRuntime';
 import { Effect } from 'effect';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import { allMrsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, filterMrStateAtom } from '../mergerequests/mergerequests-atom';
 import type { MergeRequestState } from '../graphql/generated/gitlab-base-types';
 import { userSelectionsAtom } from '../userselection/userselection-atom';
 import { groupsAtom } from '../data/data-atom';
 import { selectedUserSelectionEntryIdAtom } from '../settings/settings-atom';
 import type { UserSelectionEntry, UserOrGroupId, UserGroup } from '../userselection/userSelection';
+import { useAutoScroll } from '../hooks/useAutoScroll';
+import { eventChangesReadmodelAtom } from '../changetracking/change-tracking-atom';
+import type { Change, MrChange } from '../changetracking/change-tracking-projection';
+import type { LazyReviewerEvent } from '../events/events';
+import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../jira/jira-atom';
+import { useJiraScroll } from '../hooks/useJiraScroll';
+import { TextAttributes } from '@opentui/core';
+import { Colors } from '../colors';
 
-interface ChangeDebugFile {
-  eventType: string;
-  timestamp: string;
-  mrs: Record<string, {
-    name: string;
-    state: string;
-    commentsDelta: string[];
-    stateDelta?: string;
-  }>;
-}
+const isMrChange = (change: Change): change is MrChange => {
+  switch (change.type) {
+    case 'new-mr':
+    case 'merged-mr':
+    case 'closed-mr':
+    case 'reopened-mr':
+    case 'system-note':
+    case 'diff-comment':
+    case 'discussion-comment':
+      return true;
+    case 'new-jira-issue':
+    case 'jira-status-changed':
+    case 'jira-comment':
+      return false;
+    default:
+      return false;
+  }
+};
 
-interface MrChange {
-  mrId: string;
-  mrName: string;
-  author: string;
-  isNew: boolean;
-  stateChange: string | null;
-  newComments: number;
-  noteIds: string[];
-}
-
-interface ChangeSummary {
-  newMrs: number;
-  comments: number;
-  stateChanges: number;
-  mrChanges: MrChange[];
-}
-
-function getChangesForEvent(
-  event: { timestamp: string; type: string } | undefined,
-  allMrsState: { mrsByGid: ReadonlyMap<string, any> } | null
-): ChangeSummary {
-  if (!event) return { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
-
-  const fileTimestamp = event.timestamp.replace(/[:.]/g, "-");
-  const debugFilePath = join(process.cwd(), "debug", "changes", `${fileTimestamp}_${event.type}_changes.json`);
-
-  if (!existsSync(debugFilePath)) return { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
-
-  try {
-    const data: ChangeDebugFile = JSON.parse(readFileSync(debugFilePath, 'utf-8'));
-    const mrChanges: MrChange[] = [];
-    let newMrs = 0;
-    let comments = 0;
-    let stateChanges = 0;
-
-    for (const [mrId, mrData] of Object.entries(data.mrs)) {
-      const mr = allMrsState?.mrsByGid.get(mrId);
-      const author = mr?.author ?? 'Unknown';
-
-      const isNew = mrData.stateDelta === 'opened';
-      const stateChange = mrData.stateDelta && mrData.stateDelta !== 'opened'
-        ? mrData.stateDelta
-        : null;
-
-      const newComments = mrData.commentsDelta.length;
-
-      if (isNew) newMrs++;
-      if (stateChange) stateChanges++;
-      comments += newComments;
-
-      if (isNew || stateChange || newComments > 0) {
-        mrChanges.push({
-          mrId,
-          mrName: mrData.name,
-          author,
-          isNew,
-          stateChange,
-          newComments,
-          noteIds: mrData.commentsDelta
-        });
-      }
-    }
-
-    return { newMrs, comments, stateChanges, mrChanges };
-  } catch {
-    return { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
+function getChangeDescription(change: Change): { badge: string; color: string; text: string } {
+  switch (change.type) {
+    case 'new-mr':
+      return { badge: '📋', color: '#50fa7b', text: `New: ${change.mr.mrName} (${change.mr.mrAuthor})` };
+    case 'merged-mr':
+      return { badge: '✓', color: '#bd93f9', text: `Merged: ${change.mr.mrName}` };
+    case 'closed-mr':
+      return { badge: '✗', color: '#ff5555', text: `Closed: ${change.mr.mrName}` };
+    case 'reopened-mr':
+      return { badge: '↻', color: '#ffb86c', text: `Reopened: ${change.mr.mrName}` };
+    case 'system-note':
+      return { badge: '⚙', color: '#6272a4', text: `${change.author}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
+    case 'diff-comment':
+      const lineInfo = change.line ? `:${change.line}` : '';
+      const fileName = change.filePath.split('/').pop() ?? change.filePath;
+      return { badge: '📝', color: '#8be9fd', text: `${change.author} on ${fileName}${lineInfo}` };
+    case 'discussion-comment':
+      return { badge: '💬', color: '#ffb86c', text: `${change.author} commented on ${change.mr.mrName}` };
+    case 'new-jira-issue':
+      return { badge: '🧩', color: '#50fa7b', text: `New Jira: ${change.issue.issueKey} - ${change.issue.summary}` };
+    case 'jira-status-changed':
+      return { badge: '🔄', color: '#bd93f9', text: `Jira ${change.issue.issueKey}: ${change.fromStatus ? `${change.fromStatus} → ` : ''}${change.toStatus}` };
+    case 'jira-comment':
+      return { badge: '💬', color: '#8be9fd', text: `${change.author} commented on ${change.issue.issueKey}` };
+    default:
+      const _: never = change;
+      throw new Error("unreachable")
   }
 }
 
-interface GroupedMrChanges {
-  new: MrChange[];
-  merged: MrChange[];
-  closed: MrChange[];
-  reopened: MrChange[];
-  comments: MrChange[];
-}
-
-function groupMrChangesByType(mrChanges: MrChange[]): GroupedMrChanges {
-  const grouped: GroupedMrChanges = {
-    new: [],
-    merged: [],
-    closed: [],
-    reopened: [],
-    comments: []
-  };
-
-  for (const mrChange of mrChanges) {
-    if (mrChange.isNew) {
-      grouped.new.push(mrChange);
-    } else if (mrChange.stateChange === 'merged') {
-      grouped.merged.push(mrChange);
-    } else if (mrChange.stateChange === 'closed') {
-      grouped.closed.push(mrChange);
-    } else if (mrChange.stateChange === 'reopened') {
-      grouped.reopened.push(mrChange);
-    } else if (mrChange.newComments > 0) {
-      grouped.comments.push(mrChange);
-    }
+function getNoteIdFromChange(change: Change): string | undefined {
+  switch (change.type) {
+    case 'system-note':
+    case 'diff-comment':
+    case 'discussion-comment':
+      return change.noteId;
+    default:
+      return undefined;
   }
-
-  return grouped;
-}
-
-function formatStateChangeSummary(mrChanges: MrChange[]): string {
-  const stateChangeCounts: Record<string, number> = {};
-
-  for (const mrChange of mrChanges) {
-    if (mrChange.stateChange) {
-      stateChangeCounts[mrChange.stateChange] = (stateChangeCounts[mrChange.stateChange] || 0) + 1;
-    }
-  }
-
-  const parts: string[] = [];
-  if (stateChangeCounts.merged) {
-    parts.push(`✓ ${stateChangeCounts.merged} merged`);
-  }
-  if (stateChangeCounts.closed) {
-    parts.push(`✗ ${stateChangeCounts.closed} closed`);
-  }
-  if (stateChangeCounts.reopened) {
-    parts.push(`↻ ${stateChangeCounts.reopened} reopened`);
-  }
-
-  return parts.join(', ');
-}
-
-function formatMrName(mrName: string): string {
-  // const match = mrName.match(/^!(\d+)\s*-\s*(.+)$/);
-  // if (match && match[2]) {
-  //   return match[2];
-  // }
-  return mrName;
 }
 
 interface MrSuggestion {
@@ -210,7 +132,6 @@ export default function FactsPane() {
   const [activePane, setActivePane] = useAtom(activePaneAtom);
   const allEvents = resultToArray(useAtomValue(allEventsIncludingCompactedAtom));
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
-  const [selectedIndex, setSelectedIndex] = useAtom(selectedEventIndexAtom);
   const [compactionMessage, setCompactionMessage] = useState<string | null>(null);
   const [sublistFocused, setSublistFocused] = useState(false);
   const [sublistIndex, setSublistIndex] = useState(0);
@@ -225,10 +146,18 @@ export default function FactsPane() {
   const setFilterMrState = useAtomSet(filterMrStateAtom);
   const setInfoPaneTab = useAtomSet(infoPaneTabAtom);
   const setTargetNoteId = useAtomSet(targetNoteIdAtom);
+  const { scroll: scrollToDiscussion } = useDiscussionScroll();
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+  const setSelectedJiraIndex = useAtomSet(selectedJiraIndexAtom);
+  const setSelectedJiraSubIndex = useAtomSet(selectedJiraSubIndexAtom);
+  const { scroll: scrollJira } = useJiraScroll();
+  const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
 
   const lastCompactionIndex = allEvents.findLastIndex(
-    event => event.type === 'mergerequests-compacted-event'
+    event => event.type === 'compacted-event'
   );
+
+  const emptySummary: Change[] = [];
 
   const events = allEvents;
   const isActive = activePane === ActivePane.Facts;
@@ -240,13 +169,23 @@ export default function FactsPane() {
     }), [allMrsResult]);
 
   // Get current event's changes for sublist navigation
+  const eventChangesReadmodel = useAtomValue(eventChangesReadmodelAtom);
+  const emptyDeltasByEventId = useMemo(() => new Map<string, Change[]>(), []);
+  const deltasByEventId = eventChangesReadmodel.pipe(
+    Result.map(v => v.deltasByEventId),
+    Result.getOrElse(() => emptyDeltasByEventId)
+  );
+
+  const getDeltaOrDefault = (ev: LazyReviewerEvent | undefined) =>
+    deltasByEventId.get(ev?.eventId ?? "") ?? emptySummary;
+
   const currentEventIndex = highlightedIndex ?? events.length - 1;
   const currentEvent = events[currentEventIndex];
-  const currentSummary = useMemo(() =>
-    currentEvent && 'timestamp' in currentEvent
-      ? getChangesForEvent(currentEvent as { timestamp: string; type: string }, allMrsState)
-      : { newMrs: 0, comments: 0, mrChanges: [] },
-    [currentEvent, allMrsState]
+  // Extract the specific deltas for the current event
+  const currentEventDeltas = currentEvent ? deltasByEventId.get(currentEvent.eventId) : undefined;
+  const currentSummary = useMemo(
+    () => getDeltaOrDefault(currentEvent),
+    [currentEvent, currentEventDeltas]
   );
 
   // We want to display newest events at the top.
@@ -262,7 +201,14 @@ export default function FactsPane() {
     event: typeof events[0];
   }
 
+  // Use a ref to avoid re-renders on every Map reference change
+  // Only recalculate when the Map size changes (new entries added)
+  const deltasByEventIdRef = useRef(deltasByEventId);
+  deltasByEventIdRef.current = deltasByEventId;
+  const deltasByEventIdSize = deltasByEventId.size;
+
   const groupedEvents: EventGroup[] = useMemo(() => {
+    const deltas = deltasByEventIdRef.current;
     const grouped: EventGroup[] = [];
     for (let i = 0; i < displayEvents.length; i++) {
       const reversedIndex = i;
@@ -270,10 +216,8 @@ export default function FactsPane() {
       const event = displayEvents[i];
       if (!event) continue;
 
-      const summary = 'timestamp' in event
-        ? getChangesForEvent(event as { timestamp: string; type: string }, allMrsState)
-        : { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
-      const hasSummary = summary.newMrs > 0 || summary.comments > 0 || summary.stateChanges > 0;
+      const summary = getDeltaOrDefault(event);
+      const hasSummary = summary.length > 0;
 
       if (!hasSummary) {
         // Check if we can extend the last range
@@ -282,10 +226,8 @@ export default function FactsPane() {
           lastGroup.startIndex = originalIndex;
         } else if (lastGroup && lastGroup.type === 'single' && lastGroup.startIndex === originalIndex + 1) {
           // Check if the last single event also has no summary
-          const lastSummary = 'timestamp' in lastGroup.event
-            ? getChangesForEvent(lastGroup.event as { timestamp: string; type: string }, allMrsState)
-            : { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
-          const lastHasSummary = lastSummary.newMrs > 0 || lastSummary.comments > 0 || lastSummary.stateChanges > 0;
+          const lastSummary = getDeltaOrDefault(lastGroup.event);
+          const lastHasSummary = lastSummary.length > 0;
 
           if (!lastHasSummary) {
             // Convert single to range
@@ -302,20 +244,25 @@ export default function FactsPane() {
       }
     }
     return grouped;
-  }, [displayEvents, events.length, allMrsState]);
+  }, [displayEvents, events.length, allMrsState, deltasByEventIdSize]);
 
   // Helper to select MR and show suggestion if not in filtered list
-  // If noteId is provided, also navigate to activity tab and select that note
-  const selectMrById = (mrId: string, mrName: string, noteId?: string) => {
+  // If noteId is provided, also navigate to the specified tab and select that note
+  const selectMrById = (mrId: string, mrName: string, noteId?: string, navigateTo?: 'overview' | 'activity') => {
     const mrIndex = filteredMrs.findIndex(mr => mr.id === mrId);
     if (mrIndex >= 0) {
       setSelectedMrIndex(mrIndex);
       setSuggestion(null);
 
-      // If a specific note is requested, navigate to activity tab
-      if (noteId) {
-        setInfoPaneTab('activity');
-        setTargetNoteId(noteId);
+      // If a specific note is requested, navigate to the appropriate tab
+      if (noteId && navigateTo) {
+        setInfoPaneTab(navigateTo);
+        if (navigateTo === 'overview') {
+          // Use the scroll service - it will wait for the handler if needed
+          void scrollToDiscussion(noteId);
+        } else {
+          setTargetNoteId(noteId);
+        }
       }
     } else {
       // MR not in filtered list - show suggestion with author and state
@@ -327,28 +274,62 @@ export default function FactsPane() {
     }
   };
 
+  const selectMrForChange = (change: Change) => {
+    if (isMrChange(change)) {
+      const noteId = getNoteIdFromChange(change);
+      // For discussion comments, navigate to overview tab to show in unresolved discussions
+      // For system notes, navigate to activity tab
+      const navigateTo: 'overview' | 'activity' | undefined =
+        change.type === 'diff-comment' || change.type === 'discussion-comment'
+          ? 'overview'
+          : change.type === 'system-note'
+            ? 'activity'
+            : undefined;
+      selectMrById(change.mr.mrId, change.mr.mrName, noteId, navigateTo);
+      return;
+    }
+
+    if (change.type === 'jira-comment' || change.type === 'jira-status-changed' || change.type === 'new-jira-issue') {
+      const issueKey = change.issue.issueKey;
+      const inFiltered = filteredMrs.find(mr => mr.jiraIssueKeys?.includes(issueKey));
+      const fromAll = inFiltered
+        ? inFiltered
+        : allMrsState
+          ? Array.from(allMrsState.mrsByGid.values()).find(mr => mr.jiraIssueKeys?.includes(issueKey))
+          : undefined;
+
+      if (fromAll) {
+        console.log('selecting jira issue', issueKey, change);
+        setInfoPaneTab('jira');
+        selectMrById(fromAll.id, fromAll.title ?? issueKey);
+        const issueIndex = fromAll.jiraIssueKeys.findIndex(k => k === issueKey);
+        setSelectedJiraIndex(issueIndex >= 0 ? issueIndex : 0);
+        setSelectedJiraSubIndex(0);
+        void scrollJira(issueKey, change.type === 'jira-comment' ? change.commentId : undefined);
+      }
+    }
+  };
+
   useKeyboard(async (key) => {
     if (!isActive) return;
 
     if (sublistFocused) {
       // Sublist navigation - also selects the MR
-      const selectMrAtIndex = (idx: number) => {
-        const mrChange = currentSummary.mrChanges[idx];
-        if (mrChange) {
-          // Pass first note ID if this is a comment change
-          const noteId = mrChange.noteIds.length > 0 ? mrChange.noteIds[0] : undefined;
-          selectMrById(mrChange.mrId, mrChange.mrName, noteId);
+      const selectChangeAtIndex = (idx: number) => {
+        const change = currentSummary[idx];
+        if (change) {
+          selectMrForChange(change);
         }
       };
 
       if (key.name === 'j' || key.name === 'down') {
-        const newIndex = Math.min(sublistIndex + 1, currentSummary.mrChanges.length - 1);
+        const newIndex = Math.min(sublistIndex + 1, currentSummary.length - 1);
         setSublistIndex(newIndex);
-        selectMrAtIndex(newIndex);
+        selectChangeAtIndex(newIndex);
       } else if (key.name === 'k' || key.name === 'up') {
         const newIndex = Math.max(sublistIndex - 1, 0);
         setSublistIndex(newIndex);
-        selectMrAtIndex(newIndex);
+        selectChangeAtIndex(newIndex);
       } else if (key.name === 'return') {
         // Enter - activate MR pane
         setActivePane(ActivePane.MergeRequests);
@@ -363,58 +344,73 @@ export default function FactsPane() {
     // Event list navigation - navigate by groups, not individual events
     if (key.name === 'j' || key.name === 'down') {
         setSuggestion(null);
-        setHighlightedIndex(prev => {
-            const current = prev === null ? events.length - 1 : prev;
-            // Find the group containing the current index
-            const currentGroupIndex = groupedEvents.findIndex(g =>
-                current >= g.startIndex && current <= g.endIndex
-            );
-            // Move to the next group (earlier in time, lower index)
-            if (currentGroupIndex < 0 || currentGroupIndex >= groupedEvents.length - 1) {
-                return Math.max(current - 1, 0);
-            }
+        const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
+        const currentGroupIndex = groupedEvents.findIndex(g =>
+            current >= g.startIndex && current <= g.endIndex
+        );
+        // Move to the next group (earlier in time, lower index)
+        if (currentGroupIndex >= groupedEvents.length - 1) {
+            // Already at the last group, don't move
+            return;
+        } else if (currentGroupIndex < 0) {
+            // Fallback - shouldn't normally happen
+            setHighlightedIndex(Math.max(current - 1, 0));
+        } else {
             const nextGroup = groupedEvents[currentGroupIndex + 1];
-            return nextGroup ? nextGroup.endIndex : 0;
-        });
+            const newIndex = nextGroup ? nextGroup.endIndex : 0;
+            const newGroupIndex = currentGroupIndex + 1;
+            setHighlightedIndex(newIndex);
+            if (nextGroup) {
+                scrollToId(nextGroup.event.eventId);
+            }
+        }
     } else if (key.name === 'k' || key.name === 'up') {
         setSuggestion(null);
-        setHighlightedIndex(prev => {
-            const current = prev === null ? events.length - 1 : prev;
-            // Find the group containing the current index
-            const currentGroupIndex = groupedEvents.findIndex(g =>
-                current >= g.startIndex && current <= g.endIndex
-            );
-            // Move to the previous group (later in time, higher index)
-            if (currentGroupIndex <= 0) {
-                return null;
+        const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
+        const currentGroupIndex = groupedEvents.findIndex(g =>
+            current >= g.startIndex && current <= g.endIndex
+        );
+        // Move to the previous group (later in time, higher index)
+        if (currentGroupIndex <= 0) {
+            setHighlightedIndex(null);
+            const firstGroup = groupedEvents[0];
+            if (firstGroup) {
+                scrollToId(firstGroup.event.eventId);
             }
-            const prevGroup = groupedEvents[currentGroupIndex - 1];
-            return prevGroup ? prevGroup.startIndex : events.length - 1;
-        });
+        } else {
+            const newGroupIndex = currentGroupIndex - 1;
+            const prevGroup = groupedEvents[newGroupIndex];
+            const newIndex = prevGroup ? prevGroup.startIndex : events.length - 1;
+            setHighlightedIndex(newIndex);
+            if (prevGroup) {
+                scrollToId(prevGroup.event.eventId);
+            }
+        }
     } else if (key.name === 'return') {
         // Enter - focus on sublist if there are changes
-        if (currentSummary.mrChanges.length > 0) {
+        if (currentSummary.length > 0) {
             setSublistFocused(true);
             setSublistIndex(0);
-            // Select first MR
-            const mrChange = currentSummary.mrChanges[0];
-            if (mrChange) {
-              const noteId = mrChange.noteIds.length > 0 ? mrChange.noteIds[0] : undefined;
-              selectMrById(mrChange.mrId, mrChange.mrName, noteId);
+            // Select first change's MR
+            const change = currentSummary[0];
+            if (change) {
+              selectMrForChange(change);
             }
         }
     } else if (key.name === 'g' && !key.shift) {
-        // g - time-travel to this event
-        setSelectedIndex(highlightedIndex);
+      // nothing
     } else if (key.name === 'escape') {
-        setSelectedIndex(null);
         setHighlightedIndex(null);
         setSuggestion(null);
     } else if (key.name === 'g' && key.shift) {
         // G - bottom (visually) -> Oldest group
         setSuggestion(null);
-        const oldestGroup = groupedEvents[groupedEvents.length - 1];
+        const lastGroupIndex = groupedEvents.length - 1;
+        const oldestGroup = groupedEvents[lastGroupIndex];
         setHighlightedIndex(oldestGroup ? oldestGroup.startIndex : 0);
+        if (oldestGroup) {
+            scrollToId(oldestGroup.event.eventId);
+        }
     } else if (key.name === 'c') {
         setCompactionMessage('Compacting...');
         try {
@@ -429,14 +425,16 @@ export default function FactsPane() {
         const eventIndex = highlightedIndex ?? events.length - 1;
         setCompactionMessage('Opening event in editor...');
         try {
-            const filePath = await EventStorage.getEventFilePath(eventIndex).pipe(
-                Effect.provide(appLayer),
-                Effect.runPromise
+            const filePath = await Effect.runPromise(
+              EventStorage.getEventFilePath(eventIndex).pipe(
+                Effect.provide(appLayer)
+              )
             );
 
-            await openFileInEditor(filePath).pipe(
-                Effect.provide(appLayer),
-                Effect.runPromise
+            await Effect.runPromise(
+              openFileInEditor(filePath).pipe(
+                Effect.provide(appLayer)
+              )
             );
 
             setCompactionMessage(`Opened: ${filePath}`);
@@ -524,6 +522,7 @@ export default function FactsPane() {
             </box>
         )}
         <scrollbox
+            ref={scrollBoxRef}
             style={{
                 flexGrow: 1,
                 contentOptions: {
@@ -544,26 +543,24 @@ export default function FactsPane() {
         {groupedEvents.map((group, groupIndex) => {
             if (group.type === 'range') {
                 // Render collapsed range (2 lines to match alignment)
-                const rangeKey = `range-${group.startIndex}-${group.endIndex}`;
                 const isCompacted = lastCompactionIndex >= 0 && group.startIndex < lastCompactionIndex;
 
                 // Check if this range is highlighted or selected
                 const currentHighlight = highlightedIndex === null ? events.length - 1 : highlightedIndex;
-                const currentSelection = selectedIndex === null ? events.length - 1 : selectedIndex;
                 const isHighlighted = currentHighlight >= group.startIndex && currentHighlight <= group.endIndex;
-                const isSelected = currentSelection >= group.startIndex && currentSelection <= group.endIndex;
+                const isSelected = false; // currentSelection >= group.startIndex && currentSelection <= group.endIndex;
 
-                let color = isCompacted ? '#6272a4' : '#44475a';
+                let color = isCompacted ? '#e1cd39ff' : '#44475a';
                 let backgroundColor: string | undefined = undefined;
 
                 if (isSelected && isHighlighted) {
-                    color = '#50fa7b';
-                    backgroundColor = '#44475a';
+                    color = '#5af78e';
+                    backgroundColor = '#2d2f3a';
                 } else if (isSelected) {
                     color = '#50fa7b';
                 } else if (isHighlighted) {
-                    color = '#8be9fd';
-                    backgroundColor = '#44475a';
+                    color = '#5fd7ff';
+                    backgroundColor = '#3a3d4e';
                 }
 
                 const handleRangeClick = () => {
@@ -573,7 +570,7 @@ export default function FactsPane() {
                 };
 
                 return (
-                    <box key={rangeKey} flexDirection="column" width="100%">
+                    <box key={group.event.eventId} id={group.event.eventId} flexDirection="column" width="100%">
                         <box height={1} width="100%" flexDirection="row" onMouseDown={handleRangeClick}>
                             <text fg={color} bg={backgroundColor} wrapMode="word">
                                 {`${group.startIndex.toString().padStart(4, ' ')}...${group.endIndex.toString().padEnd(4, ' ')} | (no changes)`}
@@ -593,10 +590,9 @@ export default function FactsPane() {
             const originalIndex = group.startIndex;
             const event = group.event;
             const isHighlighted = highlightedIndex === originalIndex || (highlightedIndex === null && originalIndex === events.length - 1);
-            const isSelected = selectedIndex === originalIndex || (selectedIndex === null && originalIndex === events.length - 1);
+            const isSelected = false; // selectedIndex === originalIndex || (selectedIndex === null && originalIndex === events.length - 1);
             const isCompacted = lastCompactionIndex >= 0 && originalIndex < lastCompactionIndex;
-            const isCompactionEvent = event.type === 'mergerequests-compacted-event';
-            const isExpanded = isHighlighted;
+            const isCompactionEvent = event.type === 'compacted-event';
 
             let color = '#f8f8f2';
             let backgroundColor: string | undefined = undefined;
@@ -608,49 +604,79 @@ export default function FactsPane() {
             }
 
             if (isSelected && isHighlighted) {
-                color = '#50fa7b';
-                backgroundColor = '#44475a';
+                color = '#5af78e';
+                backgroundColor = '#2d2f3a';
             } else if (isSelected) {
                 color = '#50fa7b';
             } else if (isHighlighted) {
-                color = '#8be9fd';
-                backgroundColor = '#44475a';
+                color = '#5fd7ff';
+                backgroundColor = '#3a3d4e';
             }
 
-            const displayIndex = originalIndex.toString().padStart(4, ' ');
-            const summary = 'timestamp' in event
-                ? getChangesForEvent(event as { timestamp: string; type: string }, allMrsState)
-                : { newMrs: 0, comments: 0, stateChanges: 0, mrChanges: [] };
-            const hasSummary = summary.newMrs > 0 || summary.comments > 0 || summary.stateChanges > 0;
-            const stateChangeSummary = summary.stateChanges > 0 ? formatStateChangeSummary(summary.mrChanges) : '';
+            const displayIndex = originalIndex.toString(); //.padEnd(4, ' ');
+            const summary = getDeltaOrDefault(event);
+            const hasSummary = summary.length > 0;
 
             const handleEventClick = () => {
-                setHighlightedIndex(originalIndex);
-                setSublistFocused(false);
-                const mrChange = summary.mrChanges[0];
-                if (mrChange) {
-                    const noteId = mrChange.noteIds.length > 0 ? mrChange.noteIds[0] : undefined;
-                    selectMrById(mrChange.mrId, mrChange.mrName, noteId);
+                const now = Date.now();
+                const lastClick = lastClickRef.current;
+                const isDoubleClick = lastClick && lastClick.eventId === event.eventId && (now - lastClick.time) < 300;
+
+                lastClickRef.current = { eventId: event.eventId, time: now };
+
+                if (isDoubleClick && summary.length > 0) {
+                    // Double-click: focus on sublist (like pressing Enter)
+                    setHighlightedIndex(originalIndex);
+                    setSublistFocused(true);
+                    setSublistIndex(0);
+                    const change = summary[0];
+                    if (change) {
+                        selectMrForChange(change);
+                    }
                 } else {
-                    setSuggestion(null);
+                    // Single click: just highlight
+                    setHighlightedIndex(originalIndex);
+                    setSublistFocused(false);
+                    const change = summary[0];
+                    if (change) {
+                        selectMrForChange(change);
+                    } else {
+                        setSuggestion(null);
+                    }
                 }
             };
 
-            const handleSublistClick = (i: number, mrChange: MrChange) => {
+            const handleChangeClick = (i: number, change: Change) => {
+                setHighlightedIndex(originalIndex);
                 setSublistFocused(true);
                 setSublistIndex(i);
-                const noteId = mrChange.noteIds.length > 0 ? mrChange.noteIds[0] : undefined;
-                selectMrById(mrChange.mrId, mrChange.mrName, noteId);
+                selectMrForChange(change);
+            };
+            const formatRelativeTime = (date: Date) => {
+              const now = new Date();
+              const diffMs = now.getTime() - date.getTime();
+              const diffMins = Math.floor(diffMs / 60000);
+              const diffHours = Math.floor(diffMs / 3600000);
+              const diffDays = Math.floor(diffMs / 86400000);
+              const diffWeeks = Math.floor(diffDays / 7);
+              const diffMonths = Math.floor(diffDays / 30);
+
+              if (diffMins < 1) return 'now';
+              if (diffMins < 60) return `${diffMins}m`;
+              if (diffHours < 24) return `${diffHours}h`;
+              if (diffDays < 7) return `${diffDays}d`;
+              if (diffDays < 30) return `${diffWeeks}w`;
+              return `${diffMonths}M`;
             };
 
             return (
-                <box key={originalIndex} flexDirection="column" width="100%">
+                <box key={group.event.eventId} id={group.event.eventId} flexDirection="column" width="100%">
                     <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
                         <text fg={color} bg={backgroundColor} wrapMode="word">
-                            {displayIndex}
+                            {' '}{displayIndex}
                         </text>
-                        <text fg="#6272a4" bg={backgroundColor} wrapMode="word">
-                            {` | ${event.type}`}
+                        <text fg={color} bg={backgroundColor} wrapMode="word">
+                            {` > ${event.type}`}
                         </text>
                     </box>
                     {!hasSummary && (
@@ -661,77 +687,36 @@ export default function FactsPane() {
                             <box flexGrow={1} height={1} style={{ backgroundColor: '#1e1f29' }} />
                         </box>
                     )}
-                    {summary.newMrs > 0 && (
-                        <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
-                            <text fg="#50fa7b" bg="#1e1f29">
-                                {'      📋 '}{summary.newMrs}{' new MRs'}
-                            </text>
-                            <box flexGrow={1} height={1} style={{ backgroundColor: '#1e1f29' }} />
-                        </box>
-                    )}
-                    {summary.stateChanges > 0 && (
-                        <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
-                            <text fg="#bd93f9" bg="#1e1f29">
-                                {'      '}{stateChangeSummary}
-                            </text>
-                            <box flexGrow={1} height={1} style={{ backgroundColor: '#1e1f29' }} />
-                        </box>
-                    )}
-                    {summary.comments > 0 && (
-                        <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
-                            <text fg="#ffb86c" bg="#1e1f29">
-                                {'      💬 '}{summary.comments}{' comments'}
-                            </text>
-                            <box flexGrow={1} height={1} style={{ backgroundColor: '#1e1f29' }} />
-                        </box>
-                    )}
-                    {isExpanded && summary.mrChanges.length > 0 && (() => {
-                        const grouped = groupMrChangesByType(summary.mrChanges);
-                        const allMrChanges: MrChange[] = [
-                            ...grouped.new,
-                            ...grouped.merged,
-                            ...grouped.closed,
-                            ...grouped.reopened,
-                            ...grouped.comments
-                        ];
+                    {summary.map((change, i) => {
+                        const isSelected = isHighlighted && sublistFocused && i === sublistIndex;
+                        const { badge, color: changeColor, text } = getChangeDescription(change);
 
-                        return allMrChanges.map((mrChange, i) => {
-                            const isSublistSelected = sublistFocused && i === sublistIndex;
-                            let badge = '';
-                            let badgeColor = '#bd93f9';
+                        const formattedDate = change.changedAt
+                          ? formatRelativeTime(change.changedAt).padEnd(3, ' ')
+                          : '?  ';
 
-                            if (mrChange.isNew) {
-                                badge = '📋';
-                                badgeColor = '#50fa7b';
-                            } else if (mrChange.stateChange === 'merged') {
-                                badge = '✓';
-                                badgeColor = '#bd93f9';
-                            } else if (mrChange.stateChange === 'closed') {
-                                badge = '✗';
-                                badgeColor = '#ff5555';
-                            } else if (mrChange.stateChange === 'reopened') {
-                                badge = '↻';
-                                badgeColor = '#ffb86c';
-                            } else if (mrChange.newComments > 0) {
-                                badge = '💬';
-                                badgeColor = '#ffb86c';
-                            }
-
-                            const commentText = mrChange.newComments > 0 ? ` - ${mrChange.newComments} comments` : '';
-
-                            return (
-                                <box key={i} height={1} width="100%" onMouseDown={() => handleSublistClick(i, mrChange)}>
+                        return (
+                            <box key={i} height={1} width="100%" flexDirection='row' onMouseDown={() => handleChangeClick(i, change)}>
+                                <box width={4} flexShrink={0} height={1}>
                                     <text
-                                      wrapMode='none'
-                                        fg={isSublistSelected ? '#50fa7b' : badgeColor}
-                                        bg={isSublistSelected ? '#44475a' : undefined}
+                                        wrapMode='none'
+                                        fg={Colors.PRIMARY}
+                                        bg={isSelected ? '#44475a' : '#1e1f29'}
+                                        style={{attributes: TextAttributes.DIM}}
                                     >
-                                        {'      '}{badge} {formatMrName(mrChange.mrName)}{commentText} ({mrChange.author})
+                                        {' '}{formattedDate}
                                     </text>
                                 </box>
-                            );
-                        });
-                    })()}
+                                <text
+                                    wrapMode='none'
+                                    fg={isSelected ? '#50fa7b' : changeColor}
+                                    bg={isSelected ? '#44475a' : '#1e1f29'}
+                                >
+                                    {' '}{badge} {text}
+                                </text>
+                            </box>
+                        );
+                    })}
                 </box>
             );
         })}

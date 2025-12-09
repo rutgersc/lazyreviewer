@@ -11,6 +11,7 @@ import {
 } from "./jira-schema";
 import type { JiraIssuesFetchedEvent } from "../events/jira-events";
 import { EventStorage, type LazyReviewerEvent } from "../events/events";
+import { generateEventId } from "../events/event-id";
 
 export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
 
@@ -157,12 +158,15 @@ export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[])
       total: 0,
       maxResults: 0
     };
+    const timestamp = new Date().toISOString();
+    const type = 'jira-issues-fetched-event' as const;
     const event: JiraIssuesFetchedEvent = {
-      type: 'jira-issues-fetched-event',
+      eventId: generateEventId(timestamp, type),
+      type,
       searchResponse: emptyResponse,
       issues: emptyResponse,
       forTicketKeys: ticketKeys,
-      timestamp: new Date().toISOString()
+      timestamp
     };
     return event;
   }
@@ -208,12 +212,15 @@ export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[])
     issues: processedIssues
   };
 
+  const timestamp = new Date().toISOString();
+  const type = 'jira-issues-fetched-event' as const;
   const event: JiraIssuesFetchedEvent = {
-    type: 'jira-issues-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     searchResponse: result,
     issues: processedResponse,
     forTicketKeys: ticketKeys,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;

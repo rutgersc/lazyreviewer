@@ -1,8 +1,10 @@
 import { Schema } from "effect"
 import type { JiraSearchResponse } from "../jira/jira-schema";
+import { EventIdSchema } from "./event-id";
 
 // Jira event schemas
 const JiraIssuesFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('jira-issues-fetched-event'),
   searchResponse: Schema.Unknown,
   issues: Schema.Unknown,

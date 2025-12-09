@@ -6,13 +6,14 @@ import type { JiraIssue } from '../jira/jira-schema';
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
-import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
-import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../jira/jira-atom';
+import { selectedJiraIndexAtom, selectedJiraSubIndexAtom, jiraCommentFocusedAtom, selectedJiraCommentIndexAtom } from '../jira/jira-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
-import { useEffect } from 'react';
+import { useRef } from 'react';
+import { useJiraScroll } from '../hooks/useJiraScroll';
 
 interface JiraIssuesListProps {
   activePane: ActivePane;
@@ -31,7 +32,11 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
   const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const [selectedJiraIndex, setSelectedJiraIndex] = useAtom(selectedJiraIndexAtom);
   const [selectedJiraSubIndex, setSelectedJiraSubIndex] = useAtom(selectedJiraSubIndexAtom);
+  const [commentFocused, setCommentFocused] = useAtom(jiraCommentFocusedAtom);
+  const [selectedCommentIndex, setSelectedCommentIndex] = useAtom(selectedJiraCommentIndexAtom);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+  const registeredRef = useRef(false);
+  const { registerHandler } = useJiraScroll();
 
   const handleJiraClick = useDoubleClick<JiraListItem>({
     onSingleClick: (item) => {
@@ -45,6 +50,30 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
        openUrl(jiraUrl);
     }
   });
+
+  if (!registeredRef.current) {
+    console.log('registering handler');
+    registeredRef.current = true;
+    const handler = ({ issueKey, commentId }: { issueKey: string; commentId?: string }) => {
+      if (jiraIssues.length === 0) return;
+      const issueIndex = jiraIssues.findIndex(i => i.key === issueKey);
+      if (issueIndex < 0) return;
+      setSelectedJiraIndex(issueIndex);
+      setSelectedJiraSubIndex(0);
+      const issue = jiraIssues[issueIndex];
+      if (!issue) return;
+      scrollToId(`jira-item-${issueIndex}-0`);
+      if (commentId) {
+        const commentIndex = issue.fields.comment.comments.findIndex(c => c.id === commentId);
+        if (commentIndex >= 0) {
+          setCommentFocused(true);
+          setSelectedCommentIndex(commentIndex);
+          scrollToId(`jira-comment-${commentId}`);
+        }
+      }
+    };
+    registerHandler(handler);
+  }
 
   const jiraListItems: JiraListItem[] = [];
   jiraIssues.forEach((issue, issueIndex) => {
@@ -90,7 +119,52 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
     const selectedIssue = jiraIssues[selectedJiraIndex];
     const hasParent = selectedIssue?.fields.parent !== undefined;
     const maxSubIndex = hasParent ? 1 : 0;
+    const comments = selectedIssue?.fields.comment.comments ?? [];
 
+    // Comment-focused navigation mode
+    if (commentFocused) {
+      switch (key.name) {
+        case 'j':
+        case 'down':
+          if (selectedCommentIndex < comments.length - 1) {
+            const newIndex = selectedCommentIndex + 1;
+            setSelectedCommentIndex(newIndex);
+            const comment = comments[newIndex];
+            if (comment) scrollToId(`jira-comment-${comment.id}`);
+          }
+          break;
+        case 'k':
+        case 'up':
+          if (selectedCommentIndex > 0) {
+            const newIndex = selectedCommentIndex - 1;
+            setSelectedCommentIndex(newIndex);
+            const comment = comments[newIndex];
+            if (comment) scrollToId(`jira-comment-${comment.id}`);
+          }
+          break;
+        case 'escape':
+          setCommentFocused(false);
+          setSelectedCommentIndex(0);
+          break;
+        case 'i':
+          if (selectedIssue) {
+            const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
+            const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
+            openUrl(jiraUrl);
+          }
+          break;
+        case 'c':
+          if (selectedIssue) {
+            const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
+            const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
+            copyToClipboard(jiraUrl);
+          }
+          break;
+      }
+      return;
+    }
+
+    // Issue-level navigation mode
     switch (key.name) {
       case 'j':
       case 'down':
@@ -101,7 +175,9 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
         } else if (selectedJiraIndex < jiraIssues.length - 1) {
           const newIndex = selectedJiraIndex + 1;
           setSelectedJiraIndex(newIndex);
-          scrollToId(`jira-item-${newIndex}-${selectedJiraSubIndex}`);
+          setSelectedJiraSubIndex(0);
+          setSelectedCommentIndex(0);
+          scrollToId(`jira-item-${newIndex}-0`);
         }
         break;
       case 'k':
@@ -113,11 +189,23 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
         } else if (selectedJiraIndex > 0) {
           const newIndex = selectedJiraIndex - 1;
           setSelectedJiraIndex(newIndex);
-          scrollToId(`jira-item-${newIndex}-${selectedJiraSubIndex}`);
+          const prevIssue = jiraIssues[newIndex];
+          const prevMaxSub = prevIssue?.fields.parent ? 1 : 0;
+          setSelectedJiraSubIndex(prevMaxSub);
+          setSelectedCommentIndex(0);
+          scrollToId(`jira-item-${newIndex}-${prevMaxSub}`);
+        }
+        break;
+      case 'return':
+        // Enter comment focus mode if issue has comments
+        if (comments.length > 0) {
+          setCommentFocused(true);
+          setSelectedCommentIndex(0);
+          const comment = comments[0];
+          if (comment) scrollToId(`jira-comment-${comment.id}`);
         }
         break;
       case 'i':
-      case 'return':
         if (selectedIssue) {
           const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
           const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
@@ -130,6 +218,11 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
           const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
           copyToClipboard(jiraUrl);
         }
+        break;
+      case 'escape':
+        // Reset selection when escaping at issue level
+        setSelectedJiraIndex(0);
+        setSelectedJiraSubIndex(0);
         break;
     }
   });
@@ -218,7 +311,7 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
         ─────────────────────────────────────
       </text>
 
-      {selectedListItem && <JiraIssueInfo issue={selectedListItem.issue} />}
+      {selectedListItem && <JiraIssueInfo issue={selectedListItem.issue} selectedCommentIndex={selectedCommentIndex} commentFocused={commentFocused} />}
     </box>
     </scrollbox>
   );

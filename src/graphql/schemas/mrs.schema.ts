@@ -45,10 +45,12 @@ export const MergeRequestFieldsFragmentSchema: Schema.Schema<MergeRequestFieldsF
           Schema.NullOr(Schema.Struct({
           id: Schema.Unknown,
           __typename: Schema.Literal('Note'),
+          system: Schema.Boolean,
           body: Schema.String,
           author: Schema.NullOr(Schema.Struct({
             name: Schema.String
           })),
+          url: Schema.NullOr(Schema.String),
           createdAt: Schema.String,
           resolvable: Schema.Boolean,
           resolved: Schema.Boolean,

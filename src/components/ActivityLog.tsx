@@ -8,13 +8,15 @@ import type { PipelineJob } from "../gitlab/gitlab-graphql";
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
-import { useAtom, useAtomValue, useAtomSet, Result } from "@effect-atom/atom-react";
+import { useAtom, useAtomValue, useAtomSet, Result, Atom } from "@effect-atom/atom-react";
 import { infoPaneTabAtom, activeModalAtom } from "../ui/navigation-atom";
-import { selectedActivityIndexAtom, targetNoteIdAtom } from "../components/activity-atom";
 import { loadJobLogAtom } from "../mergerequests/job-atom";
 import { allJiraIssuesAtom } from "../mergerequests/mergerequests-atom";
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useEffect } from 'react';
+
+export const selectedActivityIndexAtom = Atom.make<number>(0);
+export const targetNoteIdAtom = Atom.make<string | null>(null);
 
 type EventType =
   | 'mr_created'

@@ -1,8 +1,10 @@
 import { Schema } from "effect"
 import { BitbucketPullRequestsResponseSchema, BitbucketPullRequestSchema, BitbucketCommentsResponseSchema } from "../bitbucket/bitbucket-schema";
+import { EventIdSchema } from "./event-id";
 
 // Bitbucket event schemas
 const BitbucketPrsFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('bitbucket-prs-fetched-event'),
   prsResponse: BitbucketPullRequestsResponseSchema,
   forWorkspace: Schema.String,
@@ -20,6 +22,7 @@ const BitbucketPrsFetchedEventSchema = Schema.Struct({
 export type BitbucketPrsFetchedEvent = Schema.Schema.Type<typeof BitbucketPrsFetchedEventSchema>
 
 const BitbucketSinglePrFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('bitbucket-single-pr-fetched-event'),
   pr: BitbucketPullRequestSchema,
   forWorkspace: Schema.String,
@@ -31,6 +34,7 @@ const BitbucketSinglePrFetchedEventSchema = Schema.Struct({
 export type BitbucketSinglePrFetchedEvent = Schema.Schema.Type<typeof BitbucketSinglePrFetchedEventSchema>
 
 const BitbucketPrCommentsFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('bitbucket-pr-comments-fetched-event'),
   commentsResponse: BitbucketCommentsResponseSchema,
   forWorkspace: Schema.String,

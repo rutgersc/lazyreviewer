@@ -3,12 +3,15 @@ import { TextAttributes } from '@opentui/core';
 import type { JiraIssue } from '../jira/jira-schema';
 import { extractTextFromJiraComment, type JiraComment } from '../jira/jira-service';
 import { formatCompactTime } from '../utils/formatting';
+import { Colors } from '../colors';
 
 interface JiraIssueInfoProps {
   issue: JiraIssue;
+  selectedCommentIndex: number;
+  commentFocused: boolean;
 }
 
-export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
+export default function JiraIssueInfo({ issue, selectedCommentIndex, commentFocused }: JiraIssueInfoProps) {
   const renderComments = (comments: JiraComment[]) => {
     if (!comments || comments.length === 0) {
       return (
@@ -29,11 +32,16 @@ export default function JiraIssueInfo({ issue }: JiraIssueInfoProps) {
         >
           {`Comments (${comments.length})`}
         </text>
-        {comments.map((comment) => {
+        {comments.map((comment, index) => {
           const commentText = extractTextFromJiraComment(comment);
+          const isSelected = commentFocused && index === selectedCommentIndex;
 
           return (
-            <box key={comment.id} style={{ flexDirection: "column", marginLeft: 2, width: "100%", backgroundColor: '#1a1a1a', padding: 1 }}>
+            <box
+              key={comment.id}
+              id={`jira-comment-${comment.id}`}
+              style={{ flexDirection: "column", marginLeft: 2, width: "100%", backgroundColor: isSelected ? Colors.SELECTED : '#1a1a1a', padding: 1 }}
+            >
               <box style={{ flexDirection: "row", gap: 0, width: "100%" }}>
                 <text
                   style={{ fg: '#8be9fd', attributes: TextAttributes.BOLD }}

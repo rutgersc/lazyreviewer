@@ -1,41 +1,35 @@
-import { Stream, Effect } from "effect";
+import { Stream, Effect, Chunk } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { EventStorage, type LazyReviewerEvent } from "./events";
-import { Atom } from "@effect-atom/atom-react";
-import { persistCompactedState, projectToCompactedMergeRequestsState, isCompactedMergeRequestsEvent, type CompactedMergeRequestEntry } from "../mergerequests/mergerequest-compaction-projection";
-
-export const allEventsAtom = appAtomRuntime.atom(
-  Stream.unwrap(EventStorage.eventsStream).pipe(
-    Stream.scan([] as LazyReviewerEvent[], (acc, event) => [...acc, event])
-  ),
-  { initialValue: [] }
-)
+import { projectEventsToCompactedState, compactedStateToEvent, type CompactedState } from "./project-to-compacted-state";
 
 export const allEventsIncludingCompactedAtom = appAtomRuntime.atom(
   Stream.unwrap(EventStorage.allEventsStream).pipe(
-    Stream.scan([] as LazyReviewerEvent[], (acc, event) => [...acc, event])
+    Stream.groupedWithin(100, "0.15 seconds"),
+    Stream.scan([] as LazyReviewerEvent[], (acc, events) =>
+      Chunk.reduce(events, acc, (currentAcc, event) => [...currentAcc, event])
+    )
   ),
   { initialValue: [] }
 )
 
-export const selectedEventIndexAtom = Atom.make<number | null>(null);
-
 export const compactAllEventsAtom = appAtomRuntime.fn(() =>
   Effect.gen(function* () {
-    // Project all events to get final state
-    const finalState = (yield* EventStorage.loadEvents)
-      .filter(isCompactedMergeRequestsEvent)
-      .reduce(
-        (state, event) => projectToCompactedMergeRequestsState(state, event),
-        new Map<string, CompactedMergeRequestEntry>()
-      );
+    const allEvents = yield* EventStorage.loadEvents
 
-    if (finalState.size === 0) {
+    const compactedState = projectEventsToCompactedState(allEvents);
+
+    if (compactedState.mergeRequests.size === 0 && compactedState.jiraIssues.size === 0) {
       return { success: false, message: "No events to compact" };
     }
 
-    const count = yield* persistCompactedState(finalState);
+    const compactedEvent = compactedStateToEvent(compactedState);
+    yield* EventStorage.appendEvent(compactedEvent);
 
-    return { success: true, message: `Compacted all events into ${count} MRs` };
+    const parts: string[] = [];
+    parts.push(`${compactedState.mergeRequests.size} MRs`);
+    parts.push(`${compactedState.jiraIssues.size} Jira issues`);
+
+    return { success: true, message: `Compacted all events into ${parts.join(' and ')}` };
   })
 );

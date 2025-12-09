@@ -2,6 +2,7 @@ import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/g
 import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import type { BitbucketPullRequest, BitbucketComment } from "./bitbucketapi";
+import type { CompactedEvent } from "../events/event-compaction-events";
 
 function countCommentsByResolution(comments: readonly BitbucketComment[]): {
   total: number;
@@ -40,14 +41,16 @@ function mapBitbucketCommentsToDiscussions(comments: readonly BitbucketComment[]
       author: comment.user.display_name,
       createdAt: new Date(comment.created_on),
       resolvable: true,
+      system: false,
       resolved: comment.resolution !== null && comment.resolution !== undefined,
+      url: comment.links.self.href ?? "",
       position: comment.inline ? {
         filePath: comment.inline.path,
         newLine: comment.inline.to || null,
         oldLine: comment.inline.from || null,
         oldPath: null,
       } : null,
-    }));
+    } satisfies DiscussionNote));
 
     return {
       id: `bitbucket-discussion-${topComment.id}`,
@@ -135,9 +138,24 @@ export const projectBitbucketPrCommentsFetchedEvent = (event: BitbucketPrComment
   return event.commentsResponse.values || [];
 };
 
+export const projectBitbucketMrsCompactedEvent = (event: CompactedEvent): GitlabMergeRequest[] => {
+  // Discriminate by checking for gitlab-specific field
+  const prs: BitbucketPullRequest[] = event.mrs.filter(mr => "source" in mr);
+
+  const gitlabMrs = prs.map(pr => {
+    const fullPath = pr.destination.repository.full_name;
+    const [workspace = "", repoSlug = ""] = fullPath.split("/");
+    const mr = mapBitbucketToGitlabMergeRequest(pr, workspace, repoSlug);
+    return mr;
+  });
+
+  return gitlabMrs;
+}
+
 export const projectBitbucketSinglePrFetchedEvent = (
   event: BitbucketSinglePrFetchedEvent,
   commentData: { total: number; resolved: number; unresolved: number; comments: readonly BitbucketComment[] }
 ): GitlabMergeRequest => {
   return mapBitbucketToGitlabMergeRequest(event.pr, event.forWorkspace, event.forRepoSlug, commentData);
 };
+

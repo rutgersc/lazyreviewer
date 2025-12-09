@@ -16,6 +16,7 @@ import fs from "fs";
 import path from "path";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent } from "../events/gitlab-events";
 import { projectGitlabJobHistoryFetchedEvent, projectGitlabJobTraceFetchedEvent, projectGitlabPipelineFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent } from "./gitlab-projections";
+import { generateEventId } from "../events/event-id";
 
 export type {
   PipelineJob,
@@ -156,12 +157,15 @@ export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (u
     catch: cause => new FetchGitlabMrsError({ cause })
   });
 
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-user-mrs-fetched-event' as const;
   const event: GitlabUserMergeRequestsFetchedEvent = {
-    type: 'gitlab-user-mrs-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     mrs: data,
     forUsernames: usernames,
     forState: state,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;
@@ -180,12 +184,15 @@ export const getGitlabMrsByProjectAsEvent = Effect.fn("getGitlabMrsByProjectAsEv
     catch: cause => new FetchGitlabProjectMrsError({ cause })
   });
 
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-project-mrs-fetched-event' as const;
   const event: GitlabprojectMergeRequestsFetchedEvent = {
-    type: 'gitlab-project-mrs-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     mrs: data,
     forProjectPath: projectPath,
     forState: state,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;
@@ -194,12 +201,15 @@ export const getGitlabMrsByProjectAsEvent = Effect.fn("getGitlabMrsByProjectAsEv
 export const getJobTraceAsEvent = Effect.fn("getJobTraceAsEvent")(function* (projectId: string, jobId: string) {
   const traceData = yield* getJobTraceRaw(projectId, jobId);
 
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-jobtrace-fetched-event' as const;
   const event: GitlabJobTraceFetchedEvent = {
-    type: 'gitlab-jobtrace-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     jobTrace: traceData || '',
     forProjectId: projectId,
     forJobId: jobId,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;
@@ -222,12 +232,15 @@ export const getMrPipelineAsEvent = Effect.fn("getMrPipelineAsEvent")(function* 
     catch: cause => new FetchMrPipelineError({ cause })
   });
 
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-pipeline-fetched-event' as const;
   const event: GitlabPipelineFetchedEvent = {
-    type: 'gitlab-pipeline-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     pipeline: data,
     forProjectPath: projectPath,
     forIid: iid,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;
@@ -259,12 +272,15 @@ export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(functi
     catch: cause => new FetchJobHistoryError({ cause })
   });
 
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-jobhistory-fetched-event' as const;
   const event: GitlabJobHistoryFetchedEvent = {
-    type: 'gitlab-jobhistory-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     jobHistory: data,
     forProjectPath: projectPath,
     forJobName: jobName,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;
@@ -282,12 +298,15 @@ export const getSingleMrAsEvent = Effect.fn("getSingleMrAsEvent")(function* (pro
     catch: cause => new FetchSingleMrError({ cause })
   });
 
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-single-mr-fetched-event' as const;
   const event: GitlabSingleMrFetchedEvent = {
-    type: 'gitlab-single-mr-fetched-event',
+    eventId: generateEventId(timestamp, type),
+    type,
     mr: data,
     forProjectPath: projectPath,
     forIid: iid,
-    timestamp: new Date().toISOString()
+    timestamp
   };
 
   return event;

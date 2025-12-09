@@ -38,6 +38,8 @@ export const DiscussionNoteSchema = Schema.Struct({
   createdAt: Schema.Date,
   resolvable: Schema.Boolean,
   resolved: Schema.Boolean,
+  system: Schema.Boolean,
+  url: Schema.String,
   position: Schema.NullOr(Schema.Struct({
     filePath: Schema.NullOr(Schema.String),
     newLine: Schema.NullOr(Schema.Number),
@@ -110,3 +112,35 @@ export type PipelineStage = Schema.Schema.Type<typeof PipelineStageSchema>
 export type DiscussionNote = Schema.Schema.Type<typeof DiscussionNoteSchema>
 export type Discussion = Schema.Schema.Type<typeof DiscussionSchema>
 export type GitlabMergeRequest = Schema.Schema.Type<typeof GitlabMergeRequestSchema>
+
+// Discriminated union for note types based on their semantic meaning
+export interface SystemNote {
+  readonly type: 'system';
+  readonly id: string;
+  readonly body: string;
+  readonly author: string;
+  readonly createdAt: Date;
+}
+
+export interface DiscussionComment {
+  readonly type: 'discussion';
+  readonly id: string;
+  readonly body: string;
+  readonly author: string;
+  readonly createdAt: Date;
+  readonly resolved: boolean;
+}
+
+export interface DiffComment {
+  readonly type: 'diff';
+  readonly id: string;
+  readonly body: string;
+  readonly author: string;
+  readonly createdAt: Date;
+  readonly resolved: boolean;
+  readonly filePath: string;
+  readonly newLine: number | null;
+  readonly oldLine: number | null;
+}
+
+export type NoteType = SystemNote | DiscussionComment | DiffComment;

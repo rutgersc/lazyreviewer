@@ -173,9 +173,42 @@ export default function App() {
 
   const infoActive = activePane === ActivePane.InfoPane;
 
-  let factsWidthStr: RenderableOptions['width'] = infoActive ? 40 : 40;
-  let middleWidthStr: RenderableOptions['width'] = infoActive ? "45%" : "55%";
-  let rightWidthStr: RenderableOptions['width'] = infoActive ? "55%" : "45%";
+  const getWidths = (): {
+    left: RenderableOptions["width"];
+    middle: RenderableOptions["width"];
+    right: RenderableOptions["width"];
+  } => {
+    switch (activePane) {
+      case ActivePane.Facts:
+        return {
+          left: "25%",
+          middle: "35%",
+          right: "40%",
+        };
+
+      case ActivePane.UserSelection:
+      case ActivePane.MergeRequests:
+        return {
+          left: "20%",
+          middle: "50%",
+          right: "30%",
+        };
+
+      case ActivePane.InfoPane:
+      case ActivePane.Console:
+        return {
+          left: "20%",
+          middle: "30%",
+          right: "50%",
+        };
+
+      default:
+        const _: never = activePane;
+        throw new Error("unreachable");
+    }
+  };
+
+  const widths = getWidths();
 
   return (
     <box style={{ flexDirection: "column", height: "100%", backgroundColor: '#282a36' }}>
@@ -188,7 +221,7 @@ export default function App() {
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.Facts ? "#50fa7b" : "#6272a4",
-              width: factsWidthStr,
+              width: widths.left,
               backgroundColor: '#282a36'
             }}
         >
@@ -196,7 +229,7 @@ export default function App() {
         </box>
 
         {/* Middle panel - two stacked panes */}
-        <box style={{ flexDirection: "column", width: middleWidthStr }}>
+        <box style={{ flexDirection: "column", width: widths.middle }}>
           {/* Merge Request Pane (top) */}
           <box
             style={{
@@ -232,7 +265,7 @@ export default function App() {
         <box
           style={{
             flexDirection: "column",
-            width: rightWidthStr,
+            width: widths.right,
             backgroundColor: '#282a36'
           }}
         >

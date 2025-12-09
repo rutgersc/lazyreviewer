@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents when working with code in this repository.
 
 ## Project Overview
 
@@ -36,11 +36,36 @@ bun install
 
 ## Development Notes
 
-!IMPORTANT!: UI RENDERER SOURCE AVAILABLE AT (windows=F:\GitRepos\opentui, osx=/Users/rutgerschoorstra/Gitrepos/opentui)
-!IMPORTANT!: effect-atom SOURCECODE AVAILABLE AT /Users/rutgerschoorstra/Gitrepos/effect-atom
-!IMPORTANT!: effect-atom SOURCE AVAILABLE AT F:\GitRepos\effect-atom\packages
-!IMPORTANT!: effect-ts AVAILABLE AT F:\GitRepos\effect
-!IMPORTANT!: effect-ts-examples AVAILABLE AT /Users/rutgerschoorstra/Gitrepos/effect-examples/examples
+### Library Source Code (CRITICAL)
+
+**The following libraries have their source code available as git submodules in the `vendor/` directory:**
+
+| Library | Submodule Path | Package |
+|---------|---------------|---------|
+| openTUI (UI renderer) | `vendor/opentui` | `@opentui/core`, `@opentui/react` |
+| effect-atom | `vendor/effect-atom` | `@effect-atom/atom-react` |
+| Effect-TS | `vendor/effect` | `effect`, `@effect/platform`, `@effect/schema` |
+| Effect examples | `vendor/effect-examples` | (reference implementations) |
+
+**MANDATORY: Before doing ANY work involving these libraries, you MUST:**
+
+1. **Check if submodules are cloned**: Run `git submodule status` to verify. If any submodule shows a `-` prefix (not initialized) or the directory is empty, clone it first.
+
+2. **Clone missing submodules**: If not cloned, run:
+   ```bash
+   git submodule update --init --depth 1 vendor/<submodule-name>
+   ```
+   Or to clone all: `git submodule update --init --depth 1`
+
+3. **Always consult the source**: When implementing features, debugging, or answering questions about these libraries:
+   - Read the actual source code in `vendor/` to understand implementation details
+   - Check types, function signatures, and behavior directly from source
+   - Look at examples in `vendor/effect-examples` for usage patterns
+   - Do NOT rely solely on documentation or assumptions—verify against the source
+
+**Why this matters**: These are the exact versions used by this project. Online documentation may differ from the pinned versions. The source is the authoritative reference.
+
+!IMPORTANT!: This app is a terminal TUI (openTUI), not a web app—no browser runtime concerns; focus on TUI/event-loop behavior.
 
 ### Type-Driven Development Approach
 
@@ -131,10 +156,30 @@ async switchUserSelection(entry: number) {
 3. **Define plan phases and tasks**: Clearly define each phase, subdivided by tasks. Number accordingly for example, "Phase 1: add new pane" "Task 1.1: do something"). Implement in logical order (types → utilities → components → integration). Describe for each task what other tasks it depends on and what it is that it depends on. Structure the phases and tasks according to the dependencies between them.
 
 ### Code Style
-- favor functions with parameters over classes
-- favor immutability over mutability
-- favor small functions taking input and output. Avoid side effects like state mutation, instead favor creating new values.
-   - example: use `arrayName.map(i => processI(i))` instead of `arrayName.foreach(i => /*sideEffect*/)`
+
+**Immutable FP Style (MANDATORY):**
+- **ALWAYS use `map`/`filter`/`reduce`** instead of `for` loops or `forEach` with mutations
+- **NEVER mutate** - always create new values instead of modifying existing ones
+- Prefer expression-based code (returns values) over statement-based code (performs effects)
+
+```typescript
+// ❌ BAD: Imperative loop with mutation
+const results: T[] = []
+for (const item of items) {
+  if (condition(item)) {
+    results.push(transform(item))
+  }
+}
+
+// ✅ GOOD: Declarative FP chain
+const results = items
+  .filter(condition)
+  .map(transform)
+```
+
+**Other Style Guidelines:**
+- Favor functions with parameters over classes
+- Favor small pure functions with clear input/output
 - DONT use INLINE imports via require. Always import top level
 
 ### React: CRITICAL useEffect Antipattern

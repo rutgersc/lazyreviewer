@@ -11,8 +11,7 @@ import {
   projectOpenMrsAndDetectMissing,
   OpenMrsTrackingState
 } from "./mr-diff-tracking";
-import { EventStorage, type LazyReviewerEvent } from "../events/events";
-import { selectedEventIndexAtom } from "../events/events-atom";
+import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Console, Stream, Chunk } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
@@ -23,7 +22,7 @@ import { join } from 'path';
 import type { JiraIssue } from "../jira/jira-service";
 import { selectedUserSelectionEntryAtom, userSelectionsAtom } from "../userselection/userselection-atom";
 import { groupsAtom } from "../data/data-atom";
-import { AllMrsState, projectAllMrs, type MrRelevantEvent } from "./all-mergerequests-projection";
+import { AllMrsState, projectAllMrs, isMrRelevantEvent } from "./all-mergerequests-projection";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -50,29 +49,11 @@ export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 
 export const allMrsAtom = appAtomRuntime.atom(
   (get) => {
-    const selectedIndex = get(selectedEventIndexAtom);
-
     return Stream.unwrap(
       Effect.gen(function* () {
-        const baseStream = yield* EventStorage.eventsStream;
-
-        // Apply time-travel limit if needed
-        const stream = selectedIndex === null
-          ? baseStream
-          : baseStream.pipe(Stream.take(selectedIndex + 1));
-
-        // Filter to only MR-relevant events
-        const isMrRelevantEvent = (event: LazyReviewerEvent): event is MrRelevantEvent => {
-          return event.type === 'gitlab-user-mrs-fetched-event' ||
-                 event.type === 'gitlab-project-mrs-fetched-event' ||
-                 event.type === 'gitlab-single-mr-fetched-event' ||
-                 event.type === 'jira-issues-fetched-event' ||
-                 event.type === 'mergerequests-compacted-event';
-        };
-
-        return stream.pipe(
+        return (yield* EventStorage.eventsStream).pipe(
           Stream.filter(isMrRelevantEvent),
-          Stream.groupedWithin(100, "0.1 seconds"),
+          Stream.groupedWithin(100, "0.15 seconds"),
           Stream.scan(
             new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() }),
             (state: AllMrsState, events) =>
@@ -97,25 +78,9 @@ export const allJiraIssuesAtom = Atom.map(
 
 export const openMrsTrackingAtom = appAtomRuntime.atom(
   (get) => {
-    const selectedIndex = get(selectedEventIndexAtom);
-
     return Stream.unwrap(
       Effect.gen(function* () {
-        const baseStream = yield* EventStorage.eventsStream;
-
-        // Apply time-travel limit if needed
-        const stream = selectedIndex === null
-          ? baseStream
-          : baseStream.pipe(Stream.take(selectedIndex + 1));
-
-        const isMrRelevantEvent = (event: LazyReviewerEvent): event is MrRelevantEvent => {
-          return event.type === 'gitlab-user-mrs-fetched-event' ||
-                 event.type === 'gitlab-project-mrs-fetched-event' ||
-                 event.type === 'gitlab-single-mr-fetched-event' ||
-                 event.type === 'mergerequests-compacted-event';
-        };
-
-        return stream.pipe(
+        return (yield* EventStorage.eventsStream).pipe(
           Stream.filter(isMrRelevantEvent),
           Stream.scan(
             initialOpenMrsTrackingState,

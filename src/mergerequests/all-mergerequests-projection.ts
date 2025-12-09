@@ -1,10 +1,11 @@
 
 import { Data } from "effect";
-import { mapBitbucketToGitlabMergeRequest } from "../bitbucket/bitbucket-projections";
-import type { MergeRequestsCompactedEvent } from "../events/event-compaction-events";
+import { projectBitbucketMrsCompactedEvent } from "../bitbucket/bitbucket-projections";
+import type { CompactedEvent } from "../events/event-compaction-events";
+import type { LazyReviewerEvent } from "../events/events";
 import type { GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabUserMergeRequestsFetchedEvent } from "../events/gitlab-events";
 import type { JiraIssuesFetchedEvent } from "../events/jira-events";
-import { projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabProjectMrsFetchedEvent, mapMrFragment } from "../gitlab/gitlab-projections";
+import { projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabMrsCompactedEvent } from "../gitlab/gitlab-projections";
 import type { JiraIssue } from "../jira/jira-schema";
 import { projectJiraIssuesFetchedEvent } from "../jira/jira-service";
 import type { MergeRequest } from "./mergerequest-schema";
@@ -15,7 +16,15 @@ export type MrRelevantEvent =
   | GitlabprojectMergeRequestsFetchedEvent
   | JiraIssuesFetchedEvent
   | GitlabSingleMrFetchedEvent
-  | MergeRequestsCompactedEvent
+  | CompactedEvent
+
+export const isMrRelevantEvent = (event: LazyReviewerEvent): event is MrRelevantEvent => {
+  return event.type === 'gitlab-user-mrs-fetched-event' ||
+    event.type === 'gitlab-project-mrs-fetched-event' ||
+    event.type === 'gitlab-single-mr-fetched-event' ||
+    event.type === 'jira-issues-fetched-event' ||
+    event.type === 'compacted-event'
+}
 
 export class MrStateNotFetched extends Data.TaggedClass("NotFetched")<{}> {}
 
@@ -38,88 +47,86 @@ export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMr
   const currentMap = new Map(state.mrsByGid);
   const currentJiraIssues = new Map(state.jiraIssuesByKey);
 
-  if (event.type === 'gitlab-user-mrs-fetched-event') {
-    const gitlabMrs = projectGitlabUserMrsFetchedEvent(event);
+  switch (event.type)
+  {
+    case 'gitlab-user-mrs-fetched-event': {
+      const gitlabMrs = projectGitlabUserMrsFetchedEvent(event);
 
-    // Update/add each MR to the map
-    gitlabMrs.forEach(gitlabMr => {
-      // No longer enriching with Jira issues directly
-      currentMap.set(gitlabMr.id, gitlabMr);
-    });
+      gitlabMrs.forEach(gitlabMr => currentMap.set(gitlabMr.id, gitlabMr));
 
-    return new AllMrsState({
-      mrsByGid: currentMap,
-      jiraIssuesByKey: currentJiraIssues,
-      timestamp: new Date()
-    });
-  }
-
-  if (event.type === 'gitlab-single-mr-fetched-event') {
-    const gitlabMr = projectGitlabSingleMrFetchedEvent(event);
-    if (gitlabMr) {
-      currentMap.set(gitlabMr.id, gitlabMr);
+      return new AllMrsState({
+        mrsByGid: currentMap,
+        jiraIssuesByKey: currentJiraIssues,
+        timestamp: new Date()
+      });
     }
-    return new AllMrsState({
-      mrsByGid: currentMap,
-      jiraIssuesByKey: currentJiraIssues,
-      timestamp: new Date()
-    });
-  }
 
-  // Handle GitLab project MRs
-  if (event.type === 'gitlab-project-mrs-fetched-event') {
-    const gitlabMrs = projectGitlabProjectMrsFetchedEvent(event);
-
-    gitlabMrs.forEach(gitlabMr => {
-      // No longer enriching with Jira issues directly
-      currentMap.set(gitlabMr.id, gitlabMr);
-    });
-
-    return new AllMrsState({
-      mrsByGid: currentMap,
-      jiraIssuesByKey: currentJiraIssues,
-      timestamp: new Date()
-    });
-  }
-  else if (event.type === 'jira-issues-fetched-event') {
-    const newJiraTickets = projectJiraIssuesFetchedEvent(event);
-
-    newJiraTickets.forEach(ticket => {
-      currentJiraIssues.set(ticket.key, ticket);
-    });
-
-    return new AllMrsState({
-      mrsByGid: currentMap,
-      jiraIssuesByKey: currentJiraIssues,
-      timestamp: state.timestamp // Keep original timestamp
-    });
-  }
-  else if (event.type === "mergerequests-compacted-event") {
-    const newMap = new Map<string, MergeRequest>();
-
-    event.mrs.forEach((rawMr, index) => {
-      // Discriminate by checking for Bitbucket-specific fields (source/destination)
-      if ("source" in rawMr && "destination" in rawMr) {
-        // Bitbucket PR
-        const fullPath = rawMr.destination.repository.full_name;
-        const [workspace = "", repoSlug = ""] = fullPath.split("/");
-        const mr = mapBitbucketToGitlabMergeRequest(rawMr, workspace, repoSlug);
-        newMap.set(mr.id, mr);
-      } else if ("iid" in rawMr && "project" in rawMr) {
-        // GitLab MR (MergeRequestFieldsFragment)
-        const mr = mapMrFragment(rawMr);
-        newMap.set(mr.id, mr);
+    case 'gitlab-single-mr-fetched-event': {
+      const gitlabMr = projectGitlabSingleMrFetchedEvent(event);
+      if (gitlabMr) {
+        currentMap.set(gitlabMr.id, gitlabMr);
       }
-    });
+      return new AllMrsState({
+        mrsByGid: currentMap,
+        jiraIssuesByKey: currentJiraIssues,
+        timestamp: new Date()
+      });
+    }
 
-    return new AllMrsState({
-      mrsByGid: newMap,
-      jiraIssuesByKey: currentJiraIssues,
-      timestamp: new Date(),
-    });
+    case 'gitlab-project-mrs-fetched-event': {
+      const gitlabMrs = projectGitlabProjectMrsFetchedEvent(event);
+
+      gitlabMrs.forEach(gitlabMr => {
+        // No longer enriching with Jira issues directly
+        currentMap.set(gitlabMr.id, gitlabMr);
+      });
+
+      return new AllMrsState({
+        mrsByGid: currentMap,
+        jiraIssuesByKey: currentJiraIssues,
+        timestamp: new Date()
+      });
+    }
+
+    case 'jira-issues-fetched-event': {
+      const newJiraTickets = projectJiraIssuesFetchedEvent(event);
+
+      newJiraTickets.forEach(ticket => {
+        currentJiraIssues.set(ticket.key, ticket);
+      });
+
+      return new AllMrsState({
+        mrsByGid: currentMap,
+        jiraIssuesByKey: currentJiraIssues,
+        timestamp: state.timestamp // Keep original timestamp
+      });
+    }
+
+    case "compacted-event": {
+      const gitlabMrs = projectGitlabMrsCompactedEvent(event);
+      const bitbucketMrs = projectBitbucketMrsCompactedEvent(event);
+
+      var mrsByGid = new Map<string, MergeRequest>(
+        gitlabMrs.concat(bitbucketMrs).map(mr => [mr.id, mr])
+      );
+
+      // Also project Jira issues from the compacted event
+      const newJiraIssues = new Map<string, JiraIssue>();
+      event.jiraIssues.forEach(issue => {
+        newJiraIssues.set(issue.key, issue);
+      });
+
+      return new AllMrsState({
+        mrsByGid: mrsByGid,
+        jiraIssuesByKey: newJiraIssues,
+        timestamp: new Date(),
+      });
+    }
+
+    default:
+      const _: never = event;
+      throw new Error("Unreachable")
   }
-
-  return state;
 };
 
 // Pure projection function for folding events into MR state
@@ -131,7 +138,7 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelev
     if (
       event.forState === key.state &&
       event.forUsernames.length === key.usernames.length &&
-      event.forUsernames.every(u => key.usernames.includes(u))
+      event.forUsernames.every((u: string) => key.usernames.includes(u))
     ) {
       // Project GitLab MRs from the event
       const gitlabMrs = projectGitlabUserMrsFetchedEvent(event)
@@ -159,11 +166,7 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelev
     }
   }
 
-  // Handle JiraIssuesFetchedEvent - enrich existing MRs
   if (event.type === 'jira-issues-fetched-event') {
-    // Since we don't enrich anymore, we just return the state as is,
-    // but we might want to update the timestamp if that's important.
-    // However, the state.data only contains MRs without jiraIssues now.
     return state
   }
 

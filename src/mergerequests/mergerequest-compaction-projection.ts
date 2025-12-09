@@ -1,6 +1,4 @@
-import { Effect, Stream } from "effect"
-import type { MergeRequestsCompactedEvent } from "../events/event-compaction-events"
-import { EventStorage } from "../eventstore/eventStorage"
+import type { CompactedEvent } from "../events/event-compaction-events"
 import type { LazyReviewerEvent } from "../events/events"
 import type { MergeRequestFieldsFragment } from "../graphql/mrs.generated"
 import type { BitbucketPullRequest } from "../bitbucket/bitbucketapi"
@@ -24,7 +22,7 @@ export type CompactedMergeRequestsDependentEvents =
 
 export type CompactedMergeRequestsEvent =
   | CompactedMergeRequestsDependentEvents
-  | MergeRequestsCompactedEvent
+  | CompactedEvent
 
 export interface CompactedMergeRequestEntry {
   mr: MergeRequestFieldsFragment | BitbucketPullRequest
@@ -70,41 +68,45 @@ export const isCompactedMergeRequestsEvent = (event: LazyReviewerEvent): event i
   event.type === 'gitlab-single-mr-fetched-event' ||
   event.type === 'bitbucket-prs-fetched-event' ||
   event.type === 'bitbucket-single-pr-fetched-event' ||
-  event.type === 'mergerequests-compacted-event'
+  event.type === 'compacted-event'
 
 const isGitlabMr = (mr: MergeRequestFieldsFragment | BitbucketPullRequest): mr is MergeRequestFieldsFragment =>
   'iid' in mr && 'project' in mr
+
+const projectMrsToState = (mrs: ReadonlyArray<MergeRequestFieldsFragment | BitbucketPullRequest>): CompactedMergeRequestsState => {
+  const newState = new Map<string, CompactedMergeRequestEntry>()
+  mrs.forEach(mr => {
+    if (isGitlabMr(mr)) {
+      const key = getMrKey(mr.project.fullPath, mr.iid)
+      newState.set(key, {
+        mr,
+        forUsernames: [mr.author?.name || ''],
+        forState: 'all',
+        forProjectPath: mr.project.fullPath,
+        forIid: mr.iid
+      })
+    } else {
+      const repoFullName = mr.destination.repository.full_name
+      const key = getMrKey(repoFullName, mr.id)
+      newState.set(key, {
+        mr,
+        forUsernames: [mr.author.display_name],
+        forState: 'all',
+        forProjectPath: repoFullName,
+        forIid: mr.id
+      })
+    }
+  })
+  return newState
+}
 
 export const projectToCompactedMergeRequestsState = (
   state: CompactedMergeRequestsState,
   event: CompactedMergeRequestsEvent
 ): CompactedMergeRequestsState => {
   switch (event.type) {
-    case 'mergerequests-compacted-event': {
-      const newState = new Map<string, CompactedMergeRequestEntry>()
-      event.mrs.forEach(mr => {
-        if (isGitlabMr(mr)) {
-          const key = getMrKey(mr.project.fullPath, mr.iid)
-          newState.set(key, {
-            mr,
-            forUsernames: [mr.author?.name || ''],
-            forState: 'all',
-            forProjectPath: mr.project.fullPath,
-            forIid: mr.iid
-          })
-        } else {
-          const repoFullName = mr.destination.repository.full_name
-          const key = getMrKey(repoFullName, mr.id)
-          newState.set(key, {
-            mr,
-            forUsernames: [mr.author.display_name],
-            forState: 'all',
-            forProjectPath: repoFullName,
-            forIid: mr.id
-          })
-        }
-      })
-      return newState
+    case 'compacted-event': {
+      return projectMrsToState(event.mrs)
     }
 
     case 'gitlab-user-mrs-fetched-event': {
@@ -201,18 +203,3 @@ export const projectToCompactedMergeRequestsState = (
         throw new Error("unexpected non-exhaustive match")
   }
 }
-
-export const persistCompactedState = (state: CompactedMergeRequestsState) =>
-  Effect.gen(function* () {
-    const mrs = Array.from(state.values()).map(entry => entry.mr)
-
-    const compactedEvent: MergeRequestsCompactedEvent = {
-      type: 'mergerequests-compacted-event' as const,
-      mrs,
-      timestamp: new Date().toISOString()
-    }
-
-    yield* EventStorage.appendEvent(compactedEvent)
-
-    return mrs.length
-  })

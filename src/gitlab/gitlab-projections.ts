@@ -1,8 +1,9 @@
 import type { ProjectMRsQuery } from "../graphql/project-mrs.generated";
 import { extractElabTicketsFromTitle } from "../jira/jira-service";
-import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest, JobHistoryEntry } from "./gitlab-schema";
+import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest, JobHistoryEntry, DiscussionNote } from "./gitlab-schema";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent } from "../events/gitlab-events";
 import type { MergeRequestFieldsFragment, MRsQuery } from "../graphql/mrs.generated";
+import type { CompactedEvent } from "../events/event-compaction-events";
 
 export const mapMrFragment = (
   mr: MergeRequestFieldsFragment)
@@ -48,13 +49,15 @@ export const mapMrFragment = (
       createdAt: new Date(note?.createdAt || ''),
       resolvable: note?.resolvable || false,
       resolved: note?.resolved || false,
+      system: note?.system ?? false,
+      url: note?.url || "",
       position: note?.position ? {
         filePath: note.position.filePath || null,
         newLine: note.position.newLine || null,
         oldLine: note.position.oldLine || null,
         oldPath: note.position.oldPath || null,
       } : null,
-    }))
+    } satisfies DiscussionNote))
   }));
 
   const totalDiscussions = discussions.length;
@@ -105,95 +108,10 @@ export const projectGitlabUserMrsFetchedEvent = (event: GitlabUserMergeRequestsF
 };
 
 export const projectGitlabProjectMrsFetchedEvent = (event: GitlabprojectMergeRequestsFetchedEvent): GitlabMergeRequest[] => {
-  const mapProjectMr = (
-    mr: NonNullable<
-      NonNullable<
-        NonNullable<
-          NonNullable<ProjectMRsQuery['project']>['mergeRequests']
-        >['nodes']
-      >[number]
-    >
-  ): GitlabMergeRequest => {
-    if (!mr) {
-      throw Error("mr null");
-    }
-
-    const pipeline = {
-      stage: mr.headPipeline?.stages?.nodes
-        ?.map(stage => ({
-          name: stage?.name || '',
-          jobs: stage?.jobs?.nodes
-            ?.map(job => ({
-              id: job?.id || '',
-              localId: Number(job?.id.split('/').pop()),
-              name: job?.name || '',
-              status: job?.status || 'CREATED',
-              failureMessage: job?.failureMessage || null,
-              webPath: job?.webPath || null,
-              startedAt: job?.startedAt || '',
-              duration: job?.duration ?? null
-            } satisfies PipelineJob))
-            .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
-            || []
-        })) || []
-    };
-
-    const rawDiscussions = mr.discussions?.nodes || [];
-    const discussions: Discussion[] = rawDiscussions.map(d => ({
-      id: d?.id || '',
-      resolved: d?.resolved || false,
-      resolvable: d?.resolvable || false,
-      notes: (d?.notes?.nodes || []).map(note => ({
-        id: note?.id || '',
-        body: note?.body || '',
-        author: note?.author?.name || '',
-        createdAt: new Date(note?.createdAt || ''),
-        resolvable: note?.resolvable || false,
-        resolved: note?.resolved || false,
-        position: note?.position ? {
-          filePath: note.position.filePath || null,
-          newLine: note.position.newLine || null,
-          oldLine: note.position.oldLine || null,
-          oldPath: note.position.oldPath || null,
-        } : null,
-      }))
-    }));
-
-    const totalDiscussions = discussions.length;
-    const resolvableDiscussions = discussions.filter(d => d.resolvable).length;
-    const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved === true).length;
-    const unresolvedDiscussions = resolvableDiscussions - resolvedDiscussions;
-
-    return {
-      id: mr.id,
-      iid: mr.iid,
-      title: mr.title!,
-      jiraIssueKeys: extractElabTicketsFromTitle(mr.title!),
-      webUrl: mr.webUrl!,
-      sourcebranch: mr.sourceBranch,
-      targetbranch: mr.targetBranch,
-      project: {
-        name: mr.project.name,
-        path: mr.project.path,
-        fullPath: mr.project.fullPath
-      },
-      author: mr.author?.username || '',
-      avatarUrl: mr.author?.avatarUrl || null,
-      createdAt: new Date(mr.createdAt),
-      updatedAt: new Date(mr.updatedAt),
-      state: mr.state,
-      approvedBy: mr!.approvedBy!.nodes!.map(n => ({ id: n!.id || n!.name, name: n!.name, username: n!.username })),
-      resolvableDiscussions,
-      resolvedDiscussions,
-      unresolvedDiscussions,
-      totalDiscussions,
-      discussions,
-      pipeline: pipeline
-    } satisfies GitlabMergeRequest;
-  }
-
   const mrs = event.mrs.project?.mergeRequests?.nodes || [];
-  return mrs.filter(mr => mr !== null).map(mr => mapProjectMr(mr!));
+  return mrs
+    .filter(mr => mr !== null)
+    .map(mr => mapMrFragment(mr));
 };
 
 export const projectGitlabJobTraceFetchedEvent = (event: GitlabJobTraceFetchedEvent): string | null => {
@@ -261,81 +179,15 @@ export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetch
 
 export const projectGitlabSingleMrFetchedEvent = (event: GitlabSingleMrFetchedEvent): GitlabMergeRequest | null => {
   const mr = event.mr.project?.mergeRequest;
-
   if (!mr) {
     return null;
   }
 
-  const pipeline = {
-    stage: mr.headPipeline?.stages?.nodes
-      ?.map(stage => ({
-        name: stage?.name || '',
-        jobs: stage?.jobs?.nodes
-          ?.map(job => ({
-            id: job?.id || '',
-            localId: Number(job?.id.split('/').pop()),
-            name: job?.name || '',
-            status: job?.status || 'CREATED',
-            failureMessage: job?.failureMessage || null,
-            webPath: job?.webPath || null,
-            startedAt: job?.startedAt || '',
-            duration: job?.duration ?? null
-          } satisfies PipelineJob))
-          .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
-          || []
-      })) || []
-  };
-
-  const rawDiscussions = mr.discussions?.nodes || [];
-  const discussions: Discussion[] = rawDiscussions.map(d => ({
-    id: d?.id || '',
-    resolved: d?.resolved || false,
-    resolvable: d?.resolvable || false,
-    notes: (d?.notes?.nodes || []).map(note => ({
-      id: note?.id || '',
-      body: note?.body || '',
-      author: note?.author?.name || '',
-      createdAt: new Date(note?.createdAt || ''),
-      resolvable: note?.resolvable || false,
-      resolved: note?.resolved || false,
-      position: note?.position ? {
-        filePath: note.position.filePath || null,
-        newLine: note.position.newLine || null,
-        oldLine: note.position.oldLine || null,
-        oldPath: note.position.oldPath || null,
-      } : null,
-    }))
-  }));
-
-  const totalDiscussions = discussions.length;
-  const resolvableDiscussions = discussions.filter(d => d.resolvable).length;
-  const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved === true).length;
-  const unresolvedDiscussions = resolvableDiscussions - resolvedDiscussions;
-
-  return {
-    id: mr.id,
-    iid: mr.iid,
-    title: mr.title!,
-    jiraIssueKeys: extractElabTicketsFromTitle(mr.title!),
-    webUrl: mr.webUrl!,
-    sourcebranch: mr.sourceBranch,
-    targetbranch: mr.targetBranch,
-    project: {
-      name: mr.project.name,
-      path: mr.project.path,
-      fullPath: mr.project.fullPath
-    },
-    author: mr.author?.username || '',
-    avatarUrl: mr.author?.avatarUrl || null,
-    createdAt: new Date(mr.createdAt),
-    updatedAt: new Date(mr.updatedAt),
-    state: mr.state,
-    approvedBy: mr!.approvedBy!.nodes!.map(n => ({ id: n!.id || n!.name, name: n!.name, username: n!.username })),
-    resolvableDiscussions,
-    resolvedDiscussions,
-    unresolvedDiscussions,
-    totalDiscussions,
-    discussions,
-    pipeline: pipeline
-  } satisfies GitlabMergeRequest;
+  return mapMrFragment(mr);
 };
+
+export const projectGitlabMrsCompactedEvent = (event: CompactedEvent): GitlabMergeRequest[] => {
+  // Discriminate by checking for gitlab-specific field
+  const mrs: MergeRequestFieldsFragment[] = event.mrs.filter(mr => "discussions" in mr);
+  return mrs.map(mr => mapMrFragment(mr));
+}

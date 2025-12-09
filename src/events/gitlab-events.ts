@@ -7,9 +7,11 @@ import type { ProjectMRsQuery } from "../graphql/project-mrs.generated";
 import type { SingleMrQuery } from "../graphql/single-mr.generated";
 import type { ProjectPipelinesJobHistoryQuery } from "../graphql/project-pipelines-job-history.generated";
 import { MRsQuerySchema } from "../graphql/schemas/mrs.schema";
+import { EventIdSchema } from "./event-id";
 
 // GitLab event schemas
 const GitlabUserMergeRequestsFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('gitlab-user-mrs-fetched-event'),
   mrs: MRsQuerySchema,
   forUsernames: Schema.Array(Schema.String),
@@ -20,6 +22,7 @@ const GitlabUserMergeRequestsFetchedEventSchema = Schema.Struct({
 export type GitlabUserMergeRequestsFetchedEvent = Schema.Schema.Type<typeof GitlabUserMergeRequestsFetchedEventSchema>
 
 const GitlabProjectMergeRequestsFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('gitlab-project-mrs-fetched-event'),
   mrs: Schema.Unknown,
   forProjectPath: Schema.String,
@@ -33,6 +36,7 @@ export interface GitlabprojectMergeRequestsFetchedEvent extends Schema.Schema.Ty
 }
 
 const GitlabSingleMrFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('gitlab-single-mr-fetched-event'),
   mr: Schema.Unknown,
   forProjectPath: Schema.String,
@@ -45,6 +49,7 @@ export interface GitlabSingleMrFetchedEvent extends Schema.Schema.Type<typeof Gi
 }
 
 const GitlabJobTraceFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('gitlab-jobtrace-fetched-event'),
   jobTrace: Schema.String,
   forProjectId: Schema.String,
@@ -55,6 +60,7 @@ const GitlabJobTraceFetchedEventSchema = Schema.Struct({
 export type GitlabJobTraceFetchedEvent = Schema.Schema.Type<typeof GitlabJobTraceFetchedEventSchema>
 
 const GitlabPipelineFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('gitlab-pipeline-fetched-event'),
   pipeline: Schema.Unknown,
   forProjectPath: Schema.String,
@@ -67,6 +73,7 @@ export interface GitlabPipelineFetchedEvent extends Schema.Schema.Type<typeof Gi
 }
 
 const GitlabJobHistoryFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
   type: Schema.Literal('gitlab-jobhistory-fetched-event'),
   jobHistory: Schema.Unknown,
   forProjectPath: Schema.String,

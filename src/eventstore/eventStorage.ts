@@ -21,24 +21,27 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     )
 
     const parseFilename = (filename: string) => {
-      // Format: {number}_{timestamp}_{event-type}.json
-      // Example: 5_2025-11-08T14-30-25.123Z_gitlab-user-mrs-fetched-event.json
-      const match = filename.match(/^(\d+)_(.+?)_(.+)\.json$/)
+      // Format: {number}_{eventId}.json
+      // Example: 5_2025-11-08T14-30-25-123Z_gitlab-user-mrs-fetched-event_a1b2c3d4.json
+      const match = filename.match(/^(\d+)_(.+)\.json$/)
       if (!match) return null
 
       const numberStr = match[1]
-      const timestamp = match[2]
-      const eventType = match[3]
+      const eventId = match[2]
 
-      if (!numberStr || !timestamp || !eventType) return null
+      if (!numberStr || !eventId) return null
 
       const eventNumber = parseInt(numberStr, 10)
 
       if (isNaN(eventNumber)) return null
 
+      // Extract event type from eventId (format: timestamp_type_random)
+      const eventIdParts = eventId.split('_')
+      const eventType = eventIdParts.length >= 2 ? eventIdParts.slice(1, -1).join('_') : undefined
+
       return {
         eventNumber,
-        timestamp: timestamp.replace(/-/g, ':'), // Convert back to ISO format
+        eventId,
         eventType,
         filename
       }
@@ -60,7 +63,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
       // Find the LAST compaction event (highest event number)
       const lastCompactionIndex = parsedFiles.findLastIndex(
-        parsed => parsed.eventType === 'mergerequests-compacted-event'
+        parsed => parsed.eventType === 'compacted-event'
       )
 
       // Load only from last compaction onwards if requested
@@ -117,11 +120,8 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
         ? Math.max(...eventNumbers) + 1
         : 0
 
-      // Use timestamp from event
-      const fileTimestamp = event.timestamp.replace(/:/g, '-') // "2025-11-08T14-30-25.123Z"
-
-      // Create filename
-      const filename = `${nextNumber}_${fileTimestamp}_${event.type}.json`
+      // Create filename using eventId
+      const filename = `${nextNumber}_${event.eventId}.json`
       const filePath = path.join(eventsDir, filename)
 
       // Write event to file
