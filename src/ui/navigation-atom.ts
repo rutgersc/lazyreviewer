@@ -31,3 +31,10 @@ export const cycleInfoPaneTabAtom = Atom.writable(
     ctx.set(infoPaneTabAtom, newTab);
   }
 );
+
+export const nowAtom = Atom.readable(
+  () => new Date(),
+  (refresh) => {
+    setInterval(() => refresh(nowAtom), 60_000);
+  }
+);

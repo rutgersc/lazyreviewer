@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useKeyboard } from '@opentui/react';
 import { useAtom, useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
-import { activePaneAtom, infoPaneTabAtom } from '../ui/navigation-atom';
+import { activePaneAtom, infoPaneTabAtom, nowAtom } from '../ui/navigation-atom';
 import { targetNoteIdAtom } from './ActivityLog';
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
 import { allEventsIncludingCompactedAtom, compactAllEventsAtom } from '../events/events-atom';
@@ -152,6 +152,7 @@ export default function FactsPane() {
   const setSelectedJiraSubIndex = useAtomSet(selectedJiraSubIndexAtom);
   const { scroll: scrollJira } = useJiraScroll();
   const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
+  const now = useAtomValue(nowAtom);
 
   const lastCompactionIndex = allEvents.findLastIndex(
     event => event.type === 'compacted-event'
@@ -653,7 +654,6 @@ export default function FactsPane() {
                 selectMrForChange(change);
             };
             const formatRelativeTime = (date: Date) => {
-              const now = new Date();
               const diffMs = now.getTime() - date.getTime();
               const diffMins = Math.floor(diffMs / 60000);
               const diffHours = Math.floor(diffMs / 3600000);
