@@ -99,8 +99,7 @@ export default function App() {
           // openSettingsFile();
         } else {
           const mr = await refreshMergeRequests();
-          Console.Console.pipe(
-            Effect.flatMap(_ => _.log(mr)),
+          Console.log(mr).pipe(
             Effect.provide(consoleLoggedLayer),
             Effect.runPromise
           );

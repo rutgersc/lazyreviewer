@@ -188,7 +188,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     }).pipe(
       Effect.catchAllCause((cause) =>
         Effect.gen(function* () {
-          yield* (yield* Console.Console).error("Error refreshing merge requests:", cause)
+          yield* Console.error("Error refreshing merge requests:", cause)
         })
       )
     );

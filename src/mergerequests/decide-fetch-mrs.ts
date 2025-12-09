@@ -1,4 +1,4 @@
-import { Effect, Data } from "effect"
+import { Effect, Data, Console } from "effect"
 import type { PlatformError } from "@effect/platform/Error"
 import type { ParseError } from "effect/ParseResult"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
@@ -46,6 +46,7 @@ export const decideFetchUserMrs = (
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
+  yield* Console.log("hello")
   const mrEvent = yield* getGitlabMrsAsEvent(usernames, state)
   yield* EventStorage.appendEvent(mrEvent)
 

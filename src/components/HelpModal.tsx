@@ -215,8 +215,7 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
     onRefresh: async () => {
       setActiveModal('none');
       const mr = await refreshMergeRequests();
-      Console.Console.pipe(
-        Effect.flatMap(_ => _.log(mr)),
+      Console.log(mr).pipe(
         Effect.provide(consoleLoggedLayer),
         Effect.runPromise
       );

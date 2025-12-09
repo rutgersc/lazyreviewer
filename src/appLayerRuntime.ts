@@ -1,5 +1,5 @@
 import { Path } from "@effect/platform"
-import { Layer, DefaultServices, Effect, Runtime, Scope } from "effect"
+import { Layer, Effect, Runtime, Scope } from "effect"
 import * as FileSystem from "@effect/platform-node/NodeFileSystem"
 import * as CommandExecutor from "@effect/platform-node/NodeCommandExecutor"
 import { LogStorage } from "./logging/logStorage"
@@ -18,9 +18,10 @@ const logStorageLayer = LogStorage.Default.pipe(
   Layer.provide(fileSystemLayer)
 )
 
+// ConsoleLogged sets the Console in the FiberRef (via Console.setConsole)
+// so Console.log() etc use our wrapped console. It requires LogStorage.
 export const consoleLoggedLayer = ConsoleLogged.pipe(
-  Layer.provide(logStorageLayer),
-  Layer.provide(Layer.succeedContext(DefaultServices.liveServices))
+  Layer.provide(logStorageLayer)
 )
 
 const eventStorageLayer = EventStorage.Default.pipe(

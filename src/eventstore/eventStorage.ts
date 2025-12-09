@@ -9,7 +9,6 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
   effect: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem
     const path = yield* Path.Path
-    const console = yield* Console.Console;
 
     const eventsDir = path.join(EVENTS_DIR)
 
@@ -48,7 +47,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     }
 
     const loadEventsImpl = (fromLastCompaction: boolean) => Effect.gen(function* () {
-      yield* console.log(`[EventStorage] loading ${fromLastCompaction ? 'from last compaction' : 'all events'}..`)
+      yield* Console.log(`[EventStorage] loading ${fromLastCompaction ? 'from last compaction' : 'all events'}..`)
 
       // Read directory
       const files = yield* fs.readDirectory(eventsDir).pipe(
@@ -71,7 +70,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
         ? parsedFiles.slice(lastCompactionIndex)
         : parsedFiles
 
-      yield* console.log(
+      yield* Console.log(
         `[EventStorage] Found ${parsedFiles.length} total events, ` +
         `loading ${eventsToLoad.length}`
       )
@@ -93,7 +92,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
           }).pipe(
             Effect.catchAll((error) =>
               Effect.gen(function* () {
-                yield* console.log(`Failed to load event file ${parsed.filename}: ${error}`)
+                yield* Console.log(`Failed to load event file ${parsed.filename}: ${error}`)
                 return null
               })
             )
