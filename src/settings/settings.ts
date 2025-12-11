@@ -12,6 +12,7 @@ export interface NotificationSettings {
   syncIntervalSeconds: number;
   syncUserSelectionEntryId?: string;
   lastProcessedEventId?: string;
+  lastRefreshTimestamp?: string; // ISO date string of when the last background refresh occurred
 }
 
 export interface Settings {

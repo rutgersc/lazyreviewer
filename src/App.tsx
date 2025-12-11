@@ -23,7 +23,7 @@ import { toggleNotificationsAtom, notificationSettingsAtom } from './settings/se
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { Console, Effect } from 'effect';
 import { consoleLoggedLayer } from './appLayerRuntime';
-import { backgroundFetchAtom, notificationStreamAtom } from './notifications/notification-sync-atom';
+import { notificationStreamAtom } from './notifications/notification-sync-atom';
 import { clearUnreadCount } from './notifications/title-indicator';
 
 export default function App() {
@@ -51,7 +51,6 @@ export default function App() {
     return issue ? [issue] : [];
   }) || [];
 
-  useAtomValue(backgroundFetchAtom);
   useAtomValue(notificationStreamAtom);
 
   useEffect(() => {

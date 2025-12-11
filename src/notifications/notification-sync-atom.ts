@@ -1,5 +1,5 @@
 import { Atom, Result } from '@effect-atom/atom-react';
-import { Effect, Stream, Console } from 'effect';
+import { Effect, Stream, Console, Option } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserAtom } from '../settings/settings-atom';
 import { userSelectionsByIdAtom } from '../userselection/userselection-atom';
@@ -13,60 +13,119 @@ import { incrementUnreadCount } from './title-indicator';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
 
+export type BackgroundSyncStatus =
+  | { _tag: 'syncPending'; nextRefreshDate: Date }
+  | { _tag: 'syncPerformed' }
+  | { _tag: 'syncDisabled' };
+
+// Module-level semaphore (mutex) to ensure only one sync loop iteration runs at a time
+const syncLoopMutex = Effect.unsafeMakeSemaphore(1);
+
+// Debug: track stream instances
+let streamInstanceCounter = 0;
+
 /**
- * Background fetch scheduler - periodically fetches MRs for configured syncUserSelectionEntryId
+ * Computes the current sync status based on settings.
+ * Returns the status and whether a fetch should be performed.
+ */
+const computeSyncStatus = (get: Atom.Context): { status: BackgroundSyncStatus; shouldFetch: boolean; matchingSelection?: ReturnType<typeof extractSelectionData> extends infer T ? T : never } => {
+  const settingsResult = get.registry.get(settingsAtom);
+  const settings = Result.match(settingsResult, {
+    onInitial: () => null,
+    onFailure: () => null,
+    onSuccess: (s) => s.value
+  });
+
+  const userSelectionsById = get.registry.get(userSelectionsByIdAtom);
+  const matchingSelection = settings?.notifications.enabled
+    ? userSelectionsById.get(settings.notifications.syncUserSelectionEntryId!)
+    : undefined;
+
+  if (!settings || !settings.notifications.enabled || !matchingSelection) {
+    return { status: { _tag: 'syncDisabled' }, shouldFetch: false };
+  }
+
+  // Use loadSettings() directly to get fresh data from disk
+  const freshSettings = loadSettings();
+  const lastRefreshTimestamp = freshSettings.notifications.lastRefreshTimestamp;
+  const syncIntervalMs = settings.notifications.syncIntervalSeconds * 1000;
+  const now = Date.now();
+
+  const lastRefreshTime = lastRefreshTimestamp
+    ? new Date(lastRefreshTimestamp).getTime()
+    : 0;
+
+  const timeUntilNextRefresh = syncIntervalMs - (now - lastRefreshTime);
+
+  if (timeUntilNextRefresh > 0) {
+    return {
+      status: { _tag: 'syncPending', nextRefreshDate: new Date(lastRefreshTime + syncIntervalMs) },
+      shouldFetch: false
+    };
+  }
+
+  const groups = get.registry.get(groupsAtom);
+  const cacheKey = extractSelectionData(matchingSelection, groups, 'opened');
+
+  return {
+    status: { _tag: 'syncPending', nextRefreshDate: new Date(lastRefreshTime + syncIntervalMs) },
+    shouldFetch: true,
+    matchingSelection: cacheKey
+  };
+};
+
+/**
+ * Background fetch scheduler - emits BackgroundSyncStatus every 5 seconds.
+ * Uses a mutex to ensure only one iteration runs at a time across all instances.
  */
 const backgroundFetchStream = Effect.fn("backgroundFetchStream")(function* (get: Atom.Context) {
+  const instanceId = ++streamInstanceCounter;
+  yield* Console.log(`[BackgroundSync] Stream instance #${instanceId} CREATED`);
+
+  // Register finalizer to log when this stream instance is disposed
+  get.addFinalizer(() => {
+    console.log(`[BackgroundSync] Stream instance #${instanceId} DISPOSED`);
+  });
+
   return Stream.repeatEffect(
-    Effect.gen(function* () {
-      const settingsResult = get.registry.get(settingsAtom);
-      const settings = Result.match(settingsResult, {
-        onInitial: () => null,
-        onFailure: () => null,
-        onSuccess: (s) => s.value
-      });
+    // Wrap entire iteration in mutex - if another instance is running, this one waits
+    syncLoopMutex.withPermits(1)(
+      Effect.gen(function* () {
+        const { status, shouldFetch, matchingSelection } = computeSyncStatus(get);
 
-      if (!settings || !settings.notifications.enabled) {
-        yield* Effect.sleep('30 seconds');
-        return;
-      }
+        if (!shouldFetch) {
+          const sleepTime = status._tag === 'syncDisabled' ? '30 seconds' : '5 seconds';
+          yield* Effect.sleep(sleepTime);
+          return status;
+        }
 
-      const syncUserSelectionEntryId = settings.notifications.syncUserSelectionEntryId;
-      if (!syncUserSelectionEntryId) {
-        yield* Console.error('[BackgroundSync] syncUserSelectionEntryId not configured');
-        yield* Effect.sleep('30 seconds');
-        return;
-      }
+        // Time to perform the fetch
+        yield* Console.log(`[BackgroundSync] Fetching MRs...`);
 
-      const userSelectionsById = get.registry.get(userSelectionsByIdAtom);
-      const matchingSelection = userSelectionsById.get(syncUserSelectionEntryId);
+        yield* Effect.catchAllCause(
+          matchingSelection!._tag === 'UserMRs'
+            ? decideFetchUserMrs(matchingSelection!.usernames as string[], 'opened')
+            : decideFetchProjectMrs(matchingSelection!.projectPath, 'opened'),
+          (cause) => Console.error('[BackgroundSync] Fetch failed:', cause)
+        );
 
-      if (!matchingSelection) {
-        yield* Console.error(`[BackgroundSync] No userSelection for id "${syncUserSelectionEntryId}"`);
-        yield* Effect.sleep('30 seconds');
-        return;
-      }
+        // Update the lastRefreshTimestamp in settings
+        const currentSettings = loadSettings();
+        currentSettings.notifications.lastRefreshTimestamp = new Date().toISOString();
+        saveSettings(currentSettings);
 
-      const groups = get.registry.get(groupsAtom);
-      const cacheKey = extractSelectionData(matchingSelection, groups, 'opened');
+        // Sleep before next check
+        yield* Effect.sleep('5 seconds');
 
-      yield* Console.log(`[BackgroundSync] Fetching MRs for "${matchingSelection.name}"`);
-
-      yield* Effect.catchAllCause(
-        cacheKey._tag === 'UserMRs'
-          ? decideFetchUserMrs(cacheKey.usernames as string[], 'opened')
-          : decideFetchProjectMrs(cacheKey.projectPath, 'opened'),
-        (cause) => Console.error('[BackgroundSync] Fetch failed:', cause)
-      );
-
-      yield* Effect.sleep(`${settings.notifications.syncIntervalSeconds} seconds`);
-    })
+        return { _tag: 'syncPerformed' } as BackgroundSyncStatus;
+      })
+    )
   );
 });
 
 export const backgroundFetchAtom = appAtomRuntime.atom(
   (get) => Stream.unwrap(backgroundFetchStream(get)),
-  { initialValue: undefined }
+  { initialValue: { _tag: 'syncDisabled' } as BackgroundSyncStatus }
 ).pipe(Atom.keepAlive);
 
 
