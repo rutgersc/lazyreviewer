@@ -21,6 +21,8 @@ import { writeFileSync } from 'fs';
 import { join } from 'path';
 import type { JiraIssue } from "../jira/jira-service";
 import { selectedUserSelectionEntryAtom, userSelectionsAtom } from "../userselection/userselection-atom";
+import { allEventsIncludingCompactedAtom } from "../events/events-atom";
+import type { LazyReviewerEvent } from "../events/events";
 import { groupsAtom } from "../data/data-atom";
 import { AllMrsState, projectAllMrs, isMrRelevantEvent } from "./all-mergerequests-projection";
 
@@ -146,22 +148,70 @@ export const filteredMrsAtom = Atom.make((get) => {
 export const mergeRequestsAtom = Atom.make((get) => Result.success(get(filteredMrsAtom)));
 export const unwrappedMergeRequestsAtom = filteredMrsAtom;
 
-// Extract timestamp from global MR state
-export const lastRefreshTimestampAtom = Atom.map(
-  allMrsAtom,
-  (result) => Result.map(result, (state: AllMrsState) => state.timestamp)
-);
+// Helper to check if two arrays of usernames match (same set of users)
+const usernamesMatch = (eventUsernames: readonly string[], selectionUsernames: readonly string[]): boolean => {
+  if (eventUsernames.length !== selectionUsernames.length) return false;
+  const sortedEvent = [...eventUsernames].sort();
+  const sortedSelection = [...selectionUsernames].sort();
+  return sortedEvent.every((username, i) => username === sortedSelection[i]);
+};
 
-export const unwrappedLastRefreshTimestampAtom = Atom.map(
-  lastRefreshTimestampAtom,
-  (result): Date | null => {
-    return Result.match(result, {
-      onInitial: () => null,
-      onFailure: () => null,
-      onSuccess: (timestamp) => timestamp.value
-    })
+// Helper to extract usernames from a selection entry
+const extractUsernames = (
+  selectionEntry: { selection: readonly import("../userselection/userSelection").UserOrGroupId[] },
+  groups: readonly import("../userselection/userSelection").UserGroup[]
+): string[] => {
+  const usernames: string[] = [];
+
+  const processId = (id: import("../userselection/userSelection").UserOrGroupId) => {
+    if (id.type === 'userId') {
+      usernames.push(id.id);
+    } else if (id.type === 'groupId') {
+      const group = groups.find(g => g.id.id === id.id);
+      if (group) {
+        group.children.forEach(processId);
+      }
+    }
+    // repositoryId is ignored for username matching
+  };
+
+  selectionEntry.selection.forEach(processId);
+  return usernames;
+};
+
+// Find the last refresh timestamp for the current selection + state
+export const lastRefreshTimestampAtom = Atom.make((get): Date | null => {
+  const selectionEntry = get(selectedUserSelectionEntryAtom);
+  if (!selectionEntry) return null;
+
+  const filterMrState = get(filterMrStateAtom);
+  const groupsList = get(groupsAtom);
+  const events = Result.match(get(allEventsIncludingCompactedAtom), {
+    onInitial: () => [] as LazyReviewerEvent[],
+    onSuccess: (e) => e.value,
+    onFailure: () => [] as LazyReviewerEvent[]
+  });
+
+  const selectionUsernames = extractUsernames(selectionEntry, groupsList);
+
+  // Find the most recent matching event (events are in chronological order, so search from end)
+  for (let i = events.length - 1; i >= 0; i--) {
+    const event = events[i];
+    if (!event) continue;
+
+    if (event.type === 'gitlab-user-mrs-fetched-event') {
+      // Check if usernames and state match
+      if (event.forState === filterMrState && usernamesMatch(event.forUsernames, selectionUsernames)) {
+        return new Date(event.timestamp);
+      }
+    }
+    // TODO: Add support for gitlab-project-mrs-fetched-event if needed
   }
-);
+
+  return null;
+});
+
+export const unwrappedLastRefreshTimestampAtom = lastRefreshTimestampAtom;
 
 // Derived: compute loading state
 export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
