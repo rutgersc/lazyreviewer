@@ -150,15 +150,15 @@ const detectMergerequestChanges = (
   latestGitlabMrs: GitlabMergeRequest[]
 ): MrProjectionResult => {
 
-  const determineMrStatusChange = (stateDelta: string | undefined, mrInfo: MrInfo, changedAt: Date): MrChange | undefined => {
+  const determineMrStatusChange = (stateDelta: string | undefined, mrInfo: MrInfo, updatedAt: Date): MrChange | undefined => {
     if (stateDelta === 'opened') {
-      return { type: 'new-mr', mr: mrInfo, changedAt: changedAt };
+      return { type: 'new-mr', mr: mrInfo, changedAt: updatedAt };
     } else if (stateDelta === 'merged') {
-      return { type: 'merged-mr', mr: mrInfo, changedAt: changedAt };
+      return { type: 'merged-mr', mr: mrInfo, changedAt: updatedAt };
     } else if (stateDelta === 'closed') {
-      return { type: 'closed-mr', mr: mrInfo, changedAt: changedAt };
+      return { type: 'closed-mr', mr: mrInfo, changedAt: updatedAt };
     } else if (stateDelta === 'reopened') {
-      return { type: 'reopened-mr', mr: mrInfo, changedAt: changedAt };
+      return { type: 'reopened-mr', mr: mrInfo, changedAt: updatedAt };
     }
   }
 
@@ -251,7 +251,7 @@ const detectMergerequestChanges = (
 
     if (delta.stateDelta !== undefined || delta.commentsDelta.size > 0) {
       const mrInfo: MrInfo = { mrId: delta.mrId, mrName: mr?.title ?? "unknown", mrAuthor: mr.author };
-      const mrStatusChange = determineMrStatusChange(delta.stateDelta, mrInfo, mr.createdAt);
+      const mrStatusChange = determineMrStatusChange(delta.stateDelta, mrInfo, mr.updatedAt);
       const noteChanges = [...delta.commentsDelta].map((noteId) => {
         const found = mr ? findNoteById(mr, noteId) : undefined;
         return determineNoteChange(noteId, found?.discussionId ?? '', found?.note, mrInfo);

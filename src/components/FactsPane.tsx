@@ -50,13 +50,13 @@ function getChangeDescription(change: Change): { badge: string; color: string; t
     case 'new-mr':
       return { badge: '📋', color: '#50fa7b', text: `New: ${change.mr.mrName} (${change.mr.mrAuthor})` };
     case 'merged-mr':
-      return { badge: '✓', color: '#bd93f9', text: `Merged: ${change.mr.mrName}` };
+      return { badge: '✓ ', color: '#bd93f9', text: `Merged: ${change.mr.mrName}` };
     case 'closed-mr':
       return { badge: '✗', color: '#ff5555', text: `Closed: ${change.mr.mrName}` };
     case 'reopened-mr':
       return { badge: '↻', color: '#ffb86c', text: `Reopened: ${change.mr.mrName}` };
     case 'system-note':
-      return { badge: '⚙', color: '#6272a4', text: `${change.author}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
+      return { badge: '⚙ ', color: '#6272a4', text: `${change.author}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
     case 'diff-comment':
       const lineInfo = change.line ? `:${change.line}` : '';
       const fileName = change.filePath.split('/').pop() ?? change.filePath;
@@ -424,7 +424,7 @@ export default function FactsPane() {
         }
     } else if (key.name === 'e') {
         const eventIndex = highlightedIndex ?? events.length - 1;
-        setCompactionMessage('Opening event in editor...');
+        setCompactionMessage(highlightedIndex + 'Opening event in editor...');
         try {
             const filePath = await Effect.runPromise(
               EventStorage.getEventFilePath(eventIndex).pipe(
@@ -614,7 +614,7 @@ export default function FactsPane() {
                 backgroundColor = '#3a3d4e';
             }
 
-            const displayIndex = originalIndex.toString(); //.padEnd(4, ' ');
+            const displayIndex = ' ' + originalIndex.toString().padEnd(4, ' ');
             const summary = getDeltaOrDefault(event);
             const hasSummary = summary.length > 0;
 
@@ -673,10 +673,10 @@ export default function FactsPane() {
                 <box key={group.event.eventId} id={group.event.eventId} flexDirection="column" width="100%">
                     <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
                         <text fg={color} bg={backgroundColor} wrapMode="word">
-                            {' '}{displayIndex}
+                            {displayIndex}
                         </text>
                         <text fg={color} bg={backgroundColor} wrapMode="word">
-                            {` > ${event.type}`}
+                            {`>> ${event.type}`}
                         </text>
                     </box>
                     {!hasSummary && (
