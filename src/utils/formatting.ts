@@ -1,5 +1,4 @@
-export const formatCompactTime = (date: Date): string => {
-  const now = new Date();
+export const formatCompactTime = (date: Date, now: Date = new Date()): string => {
   const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));

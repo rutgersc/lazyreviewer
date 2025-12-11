@@ -19,7 +19,7 @@ import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
 import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom } from "../mergerequests/mergerequests-atom";
-import { activePaneAtom, activeModalAtom } from "../ui/navigation-atom";
+import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom";
 import { currentUserAtom } from "../settings/settings-atom";
 import { getSingleMr } from "../gitlab/gitlab-graphql";
 import { Effect, Runtime } from "effect";
@@ -80,11 +80,13 @@ const formatTimeUntil = (targetDate: Date): string => {
 const TimeColumnAuthorTitle = ({
   mr,
   isMyMr,
-  isOutOfDate
+  isOutOfDate,
+  now
 }: {
   mr: MergeRequest;
   isMyMr: boolean;
   isOutOfDate: boolean;
+  now: Date;
 }) => (
   <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
     <box style={{ width: 3 }}>
@@ -92,7 +94,7 @@ const TimeColumnAuthorTitle = ({
         style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
         wrapMode='none'
       >
-        {formatCompactTime(mr.updatedAt)}
+        {formatCompactTime(mr.updatedAt, now)}
       </text>
     </box>
 
@@ -176,7 +178,7 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
   );
 };
 
-const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap, jiraIssuesMap }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue> }) => {
+const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap, jiraIssuesMap, now }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue>; now: Date }) => {
   const currentUser = useAtomValue(currentUserAtom);
   const seenMergeRequests = useAtomValue(seenMergeRequestsAtom);
   const isSeen = seenMergeRequests.has(mr.id);
@@ -197,7 +199,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
           style={{ fg: getCreatedDateColor(createdAt), attributes: TextAttributes.DIM }}
           wrapMode='none'
         >
-          {formatCompactTime(createdAt)}
+          {formatCompactTime(createdAt, now)}
         </text>
       </box>
 
@@ -347,12 +349,14 @@ const IgnoredMergeRequestRow = ({
   mr,
   isActiveInLocalRepo,
   repoColor,
-  isMyMr
+  isMyMr,
+  now
 }: {
   mr: MergeRequest;
   isActiveInLocalRepo: boolean;
   repoColor?: string;
   isMyMr: boolean;
+  now: Date;
 }) => {
   const projectColor = repoColor || Colors.SUCCESS;
 
@@ -364,7 +368,7 @@ const IgnoredMergeRequestRow = ({
             style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
             wrapMode='none'
           >
-            {formatCompactTime(mr.updatedAt)}
+            {formatCompactTime(mr.updatedAt, now)}
           </text>
         </box>
 
@@ -390,7 +394,7 @@ const IgnoredMergeRequestRow = ({
             style={{ fg: getCreatedDateColor(mr.createdAt), attributes: TextAttributes.DIM }}
             wrapMode='none'
           >
-            {formatCompactTime(mr.createdAt)}
+            {formatCompactTime(mr.createdAt, now)}
           </text>
         </box>
 
@@ -480,6 +484,7 @@ export default function MergeRequestPane({}: {}) {
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
   const { missingIds, reconcile, isReconciling } = useReconcileMissingMrs();
   const backgroundSyncStatus = useAtomValue(backgroundFetchAtom);
+  const now = useAtomValue(nowAtom);
 
   const allMrs = useAtomValue(allMrsAtom);
   const openMrs = useAtomValue(missingMrsDiffAtom);
@@ -763,7 +768,7 @@ export default function MergeRequestPane({}: {}) {
       {!isLoading && lastRefreshTimestamp && (
         <box style={{ flexDirection: "row", alignItems: "center", gap: 1, marginTop: 1 }}>
           <text style={{ fg: Colors.SUPPORTING }} wrapMode="none">
-            Last refreshed: {formatCompactTime(lastRefreshTimestamp)} ago
+            Last refreshed: {formatCompactTime(lastRefreshTimestamp, now)} ago
           </text>
           <text
              onMouseDown={() => refreshMergeRequests()}
@@ -854,11 +859,11 @@ export default function MergeRequestPane({}: {}) {
               }}
             >
               {isIgnored ? (
-                <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} isMyMr={isMyMr} />
+                <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} isMyMr={isMyMr} now={now} />
               ) : (
                 <>
-                  <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} />
-                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} />
+                  <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} now={now} />
+                  <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} />
                 </>
               )}
             </box>
