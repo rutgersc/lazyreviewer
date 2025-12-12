@@ -11,7 +11,7 @@ import { EventStorage } from '../eventstore/eventStorage';
 import { openFileInEditor } from '../utils/open-file';
 import { appLayer } from '../appLayerRuntime';
 import { Effect } from 'effect';
-import { allMrsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, filterMrStateAtom } from '../mergerequests/mergerequests-atom';
+import { allMrsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, filterMrStateAtom, isMergeRequestsLoadingAtom } from '../mergerequests/mergerequests-atom';
 import type { MergeRequestState } from '../graphql/generated/gitlab-base-types';
 import { userSelectionsAtom } from '../userselection/userselection-atom';
 import { groupsAtom } from '../data/data-atom';
@@ -171,6 +171,7 @@ export default function FactsPane() {
   const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
   const now = useAtomValue(nowAtom);
   const backgroundSyncStatus = useAtomValue(backgroundFetchAtom);
+  const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
 
   const lastCompactionIndex = allEvents.findLastIndex(
     event => event.type === 'compacted-event'
@@ -535,7 +536,11 @@ export default function FactsPane() {
                     <text fg="#44475a" wrapMode="none">{'│    LazyGitLab 🦊    │'}</text>
                     <text fg="#44475a" wrapMode="none">{'│     Event Log       │'}</text>
                     <text fg="#44475a" wrapMode="none">{'╰─────────────────────╯'}</text>
-                    {Result.isSuccess(backgroundSyncStatus) && backgroundSyncStatus.value._tag === 'syncPending' && (
+                    {isLoading ? (
+                        <text fg="#8be9fd" wrapMode="none">
+                            refreshing...
+                        </text>
+                    ) : Result.isSuccess(backgroundSyncStatus) && backgroundSyncStatus.value._tag === 'syncPending' && (
                         <text fg="#6272a4" wrapMode="none">
                             refreshing {`${backgroundSyncStatus.value.userSelection.name}`} in {formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}
                         </text>
