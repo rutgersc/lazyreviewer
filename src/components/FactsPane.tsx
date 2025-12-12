@@ -25,6 +25,23 @@ import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../jira/jira-at
 import { useJiraScroll } from '../hooks/useJiraScroll';
 import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
+import { backgroundFetchAtom } from '../notifications/notification-sync-atom';
+
+const formatTimeUntil = (targetDate: Date): string => {
+  const now = Date.now();
+  const diffMs = targetDate.getTime() - now;
+
+  if (diffMs <= 0) return 'now';
+
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+};
 
 const isMrChange = (change: Change): change is MrChange => {
   switch (change.type) {
@@ -48,7 +65,7 @@ const isMrChange = (change: Change): change is MrChange => {
 function getChangeDescription(change: Change): { badge: string; color: string; text: string } {
   switch (change.type) {
     case 'new-mr':
-      return { badge: '📋', color: '#50fa7b', text: `New: ${change.mr.mrName} (${change.mr.mrAuthor})` };
+      return { badge: '📋', color: '#50fa7b', text: `New MR: ${change.mr.mrName} (${change.mr.mrAuthor})` };
     case 'merged-mr':
       return { badge: '✓ ', color: '#bd93f9', text: `Merged: ${change.mr.mrName}` };
     case 'closed-mr':
@@ -153,6 +170,7 @@ export default function FactsPane() {
   const { scroll: scrollJira } = useJiraScroll();
   const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
   const now = useAtomValue(nowAtom);
+  const backgroundSyncStatus = useAtomValue(backgroundFetchAtom);
 
   const lastCompactionIndex = allEvents.findLastIndex(
     event => event.type === 'compacted-event'
@@ -247,7 +265,7 @@ export default function FactsPane() {
     return grouped;
   }, [displayEvents, events.length, allMrsState, deltasByEventIdSize]);
 
-  // Helper to select MR and show suggestion if not in filtered list
+  // Helper to select MR - if not in filtered list, switch to appropriate selection directly
   // If noteId is provided, also navigate to the specified tab and select that note
   const selectMrById = (mrId: string, mrName: string, noteId?: string, navigateTo?: 'overview' | 'activity') => {
     const mrIndex = filteredMrs.findIndex(mr => mr.id === mrId);
@@ -266,11 +284,14 @@ export default function FactsPane() {
         }
       }
     } else {
-      // MR not in filtered list - show suggestion with author and state
+      // MR not in filtered list - switch to appropriate selection directly
       const mr = allMrsState?.mrsByGid.get(mrId);
       if (mr) {
         const suggestedSelection = findSelectionForAuthor(mr.author, userSelections, groups);
-        setSuggestion({ mrName, author: mr.author, state: mr.state, suggestedSelection });
+        if (suggestedSelection) {
+          setSelectedUserSelectionEntryId(suggestedSelection.userSelectionEntryId);
+          setFilterMrState(mr.state as MergeRequestState);
+        }
       }
     }
   };
@@ -509,11 +530,16 @@ export default function FactsPane() {
                     )}
                 </box>
             ) : (
-                <box key="logo-box" width="100%" height={6} flexDirection="column" style={{ justifyContent: 'center', backgroundColor: '#282a36' }}>
-                    <text fg="#44475a" wrapMode="none">{'  ╭─────────────────────╮'}</text>
-                    <text fg="#44475a" wrapMode="none">{'  │    LazyGitLab 🦊    │'}</text>
-                    <text fg="#44475a" wrapMode="none">{'  │     Event Log       │'}</text>
-                    <text fg="#44475a" wrapMode="none">{'  ╰─────────────────────╯'}</text>
+                <box key="logo-box" width="100%" height={6} flexDirection="column" style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#282a36' }}>
+                    <text fg="#44475a" wrapMode="none">{'╭─────────────────────╮'}</text>
+                    <text fg="#44475a" wrapMode="none">{'│    LazyGitLab 🦊    │'}</text>
+                    <text fg="#44475a" wrapMode="none">{'│     Event Log       │'}</text>
+                    <text fg="#44475a" wrapMode="none">{'╰─────────────────────╯'}</text>
+                    {Result.isSuccess(backgroundSyncStatus) && backgroundSyncStatus.value._tag === 'syncPending' && (
+                        <text fg="#6272a4" wrapMode="none">
+                            refreshing {`${backgroundSyncStatus.value.userSelection.name}`} in {formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}
+                        </text>
+                    )}
                 </box>
             )}
         </box>

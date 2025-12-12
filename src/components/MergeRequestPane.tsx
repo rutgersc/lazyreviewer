@@ -27,7 +27,6 @@ import type { JiraIssue } from "../jira/jira-schema";
 import { missingMrsDiffAtom, isReconcilingAtom } from "../mergerequests/mr-diff-tracking";
 import { useReconcileMissingMrs } from "../mergerequests/mr-reconciliation";
 import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom } from "../settings/settings-atom";
-import { backgroundFetchAtom, type BackgroundSyncStatus } from "../notifications/notification-sync-atom";
 
 const getJiraStatusColor = (statusName: string | undefined): string => {
   if (!statusName) return Colors.PRIMARY;
@@ -59,22 +58,6 @@ const getCreatedDateColor = (createdAt: Date): string => {
   if (ageInDays < 7) return Colors.SECONDARY;
   if (ageInDays < 14) return Colors.WARNING;
   return Colors.ERROR;
-};
-
-const formatTimeUntil = (targetDate: Date): string => {
-  const now = Date.now();
-  const diffMs = targetDate.getTime() - now;
-
-  if (diffMs <= 0) return 'now';
-
-  const totalSeconds = Math.floor(diffMs / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
-  }
-  return `${seconds}s`;
 };
 
 const TimeColumnAuthorTitle = ({
@@ -483,7 +466,6 @@ export default function MergeRequestPane({}: {}) {
   const refetchSelectedMrPipeline = useAtomSet(refetchSelectedMrPipelineAtom, { mode: 'promiseExit' });
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
   const { missingIds, reconcile, isReconciling } = useReconcileMissingMrs();
-  const backgroundSyncStatus = useAtomValue(backgroundFetchAtom);
   const now = useAtomValue(nowAtom);
 
   const allMrs = useAtomValue(allMrsAtom);
@@ -779,11 +761,6 @@ export default function MergeRequestPane({}: {}) {
            >
               {" >> refresh <<"}
           </text>
-          {Result.isSuccess(backgroundSyncStatus) && backgroundSyncStatus.value._tag === 'syncPending' && (
-            <text style={{ fg: Colors.SUPPORTING }} wrapMode="none">
-              (next in {formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)})
-            </text>
-          )}
           {missingIds.length > 0 && !isReconciling && (
              <text
                 onMouseDown={() => reconcile()}

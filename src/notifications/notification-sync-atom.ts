@@ -4,7 +4,7 @@ import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserAtom } from '../settings/settings-atom';
 import { userSelectionsByIdAtom } from '../userselection/userselection-atom';
 import { groupsAtom } from '../data/data-atom';
-import { extractSelectionData } from '../userselection/userSelection';
+import { extractSelectionData, type UserSelectionEntry } from '../userselection/userSelection';
 import { decideFetchUserMrs, decideFetchProjectMrs } from '../mergerequests/decide-fetch-mrs';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
@@ -14,7 +14,7 @@ import { defaultNotificationPreferences, type NotificationContext, type Notifiab
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
 
 export type BackgroundSyncStatus =
-  | { _tag: 'syncPending'; nextRefreshDate: Date }
+  | { _tag: 'syncPending'; nextRefreshDate: Date, userSelection: UserSelectionEntry }
   | { _tag: 'syncPerformed' }
   | { _tag: 'syncDisabled' };
 
@@ -57,9 +57,15 @@ const computeSyncStatus = (get: Atom.Context): { status: BackgroundSyncStatus; s
 
   const timeUntilNextRefresh = syncIntervalMs - (now - lastRefreshTime);
 
+  const syncPending = {
+    _tag: 'syncPending',
+    nextRefreshDate: new Date(lastRefreshTime + syncIntervalMs),
+    userSelection: matchingSelection
+  } satisfies BackgroundSyncStatus;
+
   if (timeUntilNextRefresh > 0) {
     return {
-      status: { _tag: 'syncPending', nextRefreshDate: new Date(lastRefreshTime + syncIntervalMs) },
+      status: syncPending,
       shouldFetch: false
     };
   }
@@ -68,7 +74,7 @@ const computeSyncStatus = (get: Atom.Context): { status: BackgroundSyncStatus; s
   const cacheKey = extractSelectionData(matchingSelection, groups, 'opened');
 
   return {
-    status: { _tag: 'syncPending', nextRefreshDate: new Date(lastRefreshTime + syncIntervalMs) },
+    status: syncPending,
     shouldFetch: true,
     matchingSelection: cacheKey
   };
