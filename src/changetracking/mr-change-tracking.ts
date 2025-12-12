@@ -72,8 +72,35 @@ export interface ReopenedMrChange {
   changedAt: Date;
 }
 
+export type SystemNoteType =
+  | 'commits-added'
+  | 'approved'
+  | 'mentioned-in-mr'
+  | 'branch-deleted'
+  | 'left-review-comments'
+  | 'changed-description'
+  | 'changed-target-branch'
+  | 'changed-line'
+  | 'changed-title'
+  | 'resolved-all-threads'
+  | 'assigned'
+  | 'unassigned'
+  | 'unknown';
+
+export const FILTERED_SYSTEM_NOTE_TYPES: ReadonlySet<SystemNoteType> = new Set([
+  'left-review-comments',
+  'changed-description',
+  'changed-target-branch',
+  'changed-line',
+  'changed-title',
+  'resolved-all-threads',
+  'assigned',
+  'unassigned',
+]);
+
 export interface SystemNoteChange {
   type: 'system-note';
+  systemNoteType: SystemNoteType;
   mr: MrInfo;
   noteId: string;
   body: string;
@@ -169,23 +196,64 @@ const detectMergerequestChanges = (
     mrInfo: MrInfo
   ): MrChange => {
 
-    const determineSystemNoteChange = (note: DiscussionNote): SystemNoteChange => {
+    const parseSystemNoteType = (body: string): SystemNoteType => {
       // added 1 commit\n\n<ul><li>
       // added 3 commits
-      // left review comments
-      // changed the description
-      // changed target branch from
-      // changed this line in
+      if (body.startsWith('added ') && body.includes('commit')) {
+        return 'commits-added';
+      }
       // approved this merge request
-      // <p>changed title from <code
+      if (body.startsWith('approved this merge request')) {
+        return 'approved';
+      }
       // mentioned in merge request !768
       // mentioned in merge request BlackLotus!775
-      // resolved all threads
-      // assigned to @ArjenPost
-      // unassigned @m.bures
+      if (body.startsWith('mentioned in merge request')) {
+        return 'mentioned-in-mr';
+      }
       // deleted the `ELAB-18404__Support_export_samples_query_in_BL_StrawberryShake` branch
+      if (body.startsWith('deleted the ') && body.includes('branch')) {
+        return 'branch-deleted';
+      }
+      // left review comments
+      if (body.startsWith('left review comments')) {
+        return 'left-review-comments';
+      }
+      // changed the description
+      if (body.startsWith('changed the description')) {
+        return 'changed-description';
+      }
+      // changed target branch from
+      if (body.startsWith('changed target branch')) {
+        return 'changed-target-branch';
+      }
+      // changed this line in
+      if (body.startsWith('changed this line')) {
+        return 'changed-line';
+      }
+      // <p>changed title from <code
+      if (body.includes('changed title from')) {
+        return 'changed-title';
+      }
+      // resolved all threads
+      if (body.startsWith('resolved all threads')) {
+        return 'resolved-all-threads';
+      }
+      // assigned to @ArjenPost
+      if (body.startsWith('assigned to')) {
+        return 'assigned';
+      }
+      // unassigned @m.bures
+      if (body.startsWith('unassigned')) {
+        return 'unassigned';
+      }
+      return 'unknown';
+    };
+
+    const determineSystemNoteChange = (note: DiscussionNote): SystemNoteChange => {
       return {
         type: "system-note",
+        systemNoteType: parseSystemNoteType(note.body),
         mr: mrInfo,
         noteId: note.id,
         body: note.body,
@@ -197,6 +265,7 @@ const detectMergerequestChanges = (
     if (!note) {
       return {
         type: "system-note",
+        systemNoteType: 'unknown',
         mr: mrInfo,
         noteId: noteId,
         body: "unknown (is this a bug?)",

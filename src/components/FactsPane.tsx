@@ -20,6 +20,7 @@ import type { UserSelectionEntry, UserOrGroupId, UserGroup } from '../userselect
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { eventChangesReadmodelAtom } from '../changetracking/change-tracking-atom';
 import type { Change, MrChange } from '../changetracking/change-tracking-projection';
+import { FILTERED_SYSTEM_NOTE_TYPES } from '../changetracking/mr-change-tracking';
 import type { LazyReviewerEvent } from '../events/events';
 import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../jira/jira-atom';
 import { useJiraScroll } from '../hooks/useJiraScroll';
@@ -61,6 +62,9 @@ const isMrChange = (change: Change): change is MrChange => {
       return false;
   }
 };
+
+const isFilteredSystemNote = (change: Change): boolean =>
+  change.type === 'system-note' && FILTERED_SYSTEM_NOTE_TYPES.has(change.systemNoteType);
 
 function getChangeDescription(change: Change): { badge: string; color: string; text: string } {
   switch (change.type) {
@@ -197,7 +201,7 @@ export default function FactsPane() {
   );
 
   const getDeltaOrDefault = (ev: LazyReviewerEvent | undefined) =>
-    deltasByEventId.get(ev?.eventId ?? "") ?? emptySummary;
+    (deltasByEventId.get(ev?.eventId ?? "") ?? emptySummary).filter(c => !isFilteredSystemNote(c));
 
   const currentEventIndex = highlightedIndex ?? events.length - 1;
   const currentEvent = events[currentEventIndex];
