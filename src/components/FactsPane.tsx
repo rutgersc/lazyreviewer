@@ -16,6 +16,7 @@ import type { MergeRequestState } from '../graphql/generated/gitlab-base-types';
 import { userSelectionsAtom } from '../userselection/userselection-atom';
 import { groupsAtom } from '../data/data-atom';
 import { selectedUserSelectionEntryIdAtom } from '../settings/settings-atom';
+import { openSettingsFile } from '../settings/settings';
 import type { UserSelectionEntry, UserOrGroupId, UserGroup } from '../userselection/userSelection';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { eventChangesReadmodelAtom } from '../changetracking/change-tracking-atom';
@@ -473,6 +474,104 @@ export default function FactsPane() {
     }
   });
 
+  const suggestionBox = (suggestion: MrSuggestion) => (
+    <box
+      key="suggestion-box"
+      width="100%"
+      flexDirection="column"
+      style={{
+        border: true,
+        borderColor: "#ffb86c",
+      }}
+    >
+      <box height={1} width="100%" flexDirection="row">
+        <text fg="#ffb86c" wrapMode="none">
+          {" ⚠ MR not in view"}
+        </text>
+      </box>
+      <box height={1} width="100%" flexDirection="row">
+        <text fg="#f8f8f2" wrapMode="none">
+          {` Author: ${suggestion.author}, State: ${suggestion.state}`}
+        </text>
+      </box>
+      {suggestion.suggestedSelection ? (
+        <box
+          height={1}
+          width="100%"
+          flexDirection="row"
+          onMouseDown={() => {
+            if (suggestion.suggestedSelection) {
+              setSelectedUserSelectionEntryId(
+                suggestion.suggestedSelection.userSelectionEntryId
+              );
+              setFilterMrState(suggestion.state as MergeRequestState);
+              setSuggestion(null);
+            }
+          }}
+        >
+          <text fg="#282a36" bg="#50fa7b" wrapMode="none">
+            {` Switch to "${suggestion.suggestedSelection.name}" (${suggestion.state}) `}
+          </text>
+        </box>
+      ) : (
+        <box height={1} width="100%" flexDirection="row">
+          <text fg="#6272a4" wrapMode="none">
+            {" (no matching selection found)"}
+          </text>
+        </box>
+      )}
+    </box>
+  );
+
+  const logoBox = () =>
+  {
+    const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {
+
+      const res = Result.match(backgroundSyncStatus, {
+        onInitial: (s) => {
+          return "initial";
+        },
+        onFailure: (f) => {
+          return `onFailure: ${f.cause.toString()}`
+        },
+        onSuccess: (backgroundSyncStatus) => {
+          switch (backgroundSyncStatus.value._tag)
+          {
+            case 'syncDisabled':
+              return "sync disabled";
+            case 'syncPending':
+               return `refreshing ${backgroundSyncStatus.value.userSelection.name} in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
+            case 'syncPerformed':
+               return `REFRESHED ${backgroundSyncStatus.value.userSelection.name} in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
+
+
+          }
+        }
+      })
+
+      return
+        <text fg="#6272a4" wrapMode="none">
+          refreshing {`${backgroundSyncStatus.value.userSelection.name}`} in {formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}
+        </text>
+    }
+
+    return (
+      <box key="logo-box" width="100%" height={6} flexDirection="column" style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#282a36' }}>
+        <text fg="#44475a" wrapMode="none">{'╭─────────────────────╮'}</text>
+        <text fg="#44475a" wrapMode="none">{'│    LazyGitLab 🦊    │'}</text>
+        <text fg="#44475a" wrapMode="none">{'╰─────────────────────╯'}</text>
+        {isLoading ? (
+            <text fg="#8be9fd" wrapMode="none">
+                refreshing...
+            </text>
+        ) : Result.isSuccess(backgroundSyncStatus) && backgroundSyncStatus.value._tag === 'syncPending' && (
+            <text fg="#6272a4" wrapMode="none">
+                refreshing {`${backgroundSyncStatus.value.userSelection.name}`} in {formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}
+            </text>
+        )}
+      </box>);
+  }
+
   return (
     <box
       flexDirection="column"
@@ -489,68 +588,9 @@ export default function FactsPane() {
                 marginBottom: 1,
             }}
         >
-            {suggestion ? (
-                <box
-                    key="suggestion-box"
-                    width="100%"
-                    flexDirection="column"
-                    style={{
-                        border: true,
-                        borderColor: '#ffb86c',
-                    }}
-                >
-                    <box height={1} width="100%" flexDirection="row">
-                        <text fg="#ffb86c" wrapMode="none">
-                            {' ⚠ MR not in view'}
-                        </text>
-                    </box>
-                    <box height={1} width="100%" flexDirection="row">
-                        <text fg="#f8f8f2" wrapMode="none">
-                            {` Author: ${suggestion.author}, State: ${suggestion.state}`}
-                        </text>
-                    </box>
-                    {suggestion.suggestedSelection ? (
-                        <box
-                            height={1}
-                            width="100%"
-                            flexDirection="row"
-                            onMouseDown={() => {
-                                if (suggestion.suggestedSelection) {
-                                    setSelectedUserSelectionEntryId(suggestion.suggestedSelection.userSelectionEntryId);
-                                    setFilterMrState(suggestion.state as MergeRequestState);
-                                    setSuggestion(null);
-                                }
-                            }}
-                        >
-                            <text fg="#282a36" bg="#50fa7b" wrapMode="none">
-                                {` Switch to "${suggestion.suggestedSelection.name}" (${suggestion.state}) `}
-                            </text>
-                        </box>
-                    ) : (
-                        <box height={1} width="100%" flexDirection="row">
-                            <text fg="#6272a4" wrapMode="none">
-                                {' (no matching selection found)'}
-                            </text>
-                        </box>
-                    )}
-                </box>
-            ) : (
-                <box key="logo-box" width="100%" height={6} flexDirection="column" style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#282a36' }}>
-                    <text fg="#44475a" wrapMode="none">{'╭─────────────────────╮'}</text>
-                    <text fg="#44475a" wrapMode="none">{'│    LazyGitLab 🦊    │'}</text>
-                    <text fg="#44475a" wrapMode="none">{'│     Event Log       │'}</text>
-                    <text fg="#44475a" wrapMode="none">{'╰─────────────────────╯'}</text>
-                    {isLoading ? (
-                        <text fg="#8be9fd" wrapMode="none">
-                            refreshing...
-                        </text>
-                    ) : Result.isSuccess(backgroundSyncStatus) && backgroundSyncStatus.value._tag === 'syncPending' && (
-                        <text fg="#6272a4" wrapMode="none">
-                            refreshing {`${backgroundSyncStatus.value.userSelection.name}`} in {formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}
-                        </text>
-                    )}
-                </box>
-            )}
+            {suggestion
+              ? suggestionBox(suggestion)
+              : logoBox()}
         </box>
         {compactionMessage && (
             <box height={1} width="100%" flexDirection="row">
