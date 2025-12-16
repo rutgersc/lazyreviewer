@@ -523,11 +523,10 @@ export default function FactsPane() {
     </box>
   );
 
-  const logoBox = () =>
-  {
+  const logoBox = () => {
     const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {
 
-      const res = Result.match(backgroundSyncStatus, {
+      const res = Result.match(status, {
         onInitial: (s) => {
           return "initial";
         },
@@ -535,24 +534,22 @@ export default function FactsPane() {
           return `onFailure: ${f.cause.toString()}`
         },
         onSuccess: (backgroundSyncStatus) => {
-          switch (backgroundSyncStatus.value._tag)
-          {
+          switch (backgroundSyncStatus.value._tag) {
             case 'syncDisabled':
               return "sync disabled";
             case 'syncPending':
                return `refreshing ${backgroundSyncStatus.value.userSelection.name} in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
             case 'syncPerformed':
-               return `REFRESHED ${backgroundSyncStatus.value.userSelection.name} in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
-
-
+               return `REFRESHED ${backgroundSyncStatus.value}`;
           }
         }
       })
 
-      return
+      return (
         <text fg="#6272a4" wrapMode="none">
-          refreshing {`${backgroundSyncStatus.value.userSelection.name}`} in {formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}
+          {res}
         </text>
+      );
     }
 
     return (
@@ -560,15 +557,13 @@ export default function FactsPane() {
         <text fg="#44475a" wrapMode="none">{'╭─────────────────────╮'}</text>
         <text fg="#44475a" wrapMode="none">{'│    LazyGitLab 🦊    │'}</text>
         <text fg="#44475a" wrapMode="none">{'╰─────────────────────╯'}</text>
-        {isLoading ? (
-            <text fg="#8be9fd" wrapMode="none">
-                refreshing...
-            </text>
-        ) : Result.isSuccess(backgroundSyncStatus) && backgroundSyncStatus.value._tag === 'syncPending' && (
-            <text fg="#6272a4" wrapMode="none">
-                refreshing {`${backgroundSyncStatus.value.userSelection.name}`} in {formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}
-            </text>
-        )}
+        {isLoading
+          ? (
+              <text fg="#8be9fd" wrapMode="none">
+                  refreshing...
+              </text>)
+          : autoRefreshDisplay(backgroundSyncStatus)
+        }
       </box>);
   }
 

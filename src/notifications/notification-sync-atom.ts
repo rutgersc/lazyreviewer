@@ -6,12 +6,14 @@ import { userSelectionsByIdAtom } from '../userselection/userselection-atom';
 import { groupsAtom } from '../data/data-atom';
 import { extractSelectionData, type UserSelectionEntry } from '../userselection/userSelection';
 import { decideFetchUserMrs, decideFetchProjectMrs, type CacheKey } from '../mergerequests/decide-fetch-mrs';
+import { EventStorage } from '../events/events';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
-import { loadSettings, saveSettings } from '../settings/settings';
+import { loadSettings, modifySettings, saveSettings } from '../settings/settings';
 import { incrementUnreadCount } from './title-indicator';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
+import type { EmitOpsPush } from 'effect/StreamEmit';
 
 export type BackgroundSyncStatus =
   | { _tag: 'syncPending'; nextRefreshDate: Date, userSelection: UserSelectionEntry }
@@ -101,29 +103,35 @@ const backgroundFetchStream = Effect.fn("backgroundFetchStream")(function* (get:
       (cause) => Console.error('[BackgroundSync] Fetch failed:', cause)
     )
 
+    const backgroundCheck =
+      Stream.asyncPush((emit: EmitOpsPush<never, BackgroundSyncStatus>)  =>
+        Effect.gen(function* () {
+          while (true) {
+            const { status, shouldFetch, matchingSelection } = computeSyncStatus(get);
 
-  const backgroundCheck =
-    Effect.gen(function* () {
-      const { status, shouldFetch, matchingSelection } = computeSyncStatus(get);
+            if (!shouldFetch || !matchingSelection) {
+              emit.single({ _tag: 'syncDisabled' })
+              const sleepTime = status._tag === 'syncDisabled' ? '30 seconds' : '5 seconds';
+              yield* Effect.sleep(sleepTime);
+            }
+            else {
+              if (status._tag === 'syncPending') {
+                emit.single({ _tag: 'syncPending', nextRefreshDate: status.nextRefreshDate, userSelection: status.userSelection });
+              }
 
-      if (!shouldFetch || !matchingSelection) {
-        const sleepTime = status._tag === 'syncDisabled' ? '30 seconds' : '5 seconds';
-        yield* Effect.sleep(sleepTime);
-        return status;
-      }
+              yield* decideFetch(matchingSelection);
 
-      yield* decideFetch(matchingSelection);
+              modifySettings(settings => ({
+                ...settings,
+                notifications: { ...settings.notifications, lastRefreshTimestamp: new Date().toISOString() }  })
+              )
 
-      // Update the lastRefreshTimestamp in settings
-      const currentSettings = loadSettings();
-      currentSettings.notifications.lastRefreshTimestamp = new Date().toISOString();
-      saveSettings(currentSettings);
+              emit.single({ _tag: 'syncPerformed' });
 
-      // Sleep before next check
-      yield* Effect.sleep('5 seconds');
-
-      return { _tag: 'syncPerformed' } as BackgroundSyncStatus;
-    })
+              yield* Effect.sleep('5 seconds');
+            }
+          }
+        }));
 
   const mutexBackgroundCheck =
     backgroundCheck.pipe(syncLoopMutex.withPermits(1));

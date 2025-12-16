@@ -74,6 +74,11 @@ const generateRepositoryColor = (repositoryPath: string): string => {
   return REPOSITORY_COLOR_PALETTE[colorIndex] || '#ff5555';
 };
 
+export const modifySettings = (f: (s: Settings) => Settings) => {
+  const currentSettings = loadSettings();
+  saveSettings(f(currentSettings));
+}
+
 export const loadSettings = (): Settings => {
   try {
     if (!existsSync(SETTINGS_FILE)) {
