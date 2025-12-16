@@ -5,7 +5,7 @@ import { settingsAtom, currentUserAtom } from '../settings/settings-atom';
 import { userSelectionsByIdAtom } from '../userselection/userselection-atom';
 import { groupsAtom } from '../data/data-atom';
 import { extractSelectionData, type UserSelectionEntry } from '../userselection/userSelection';
-import { decideFetchUserMrs, decideFetchProjectMrs } from '../mergerequests/decide-fetch-mrs';
+import { decideFetchUserMrs, decideFetchProjectMrs, type CacheKey } from '../mergerequests/decide-fetch-mrs';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
 import { loadSettings, saveSettings } from '../settings/settings';
@@ -93,40 +93,42 @@ const backgroundFetchStream = Effect.fn("backgroundFetchStream")(function* (get:
     console.log(`[BackgroundSync] Stream instance #${instanceId} DISPOSED`);
   });
 
-  return Stream.repeatEffect(
-    // Wrap entire iteration in mutex - if another instance is running, this one waits
-    syncLoopMutex.withPermits(1)(
-      Effect.gen(function* () {
-        const { status, shouldFetch, matchingSelection } = computeSyncStatus(get);
-
-        if (!shouldFetch) {
-          const sleepTime = status._tag === 'syncDisabled' ? '30 seconds' : '5 seconds';
-          yield* Effect.sleep(sleepTime);
-          return status;
-        }
-
-        // Time to perform the fetch
-        yield* Console.log(`[BackgroundSync] Fetching MRs...`);
-
-        yield* Effect.catchAllCause(
-          matchingSelection!._tag === 'UserMRs'
-            ? decideFetchUserMrs(matchingSelection!.usernames as string[], 'opened')
-            : decideFetchProjectMrs(matchingSelection!.projectPath, 'opened'),
-          (cause) => Console.error('[BackgroundSync] Fetch failed:', cause)
-        );
-
-        // Update the lastRefreshTimestamp in settings
-        const currentSettings = loadSettings();
-        currentSettings.notifications.lastRefreshTimestamp = new Date().toISOString();
-        saveSettings(currentSettings);
-
-        // Sleep before next check
-        yield* Effect.sleep('5 seconds');
-
-        return { _tag: 'syncPerformed' } as BackgroundSyncStatus;
-      })
+  const decideFetch = (matchingSelection: CacheKey) =>
+    Effect.catchAllCause(
+      matchingSelection!._tag === 'UserMRs'
+        ? decideFetchUserMrs(matchingSelection!.usernames as string[], 'opened')
+        : decideFetchProjectMrs(matchingSelection!.projectPath, 'opened'),
+      (cause) => Console.error('[BackgroundSync] Fetch failed:', cause)
     )
-  );
+
+
+  const backgroundCheck =
+    Effect.gen(function* () {
+      const { status, shouldFetch, matchingSelection } = computeSyncStatus(get);
+
+      if (!shouldFetch || !matchingSelection) {
+        const sleepTime = status._tag === 'syncDisabled' ? '30 seconds' : '5 seconds';
+        yield* Effect.sleep(sleepTime);
+        return status;
+      }
+
+      yield* decideFetch(matchingSelection);
+
+      // Update the lastRefreshTimestamp in settings
+      const currentSettings = loadSettings();
+      currentSettings.notifications.lastRefreshTimestamp = new Date().toISOString();
+      saveSettings(currentSettings);
+
+      // Sleep before next check
+      yield* Effect.sleep('5 seconds');
+
+      return { _tag: 'syncPerformed' } as BackgroundSyncStatus;
+    })
+
+  const mutexBackgroundCheck =
+    backgroundCheck.pipe(syncLoopMutex.withPermits(1));
+
+  return Stream.repeatEffect(mutexBackgroundCheck);
 });
 
 export const backgroundFetchAtom = appAtomRuntime.atom(
