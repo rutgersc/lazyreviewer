@@ -27,6 +27,7 @@ import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../jira/jira-at
 import { useJiraScroll } from '../hooks/useJiraScroll';
 import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
+import { getAgeColor } from '../utils/formatting';
 import { backgroundFetchAtom } from '../notifications/notification-sync-atom';
 
 const formatTimeUntil = (targetDate: Date): string => {
@@ -67,30 +68,43 @@ const isMrChange = (change: Change): change is MrChange => {
 const isFilteredSystemNote = (change: Change): boolean =>
   change.type === 'system-note' && FILTERED_SYSTEM_NOTE_TYPES.has(change.systemNoteType);
 
+function getJiraPrefix(change: Change): string {
+  if (isMrChange(change)) {
+    const key = change.mr.jiraIssueKeys[0];
+    return key ? `[${key}] ` : '';
+  }
+  // Jira changes
+  if (change.type === 'new-jira-issue' || change.type === 'jira-status-changed' || change.type === 'jira-comment') {
+    return `[${change.issue.issueKey}] `;
+  }
+  return '';
+}
+
 function getChangeDescription(change: Change): { badge: string; color: string; text: string } {
+  const jira = getJiraPrefix(change);
   switch (change.type) {
     case 'new-mr':
-      return { badge: '📋', color: '#50fa7b', text: `New MR: ${change.mr.mrName} (${change.mr.mrAuthor})` };
+      return { badge: '📋', color: '#50fa7b', text: `${jira}New MR: ${change.mr.mrName} (${change.mr.mrAuthor})` };
     case 'merged-mr':
-      return { badge: '✓ ', color: '#bd93f9', text: `Merged: ${change.mr.mrName}` };
+      return { badge: '✓ ', color: '#bd93f9', text: `${jira}Merged: ${change.mr.mrName}` };
     case 'closed-mr':
-      return { badge: '✗', color: '#ff5555', text: `Closed: ${change.mr.mrName}` };
+      return { badge: '✗', color: '#ff5555', text: `${jira}Closed: ${change.mr.mrName}` };
     case 'reopened-mr':
-      return { badge: '↻', color: '#ffb86c', text: `Reopened: ${change.mr.mrName}` };
+      return { badge: '↻', color: '#ffb86c', text: `${jira}Reopened: ${change.mr.mrName}` };
     case 'system-note':
-      return { badge: '⚙ ', color: '#6272a4', text: `${change.author}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
+      return { badge: '⚙ ', color: '#6272a4', text: `${jira}${change.author}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
     case 'diff-comment':
       const lineInfo = change.line ? `:${change.line}` : '';
       const fileName = change.filePath.split('/').pop() ?? change.filePath;
-      return { badge: '📝', color: '#8be9fd', text: `${change.author} on ${fileName}${lineInfo}` };
+      return { badge: '📝', color: '#8be9fd', text: `${jira}${change.author} on ${fileName}${lineInfo}` };
     case 'discussion-comment':
-      return { badge: '💬', color: '#ffb86c', text: `${change.author} commented on ${change.mr.mrName}` };
+      return { badge: '💬', color: '#ffb86c', text: `${jira}${change.author} commented on ${change.mr.mrName}` };
     case 'new-jira-issue':
-      return { badge: '🧩', color: '#50fa7b', text: `New Jira: ${change.issue.issueKey} - ${change.issue.summary}` };
+      return { badge: '🧩', color: '#50fa7b', text: `${jira}New Jira: ${change.issue.summary}` };
     case 'jira-status-changed':
-      return { badge: '🔄', color: '#bd93f9', text: `Jira ${change.issue.issueKey}: ${change.fromStatus ? `${change.fromStatus} → ` : ''}${change.toStatus}` };
+      return { badge: '🔄', color: '#bd93f9', text: `${jira}${change.fromStatus ? `${change.fromStatus} → ` : ''}${change.toStatus}` };
     case 'jira-comment':
-      return { badge: '💬', color: '#8be9fd', text: `${change.author} commented on ${change.issue.issueKey}` };
+      return { badge: '💬', color: '#8be9fd', text: `${jira}${change.author} commented` };
     default:
       const _: never = change;
       throw new Error("unreachable")
@@ -540,7 +554,7 @@ export default function FactsPane() {
             case 'syncDisabled':
               return "sync disabled";
             case 'syncPending':
-               return `${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)} until refreshing '${backgroundSyncStatus.value.userSelection.name}'`;
+               return `syncing '${backgroundSyncStatus.value.userSelection.name}' in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
             case 'syncing':
                return `refreshing '${backgroundSyncStatus.value.userSelection.name}'...`;
             case 'syncPerformed':
@@ -770,13 +784,14 @@ export default function FactsPane() {
                         const formattedDate = change.changedAt
                           ? formatRelativeTime(change.changedAt).padEnd(3, ' ')
                           : '?  ';
+                        const dateColor = change.changedAt ? getAgeColor(change.changedAt, now) : Colors.SECONDARY;
 
                         return (
                             <box key={i} height={1} width="100%" flexDirection='row' onMouseDown={() => handleChangeClick(i, change)}>
                                 <box width={4} flexShrink={0} height={1}>
                                     <text
                                         wrapMode='none'
-                                        fg={Colors.PRIMARY}
+                                        fg={dateColor}
                                         bg={isSelected ? '#44475a' : '#1e1f29'}
                                         style={{attributes: TextAttributes.DIM}}
                                     >

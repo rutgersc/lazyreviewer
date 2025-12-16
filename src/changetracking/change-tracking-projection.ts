@@ -9,6 +9,7 @@ import {
 import type {
   MrChange,
   MrChangeTrackingRelevantEvent,
+  MrInfo,
   NewMrChange,
   MergedMrChange,
   ClosedMrChange,
@@ -40,6 +41,7 @@ export {
   type MrProjectionResult,
   type MrStateForDelta,
   type MrChange,
+  type MrInfo,
   type NewMrChange,
   type MergedMrChange,
   type ClosedMrChange,

@@ -1,3 +1,37 @@
+const hexToRgb = (hex: string): [number, number, number] => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return [255, 255, 255];
+  return [parseInt(result[1]!, 16), parseInt(result[2]!, 16), parseInt(result[3]!, 16)];
+};
+
+const rgbToHex = (r: number, g: number, b: number): string => {
+  return '#' + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
+};
+
+const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+const lerpColor = (color1: string, color2: string, t: number): string => {
+  const [r1, g1, b1] = hexToRgb(color1);
+  const [r2, g2, b2] = hexToRgb(color2);
+  return rgbToHex(lerp(r1, r2, t), lerp(g1, g2, t), lerp(b1, b2, t));
+};
+
+export const getAgeColor = (date: Date, now: Date = new Date()): string => {
+  const ageInDays = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+
+  // Color stops: fresh → yellow → orange → red
+  const fresh = '#50fa7b';   // green
+  const yellow = '#f1fa8c';  // yellow
+  const orange = '#ffb86c';  // orange
+  const red = '#ff5555';     // red
+
+  if (ageInDays <= 0) return fresh;
+  if (ageInDays <= 3) return lerpColor(fresh, yellow, ageInDays / 3);
+  if (ageInDays <= 7) return lerpColor(yellow, orange, (ageInDays - 3) / 4);
+  if (ageInDays <= 14) return lerpColor(orange, red, (ageInDays - 7) / 7);
+  return red;
+};
+
 export const formatCompactTime = (date: Date, now: Date = new Date()): string => {
   const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));

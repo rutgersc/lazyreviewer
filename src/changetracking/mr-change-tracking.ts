@@ -41,10 +41,11 @@ interface MrDelta {
 }
 
 // Info about an MR for display purposes
-interface MrInfo {
+export interface MrInfo {
   mrId: string;
   mrName: string;
   mrAuthor: string;
+  jiraIssueKeys: string[];
 }
 
 // Individual MR change types - flat list of what happened
@@ -319,7 +320,7 @@ const detectMergerequestChanges = (
     const delta = calcDelta(mr.id, previousState, latestState);
 
     if (delta.stateDelta !== undefined || delta.commentsDelta.size > 0) {
-      const mrInfo: MrInfo = { mrId: delta.mrId, mrName: mr?.title ?? "unknown", mrAuthor: mr.author };
+      const mrInfo: MrInfo = { mrId: delta.mrId, mrName: mr?.title ?? "unknown", mrAuthor: mr.author, jiraIssueKeys: mr.jiraIssueKeys };
       const mrStatusChange = determineMrStatusChange(delta.stateDelta, mrInfo, mr.updatedAt);
       const noteChanges = [...delta.commentsDelta].map((noteId) => {
         const found = mr ? findNoteById(mr, noteId) : undefined;
