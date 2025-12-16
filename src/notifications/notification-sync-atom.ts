@@ -100,11 +100,7 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
     yield* Console.log('[BackgroundSync] Daemon worker STARTED');
 
     while (true) {
-
-      console.log("this doesnt get hit start")
       const { status } = computeSyncStatus(get);
-
-      console.log("broooezn")
 
       switch (status._tag)
       {
@@ -116,6 +112,8 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
 
         case 'syncPending':
           yield* PubSub.publish(pubsub, status);
+          const msUntilRefresh = status.nextRefreshDate.getTime() - Date.now();
+          yield* Effect.sleep(`${Math.min(msUntilRefresh, 5000)} millis`);
           break;
 
         case 'syncing':
@@ -134,9 +132,6 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
           yield* Effect.sleep('5 seconds');
           break;
 
-        case 'syncPerformed':
-          // TODO: this is a bit iffy
-          break;
       }
     }
   });
@@ -144,7 +139,6 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
 
 const ensureBackgroundWorker = (get: Atom.Context) =>
   Effect.gen(function* () {
-    console.log("triggered")
     if (workerState) {
       yield* Console.log('[BackgroundSync] Worker already running, reusing PubSub');
       return workerState.pubsub;

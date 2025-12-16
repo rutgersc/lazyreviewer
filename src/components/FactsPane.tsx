@@ -540,7 +540,7 @@ export default function FactsPane() {
             case 'syncDisabled':
               return "sync disabled";
             case 'syncPending':
-               return `${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)} until refreshing '${backgroundSyncStatus.value.userSelection.name}' in `;
+               return `${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)} until refreshing '${backgroundSyncStatus.value.userSelection.name}'`;
             case 'syncing':
                return `refreshing '${backgroundSyncStatus.value.userSelection.name}'...`;
             case 'syncPerformed':
