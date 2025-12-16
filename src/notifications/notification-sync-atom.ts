@@ -1,36 +1,37 @@
 import { Atom, Result } from '@effect-atom/atom-react';
-import { Effect, Stream, Console, Option } from 'effect';
+import { Effect, Stream, Console, Option, PubSub, Fiber } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserAtom } from '../settings/settings-atom';
 import { userSelectionsByIdAtom } from '../userselection/userselection-atom';
 import { groupsAtom } from '../data/data-atom';
 import { extractSelectionData, type UserSelectionEntry } from '../userselection/userSelection';
 import { decideFetchUserMrs, decideFetchProjectMrs, type CacheKey } from '../mergerequests/decide-fetch-mrs';
-import { EventStorage } from '../events/events';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
 import { loadSettings, modifySettings, saveSettings } from '../settings/settings';
 import { incrementUnreadCount } from './title-indicator';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
-import type { EmitOpsPush } from 'effect/StreamEmit';
 
 export type BackgroundSyncStatus =
   | { _tag: 'syncPending'; nextRefreshDate: Date, userSelection: UserSelectionEntry }
-  | { _tag: 'syncPerformed' }
-  | { _tag: 'syncDisabled' };
+  | { _tag: 'syncing', flattenedUserSelection: CacheKey, userSelection: UserSelectionEntry }
+  | { _tag: 'syncPerformed', flattenedUserSelection: CacheKey, userSelection: UserSelectionEntry; duration: string }
+  | { _tag: 'syncDisabled', reason: 'notificationSettingDisabled' | 'noMatchingSelection' };
 
-// Module-level semaphore (mutex) to ensure only one sync loop iteration runs at a time
-const syncLoopMutex = Effect.unsafeMakeSemaphore(1);
-
-// Debug: track stream instances
-let streamInstanceCounter = 0;
+// Module-level singleton state for background worker
+let workerState: {
+  pubsub: PubSub.PubSub<BackgroundSyncStatus>;
+  fiber: Fiber.RuntimeFiber<never, never>;
+} | undefined;
 
 /**
  * Computes the current sync status based on settings.
  * Returns the status and whether a fetch should be performed.
  */
-const computeSyncStatus = (get: Atom.Context): { status: BackgroundSyncStatus; shouldFetch: boolean; matchingSelection?: ReturnType<typeof extractSelectionData> extends infer T ? T : never } => {
+const computeSyncStatus = (get: Atom.Context): {
+  status: BackgroundSyncStatus;
+} => {
   const settingsResult = get.registry.get(settingsAtom);
   const settings = Result.match(settingsResult, {
     onInitial: () => null,
@@ -43,13 +44,15 @@ const computeSyncStatus = (get: Atom.Context): { status: BackgroundSyncStatus; s
     ? userSelectionsById.get(settings.notifications.syncUserSelectionEntryId!)
     : undefined;
 
-  if (!settings || !settings.notifications.enabled || !matchingSelection) {
-    return { status: { _tag: 'syncDisabled' }, shouldFetch: false };
+  if (!settings || !settings.notifications.enabled) {
+    return { status: { _tag: 'syncDisabled', reason: 'notificationSettingDisabled' } };
   }
 
-  // Use loadSettings() directly to get fresh data from disk
-  const freshSettings = loadSettings();
-  const lastRefreshTimestamp = freshSettings.notifications.lastRefreshTimestamp;
+  if (!matchingSelection) {
+    return { status: { _tag: 'syncDisabled', reason: 'noMatchingSelection' } };
+  }
+
+  const lastRefreshTimestamp = settings.notifications.lastRefreshTimestamp;
   const syncIntervalMs = settings.notifications.syncIntervalSeconds * 1000;
   const now = Date.now();
 
@@ -58,17 +61,13 @@ const computeSyncStatus = (get: Atom.Context): { status: BackgroundSyncStatus; s
     : 0;
 
   const timeUntilNextRefresh = syncIntervalMs - (now - lastRefreshTime);
-
-  const syncPending = {
-    _tag: 'syncPending',
-    nextRefreshDate: new Date(lastRefreshTime + syncIntervalMs),
-    userSelection: matchingSelection
-  } satisfies BackgroundSyncStatus;
-
   if (timeUntilNextRefresh > 0) {
     return {
-      status: syncPending,
-      shouldFetch: false
+      status: {
+        _tag: 'syncPending',
+        nextRefreshDate: new Date(lastRefreshTime + syncIntervalMs),
+        userSelection: matchingSelection
+      } satisfies BackgroundSyncStatus
     };
   }
 
@@ -76,74 +75,101 @@ const computeSyncStatus = (get: Atom.Context): { status: BackgroundSyncStatus; s
   const cacheKey = extractSelectionData(matchingSelection, groups, 'opened');
 
   return {
-    status: syncPending,
-    shouldFetch: true,
-    matchingSelection: cacheKey
+    status: {
+      _tag: 'syncing',
+      flattenedUserSelection: cacheKey,
+      userSelection: matchingSelection
+    } satisfies BackgroundSyncStatus
   };
 };
 
 /**
- * Background fetch scheduler - emits BackgroundSyncStatus every 5 seconds.
- * Uses a mutex to ensure only one iteration runs at a time across all instances.
+ * Creates the background worker daemon that publishes to PubSub.
+ * Only one worker runs regardless of how many subscribers.
  */
-const backgroundFetchStream = Effect.fn("backgroundFetchStream")(function* (get: Atom.Context) {
-  const instanceId = ++streamInstanceCounter;
-  yield* Console.log(`[BackgroundSync] Stream instance #${instanceId} CREATED`);
-
-  // Register finalizer to log when this stream instance is disposed
-  get.addFinalizer(() => {
-    console.log(`[BackgroundSync] Stream instance #${instanceId} DISPOSED`);
-  });
-
+const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<BackgroundSyncStatus>) => {
   const decideFetch = (matchingSelection: CacheKey) =>
     Effect.catchAllCause(
-      matchingSelection!._tag === 'UserMRs'
-        ? decideFetchUserMrs(matchingSelection!.usernames as string[], 'opened')
-        : decideFetchProjectMrs(matchingSelection!.projectPath, 'opened'),
+      matchingSelection._tag === 'UserMRs'
+        ? decideFetchUserMrs(matchingSelection.usernames as string[], 'opened')
+        : decideFetchProjectMrs(matchingSelection.projectPath, 'opened'),
       (cause) => Console.error('[BackgroundSync] Fetch failed:', cause)
-    )
+    );
 
-    const backgroundCheck =
-      Stream.asyncPush((emit: EmitOpsPush<never, BackgroundSyncStatus>)  =>
-        Effect.gen(function* () {
-          while (true) {
-            const { status, shouldFetch, matchingSelection } = computeSyncStatus(get);
+  return Effect.gen(function* () {
+    yield* Console.log('[BackgroundSync] Daemon worker STARTED');
 
-            if (!shouldFetch || !matchingSelection) {
-              emit.single({ _tag: 'syncDisabled' })
-              const sleepTime = status._tag === 'syncDisabled' ? '30 seconds' : '5 seconds';
-              yield* Effect.sleep(sleepTime);
-            }
-            else {
-              if (status._tag === 'syncPending') {
-                emit.single({ _tag: 'syncPending', nextRefreshDate: status.nextRefreshDate, userSelection: status.userSelection });
-              }
+    while (true) {
 
-              yield* decideFetch(matchingSelection);
+      console.log("this doesnt get hit start")
+      const { status } = computeSyncStatus(get);
 
-              modifySettings(settings => ({
-                ...settings,
-                notifications: { ...settings.notifications, lastRefreshTimestamp: new Date().toISOString() }  })
-              )
+      console.log("broooezn")
 
-              emit.single({ _tag: 'syncPerformed' });
+      switch (status._tag)
+      {
+        case 'syncDisabled':
+          yield* PubSub.publish(pubsub, status);
+          const sleepTime = status._tag === 'syncDisabled' ? '30 seconds' : '5 seconds';
+          yield* Effect.sleep(sleepTime);
+          break;
 
-              yield* Effect.sleep('5 seconds');
-            }
-          }
-        }));
+        case 'syncPending':
+          yield* PubSub.publish(pubsub, status);
+          break;
 
-  const mutexBackgroundCheck =
-    backgroundCheck.pipe(syncLoopMutex.withPermits(1));
+        case 'syncing':
+          yield* PubSub.publish(pubsub, status);
+          yield* decideFetch(status.flattenedUserSelection);
+          modifySettings(settings => ({
+            ...settings,
+            notifications: { ...settings.notifications, lastRefreshTimestamp: new Date().toISOString() }
+          }));
+          yield* PubSub.publish(pubsub, {
+            _tag: 'syncPerformed',
+            flattenedUserSelection: status.flattenedUserSelection,
+            userSelection: status.userSelection,
+            duration: "idk seconds"
+          });
+          yield* Effect.sleep('5 seconds');
+          break;
 
-  return Stream.repeatEffect(mutexBackgroundCheck);
+        case 'syncPerformed':
+          // TODO: this is a bit iffy
+          break;
+      }
+    }
+  });
+};
+
+const ensureBackgroundWorker = (get: Atom.Context) =>
+  Effect.gen(function* () {
+    console.log("triggered")
+    if (workerState) {
+      yield* Console.log('[BackgroundSync] Worker already running, reusing PubSub');
+      return workerState.pubsub;
+    }
+
+    yield* Console.log('[BackgroundSync] Starting new background worker daemon');
+    const pubsub = yield* PubSub.unbounded<BackgroundSyncStatus>();
+    const fiber = yield* Effect.forkDaemon(createBackgroundWorker(get, pubsub));
+
+    workerState = { pubsub, fiber };
+    return pubsub;
+  });
+
+/**
+ * Background fetch stream - subscribes to the singleton daemon's PubSub.
+ */
+const backgroundFetchStream = Effect.fn("backgroundFetchStream")(function* (get: Atom.Context) {
+  const pubsub = yield* ensureBackgroundWorker(get);
+  return Stream.fromPubSub(pubsub);
 });
 
 export const backgroundFetchAtom = appAtomRuntime.atom(
   (get) => Stream.unwrap(backgroundFetchStream(get)),
   { initialValue: { _tag: 'syncDisabled' } as BackgroundSyncStatus }
 ).pipe(Atom.keepAlive);
-
 
 const buildNotificationContext = (get: Atom.Context): NotificationContext => {
   const currentUser = get.registry.get(currentUserAtom);

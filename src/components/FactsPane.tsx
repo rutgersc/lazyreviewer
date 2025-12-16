@@ -176,6 +176,7 @@ export default function FactsPane() {
   const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
   const now = useAtomValue(nowAtom);
   const backgroundSyncStatus = useAtomValue(backgroundFetchAtom);
+
   const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
 
   const lastCompactionIndex = allEvents.findLastIndex(
@@ -522,6 +523,7 @@ export default function FactsPane() {
       )}
     </box>
   );
+  console.log("redraw")
 
   const logoBox = () => {
     const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {
@@ -538,9 +540,13 @@ export default function FactsPane() {
             case 'syncDisabled':
               return "sync disabled";
             case 'syncPending':
-               return `refreshing ${backgroundSyncStatus.value.userSelection.name} in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
+               return `${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)} until refreshing '${backgroundSyncStatus.value.userSelection.name}' in `;
+            case 'syncing':
+               return `refreshing '${backgroundSyncStatus.value.userSelection.name}'...`;
             case 'syncPerformed':
-               return `REFRESHED ${backgroundSyncStatus.value}`;
+               return `refreshed ${backgroundSyncStatus.value}: took ${backgroundSyncStatus.value.duration}`;
+            default:
+              const _: never = backgroundSyncStatus.value;
           }
         }
       })

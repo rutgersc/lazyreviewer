@@ -56,7 +56,9 @@ export default function App() {
   useEffect(() => {
     const onFocus = () => clearUnreadCount();
     renderer.on('focus', onFocus);
+        renderer.console.toggle();
     return () => { renderer.off('focus', onFocus); };
+
   }, [renderer]);
 
   const handleStateSelect = async (newState: MergeRequestState) => {
