@@ -119,13 +119,14 @@ export class FetchJobHistoryError extends Data.TaggedError("FetchJobHistoryError
 export const fetchJobHistory = Effect.fn("fetchJobHistory")(function* (
   projectPath: string,
   jobName: string,
-  limit: number = 50
+  limit: number = 50,
+  after: string | null = null
 ) {
-  const event = yield* fetchJobHistoryAsEvent(projectPath, jobName, limit);
-  const history = projectGitlabJobHistoryFetchedEvent(event);
+  const event = yield* fetchJobHistoryAsEvent(projectPath, jobName, limit, after);
+  const result = projectGitlabJobHistoryFetchedEvent(event);
 
-  yield* Console.log(`[JobHistory] Fetched ${history.length} job history entries for "${jobName}" in ${projectPath}`);
-  return history;
+  yield* Console.log(`[JobHistory] Fetched ${result.history.length} job history entries for "${jobName}" in ${projectPath} (hasNextPage: ${result.pageInfo.hasNextPage})`);
+  return result;
 })
 
 export class FetchSingleMrError extends Data.TaggedError("FetchSingleMrError")<{
@@ -249,7 +250,8 @@ export const getMrPipelineAsEvent = Effect.fn("getMrPipelineAsEvent")(function* 
 export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(function* (
   projectPath: string,
   jobName: string,
-  limit: number = 50
+  limit: number = 50,
+  after: string | null = null
 ) {
   const endpoint = `https://git.elabnext.com/api/graphql`;
   const token = process.env.GITLAB_TOKEN;
@@ -267,7 +269,7 @@ export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(functi
       projectPath,
       jobName,
       first: limit,
-      after: null
+      after: after
     }),
     catch: cause => new FetchJobHistoryError({ cause })
   });

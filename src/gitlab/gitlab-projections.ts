@@ -147,8 +147,17 @@ export const projectGitlabPipelineFetchedEvent = (event: GitlabPipelineFetchedEv
   return pipeline;
 };
 
-export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetchedEvent): JobHistoryEntry[] => {
+export interface JobHistoryResult {
+  history: JobHistoryEntry[];
+  pageInfo: {
+    hasNextPage: boolean;
+    endCursor: string | null;
+  };
+}
+
+export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetchedEvent): JobHistoryResult => {
   const pipelines = event.jobHistory.project?.pipelines?.nodes || [];
+  const pageInfo = event.jobHistory.project?.pipelines?.pageInfo || { hasNextPage: false, endCursor: null };
 
   const history: JobHistoryEntry[] = pipelines
     .filter(pipeline => pipeline?.job !== null)
@@ -174,7 +183,13 @@ export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetch
       } satisfies JobHistoryEntry;
     });
 
-  return history;
+  return {
+    history,
+    pageInfo: {
+      hasNextPage: pageInfo.hasNextPage,
+      endCursor: pageInfo.endCursor
+    }
+  };
 };
 
 export const projectGitlabSingleMrFetchedEvent = (event: GitlabSingleMrFetchedEvent): GitlabMergeRequest | null => {

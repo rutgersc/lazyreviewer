@@ -6,7 +6,7 @@ import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { ActivePane } from '../userselection/userSelection';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
-import { selectedPipelineJobIndexAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryLimitAtom } from '../mergerequests/job-atom';
+import { selectedPipelineJobIndexAtom, jobHistoryDataAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryEndCursorAtom, jobHistoryHasNextPageAtom } from '../mergerequests/job-atom';
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
@@ -42,9 +42,9 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
   const [, setSelectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
   const selectedMergeRequest = useAtomValue(selectedMrAtom);
   const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
-  const setJobHistoryLoading = useAtomSet(jobHistoryLoadingAtom);
   const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
-  const setJobHistoryLimit = useAtomSet(jobHistoryLimitAtom);
+  const setJobHistoryEndCursor = useAtomSet(jobHistoryEndCursorAtom);
+  const setJobHistoryHasNextPage = useAtomSet(jobHistoryHasNextPageAtom);
   const runLoadJobLog = useAtomSet(loadJobLogAtom);
   const runFetchJobHistory = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
@@ -88,12 +88,13 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
         break;
       case 'y':
         if (pipelineJobs[selectedPipelineJobIndex]) {
-          setJobHistoryLimit(15); // Reset to default limit
           runFetchJobHistory().then((exit) => {
             if (exit._tag === 'Success') {
-              const { job, history } = exit.value;
+              const { job, history, pageInfo } = exit.value;
               setJobHistoryData(history);
               setSelectedJobForHistory(job?.name || null);
+              setJobHistoryEndCursor(pageInfo.endCursor);
+              setJobHistoryHasNextPage(pageInfo.hasNextPage);
             }
             setActiveModal('jobHistory');
           });

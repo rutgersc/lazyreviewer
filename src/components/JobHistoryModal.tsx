@@ -3,7 +3,7 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
 import { Colors } from '../colors';
-import { jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, jobHistoryLimitAtom, incrementJobHistoryLimitAtom, fetchJobHistoryAtom } from '../mergerequests/job-atom';
+import { jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, jobHistoryHasNextPageAtom, jobHistoryEndCursorAtom, loadMoreJobHistoryAtom } from '../mergerequests/job-atom';
 import { useAtomValue, useAtomSet, useAtom } from '@effect-atom/atom-react';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 
@@ -52,11 +52,11 @@ export default function JobHistoryModal({
   const jobName = useAtomValue(selectedJobForHistoryAtom);
   const jobHistory = useAtomValue(jobHistoryDataAtom);
   const isLoading = useAtomValue(jobHistoryLoadingAtom);
-  const currentLimit = useAtomValue(jobHistoryLimitAtom);
-  const [, incrementLimit] = useAtom(incrementJobHistoryLimitAtom);
+  const hasNextPage = useAtomValue(jobHistoryHasNextPageAtom);
   const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
-  const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
-  const runFetchJobHistory = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
+  const setJobHistoryEndCursor = useAtomSet(jobHistoryEndCursorAtom);
+  const setJobHistoryHasNextPage = useAtomSet(jobHistoryHasNextPageAtom);
+  const runLoadMore = useAtomSet(loadMoreJobHistoryAtom, { mode: 'promiseExit' });
 
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
     lookahead: 2,
@@ -80,14 +80,16 @@ export default function JobHistoryModal({
         return newIndex;
       });
     } else if (key.name === 'm') {
-      incrementLimit(); // Increment limit
-      runFetchJobHistory().then((exit) => {
-        if (exit._tag === 'Success') {
-          const { job, history } = exit.value;
-          setJobHistoryData(history);
-          setSelectedJobForHistory(job?.name || null);
-        }
-      });
+      if (hasNextPage) {
+        runLoadMore().then((exit) => {
+          if (exit._tag === 'Success') {
+            const { history, pageInfo } = exit.value;
+            setJobHistoryData(history);
+            setJobHistoryEndCursor(pageInfo.endCursor);
+            setJobHistoryHasNextPage(pageInfo.hasNextPage);
+          }
+        });
+      }
     } else if (key.name === 'return') {
       const selectedEntry = jobHistory[selectedIndex];
       if (selectedEntry?.webPath) {
@@ -132,7 +134,7 @@ export default function JobHistoryModal({
         }}
       >
         {/* Header */}
-        <box style={{ padding: 1, border: true, borderColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK }}>
+        <box style={{ padding: 1, border: true, borderColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK, flexShrink: 0 }}>
           <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
             {`📋 Job History: ${jobName} (${totalRuns} runs across all branches)`}
           </text>
@@ -143,11 +145,13 @@ export default function JobHistoryModal({
           ref={scrollBoxRef}
           style={{
             flexDirection: 'column',
-            padding: 1,
-            flexGrow: 1,
+            overflow: 'scroll',
             contentOptions: {
               backgroundColor: Colors.BACKGROUND,
-            }
+            },
+            viewportOptions: {
+              backgroundColor: Colors.BACKGROUND,
+            },
           }}
         >
           {isLoading ? (
@@ -269,13 +273,14 @@ export default function JobHistoryModal({
           borderColor: Colors.NEUTRAL,
           backgroundColor: Colors.TRACK,
           flexDirection: 'column',
-          gap: 0
+          gap: 0,
+          flexShrink: 0
         }}>
           <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
-            {`${totalRuns} total runs · ${developRuns} on develop · ${failedRuns} failures · limit: ${currentLimit}`}
+            {`${totalRuns} loaded · ${developRuns} on develop · ${failedRuns} failures${hasNextPage ? ' · more available' : ' · all loaded'}`}
           </text>
           <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
-            j/k: navigate • enter: open • m: load more (+15) • esc: close
+            {hasNextPage ? 'j/k: navigate • enter: open • m: load more • esc: close' : 'j/k: navigate • enter: open • esc: close'}
           </text>
         </box>
       </box>
