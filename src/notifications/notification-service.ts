@@ -40,26 +40,34 @@ class NotificationError extends Error {
 function sendNotificationForPlatform(payload: NotificationPayload): Promise<void> {
   return new Promise((resolve, reject) => {
     const os = platform();
+    console.log('[Notification] Platform:', os);
+    console.log('[Notification] Payload:', JSON.stringify(payload));
 
-    notifier.notify(
-      {
-        title: payload.title,
-        message: payload.body,
-        sound: false,
-        wait: false,
-        appID: 'LazyGitLab',
-        ...(os === 'darwin' && payload.subtitle ? { subtitle: payload.subtitle } : {})
-      },
-      (error, response) => {
-        if (error) {
-          console.error('[Notification] node-notifier error:', error);
-          console.error('[Notification] response:', response);
-          resolve();
-        } else {
-          resolve();
-        }
+    const options: notifier.Notification = {
+      title: payload.title,
+      message: payload.body,
+      sound: false,
+      wait: false,
+    };
+
+    // macOS-specific subtitle support
+    if (os === 'darwin' && payload.subtitle) {
+      options.subtitle = payload.subtitle;
+    }
+
+    // Windows: don't set appID to avoid registration requirements
+    // node-notifier will use snoretoast's default behavior
+
+    console.log('[Notification] Calling notifier.notify with options:', JSON.stringify(options));
+    notifier.notify(options, (error, response) => {
+      console.log('[Notification] Callback received - error:', error, 'response:', response);
+      if (error) {
+        console.error('[Notification] node-notifier error:', error);
+        console.error('[Notification] response:', response);
       }
-    );
+      // Always resolve - don't fail the app for notification issues
+      resolve();
+    });
   });
 }
 
