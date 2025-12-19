@@ -1,167 +1,30 @@
 import { Atom, Result } from '@effect-atom/atom-react';
-import { Effect, Stream, Console, Option, PubSub, Fiber } from 'effect';
+import { Effect, Stream, Console, Fiber, Chunk, Option } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserAtom } from '../settings/settings-atom';
-import { userSelectionsByIdAtom } from '../userselection/userselection-atom';
-import { groupsAtom } from '../data/data-atom';
-import { extractSelectionData, type UserSelectionEntry } from '../userselection/userSelection';
-import { decideFetchUserMrs, decideFetchProjectMrs, type CacheKey } from '../mergerequests/decide-fetch-mrs';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
+import { isMrChangeTrackingRelevantEvent, isJiraChangeTrackingRelevantEvent } from '../changetracking/change-tracking-projection';
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
-import { loadSettings, modifySettings, saveSettings } from '../settings/settings';
+import { loadSettings, saveSettings } from '../settings/settings';
 import { incrementUnreadCount } from './title-indicator';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
+import { BackgroundSyncService, type BackgroundSyncStatus } from './background-sync-service';
 
-export type BackgroundSyncStatus =
-  | { _tag: 'syncPending'; nextRefreshDate: Date, userSelection: UserSelectionEntry }
-  | { _tag: 'syncing', flattenedUserSelection: CacheKey, userSelection: UserSelectionEntry }
-  | { _tag: 'syncPerformed', flattenedUserSelection: CacheKey, userSelection: UserSelectionEntry; duration: string }
-  | { _tag: 'syncDisabled', reason: 'notificationSettingDisabled' | 'noMatchingSelection' };
+// Re-export for consumers
+export type { BackgroundSyncStatus } from './background-sync-service';
 
-// Module-level singleton state for background worker
-let workerState: {
-  pubsub: PubSub.PubSub<BackgroundSyncStatus>;
-  fiber: Fiber.RuntimeFiber<never, never>;
-} | undefined;
+// Module-level singleton state for notification daemon
+let notificationDaemonFiber: Fiber.RuntimeFiber<void, unknown> | undefined;
 
 /**
- * Computes the current sync status based on settings.
- * Returns the status and whether a fetch should be performed.
+ * Background fetch atom - subscribes to the service's status stream.
  */
-const computeSyncStatus = (get: Atom.Context): {
-  status: BackgroundSyncStatus;
-} => {
-  const settingsResult = get.registry.get(settingsAtom);
-  const settings = Result.match(settingsResult, {
-    onInitial: () => null,
-    onFailure: () => null,
-    onSuccess: (s) => s.value
-  });
-
-  const userSelectionsById = get.registry.get(userSelectionsByIdAtom);
-  const matchingSelection = settings?.notifications.enabled
-    ? userSelectionsById.get(settings.notifications.syncUserSelectionEntryId!)
-    : undefined;
-
-  if (!settings || !settings.notifications.enabled) {
-    return { status: { _tag: 'syncDisabled', reason: 'notificationSettingDisabled' } };
-  }
-
-  if (!matchingSelection) {
-    return { status: { _tag: 'syncDisabled', reason: 'noMatchingSelection' } };
-  }
-
-  const lastRefreshTimestamp = settings.notifications.lastRefreshTimestamp;
-  const syncIntervalMs = settings.notifications.syncIntervalSeconds * 1000;
-  const now = Date.now();
-
-  const lastRefreshTime = lastRefreshTimestamp
-    ? new Date(lastRefreshTimestamp).getTime()
-    : 0;
-
-  const timeUntilNextRefresh = syncIntervalMs - (now - lastRefreshTime);
-  if (timeUntilNextRefresh > 0) {
-    return {
-      status: {
-        _tag: 'syncPending',
-        nextRefreshDate: new Date(lastRefreshTime + syncIntervalMs),
-        userSelection: matchingSelection
-      } satisfies BackgroundSyncStatus
-    };
-  }
-
-  const groups = get.registry.get(groupsAtom);
-  const cacheKey = extractSelectionData(matchingSelection, groups, 'opened');
-
-  return {
-    status: {
-      _tag: 'syncing',
-      flattenedUserSelection: cacheKey,
-      userSelection: matchingSelection
-    } satisfies BackgroundSyncStatus
-  };
-};
-
-/**
- * Creates the background worker daemon that publishes to PubSub.
- * Only one worker runs regardless of how many subscribers.
- */
-const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<BackgroundSyncStatus>) => {
-  const decideFetch = (matchingSelection: CacheKey) =>
-    Effect.catchAllCause(
-      matchingSelection._tag === 'UserMRs'
-        ? decideFetchUserMrs(matchingSelection.usernames as string[], 'opened')
-        : decideFetchProjectMrs(matchingSelection.projectPath, 'opened'),
-      (cause) => Console.error('[BackgroundSync] Fetch failed:', cause)
-    );
-
-  return Effect.gen(function* () {
-    yield* Console.log('[BackgroundSync] Daemon worker STARTED');
-
-    while (true) {
-      const { status } = computeSyncStatus(get);
-
-      switch (status._tag)
-      {
-        case 'syncDisabled':
-          yield* PubSub.publish(pubsub, status);
-          const sleepTime = status._tag === 'syncDisabled' ? '30 seconds' : '5 seconds';
-          yield* Effect.sleep(sleepTime);
-          break;
-
-        case 'syncPending':
-          yield* PubSub.publish(pubsub, status);
-          const msUntilRefresh = status.nextRefreshDate.getTime() - Date.now();
-          yield* Effect.sleep(`${Math.min(msUntilRefresh, 5000)} millis`);
-          break;
-
-        case 'syncing':
-          yield* PubSub.publish(pubsub, status);
-          yield* decideFetch(status.flattenedUserSelection);
-          modifySettings(settings => ({
-            ...settings,
-            notifications: { ...settings.notifications, lastRefreshTimestamp: new Date().toISOString() }
-          }));
-          yield* PubSub.publish(pubsub, {
-            _tag: 'syncPerformed',
-            flattenedUserSelection: status.flattenedUserSelection,
-            userSelection: status.userSelection,
-            duration: "idk seconds"
-          });
-          yield* Effect.sleep('5 seconds');
-          break;
-
-      }
-    }
-  });
-};
-
-const ensureBackgroundWorker = (get: Atom.Context) =>
-  Effect.gen(function* () {
-    if (workerState) {
-      yield* Console.log('[BackgroundSync] Worker already running, reusing PubSub');
-      return workerState.pubsub;
-    }
-
-    yield* Console.log('[BackgroundSync] Starting new background worker daemon');
-    const pubsub = yield* PubSub.unbounded<BackgroundSyncStatus>();
-    const fiber = yield* Effect.forkDaemon(createBackgroundWorker(get, pubsub));
-
-    workerState = { pubsub, fiber };
-    return pubsub;
-  });
-
-/**
- * Background fetch stream - subscribes to the singleton daemon's PubSub.
- */
-const backgroundFetchStream = Effect.fn("backgroundFetchStream")(function* (get: Atom.Context) {
-  const pubsub = yield* ensureBackgroundWorker(get);
-  return Stream.fromPubSub(pubsub);
-});
-
 export const backgroundFetchAtom = appAtomRuntime.atom(
-  (get) => Stream.unwrap(backgroundFetchStream(get)),
+  (_get) => Effect.map(
+    BackgroundSyncService,
+    (service) => Stream.fromPubSub(service.statusPubSub)
+  ).pipe(Stream.unwrap),
   { initialValue: { _tag: 'syncDisabled' } as BackgroundSyncStatus }
 ).pipe(Atom.keepAlive);
 
@@ -197,15 +60,11 @@ const buildNotificationContext = (get: Atom.Context): NotificationContext => {
 
 const processStateChangeToNotification = (acc: ChangeTrackingState, get: Atom.Context) => {
   return Effect.gen(function* () {
+
     if (!acc.event) return;
 
     const deltas = acc.deltasByEventId.get(acc.event.eventId);
     if (!deltas || deltas.length === 0) return;
-
-    // Update last processed event ID
-    const currentSettings = loadSettings();
-    currentSettings.notifications.lastProcessedEventId = acc.event.eventId;
-    saveSettings(currentSettings);
 
     // Check if notifications are enabled
     const settingsResult = get.registry.get(settingsAtom);
@@ -278,17 +137,77 @@ ${jiraStatusChanged} JIRA status changes`
   })
 }
 
-const notificationStream = Effect.fn("notificationStream")(function* (get: Atom.Context) {
-  const settings = loadSettings();
-  const lastProcessedTimestamp = settings.notifications.lastProcessedEventId;
+const createNotificationDaemon = (get: Atom.Context) =>
+  Effect.gen(function* () {
+    yield* Console.log('[NotificationDaemon] Starting');
 
-  return (yield* changesStream(get)).pipe(
-    Stream.dropUntil(acc => !lastProcessedTimestamp || acc.event?.eventId === lastProcessedTimestamp),
-    Stream.tap((acc) => processStateChangeToNotification(acc, get))
-  );
-});
+    const settings = loadSettings();
+    const lastProcessedTimestamp = settings.notifications.lastProcessedEventId;
 
-export const notificationStreamAtom = appAtomRuntime.atom(
-  (get) => Stream.unwrap(notificationStream(get)),
-  { initialValue: undefined }
-).pipe(Atom.keepAlive);
+    const stream = (yield* changesStream(get)).pipe(
+      Stream.groupedWithin(3000, "2 seconds"),
+      Stream.dropUntil(acc => {
+        if (!lastProcessedTimestamp) {
+          return true; // stop drop
+        }
+
+        const hasLastProcessedEvent = acc.pipe(
+          Chunk.findFirst(change => change.event?.eventId == lastProcessedTimestamp),
+          Option.isSome);
+
+        console.log(`[NotificationDaemon] stop dropping events? hasLastProcessedEvent: ${hasLastProcessedEvent}, lastProcessedTimestamp: ${lastProcessedTimestamp}`)
+
+        return hasLastProcessedEvent; // if has the event, stop dropping
+      }),
+      Stream.tap((acc) => {
+        return Effect.gen(function* () {
+          // Find the last event of each type to ensure we notify for both MR and Jira changes
+          const lastMrEventState = acc.pipe(
+            Chunk.findLast(state => state.event !== undefined && isMrChangeTrackingRelevantEvent(state.event))
+          );
+          const lastJiraEventState = acc.pipe(
+            Chunk.findLast(state => state.event !== undefined && isJiraChangeTrackingRelevantEvent(state.event))
+          );
+
+          // The actual last event (for persisting lastProcessedEventId)
+          const actualLastState = acc.pipe(Chunk.last);
+
+          yield* Console.log(`[NotificationDaemon] Processing - lastMr: ${Option.isSome(lastMrEventState)}, lastJira: ${Option.isSome(lastJiraEventState)}`);
+
+          // Process each event type's deltas (avoiding duplicates if same event is both MR and Jira)
+          const processedEventIds = new Set<string>();
+
+          if (Option.isSome(lastMrEventState) && lastMrEventState.value.event) {
+            processedEventIds.add(lastMrEventState.value.event.eventId);
+            yield* processStateChangeToNotification(lastMrEventState.value, get);
+          }
+
+          if (Option.isSome(lastJiraEventState) && lastJiraEventState.value.event) {
+            const eventId = lastJiraEventState.value.event.eventId;
+            if (!processedEventIds.has(eventId)) {
+              yield* processStateChangeToNotification(lastJiraEventState.value, get);
+            }
+          }
+
+          // Persist the actual last event ID
+          if (Option.isSome(actualLastState) && actualLastState.value.event) {
+            const currentSettings = loadSettings();
+            currentSettings.notifications.lastProcessedEventId = actualLastState.value.event.eventId;
+            saveSettings(currentSettings);
+          }
+        })
+      })
+    );
+
+    yield* Stream.runDrain(stream);
+  });
+
+export const ensureNotificationDaemon = (get: Atom.Context) =>
+  Effect.gen(function* () {
+    if (notificationDaemonFiber) {
+      return;
+    }
+
+    yield* Console.log('[NotificationDaemon] Forking daemon');
+    notificationDaemonFiber = yield* Effect.forkDaemon(createNotificationDaemon(get));
+  });

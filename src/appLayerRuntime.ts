@@ -8,6 +8,7 @@ import { ConsoleLogged } from "./logging/consoleLogged"
 import { EventStorage } from "./events/events"
 import { JiraScrollService } from "./jira/jira-scroll-service"
 import { DiscussionScrollService } from "./discussion/discussion-scroll-service"
+import { BackgroundSyncService } from "./notifications/background-sync-service"
 
 const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
 const commandExecutorLayer = CommandExecutor.layer.pipe(
@@ -37,7 +38,8 @@ export const appLayer = Layer.mergeAll(
   fileSystemLayer,
   commandExecutorLayer,
   JiraScrollService.Default,
-  DiscussionScrollService.Default
+  DiscussionScrollService.Default,
+  BackgroundSyncService.Default
 )
 
 // Build a shared runtime using the atom system's memoMap

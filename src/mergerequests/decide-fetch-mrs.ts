@@ -46,7 +46,6 @@ export const decideFetchUserMrs = (
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
-  yield* Console.log("hello")
   const mrEvent = yield* getGitlabMrsAsEvent(usernames, state)
   yield* EventStorage.appendEvent(mrEvent)
 

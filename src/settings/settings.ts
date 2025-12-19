@@ -9,9 +9,13 @@ export type JobImportance = 'ignore' | 'low' | 'high';
 
 export interface NotificationSettings {
   enabled: boolean;
+  lastProcessedEventId?: string;
+}
+
+export interface BackgroundSyncSettings {
+  enabled: boolean;
   syncIntervalSeconds: number;
   syncUserSelectionEntryId?: string;
-  lastProcessedEventId?: string;
   lastRefreshTimestamp?: string; // ISO date string of when the last background refresh occurred
 }
 
@@ -24,9 +28,14 @@ export interface Settings {
   selectedUserSelectionEntryId?: string;
   currentUser: string;
   notifications: NotificationSettings;
+  backgroundSync: BackgroundSyncSettings;
 }
 
 export const defaultNotificationSettings: NotificationSettings = {
+  enabled: false
+};
+
+export const defaultBackgroundSyncSettings: BackgroundSyncSettings = {
   enabled: false,
   syncIntervalSeconds: 60 * 15
 };
@@ -38,7 +47,8 @@ export const defaultSettings: Settings = {
   seenMergeRequests: [],
   pipelineJobImportance: {},
   currentUser: 'r.schoorstra',
-  notifications: defaultNotificationSettings
+  notifications: defaultNotificationSettings,
+  backgroundSync: defaultBackgroundSyncSettings
 };
 
 // Color palette for repository colors - Dracula-compatible colors
@@ -96,6 +106,10 @@ export const loadSettings = (): Settings => {
       notifications: {
         ...defaultNotificationSettings,
         ...(settings.notifications || {})
+      },
+      backgroundSync: {
+        ...defaultBackgroundSyncSettings,
+        ...(settings.backgroundSync || {})
       }
     };
   } catch (error) {

@@ -123,9 +123,17 @@ export const currentUserAtom = Atom.make(get => {
 
 export const notificationSettingsAtom = Atom.make(get => {
   return Result.match(get(settingsAtom), {
-    onInitial: () => ({ enabled: false, syncIntervalSeconds: 60 * 10 }),
-    onSuccess: ({ value }) => value.notifications ?? { enabled: false, syncIntervalSeconds: 60 * 10 },
-    onFailure: () => ({ enabled: false, syncIntervalSeconds: 60 * 10 })
+    onInitial: () => ({ enabled: false }),
+    onSuccess: ({ value }) => value.notifications ?? { enabled: false },
+    onFailure: () => ({ enabled: false })
+  });
+});
+
+export const backgroundSyncSettingsAtom = Atom.make(get => {
+  return Result.match(get(settingsAtom), {
+    onInitial: () => ({ enabled: false, syncIntervalSeconds: 60 * 15 }),
+    onSuccess: ({ value }) => value.backgroundSync ?? { enabled: false, syncIntervalSeconds: 60 * 15 },
+    onFailure: () => ({ enabled: false, syncIntervalSeconds: 60 * 15 })
   });
 });
 
@@ -133,7 +141,7 @@ export const toggleNotificationsAtom = appAtomRuntime.fn((_: void, get) =>
   Effect.gen(function* () {
     const settings = loadSettings();
     if (!settings.notifications) {
-      settings.notifications = { enabled: false, syncIntervalSeconds: 120 };
+      settings.notifications = { enabled: false };
     }
     settings.notifications.enabled = !settings.notifications.enabled;
     saveSettings(settings);

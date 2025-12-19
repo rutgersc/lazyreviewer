@@ -46,17 +46,8 @@ function sendNotificationForPlatform(payload: NotificationPayload): Promise<void
     const options: notifier.Notification = {
       title: payload.title,
       message: payload.body,
-      sound: false,
       wait: false,
     };
-
-    // macOS-specific subtitle support
-    if (os === 'darwin' && payload.subtitle) {
-      options.subtitle = payload.subtitle;
-    }
-
-    // Windows: don't set appID to avoid registration requirements
-    // node-notifier will use snoretoast's default behavior
 
     console.log('[Notification] Calling notifier.notify with options:', JSON.stringify(options));
     notifier.notify(options, (error, response) => {

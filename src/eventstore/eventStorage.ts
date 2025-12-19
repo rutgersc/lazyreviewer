@@ -70,10 +70,10 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
         ? parsedFiles.slice(lastCompactionIndex)
         : parsedFiles
 
-      yield* Console.log(
-        `[EventStorage] Found ${parsedFiles.length} total events, ` +
-        `loading ${eventsToLoad.length}`
-      )
+      // yield* Console.log(
+      //   `[EventStorage] Found ${parsedFiles.length} total events, ` +
+      //   `loading ${eventsToLoad.length}`
+      // )
 
       // Load and parse each event file with Schema validation
       const events = yield* Effect.all(

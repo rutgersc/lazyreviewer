@@ -23,10 +23,12 @@ import { toggleNotificationsAtom, notificationSettingsAtom } from './settings/se
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { Console, Effect } from 'effect';
 import { consoleLoggedLayer } from './appLayerRuntime';
-import { notificationStreamAtom } from './notifications/notification-sync-atom';
+import { appInitAtom } from './app-init';
 import { clearUnreadCount } from './notifications/title-indicator';
 
 export default function App() {
+  useAtomValue(appInitAtom);
+
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
   const dumpAllMrs = useAtomSet(dumpAllMrsToFileAtom, { mode: 'promiseExit' });
   const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
@@ -50,8 +52,6 @@ export default function App() {
     const issue = jiraIssuesMap.get(key);
     return issue ? [issue] : [];
   }) || [];
-
-  useAtomValue(notificationStreamAtom);
 
   useEffect(() => {
     const onFocus = () => clearUnreadCount();

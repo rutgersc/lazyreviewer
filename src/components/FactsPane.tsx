@@ -537,7 +537,6 @@ export default function FactsPane() {
       )}
     </box>
   );
-  console.log("redraw")
 
   const logoBox = () => {
     const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {
