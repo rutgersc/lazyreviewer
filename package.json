@@ -23,15 +23,16 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@effect-atom/atom-react": "^0.3.4",
+    "@effect-atom/atom-react": "^0.4.4",
+    "@effect/experimental": "^0.58.0",
     "@effect/language-service": "^0.48.0",
-    "@effect/platform": "^0.92.1",
-    "@effect/platform-node": "^0.98.4",
+    "@effect/platform": "^0.94.0",
+    "@effect/platform-node": "^0.104.0",
     "@effect/schema": "^0.75.5",
-    "@opentui/core": "^0.1.50",
-    "@opentui/react": "^0.1.50",
+    "@opentui/core": "^0.1.62",
+    "@opentui/react": "^0.1.62",
     "dotenv": "^17.2.3",
-    "effect": "^3.18.4",
+    "effect": "^3.19.13",
     "node-notifier": "^10.0.1",
     "react": "^19.0.0"
   }
