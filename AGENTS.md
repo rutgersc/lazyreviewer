@@ -67,34 +67,16 @@ bun install
 
 !IMPORTANT!: This app is a terminal TUI (openTUI), not a web app—no browser runtime concerns; focus on TUI/event-loop behavior.
 
-### Type-Driven Development Approach
+### Type-Driven Development
 
-**ALWAYS start with types before making code changes:**
-**AVOID typing anything in typescript with `any`. Any shuts off typing, so don't ever use `any` at all. Absolutely never use any as a type to fix type errors.**
-**REPEAT: Avoid typing with `any`. any is NOT recommended**
-**NEVER use type assertions (`as TypeName`) to satisfy the compiler - it disables type checking and masks real type errors. Always fix the underlying type issue instead.**
+See **[Type-Driven Development](docs/type-driven-development.md)** for detailed guidance.
 
-1. **Examine existing types first**: Before modifying any code, read and understand the type definitions involved:
-   - Check interface definitions (e.g., `JiraIssue`, `GitlabMergeRequest`)
-   - Look at function signatures and their parameter/return types
-   - Understand component prop types
-
-2. **Validate type compatibility**: Ensure your planned changes align with existing types:
-   - Does the data structure match what you're trying to access? (e.g., `issue.fields.summary` not `issue.summary`)
-   - Are you passing the correct types to functions and components?
-   - Do new props match the expected interface?
-
-3. **Design new types before implementation**: For new features, define types first:
-   - Consider creating interfaces for new data structures
-   - Define component prop types upfront
-   - Consider type unions and optional properties
-
-4. **Use TypeScript as your guide**: Let the type checker catch issues during development, not after:
-   - Run `bun run typecheck` frequently during development
-   - Address type errors immediately rather than fixing them post-implementation
-   - Use IDE type hints to understand available properties and methods
-
-**Example**: When adding Jira modal, first examine `JiraIssue` interface to understand `issue.fields.summary` structure, then design `JiraModalProps` interface, then implement the component.
+**Key rules:**
+- **NEVER use `any`** - it shuts off typing entirely
+- **NEVER use type assertions** (`as TypeName`) - fix the underlying type issue instead
+- Always examine existing types before modifying code
+- Design new types before implementation
+- Run `bun run typecheck` frequently
 
 ### Code Organization and Separation of Concerns
 
@@ -147,14 +129,6 @@ async switchUserSelection(entry: number) {
 - Prevents race conditions between state updates and rendering
 - Avoids memory/rendering issues from rapid state replacements
 
-### Plan-Driven Development for Complex Features
-
-**For significant new features, create implementation plans before coding:**
-
-1. **Document in `.claude/plans/`**: Create detailed implementation plan with research findings and step-by-step approach
-2. **Brief summary original prompt**: Capture the users intent.
-3. **Define plan phases and tasks**: Clearly define each phase, subdivided by tasks. Number accordingly for example, "Phase 1: add new pane" "Task 1.1: do something"). Implement in logical order (types → utilities → components → integration). Describe for each task what other tasks it depends on and what it is that it depends on. Structure the phases and tasks according to the dependencies between them.
-
 ### Code Style
 
 **Immutable FP Style (MANDATORY):**
@@ -182,61 +156,23 @@ const results = items
 - Favor small pure functions with clear input/output
 - DONT use INLINE imports via require. Always import top level
 
-### React: CRITICAL useEffect Antipattern
+### React Patterns
 
-**useEffect is a code smell and should be avoided unless there is NO OTHER WAY**
+See **[React Patterns](docs/react-patterns.md)** for detailed guidance.
 
-**NEVER use useEffect to react to state changes when you control the setter:**
-- ❌ BAD: Using useEffect to trigger side effects when state changes
-- ✅ GOOD: Trigger side effects directly in the setter/action where state is updated
-
-**Example of the ANTIPATTERN (DO NOT DO THIS):**
-```typescript
-// ❌ BAD: Using useEffect to react to mergeRequests changes
-useEffect(() => {
-  if (mergeRequests.length > 0) {
-    fetchBranchDifferences(mergeRequests).then(differences => {
-      setBranchDifferences(differences);
-    });
-  }
-}, [mergeRequests]);
-```
-
-**The CORRECT approach:**
-```typescript
-// ✅ GOOD: Trigger side effects in the setter itself
-fetchMrs: async () => {
-  const mrs = await fetchMergeRequests(...);
-  set({ mergeRequests: mrs });
-
-  // Trigger background work right here, where we KNOW mrs changed
-  fetchBranchDifferences(mrs).then(differences => {
-    set({ branchDifferences: differences });
-  });
-}
-```
-
-**When useEffect IS acceptable:**
-- Component mount/unmount lifecycle (start/stop timers, subscriptions)
-- Reacting to external events you don't control (window resize, external library callbacks)
-- **ONLY when you have exhausted all other options**
-
-**Why this matters:**
-- useEffect creates hidden dependencies and makes code harder to follow
-- You lose explicit control flow - it's reactive magic instead of clear causation
-- It can cause unnecessary re-renders and performance issues
-- The execution order becomes unclear and hard to reason about
-
-**Rule of thumb:** If you KNOW where the state is being set (you control the setter), trigger side effects THERE, not in useEffect.
+**Key rule:** useEffect is a code smell. If you control the setter, trigger side effects there, not in useEffect.
 
 ### Code Quality Guidelines
 
 **Post-Coding Review Process:**
-After completing any coding session, ALWAYS:
-1. **Identify code duplication**: Look for repeated patterns, similar functions, or duplicated logic that can be extracted into reusable utilities
-2. **Simplification opportunities**: Check if complex code can be simplified without losing functionality
-3. **Refactor proactively**: Extract common patterns into hooks, utilities, or shared functions
-4. **Consolidate similar functions**: If multiple functions do similar things, consider unifying them with parameters
+After completing any coding session, ALWAYS apply the **[Functional Simplification Principles](docs/functional-simplification.md)**:
+1. **Pure function extraction**: Can effectful functions be split into pure logic + effectful caller?
+2. **Loop fusion**: Am I traversing the same data multiple times?
+3. **Replace mutation with transformation**: Can push/add/set be replaced with filter→map→filter pipelines?
+4. **Use appropriate data structures**: Would a Set/Map eliminate manual tracking?
+5. **Separation of concerns**: Does each function have a single responsibility?
+6. **Identify code duplication**: Look for repeated patterns that can be extracted
+7. **Consolidate similar functions**: If multiple functions do similar things, unify them with parameters
 
 **Code Reuse and Deduplication:**
 
@@ -284,28 +220,11 @@ lastRefreshTimestampAtom → derives .timestamp
 - **ONLY add comments for**: business logic context, non-obvious algorithms, or external API quirks
 - **Prefer**: descriptive variable names, clear function names, and well-structured code over comments
 
-### UI Color Guidelines
-**NEVER use hard-to-read colors that reduce accessibility:**
-- AVOID `#6272a4` (grey) - too dim and hard to read on dark backgrounds
-- AVOID colors with low contrast ratios
-- USE high-contrast colors from the Dracula theme palette:
-  - `#f8f8f2` (foreground white)
-  - `#bd93f9` (purple) - good alternative to grey
-  - `#50fa7b` (green)
-  - `#8be9fd` (cyan)
-  - `#ffb86c` (orange)
-  - `#ff5555` (red)
-  - `#f1fa8c` (yellow)
-- When in doubt, use `#bd93f9` instead of grey tones
+### UI Guidelines
 
-**IMPORTANT ACCESSIBILITY RULE:**
-- ALWAYS review all text colors in new components for readability
-- Replace any instance of `#6272a4` with `#bd93f9` for better contrast
-- Test readability by checking if text is easily visible against dark backgrounds
+See **[UI Guidelines](docs/ui-guidelines.md)** for colors, openTUI specifics, and component patterns.
 
-### openTUI info
-- when handling keys via useKeyboard, 'enter' is not a keycode. 'enter' is 'return' instead.
-
-### UI Component Guidelines
-- **Discussion counts**: Always show resolved/resolvable format (e.g., "💬 3/5" or "💬 0/0") - do not special-case zero values with conditional rendering
-- **MR row height**: The `useAutoScroll` hook's `itemHeight` parameter must match the actual number of rows rendered per MR item, otherwise keyboard navigation scrolling will be misaligned. When adding/removing rows from the MR display, update the `itemHeight` accordingly
+**Key rules:**
+- Use Dracula theme palette, avoid `#6272a4` (grey) - use `#bd93f9` instead
+- In openTUI, use `'return'` not `'enter'` for key handling
+- Always show discussion counts as resolved/resolvable format (e.g., "💬 3/5")
