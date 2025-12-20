@@ -1,6 +1,6 @@
 import { Atom, Result } from "@effect-atom/atom-react";
 import type { MergeRequest } from "./mergerequest-schema";
-import { extractSelectionData } from "../userselection/userSelection";
+import { extractSelectionData, findSelectionForAuthor, getUsernamesFromSelection } from "../userselection/userSelection";
 import {
   type CacheKey,
   decideFetchUserMrs,
@@ -21,6 +21,7 @@ import { writeFileSync } from 'fs';
 import { join } from 'path';
 import type { JiraIssue } from "../jira/jira-service";
 import { selectedUserSelectionEntryAtom, userSelectionsAtom } from "../userselection/userselection-atom";
+import { selectedUserSelectionEntryIdAtom } from "../settings/settings-atom";
 import { allEventsIncludingCompactedAtom } from "../events/events-atom";
 import type { LazyReviewerEvent } from "../events/events";
 import { groupsAtom } from "../data/data-atom";
@@ -326,4 +327,58 @@ export const dumpAllMrsToFileAtom = appAtomRuntime.fn((_, get) =>
       Effect.tap(filename => Console.log(`[Debug] Dumped allMrs state to ${filename}`))
     );
   })
+);
+
+export type SelectMrByIdParams = {
+  mrId: string;
+};
+
+export const selectMrByIdAtom = Atom.writable(
+  () => undefined as string | undefined,
+  (ctx, params: SelectMrByIdParams) => {
+    const { mrId } = params;
+
+    // Get current filtered MRs
+    const filteredMrs = ctx.get(filteredMrsAtom);
+    const mrIndex = filteredMrs.findIndex(mr => mr.id === mrId);
+
+    if (mrIndex >= 0) {
+      // MR is in current filtered list - just set the index
+      ctx.set(selectedMrIndexAtom, mrIndex);
+      return;
+    }
+
+    // MR not in filtered list - need to switch user selection
+    const allMrsResult = ctx.get(allMrsAtom);
+    const allMrsState = Result.match(allMrsResult, {
+      onInitial: () => null,
+      onFailure: () => null,
+      onSuccess: (state) => state.value
+    });
+    if (!allMrsState) return;
+
+    const mr = allMrsState.mrsByGid.get(mrId);
+    if (!mr) return;
+
+    const userSelections = ctx.get(userSelectionsAtom);
+    const groups = ctx.get(groupsAtom);
+    const suggestedSelection = findSelectionForAuthor(mr.author, userSelections, groups);
+
+    if (suggestedSelection) {
+      const newState = mr.state as MergeRequestState;
+      const selectionUsernames = getUsernamesFromSelection(suggestedSelection, groups);
+
+      // Compute the new filtered list
+      const newFilteredMrs = Array.from(allMrsState.mrsByGid.values())
+        .filter(m => m.state === newState && selectionUsernames.has(m.author))
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+
+      const newMrIndex = newFilteredMrs.findIndex(m => m.id === mrId);
+
+      // Set everything together
+      ctx.set(selectedUserSelectionEntryIdAtom, suggestedSelection.userSelectionEntryId);
+      ctx.set(filterMrStateAtom, newState);
+      ctx.set(selectedMrIndexAtom, newMrIndex >= 0 ? newMrIndex : 0);
+    }
+  }
 );

@@ -88,3 +88,38 @@ export const extractSelectionData = (
 
   throw new Error("unreachable");
 };
+
+export const getUsernamesFromSelection = (
+  entry: UserSelectionEntry,
+  groups: readonly UserGroup[]
+): Set<string> => {
+  const usernames = new Set<string>();
+
+  const processId = (id: UserOrGroupId) => {
+    if (id.type === 'userId') {
+      usernames.add(id.id);
+    } else if (id.type === 'groupId') {
+      const group = groups.find(g => g.id.id === id.id);
+      if (group) {
+        group.children.forEach(processId);
+      }
+    }
+  };
+
+  entry.selection.forEach(processId);
+  return usernames;
+};
+
+export const findSelectionForAuthor = (
+  author: string,
+  userSelections: readonly UserSelectionEntry[],
+  groups: readonly UserGroup[]
+): UserSelectionEntry | null => {
+  for (const entry of userSelections) {
+    const usernames = getUsernamesFromSelection(entry, groups);
+    if (usernames.has(author)) {
+      return entry;
+    }
+  }
+  return null;
+};

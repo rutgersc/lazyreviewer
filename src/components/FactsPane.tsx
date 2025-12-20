@@ -11,13 +11,7 @@ import { EventStorage } from '../eventstore/eventStorage';
 import { openFileInEditor } from '../utils/open-file';
 import { appLayer } from '../appLayerRuntime';
 import { Effect } from 'effect';
-import { allMrsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, filterMrStateAtom, isMergeRequestsLoadingAtom } from '../mergerequests/mergerequests-atom';
-import type { MergeRequestState } from '../graphql/generated/gitlab-base-types';
-import { userSelectionsAtom } from '../userselection/userselection-atom';
-import { groupsAtom } from '../data/data-atom';
-import { selectedUserSelectionEntryIdAtom } from '../settings/settings-atom';
-import { openSettingsFile } from '../settings/settings';
-import type { UserSelectionEntry, UserOrGroupId, UserGroup } from '../userselection/userSelection';
+import { allMrsAtom, unwrappedMergeRequestsAtom, isMergeRequestsLoadingAtom, selectMrByIdAtom } from '../mergerequests/mergerequests-atom';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { eventChangesReadmodelAtom } from '../changetracking/change-tracking-atom';
 import type { Change, MrChange } from '../changetracking/change-tracking-projection';
@@ -122,48 +116,6 @@ function getNoteIdFromChange(change: Change): string | undefined {
   }
 }
 
-interface MrSuggestion {
-  mrName: string;
-  author: string;
-  state: string;
-  suggestedSelection: UserSelectionEntry | null;
-}
-
-function getUsernamesFromSelection(
-  entry: UserSelectionEntry,
-  groups: readonly UserGroup[]
-): Set<string> {
-  const usernames = new Set<string>();
-
-  const processId = (id: UserOrGroupId) => {
-    if (id.type === 'userId') {
-      usernames.add(id.id);
-    } else if (id.type === 'groupId') {
-      const group = groups.find(g => g.id.id === id.id);
-      if (group) {
-        group.children.forEach(processId);
-      }
-    }
-  };
-
-  entry.selection.forEach(processId);
-  return usernames;
-}
-
-function findSelectionForAuthor(
-  author: string,
-  userSelections: readonly UserSelectionEntry[],
-  groups: readonly UserGroup[]
-): UserSelectionEntry | null {
-  for (const entry of userSelections) {
-    const usernames = getUsernamesFromSelection(entry, groups);
-    if (usernames.has(author)) {
-      return entry;
-    }
-  }
-  return null;
-}
-
 export default function FactsPane() {
   const [activePane, setActivePane] = useAtom(activePaneAtom);
   const allEvents = resultToArray(useAtomValue(allEventsIncludingCompactedAtom));
@@ -171,15 +123,10 @@ export default function FactsPane() {
   const [compactionMessage, setCompactionMessage] = useState<string | null>(null);
   const [sublistFocused, setSublistFocused] = useState(false);
   const [sublistIndex, setSublistIndex] = useState(0);
-  const [suggestion, setSuggestion] = useState<MrSuggestion | null>(null);
   const compactState = useAtomSet(compactAllEventsAtom, { mode: 'promise' });
   const allMrsResult = useAtomValue(allMrsAtom);
-  const [, setSelectedMrIndex] = useAtom(selectedMrIndexAtom);
+  const selectMrById = useAtomSet(selectMrByIdAtom);
   const filteredMrs = useAtomValue(unwrappedMergeRequestsAtom);
-  const userSelections = useAtomValue(userSelectionsAtom);
-  const groups = useAtomValue(groupsAtom);
-  const setSelectedUserSelectionEntryId = useAtomSet(selectedUserSelectionEntryIdAtom);
-  const setFilterMrState = useAtomSet(filterMrStateAtom);
   const setInfoPaneTab = useAtomSet(infoPaneTabAtom);
   const setTargetNoteId = useAtomSet(targetNoteIdAtom);
   const { scroll: scrollToDiscussion } = useDiscussionScroll();
@@ -286,33 +233,18 @@ export default function FactsPane() {
     return grouped;
   }, [displayEvents, events.length, allMrsState, deltasByEventIdSize]);
 
-  // Helper to select MR - if not in filtered list, switch to appropriate selection directly
-  // If noteId is provided, also navigate to the specified tab and select that note
-  const selectMrById = (mrId: string, mrName: string, noteId?: string, navigateTo?: 'overview' | 'activity') => {
-    const mrIndex = filteredMrs.findIndex(mr => mr.id === mrId);
-    if (mrIndex >= 0) {
-      setSelectedMrIndex(mrIndex);
-      setSuggestion(null);
+  // Helper to select MR and navigate to a specific note
+  const selectMrAndNavigate = (mrId: string, noteId?: string, navigateTo?: 'overview' | 'activity') => {
+    // Let the atom handle MR selection (including user selection switching if needed)
+    selectMrById({ mrId });
 
-      // If a specific note is requested, navigate to the appropriate tab
-      if (noteId && navigateTo) {
-        setInfoPaneTab(navigateTo);
-        if (navigateTo === 'overview') {
-          // Use the scroll service - it will wait for the handler if needed
-          void scrollToDiscussion(noteId);
-        } else {
-          setTargetNoteId(noteId);
-        }
-      }
-    } else {
-      // MR not in filtered list - switch to appropriate selection directly
-      const mr = allMrsState?.mrsByGid.get(mrId);
-      if (mr) {
-        const suggestedSelection = findSelectionForAuthor(mr.author, userSelections, groups);
-        if (suggestedSelection) {
-          setSelectedUserSelectionEntryId(suggestedSelection.userSelectionEntryId);
-          setFilterMrState(mr.state as MergeRequestState);
-        }
+    // Handle UI navigation
+    if (noteId && navigateTo) {
+      setInfoPaneTab(navigateTo);
+      if (navigateTo === 'overview') {
+        void scrollToDiscussion(noteId);
+      } else {
+        setTargetNoteId(noteId);
       }
     }
   };
@@ -328,7 +260,7 @@ export default function FactsPane() {
           : change.type === 'system-note'
             ? 'activity'
             : undefined;
-      selectMrById(change.mr.mrId, change.mr.mrName, noteId, navigateTo);
+      selectMrAndNavigate(change.mr.mrId, noteId, navigateTo);
       return;
     }
 
@@ -344,7 +276,7 @@ export default function FactsPane() {
       if (fromAll) {
         console.log('selecting jira issue', issueKey, change);
         setInfoPaneTab('jira');
-        selectMrById(fromAll.id, fromAll.title ?? issueKey);
+        selectMrAndNavigate(fromAll.id);
         const issueIndex = fromAll.jiraIssueKeys.findIndex(k => k === issueKey);
         setSelectedJiraIndex(issueIndex >= 0 ? issueIndex : 0);
         setSelectedJiraSubIndex(0);
@@ -379,14 +311,12 @@ export default function FactsPane() {
       } else if (key.name === 'escape') {
         setSublistFocused(false);
         setSublistIndex(0);
-        setSuggestion(null);
       }
       return;
     }
 
     // Event list navigation - navigate by groups, not individual events
     if (key.name === 'j' || key.name === 'down') {
-        setSuggestion(null);
         const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
         const currentGroupIndex = groupedEvents.findIndex(g =>
             current >= g.startIndex && current <= g.endIndex
@@ -408,7 +338,6 @@ export default function FactsPane() {
             }
         }
     } else if (key.name === 'k' || key.name === 'up') {
-        setSuggestion(null);
         const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
         const currentGroupIndex = groupedEvents.findIndex(g =>
             current >= g.startIndex && current <= g.endIndex
@@ -444,10 +373,8 @@ export default function FactsPane() {
       // nothing
     } else if (key.name === 'escape') {
         setHighlightedIndex(null);
-        setSuggestion(null);
     } else if (key.name === 'g' && key.shift) {
         // G - bottom (visually) -> Oldest group
-        setSuggestion(null);
         const lastGroupIndex = groupedEvents.length - 1;
         const oldestGroup = groupedEvents[lastGroupIndex];
         setHighlightedIndex(oldestGroup ? oldestGroup.startIndex : 0);
@@ -488,55 +415,6 @@ export default function FactsPane() {
         }
     }
   });
-
-  const suggestionBox = (suggestion: MrSuggestion) => (
-    <box
-      key="suggestion-box"
-      width="100%"
-      flexDirection="column"
-      style={{
-        border: true,
-        borderColor: "#ffb86c",
-      }}
-    >
-      <box height={1} width="100%" flexDirection="row">
-        <text fg="#ffb86c" wrapMode="none">
-          {" ⚠ MR not in view"}
-        </text>
-      </box>
-      <box height={1} width="100%" flexDirection="row">
-        <text fg="#f8f8f2" wrapMode="none">
-          {` Author: ${suggestion.author}, State: ${suggestion.state}`}
-        </text>
-      </box>
-      {suggestion.suggestedSelection ? (
-        <box
-          height={1}
-          width="100%"
-          flexDirection="row"
-          onMouseDown={() => {
-            if (suggestion.suggestedSelection) {
-              setSelectedUserSelectionEntryId(
-                suggestion.suggestedSelection.userSelectionEntryId
-              );
-              setFilterMrState(suggestion.state as MergeRequestState);
-              setSuggestion(null);
-            }
-          }}
-        >
-          <text fg="#282a36" bg="#50fa7b" wrapMode="none">
-            {` Switch to "${suggestion.suggestedSelection.name}" (${suggestion.state}) `}
-          </text>
-        </box>
-      ) : (
-        <box height={1} width="100%" flexDirection="row">
-          <text fg="#6272a4" wrapMode="none">
-            {" (no matching selection found)"}
-          </text>
-        </box>
-      )}
-    </box>
-  );
 
   const logoBox = () => {
     const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {
@@ -593,7 +471,7 @@ export default function FactsPane() {
       width="100%"
       onMouseDown={() => setActivePane(ActivePane.Facts)}
     >
-        {/* Suggestion box - reserved space to prevent list jumping */}
+        {/* Logo box - reserved space to prevent list jumping */}
         <box
             width="100%"
             height={6}
@@ -602,9 +480,7 @@ export default function FactsPane() {
                 marginBottom: 1,
             }}
         >
-            {suggestion
-              ? suggestionBox(suggestion)
-              : logoBox()}
+            {logoBox()}
         </box>
         {compactionMessage && (
             <box height={1} width="100%" flexDirection="row">
@@ -656,7 +532,6 @@ export default function FactsPane() {
                 const handleRangeClick = () => {
                     setHighlightedIndex(group.startIndex);
                     setSublistFocused(false);
-                    setSuggestion(null);
                 };
 
                 return (
@@ -731,8 +606,7 @@ export default function FactsPane() {
                     if (change) {
                         selectMrForChange(change);
                     } else {
-                        setSuggestion(null);
-                    }
+                        }
                 }
             };
 
