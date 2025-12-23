@@ -1,9 +1,9 @@
 import type { CompactedEvent } from "../events/event-compaction-events"
 import type { LazyReviewerEvent } from "../events/events"
 import type { JiraIssue } from "./jira-schema"
-import type { JiraIssuesFetchedEvent } from "../events/jira-events"
+import type { JiraIssuesFetchedEvent, JiraSprintIssuesFetchedEvent } from "../events/jira-events"
 
-export type CompactedJiraIssuesDependentEvents = JiraIssuesFetchedEvent
+export type CompactedJiraIssuesDependentEvents = JiraIssuesFetchedEvent | JiraSprintIssuesFetchedEvent
 
 export type CompactedJiraIssuesEvent =
   | CompactedJiraIssuesDependentEvents
@@ -55,6 +55,9 @@ export const projectToCompactedJiraIssuesState = (
       })
       return newState
     }
+
+    case 'jira-sprint-issues-fetched-event':
+      return state; // TODOR: fix still
 
     default:
       const _: never = event

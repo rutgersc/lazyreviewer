@@ -163,21 +163,17 @@ export default function FactsPane() {
     Result.getOrElse(() => emptyDeltasByEventId)
   );
 
-  const getDeltaOrDefault = (ev: LazyReviewerEvent | undefined) =>
+  const getDeltas = (ev: LazyReviewerEvent | undefined) =>
     (deltasByEventId.get(ev?.eventId ?? "") ?? emptySummary).filter(c => !isFilteredSystemNote(c));
 
   const currentEventIndex = highlightedIndex ?? events.length - 1;
   const currentEvent = events[currentEventIndex];
-  // Extract the specific deltas for the current event
-  const currentEventDeltas = currentEvent ? deltasByEventId.get(currentEvent.eventId) : undefined;
-  const currentSummary = useMemo(
-    () => getDeltaOrDefault(currentEvent),
-    [currentEvent, currentEventDeltas]
-  );
+  const currentEventChanges = getDeltas(currentEvent);
 
   // We want to display newest events at the top.
   const displayEvents = useMemo(() => {
     return [...events].reverse().slice(0, 100);
+    // return [...events].reverse().slice(0, 10);
   }, [events]);
 
   // Group consecutive events without summaries into ranges
@@ -194,6 +190,9 @@ export default function FactsPane() {
   deltasByEventIdRef.current = deltasByEventId;
   const deltasByEventIdSize = deltasByEventId.size;
 
+  const firstWithChanges = displayEvents.findIndex(v => getDeltas(v).length > 0);
+  console.log("My first index", firstWithChanges, displayEvents[firstWithChanges])
+
   const groupedEvents: EventGroup[] = useMemo(() => {
     const deltas = deltasByEventIdRef.current;
     const grouped: EventGroup[] = [];
@@ -203,17 +202,20 @@ export default function FactsPane() {
       const event = displayEvents[i];
       if (!event) continue;
 
-      const summary = getDeltaOrDefault(event);
-      const hasSummary = summary.length > 0;
+      const deltas = getDeltas(event);
+      const hasDeltas = deltas.length > 0;
+      const shouldGroup = firstWithChanges <= i; // only start grouping after the first change
 
-      if (!hasSummary) {
+       console.log("Should we group?", { shouldGroup, firstWithChanges, i })
+
+      if (shouldGroup && !hasDeltas) {
         // Check if we can extend the last range
         const lastGroup = grouped[grouped.length - 1];
         if (lastGroup && lastGroup.type === 'range' && lastGroup.startIndex === originalIndex + 1) {
           lastGroup.startIndex = originalIndex;
         } else if (lastGroup && lastGroup.type === 'single' && lastGroup.startIndex === originalIndex + 1) {
           // Check if the last single event also has no summary
-          const lastSummary = getDeltaOrDefault(lastGroup.event);
+          const lastSummary = getDeltas(lastGroup.event);
           const lastHasSummary = lastSummary.length > 0;
 
           if (!lastHasSummary) {
@@ -291,14 +293,14 @@ export default function FactsPane() {
     if (sublistFocused) {
       // Sublist navigation - also selects the MR
       const selectChangeAtIndex = (idx: number) => {
-        const change = currentSummary[idx];
+        const change = currentEventChanges[idx];
         if (change) {
           selectMrForChange(change);
         }
       };
 
       if (key.name === 'j' || key.name === 'down') {
-        const newIndex = Math.min(sublistIndex + 1, currentSummary.length - 1);
+        const newIndex = Math.min(sublistIndex + 1, currentEventChanges.length - 1);
         setSublistIndex(newIndex);
         selectChangeAtIndex(newIndex);
       } else if (key.name === 'k' || key.name === 'up') {
@@ -360,11 +362,11 @@ export default function FactsPane() {
         }
     } else if (key.name === 'return') {
         // Enter - focus on sublist if there are changes
-        if (currentSummary.length > 0) {
+        if (currentEventChanges.length > 0) {
             setSublistFocused(true);
             setSublistIndex(0);
             // Select first change's MR
-            const change = currentSummary[0];
+            const change = currentEventChanges[0];
             if (change) {
               selectMrForChange(change);
             }
@@ -516,7 +518,7 @@ export default function FactsPane() {
                 const isHighlighted = currentHighlight >= group.startIndex && currentHighlight <= group.endIndex;
                 const isSelected = false; // currentSelection >= group.startIndex && currentSelection <= group.endIndex;
 
-                let color = isCompacted ? '#e1cd39ff' : '#44475a';
+                let color = isCompacted ? '#e1cd39ff' : '#c8c9caff';
                 let backgroundColor: string | undefined = undefined;
 
                 if (isSelected && isHighlighted) {
@@ -579,7 +581,7 @@ export default function FactsPane() {
             }
 
             const displayIndex = ' ' + originalIndex.toString().padEnd(4, ' ');
-            const summary = getDeltaOrDefault(event);
+            const summary = getDeltas(event);
             const hasSummary = summary.length > 0;
 
             const handleEventClick = () => {

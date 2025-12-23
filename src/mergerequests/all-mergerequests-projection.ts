@@ -4,7 +4,7 @@ import { projectBitbucketMrsCompactedEvent } from "../bitbucket/bitbucket-projec
 import type { CompactedEvent } from "../events/event-compaction-events";
 import type { LazyReviewerEvent } from "../events/events";
 import type { GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabUserMergeRequestsFetchedEvent } from "../events/gitlab-events";
-import type { JiraIssuesFetchedEvent } from "../events/jira-events";
+import type { JiraIssuesFetchedEvent, JiraSprintIssuesFetchedEvent } from "../events/jira-events";
 import { projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabMrsCompactedEvent } from "../gitlab/gitlab-projections";
 import type { JiraIssue } from "../jira/jira-schema";
 import { projectJiraIssuesFetchedEvent } from "../jira/jira-service";
@@ -15,6 +15,7 @@ export type MrRelevantEvent =
   | GitlabUserMergeRequestsFetchedEvent
   | GitlabprojectMergeRequestsFetchedEvent
   | JiraIssuesFetchedEvent
+  | JiraSprintIssuesFetchedEvent
   | GitlabSingleMrFetchedEvent
   | CompactedEvent
 
@@ -23,6 +24,7 @@ export const isMrRelevantEvent = (event: LazyReviewerEvent): event is MrRelevant
     event.type === 'gitlab-project-mrs-fetched-event' ||
     event.type === 'gitlab-single-mr-fetched-event' ||
     event.type === 'jira-issues-fetched-event' ||
+    event.type === 'jira-sprint-issues-fetched-event' ||
     event.type === 'compacted-event'
 }
 
@@ -102,6 +104,19 @@ export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMr
       });
     }
 
+    case 'jira-sprint-issues-fetched-event': {
+      // Sprint issues are already converted to JiraIssue format
+      event.issues.forEach(ticket => {
+        currentJiraIssues.set(ticket.key, ticket);
+      });
+
+      return new AllMrsState({
+        mrsByGid: currentMap,
+        jiraIssuesByKey: currentJiraIssues,
+        timestamp: state.timestamp // Keep original timestamp
+      });
+    }
+
     case "compacted-event": {
       const gitlabMrs = projectGitlabMrsCompactedEvent(event);
       const bitbucketMrs = projectBitbucketMrsCompactedEvent(event);
@@ -166,7 +181,7 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelev
     }
   }
 
-  if (event.type === 'jira-issues-fetched-event') {
+  if (event.type === 'jira-issues-fetched-event' || event.type === 'jira-sprint-issues-fetched-event') {
     return state
   }
 

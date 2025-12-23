@@ -7,6 +7,9 @@ import {
   type JiraSprintTree,
   type JiraSprintTreeNode,
 } from "./jira-sprint-schema";
+import type { JiraIssue } from "./jira-schema";
+import type { JiraSprintIssuesFetchedEvent } from "../events/jira-events";
+import { generateEventId } from "../events/event-id";
 import { JiraApiError, getAuthToken, getJiraBaseUrl, JIRA_ISSUE_FIELDS } from "./jira-common";
 
 export const fetchActiveSprint = Effect.fn("fetchActiveSprint")(function* (boardId: number) {
@@ -85,6 +88,8 @@ export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprin
       try: () => response.json(),
       catch: cause => new JiraApiError({ cause, message: "Failed to parse issues response" })
     });
+
+    console.log(JSON.stringify(jsonData))
 
     const result = yield* Effect.tryPromise({
       try: () => Schema.decodeUnknownPromise(JiraSprintIssuesResponseSchema)(jsonData),
@@ -196,4 +201,88 @@ export const loadActiveSprintTree = Effect.fn("loadActiveSprintTree")(function* 
   const tree = buildSprintTree(issues);
 
   return { sprint, tree };
+});
+
+// Convert JiraSprintIssue to JiraIssue for unified storage
+export const convertSprintIssueToJiraIssue = (sprintIssue: JiraSprintIssue): JiraIssue => {
+  const extractCommentBody = (body: JiraSprintIssue['fields']['comment'] extends { comments: infer C } ? C extends readonly { body: infer B }[] ? B : never : never): JiraIssue['fields']['comment']['comments'][0]['body'] => {
+    if (typeof body === 'string') {
+      return { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: body }] }] };
+    }
+    return body as JiraIssue['fields']['comment']['comments'][0]['body'];
+  };
+
+  return {
+    key: sprintIssue.key,
+    id: sprintIssue.id,
+    self: sprintIssue.self,
+    fields: {
+      summary: sprintIssue.fields.summary,
+      parent: sprintIssue.fields.parent ? {
+        key: sprintIssue.fields.parent.key,
+        fields: {
+          summary: sprintIssue.fields.parent.fields.summary,
+          issuetype: sprintIssue.fields.parent.fields.issuetype,
+        }
+      } : undefined,
+      status: {
+        name: sprintIssue.fields.status.name,
+        statusCategory: sprintIssue.fields.status.statusCategory,
+      },
+      assignee: sprintIssue.fields.assignee ? {
+        displayName: sprintIssue.fields.assignee.displayName,
+        emailAddress: sprintIssue.fields.assignee.emailAddress ?? '',
+      } : null,
+      priority: {
+        name: sprintIssue.fields.priority?.name ?? 'Medium',
+      },
+      issuetype: sprintIssue.fields.issuetype,
+      created: sprintIssue.fields.created ?? new Date().toISOString(),
+      updated: sprintIssue.fields.updated ?? new Date().toISOString(),
+      comment: {
+        total: sprintIssue.fields.comment?.total ?? 0,
+        comments: (sprintIssue.fields.comment?.comments ?? []).map(c => ({
+          id: c.id,
+          author: {
+            displayName: c.author.displayName,
+            emailAddress: c.author.emailAddress,
+          },
+          // body: extractCommentBody(c.body),
+          body: {
+            content: undefined, // TODOR: Fix
+            type: ''
+          },
+          created: c.created,
+          updated: c.updated,
+        })),
+      },
+      subtasks: sprintIssue.fields.subtasks ?? undefined,
+    },
+  };
+};
+
+export const loadActiveSprintTreeAsEvent = Effect.fn("loadActiveSprintTreeAsEvent")(function* (boardId: number) {
+  const sprint = yield* fetchActiveSprint(boardId);
+  if (!sprint) {
+    return { sprint: null, tree: [] as JiraSprintTree, event: null };
+  }
+
+  const sprintIssues = yield* fetchSprintIssues(sprint.id);
+  const tree = buildSprintTree(sprintIssues);
+
+  // Convert sprint issues to JiraIssue format for unified storage
+  const jiraIssues = sprintIssues.map(convertSprintIssueToJiraIssue);
+
+  const timestamp = new Date().toISOString();
+  const type = 'jira-sprint-issues-fetched-event' as const;
+  const event: JiraSprintIssuesFetchedEvent = {
+    eventId: generateEventId(timestamp, type),
+    type,
+    sprintId: sprint.id,
+    boardId,
+    issues: jiraIssues,
+    timestamp,
+  };
+
+  return { sprint, tree, event };
 });

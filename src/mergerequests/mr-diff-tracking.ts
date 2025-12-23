@@ -189,6 +189,9 @@ export const projectOpenMrsAndDetectMissing = (
       // Jira events don't affect MR tracking
       return state;
 
+    case 'jira-sprint-issues-fetched-event':
+      return state; // TODOR: still fix this
+
     default:
       return exhaustive(event);
   }

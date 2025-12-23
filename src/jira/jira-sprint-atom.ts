@@ -1,7 +1,9 @@
 import { Atom } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 import type { JiraSprint, JiraSprintTree } from "./jira-sprint-schema";
-import { loadActiveSprintTree } from "./jira-sprint-service";
+import { loadActiveSprintTreeAsEvent } from "./jira-sprint-service";
+import { EventStorage } from "../events/events";
+import { appLayer } from "../appLayerRuntime";
 
 export type JiraSprintBoardState = {
   isLoading: boolean;
@@ -33,7 +35,19 @@ export const loadSprintBoardAtom = Atom.writable(
       error: null,
     });
 
-    Effect.runPromise(loadActiveSprintTree(boardId))
+    const program = Effect.gen(function* () {
+      const { sprint, tree, event } = yield* loadActiveSprintTreeAsEvent(boardId);
+
+      // Append event to storage if we have sprint data
+      console.log("appendage", event)
+      if (event) {
+        yield* EventStorage.appendEvent(event);
+      }
+
+      return { sprint, tree };
+    }).pipe(Effect.provide(appLayer));
+
+    Effect.runPromise(program)
       .then(({ sprint, tree }) => {
         const expandedKeys = new Set(tree.map(node => node.issue.key));
         ctx.set(jiraSprintBoardAtom, {
