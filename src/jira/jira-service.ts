@@ -114,6 +114,7 @@ const searchIssues = Effect.fn("searchIssues")(function* (baseUrl: string, apiTo
             'created',
             'updated',
             'comment',
+            'subtasks',
             'parent.issuetype'
           ],
         })

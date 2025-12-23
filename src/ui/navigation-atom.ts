@@ -11,7 +11,8 @@ export type ActiveModal =
   | 'jira'
   | 'retarget'
   | 'jobHistory'
-  | 'eventLog';
+  | 'eventLog'
+  | 'jiraBoard';
 
 export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);
 export const activeModalAtom = Atom.make<ActiveModal>('none');

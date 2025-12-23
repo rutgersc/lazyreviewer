@@ -29,15 +29,16 @@ export interface Settings {
   currentUser: string;
   notifications: NotificationSettings;
   backgroundSync: BackgroundSyncSettings;
+  jiraBoardId?: number;
 }
 
 export const defaultNotificationSettings: NotificationSettings = {
-  enabled: false
+  enabled: false,
 };
 
 export const defaultBackgroundSyncSettings: BackgroundSyncSettings = {
   enabled: false,
-  syncIntervalSeconds: 60 * 15
+  syncIntervalSeconds: 60 * 15,
 };
 
 export const defaultSettings: Settings = {
@@ -48,7 +49,28 @@ export const defaultSettings: Settings = {
   pipelineJobImportance: {},
   currentUser: 'r.schoorstra',
   notifications: defaultNotificationSettings,
-  backgroundSync: defaultBackgroundSyncSettings
+  backgroundSync: defaultBackgroundSyncSettings,
+};
+
+const allSettingsKeys: (keyof Settings)[] = [
+  'repositoryPaths',
+  'repositoryColors',
+  'ignoredMergeRequests',
+  'seenMergeRequests',
+  'pipelineJobImportance',
+  'selectedUserSelectionEntryId',
+  'currentUser',
+  'notifications',
+  'backgroundSync',
+  'jiraBoardId',
+];
+
+const serializeSettings = (settings: Settings): string => {
+  const obj: Record<string, unknown> = {};
+  allSettingsKeys.forEach(key => {
+    obj[key] = settings[key] ?? null;
+  });
+  return JSON.stringify(obj, null, 2);
 };
 
 // Color palette for repository colors - Dracula-compatible colors
@@ -90,37 +112,37 @@ export const modifySettings = (f: (s: Settings) => Settings) => {
 }
 
 export const loadSettings = (): Settings => {
-  try {
-    if (!existsSync(SETTINGS_FILE)) {
-      saveSettings(defaultSettings);
-      return defaultSettings;
-    }
-
-    const fileContent = readFileSync(SETTINGS_FILE, 'utf8');
-    const settings: Partial<Settings> = JSON.parse(fileContent);
-
-    return {
-      ...defaultSettings,
-      ...settings,
-      // Deep merge for nested objects
-      notifications: {
-        ...defaultNotificationSettings,
-        ...(settings.notifications || {})
-      },
-      backgroundSync: {
-        ...defaultBackgroundSyncSettings,
-        ...(settings.backgroundSync || {})
-      }
-    };
-  } catch (error) {
-    console.error('Failed to load settings:', error);
+  if (!existsSync(SETTINGS_FILE)) {
+    saveSettings(defaultSettings);
     return defaultSettings;
   }
+
+  const fileContent = readFileSync(SETTINGS_FILE, 'utf8');
+
+  let settings: Partial<Settings>;
+  try {
+    settings = JSON.parse(fileContent);
+  } catch (error) {
+    throw new Error(`Failed to parse ${SETTINGS_FILE}: ${error instanceof Error ? error.message : error}`);
+  }
+
+  return {
+    ...defaultSettings,
+    ...settings,
+    notifications: {
+      ...defaultNotificationSettings,
+      ...(settings.notifications || {})
+    },
+    backgroundSync: {
+      ...defaultBackgroundSyncSettings,
+      ...(settings.backgroundSync || {})
+    }
+  };
 };
 
 export const saveSettings = (settings: Settings): void => {
   try {
-    writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf8');
+    writeFileSync(SETTINGS_FILE, serializeSettings(settings), 'utf8');
   } catch (error) {
     console.error('Failed to save settings:', error);
   }

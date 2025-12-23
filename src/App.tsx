@@ -12,6 +12,7 @@ import JiraModal from "./components/JiraModal";
 import RetargetModal from "./components/RetargetModal";
 import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
+import JiraBoardPage from "./components/JiraBoardPage";
 import { ActivePane } from "./userselection/userSelection";
 import { useEffect, useState } from 'react';
 import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
@@ -19,7 +20,7 @@ import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranch
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom, allJiraIssuesAtom } from './mergerequests/mergerequests-atom';
-import { toggleNotificationsAtom, notificationSettingsAtom } from './settings/settings-atom';
+import { toggleNotificationsAtom, notificationSettingsAtom, jiraBoardIdAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { Console, Effect } from 'effect';
 import { consoleLoggedLayer } from './appLayerRuntime';
@@ -47,6 +48,7 @@ export default function App() {
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
+  const jiraBoardId = useAtomValue(jiraBoardIdAtom);
 
   const selectedMrJiraIssues = mergeRequests[selectedIndex]?.jiraIssueKeys.flatMap(key => {
     const issue = jiraIssuesMap.get(key);
@@ -56,7 +58,7 @@ export default function App() {
   useEffect(() => {
     const onFocus = () => clearUnreadCount();
     renderer.on('focus', onFocus);
-        renderer.console.toggle();
+    // renderer.console.toggle();
     return () => { renderer.off('focus', onFocus); };
 
   }, [renderer]);
@@ -124,6 +126,14 @@ export default function App() {
         break;
       case ']':
         cycleInfoPaneTab('next');
+        break;
+      case 'b':
+        if (jiraBoardId) {
+          setActiveModal('jiraBoard');
+        } else {
+          setCopyNotification('Set jiraBoardId in settings');
+          setTimeout(() => setCopyNotification(null), 2000);
+        }
         break;
       case 'tab':
       case 'd':
@@ -347,6 +357,14 @@ export default function App() {
       {activeModal === 'eventLog' && (
         <EventLogPane
           mergeRequests={[...mergeRequests]}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {/* Jira Board Page - fullscreen overlay */}
+      {activeModal === 'jiraBoard' && jiraBoardId && (
+        <JiraBoardPage
+          boardId={jiraBoardId}
           onClose={() => setActiveModal('none')}
         />
       )}

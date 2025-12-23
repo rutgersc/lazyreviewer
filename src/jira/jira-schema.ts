@@ -73,7 +73,20 @@ export const JiraIssueSchema = Schema.Struct({
     comment: Schema.Struct({
       total: Schema.optionalWith(Schema.Number, { default: () => 0 }),
       comments: Schema.mutable(Schema.Array(JiraCommentSchema))
-    })
+    }),
+    subtasks: Schema.optional(Schema.mutable(Schema.Array(Schema.Struct({
+      id: Schema.String,
+      key: Schema.String,
+      fields: Schema.Struct({
+        summary: Schema.String,
+        status: Schema.Struct({
+          name: Schema.String,
+        }),
+        issuetype: Schema.Struct({
+          name: Schema.String,
+        }),
+      }),
+    }))))
   })
 }).annotations({ identifier: "JiraIssue" })
 

@@ -59,8 +59,8 @@ const watchSettingsStream = Effect.gen(function* () {
   const parseContent = (content: string): Settings => {
     try {
       return JSON.parse(content) as Settings;
-    } catch {
-      return defaultSettings;
+    } catch (error) {
+      throw new Error(`Failed to parse ${SETTINGS_FILE}: ${error instanceof Error ? error.message : error}`);
     }
   };
 
@@ -183,4 +183,9 @@ export const toggleNotificationsAtom = appAtomRuntime.fn((_: void, get) =>
     saveSettings(settings);
     yield* Console.log(`[Settings] Notifications ${settings.notifications.enabled ? 'enabled' : 'disabled'}`);
   })
+);
+
+export const jiraBoardIdAtom = selectFromSettings(
+  s => s.jiraBoardId,
+  undefined as number | undefined
 );
