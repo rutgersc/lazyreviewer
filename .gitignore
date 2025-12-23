@@ -39,3 +39,4 @@ test-cache/mrs_opened_test_gitlab
 storage/events
 
 vendor/
+.claude/settings.local.json
