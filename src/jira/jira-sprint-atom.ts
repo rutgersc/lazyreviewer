@@ -56,6 +56,10 @@ export const selectedSprintAtom = Atom.readable((get) => {
 // Sprint Tree
 export const sprintTreeStateAtom = makeProjectedAtom(initialSprintTreeState, projectSprintTree);
 
+export const lastFetchedSprintIdAtom = Atom.map(sprintTreeStateAtom, (result) =>
+  Result.getOrElse(result, () => initialSprintTreeState).lastFetchedSprintId
+);
+
 export const sprintTreeAtom = Atom.map(sprintTreeStateAtom, (result) =>
   Result.getOrElse(result, () => initialSprintTreeState).tree
 );

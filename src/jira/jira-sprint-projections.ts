@@ -25,6 +25,7 @@ export const projectSprints = (state: SprintsState, event: AnyLazyReviewerEvent)
   switch (event.type) {
     case "jira-sprints-loaded-event": {
       const e = event as JiraSprintsLoadedEvent;
+      console.log(`[Projection] Sprints loaded: ${e.sprints.length} sprints for board ${e.boardId}`);
       return {
         ...state,
         sprints: e.sprints,
@@ -51,6 +52,7 @@ export const projectSelection = (state: SelectionState, event: AnyLazyReviewerEv
   switch (event.type) {
     case "jira-sprint-selected-event": {
       const e = event as JiraSprintSelectedEvent;
+      console.log(`[Projection] Sprint selected: ${e.sprintId}`);
       return {
         ...state,
         selectedSprintId: e.sprintId,
@@ -60,6 +62,7 @@ export const projectSelection = (state: SelectionState, event: AnyLazyReviewerEv
       const e = event as JiraSprintsLoadedEvent;
       // Auto-select first sprint if none selected
       if (!state.selectedSprintId && e.sprints.length > 0) {
+        console.log(`[Projection] Auto-selecting first sprint: ${e.sprints[0]!.id}`);
         return {
           ...state,
           selectedSprintId: e.sprints[0]!.id,
@@ -89,9 +92,11 @@ export const projectSprintTree = (state: SprintTreeState, event: AnyLazyReviewer
   switch (event.type) {
     case "jira-sprint-issues-fetched-event": {
       const e = event as JiraSprintIssuesFetchedEvent;
+      const tree = buildSprintTree(e.issues as any[]);
+      console.log(`[Projection] Issues fetched: ${e.issues.length} issues, tree size: ${tree.length} for sprint ${e.sprintId}`);
       return {
         ...state,
-        tree: buildSprintTree(e.issues as any[]),
+        tree,
         lastFetchedSprintId: e.sprintId,
       };
     }

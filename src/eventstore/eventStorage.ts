@@ -209,24 +209,27 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     // Combined stream of both persisted and in-memory events
     const combinedEventsStream = Stream.unwrapScoped(
       Effect.gen(function* () {
-        // Load persisted events
+        // Subscribe to pubsubs BEFORE loading historical events
+        // This ensures no events are lost between loading and subscribing
+        const persistedQueue = yield* PubSub.subscribe(eventsPubSub)
+        const inMemoryQueue = yield* PubSub.subscribe(inMemoryEventsPubSub)
+
+        // Load historical events
         const persistedEvents = yield* loadEvents
-        // Get in-memory events
         const memoryEvents = yield* Ref.get(inMemoryEventsRef)
 
-        // Create streams for new events from both pubsubs
-        const newPersistedStream = Stream.fromPubSub(eventsPubSub).pipe(
-          Stream.map((e): AnyLazyReviewerEvent => e)
-        )
-        const newInMemoryStream = Stream.fromPubSub(inMemoryEventsPubSub).pipe(
-          Stream.map((e): AnyLazyReviewerEvent => e)
-        )
-
-        // Combine: historical persisted + historical in-memory + merge of new events
         const historicalEvents: AnyLazyReviewerEvent[] = [
           ...persistedEvents,
           ...memoryEvents
         ]
+
+        // Create streams from the queues
+        const newPersistedStream = Stream.fromQueue(persistedQueue).pipe(
+          Stream.map((e): AnyLazyReviewerEvent => e)
+        )
+        const newInMemoryStream = Stream.fromQueue(inMemoryQueue).pipe(
+          Stream.map((e): AnyLazyReviewerEvent => e)
+        )
 
         return Stream.concat(
           Stream.fromIterable(historicalEvents),

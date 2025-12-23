@@ -1,6 +1,7 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
+import { useEffect } from 'react';
 import { Colors } from '../colors';
 import {
   loadSprintsAtom,
@@ -10,6 +11,7 @@ import {
   selectedSprintAtom,
   loadSprintIssuesAtom,
   sprintTreeAtom,
+  lastFetchedSprintIdAtom,
   selectedIssueIndexAtom,
   expandedKeysAtom,
   toggleExpandAtom,
@@ -68,6 +70,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const selectedSprintId = useAtomValue(selectedSprintIdAtom);
   const selectedSprint = useAtomValue(selectedSprintAtom);
   const tree = useAtomValue(sprintTreeAtom);
+  const lastFetchedSprintId = useAtomValue(lastFetchedSprintIdAtom);
 
   // UI State
   const selectedIssueIndex = useAtomValue(selectedIssueIndexAtom);
@@ -82,18 +85,18 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
 
   // Trigger initial sprints load
   if (Result.isInitial(loadSprintsResult)) {
-    loadSprints(boardId);
-  }
+      loadSprints(boardId);
+    }
 
   // Effect-like logic to load issues when sprint selection changes via projections
   if (Result.isSuccess(loadSprintsResult) && selectedSprintId && Result.isInitial(loadSprintIssuesResult)) {
     loadSprintIssues({ sprintId: selectedSprintId, boardId });
-  }
+    }
 
   // When issues load, expand all parent keys automatically if none expanded
-  if (Result.isSuccess(loadSprintIssuesResult) && tree.length > 0 && expandedKeys.size === 0) {
-    setExpandedKeys(new Set(tree.map(node => node.issue.key)));
-  }
+    if (Result.isSuccess(loadSprintIssuesResult) && tree.length > 0 && expandedKeys.size === 0) {
+      setExpandedKeys(new Set(tree.map(node => node.issue.key)));
+    }
 
   const selectedItem = flattenedList[selectedIssueIndex];
 

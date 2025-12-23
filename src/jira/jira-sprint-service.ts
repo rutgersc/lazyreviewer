@@ -88,8 +88,6 @@ export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprin
       catch: cause => new JiraApiError({ cause, message: "Failed to parse issues response" })
     });
 
-    console.log(JSON.stringify(jsonData))
-
     const result = yield* Effect.tryPromise({
       try: () => Schema.decodeUnknownPromise(JiraSprintIssuesResponseSchema)(jsonData),
       catch: cause => new JiraApiError({ cause, message: "Failed to decode issues response" })

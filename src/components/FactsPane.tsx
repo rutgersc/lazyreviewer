@@ -191,7 +191,6 @@ export default function FactsPane() {
   const deltasByEventIdSize = deltasByEventId.size;
 
   const firstWithChanges = displayEvents.findIndex(v => getDeltas(v).length > 0);
-  console.log("My first index", firstWithChanges, displayEvents[firstWithChanges])
 
   const groupedEvents: EventGroup[] = useMemo(() => {
     const deltas = deltasByEventIdRef.current;
