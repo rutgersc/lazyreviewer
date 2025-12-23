@@ -7,7 +7,7 @@ export const allEventsIncludingCompactedAtom = appAtomRuntime.atom(
   Stream.unwrap(EventStorage.allEventsStream).pipe(
     Stream.groupedWithin(300, "0.15 seconds"),
     Stream.scan([] as LazyReviewerEvent[], (acc, events) =>
-      Chunk.reduce(events, acc, (currentAcc, event) => [...currentAcc, event])
+      acc.concat(Chunk.toReadonlyArray(events))
     )
   ),
   { initialValue: [] }

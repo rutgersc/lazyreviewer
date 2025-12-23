@@ -28,14 +28,30 @@ const JiraCommentContentBlockSchema = Schema.Struct({
   type: Schema.String
 });
 
-const JiraCommentBodySchema = Schema.Union(
-  Schema.Struct({
-    content: Schema.optional(
-      Schema.mutable(Schema.Array(JiraCommentContentBlockSchema))
-    ),
-    type: Schema.String,
-  }),
-  Schema.String
+const JiraCommentBodyStructSchema = Schema.Struct({
+  content: Schema.optional(
+    Schema.mutable(Schema.Array(JiraCommentContentBlockSchema))
+  ),
+  type: Schema.String,
+});
+
+type JiraCommentBody = Schema.Schema.Type<typeof JiraCommentBodyStructSchema>;
+
+const JiraCommentBodySchema = Schema.transform(
+  Schema.Union(JiraCommentBodyStructSchema, Schema.String),
+  JiraCommentBodyStructSchema,
+  {
+    decode: (input): JiraCommentBody => {
+      if (typeof input === 'string') {
+        return {
+          type: 'doc',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: input }] }]
+        };
+      }
+      return input;
+    },
+    encode: (body) => body
+  }
 );
 
 const JiraSprintCommentSchema = Schema.Struct({

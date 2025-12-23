@@ -1,6 +1,6 @@
 import { FileSystem, Path } from "@effect/platform"
-import { Effect, Schema, Stream, PubSub, Console } from "effect"
-import { EventSchema, type LazyReviewerEvent } from "../events/events"
+import { Effect, Schema, Stream, PubSub, Console, Ref } from "effect"
+import { EventSchema, type LazyReviewerEvent, type InMemoryLazyReviewerEvent, type AnyLazyReviewerEvent } from "../events/events"
 
 const EVENTS_DIR = "storage/events"
 
@@ -12,7 +12,12 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
     const eventsDir = path.join(EVENTS_DIR)
 
+    // Persisted events pubsub
     const eventsPubSub = yield* PubSub.unbounded<LazyReviewerEvent>()
+
+    // In-memory events storage + pubsub
+    const inMemoryEventsRef = yield* Ref.make<InMemoryLazyReviewerEvent[]>([])
+    const inMemoryEventsPubSub = yield* PubSub.unbounded<InMemoryLazyReviewerEvent>()
 
     // Ensure events directory exists
     yield* fs.makeDirectory(eventsDir, { recursive: true }).pipe(
@@ -181,12 +186,68 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       return path.join(eventsDir, file.filename)
     })
 
+    // Append in-memory event (not persisted to disk)
+    const appendInMemoryEvent = (event: InMemoryLazyReviewerEvent) =>
+      Effect.gen(function* () {
+        yield* Ref.update(inMemoryEventsRef, (events) => [...events, event])
+        yield* PubSub.publish(inMemoryEventsPubSub, event)
+      })
+
+    // Stream of just in-memory events
+    const inMemoryEventsStream = Stream.unwrapScoped(
+      Effect.gen(function* () {
+        const historicalEvents = yield* Ref.get(inMemoryEventsRef)
+        const newEventsStream = Stream.fromPubSub(inMemoryEventsPubSub)
+
+        return Stream.concat(
+          Stream.fromIterable(historicalEvents),
+          newEventsStream
+        )
+      })
+    )
+
+    // Combined stream of both persisted and in-memory events
+    const combinedEventsStream = Stream.unwrapScoped(
+      Effect.gen(function* () {
+        // Load persisted events
+        const persistedEvents = yield* loadEvents
+        // Get in-memory events
+        const memoryEvents = yield* Ref.get(inMemoryEventsRef)
+
+        // Create streams for new events from both pubsubs
+        const newPersistedStream = Stream.fromPubSub(eventsPubSub).pipe(
+          Stream.map((e): AnyLazyReviewerEvent => e)
+        )
+        const newInMemoryStream = Stream.fromPubSub(inMemoryEventsPubSub).pipe(
+          Stream.map((e): AnyLazyReviewerEvent => e)
+        )
+
+        // Combine: historical persisted + historical in-memory + merge of new events
+        const historicalEvents: AnyLazyReviewerEvent[] = [
+          ...persistedEvents,
+          ...memoryEvents
+        ]
+
+        return Stream.concat(
+          Stream.fromIterable(historicalEvents),
+          Stream.merge(newPersistedStream, newInMemoryStream)
+        )
+      })
+    )
+
+    // Clear in-memory events
+    const clearInMemoryEvents = Ref.set(inMemoryEventsRef, [] as InMemoryLazyReviewerEvent[])
+
     return {
       loadEvents,
       loadAllEvents,
       appendEvent,
+      appendInMemoryEvent,
       eventsStream,
       allEventsStream,
+      inMemoryEventsStream,
+      combinedEventsStream,
+      clearInMemoryEvents,
       getEventFilePath
     } as const
   })

@@ -1,14 +1,20 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import { useEffect, useRef } from 'react';
-import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
 import { Colors } from '../colors';
 import {
-  jiraSprintBoardAtom,
-  loadSprintBoardAtom,
+  loadSprintsAtom,
+  sprintsAtom,
+  boardIdAtom,
+  selectedSprintIdAtom,
+  selectedSprintAtom,
+  loadSprintIssuesAtom,
+  sprintTreeAtom,
+  selectedIssueIndexAtom,
+  expandedKeysAtom,
   toggleExpandAtom,
-  setSelectedIndexAtom,
   flattenedListAtom,
+  selectSprintAtom,
   type FlatListItem,
 } from '../jira/jira-sprint-atom';
 import type { JiraSprintIssue } from '../jira/jira-sprint-schema';
@@ -44,22 +50,63 @@ const getStatusColor = (status: string): string => {
 };
 
 export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) {
-  const state = useAtomValue(jiraSprintBoardAtom);
-  const loadSprintBoard = useAtomSet(loadSprintBoardAtom);
+  // Action results for loading UI
+  const loadSprintsResult = useAtomValue(loadSprintsAtom);
+  const loadSprintIssuesResult = useAtomValue(loadSprintIssuesAtom);
+
+  // Actions
+  const loadSprints = useAtomSet(loadSprintsAtom);
+  const loadSprintIssues = useAtomSet(loadSprintIssuesAtom);
+  const selectSprint = useAtomSet(selectSprintAtom);
   const toggleExpand = useAtomSet(toggleExpandAtom);
-  const setSelectedIndex = useAtomSet(setSelectedIndexAtom);
+  const setSelectedIssueIndex = useAtomSet(selectedIssueIndexAtom);
+  const setExpandedKeys = useAtomSet(expandedKeysAtom);
+
+  // Data (Projected)
+  const sprints = useAtomValue(sprintsAtom);
+  const storedBoardId = useAtomValue(boardIdAtom);
+  const selectedSprintId = useAtomValue(selectedSprintIdAtom);
+  const selectedSprint = useAtomValue(selectedSprintAtom);
+  const tree = useAtomValue(sprintTreeAtom);
+
+  // UI State
+  const selectedIssueIndex = useAtomValue(selectedIssueIndexAtom);
+  const expandedKeys = useAtomValue(expandedKeysAtom);
   const flattenedList = useAtomValue(flattenedListAtom);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
-  const loadedRef = useRef(false);
 
-  useEffect(() => {
-    if (!loadedRef.current) {
-      loadedRef.current = true;
-      loadSprintBoard(boardId);
-    }
-  }, [boardId, loadSprintBoard]);
+  const isLoadingSprints = Result.isInitial(loadSprintsResult) || Result.isWaiting(loadSprintsResult);
+  const isLoadingIssues = Result.isWaiting(loadSprintIssuesResult);
+  const sprintsError = Result.isFailure(loadSprintsResult) ? String(loadSprintsResult.cause) : null;
+  const issuesError = Result.isFailure(loadSprintIssuesResult) ? String(loadSprintIssuesResult.cause) : null;
 
-  const selectedItem = flattenedList[state.selectedIndex];
+  // Trigger initial sprints load
+  if (Result.isInitial(loadSprintsResult)) {
+    loadSprints(boardId);
+  }
+
+  // Effect-like logic to load issues when sprint selection changes via projections
+  if (Result.isSuccess(loadSprintsResult) && selectedSprintId && Result.isInitial(loadSprintIssuesResult)) {
+    loadSprintIssues({ sprintId: selectedSprintId, boardId });
+  }
+
+  // When issues load, expand all parent keys automatically if none expanded
+  if (Result.isSuccess(loadSprintIssuesResult) && tree.length > 0 && expandedKeys.size === 0) {
+    setExpandedKeys(new Set(tree.map(node => node.issue.key)));
+  }
+
+  const selectedItem = flattenedList[selectedIssueIndex];
+
+  const handleSprintChange = (sprintId: number) => {
+    if (storedBoardId === null) return;
+    // Clearing selection/tree state before new load
+    setSelectedIssueIndex(0);
+    setExpandedKeys(new Set());
+    // Trigger action to append selection event
+    selectSprint({ sprintId, boardId: storedBoardId });
+    // Trigger action to load issues
+    loadSprintIssues({ sprintId, boardId: storedBoardId });
+  };
 
   useKeyboard((key: ParsedKey) => {
     switch (key.name) {
@@ -69,18 +116,18 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         break;
       case 'j':
       case 'down':
-        if (state.selectedIndex < flattenedList.length - 1) {
-          const newIndex = state.selectedIndex + 1;
-          setSelectedIndex(newIndex);
+        if (selectedIssueIndex < flattenedList.length - 1) {
+          const newIndex = selectedIssueIndex + 1;
+          setSelectedIssueIndex(newIndex);
           const item = flattenedList[newIndex];
           if (item) scrollToId(`jira-board-${item.key}`);
         }
         break;
       case 'k':
       case 'up':
-        if (state.selectedIndex > 0) {
-          const newIndex = state.selectedIndex - 1;
-          setSelectedIndex(newIndex);
+        if (selectedIssueIndex > 0) {
+          const newIndex = selectedIssueIndex - 1;
+          setSelectedIssueIndex(newIndex);
           const item = flattenedList[newIndex];
           if (item) scrollToId(`jira-board-${item.key}`);
         }
@@ -105,18 +152,32 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         }
         break;
       case 'r':
-        loadSprintBoard(boardId);
+        loadSprints(boardId);
+        break;
+      case 'h':
+      case 'left':
+        const currentIndex = sprints.findIndex(s => s.id === selectedSprintId);
+        if (currentIndex > 0) {
+          handleSprintChange(sprints[currentIndex - 1]!.id);
+        }
+        break;
+      case 'l':
+      case 'right':
+        const nextIndex = sprints.findIndex(s => s.id === selectedSprintId);
+        if (nextIndex >= 0 && nextIndex < sprints.length - 1) {
+          handleSprintChange(sprints[nextIndex + 1]!.id);
+        }
         break;
     }
   });
 
   const renderItem = (item: FlatListItem, index: number) => {
-    const isSelected = index === state.selectedIndex;
-    const isExpanded = state.expandedKeys.has(item.key);
+    const isSelected = index === selectedIssueIndex;
+    const isExpanded = expandedKeys.has(item.key);
 
     if (item.type === 'parent') {
       const issue = item.issue as JiraSprintIssue;
-      const childCount = state.tree.find(n => n.issue.key === item.key)?.children.length ?? 0;
+      const childCount = tree.find(n => n.issue.key === item.key)?.children.length ?? 0;
       const statusColor = getStatusColor(issue.fields.status.name);
       const expandIcon = childCount > 0 ? (isExpanded ? '▾' : '▸') : ' ';
 
@@ -159,7 +220,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
 
     const issue = item.issue as JiraSprintIssue;
     const statusColor = getStatusColor(issue.fields.status.name);
-    const treeChar = item.isLastChild ? '└─' : '├─';
+    const treeChar = item.level > 0 ? '└─' : '';
     const icon = getIssueTypeIcon(issue.fields.issuetype.name);
     const assignee = issue.fields.assignee?.displayName ?? 'Unassigned';
 
@@ -202,6 +263,30 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     );
   };
 
+  const renderSprintTabs = () => {
+    if (sprints.length <= 1) return null;
+
+    return (
+      <box style={{ flexDirection: 'row', gap: 2, marginBottom: 1 }}>
+        {sprints.map((sprint) => {
+          const isActive = sprint.id === selectedSprintId;
+          return (
+            <text
+              key={sprint.id}
+              style={{
+                fg: isActive ? Colors.SUCCESS : Colors.NEUTRAL,
+                attributes: isActive ? TextAttributes.BOLD : undefined,
+              }}
+              wrapMode='none'
+            >
+              {isActive ? '▸ ' : '  '}{sprint.name}
+            </text>
+          );
+        })}
+      </box>
+    );
+  };
+
   return (
     <box
       style={{
@@ -228,42 +313,51 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           }}
         >
         <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
-          ✦ Jira Board {state.sprint ? `- ${state.sprint.name}` : ''}
+          ✦ Jira Board {selectedSprint ? `- ${selectedSprint.name}` : ''}
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          q/Esc: close | j/k: navigate | Enter: expand | o: open | c: copy | r: refresh
+          q: close | j/k: nav | h/l: sprint | Enter: expand | o: open | r: refresh
         </text>
         </box>
+        {renderSprintTabs()}
         <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
           {'─'.repeat(100)}
         </text>
       </box>
 
-      {state.isLoading && (
+      {(isLoadingSprints || isLoadingIssues) && (
         <box style={{ padding: 2 }}>
           <text style={{ fg: Colors.INFO }} wrapMode='none'>
-            Loading sprint board...
+            {isLoadingSprints ? 'Loading sprints...' : 'Loading issues...'}
           </text>
         </box>
       )}
 
-      {state.error && (
+      {(sprintsError || issuesError) && (
         <box style={{ padding: 2 }}>
           <text style={{ fg: Colors.ERROR }} wrapMode='none'>
-            Error: {state.error}
+            Error: {sprintsError || issuesError}
           </text>
         </box>
       )}
 
-      {!state.isLoading && !state.error && flattenedList.length === 0 && (
+      {!isLoadingSprints && !isLoadingIssues && !sprintsError && !issuesError && sprints.length === 0 && (
         <box style={{ padding: 2 }}>
           <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
-            No issues in active sprint
+            No active sprints found
           </text>
         </box>
       )}
 
-      {!state.isLoading && flattenedList.length > 0 && (
+      {!isLoadingSprints && !isLoadingIssues && !sprintsError && !issuesError && flattenedList.length === 0 && sprints.length > 0 && (
+        <box style={{ padding: 2 }}>
+          <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
+            No issues in selected sprint
+          </text>
+        </box>
+      )}
+
+      {!isLoadingSprints && !isLoadingIssues && flattenedList.length > 0 && (
         <scrollbox
           ref={scrollBoxRef}
           style={{

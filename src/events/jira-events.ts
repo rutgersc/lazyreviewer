@@ -17,11 +17,20 @@ export interface JiraIssuesFetchedEvent extends Schema.Schema.Type<typeof JiraIs
   issues: JiraSearchResponse
 }
 
+const NumberOrStringAsNumber = Schema.transform(
+  Schema.Union(Schema.Number, Schema.String),
+  Schema.Number,
+  {
+    decode: (input) => typeof input === 'string' ? Number(input) : input,
+    encode: (n) => n
+  }
+)
+
 const JiraSprintIssuesFetchedEventSchema = Schema.Struct({
   eventId: EventIdSchema,
   type: Schema.Literal('jira-sprint-issues-fetched-event'),
   sprintId: Schema.Number,
-  boardId: Schema.Number,
+  boardId: NumberOrStringAsNumber,
   issues: Schema.Unknown,
   timestamp: Schema.String
 })

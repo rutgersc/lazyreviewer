@@ -206,7 +206,7 @@ export default function FactsPane() {
       const hasDeltas = deltas.length > 0;
       const shouldGroup = firstWithChanges <= i; // only start grouping after the first change
 
-       console.log("Should we group?", { shouldGroup, firstWithChanges, i })
+      //  console.log("Should we group?", { shouldGroup, firstWithChanges, i })
 
       if (shouldGroup && !hasDeltas) {
         // Check if we can extend the last range
