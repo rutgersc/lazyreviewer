@@ -1,11 +1,11 @@
 import { Stream, Effect, Chunk } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { EventStorage, type LazyReviewerEvent } from "./events";
-import { projectEventsToCompactedState, compactedStateToEvent, type CompactedState } from "./project-to-compacted-state";
+import { projectEventsToCompactedState, compactedStateToEvent } from "./project-to-compacted-state";
 
 export const allEventsIncludingCompactedAtom = appAtomRuntime.atom(
   Stream.unwrap(EventStorage.allEventsStream).pipe(
-    Stream.groupedWithin(100, "0.15 seconds"),
+    Stream.groupedWithin(300, "0.15 seconds"),
     Stream.scan([] as LazyReviewerEvent[], (acc, events) =>
       Chunk.reduce(events, acc, (currentAcc, event) => [...currentAcc, event])
     )

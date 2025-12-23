@@ -28,14 +28,15 @@ const JiraCommentContentBlockSchema = Schema.Struct({
   type: Schema.String
 });
 
-const JiraCommentBodySchema =
-// Schema.Union(
+const JiraCommentBodySchema = Schema.Union(
   Schema.Struct({
-    content: Schema.optional(Schema.mutable(Schema.Array(JiraCommentContentBlockSchema))),
-    type: Schema.String
-  }); //,
-  // Schema.String
-// );
+    content: Schema.optional(
+      Schema.mutable(Schema.Array(JiraCommentContentBlockSchema))
+    ),
+    type: Schema.String,
+  }),
+  Schema.String
+);
 
 const JiraSprintCommentSchema = Schema.Struct({
   id: Schema.String,

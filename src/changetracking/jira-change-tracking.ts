@@ -1,13 +1,14 @@
 import type { LazyReviewerEvent } from '../events/events'
-import type { JiraIssuesFetchedEvent } from '../events/jira-events'
+import type { JiraIssuesFetchedEvent, JiraSprintIssuesFetchedEvent } from '../events/jira-events'
 import type { CompactedEvent } from '../events/event-compaction-events'
 import type { JiraComment, JiraIssue } from '../jira/jira-schema'
 
-export type JiraChangeTrackingRelevantEvent = JiraIssuesFetchedEvent | CompactedEvent
+export type JiraChangeTrackingRelevantEvent = JiraIssuesFetchedEvent | CompactedEvent | JiraSprintIssuesFetchedEvent
 
 export function isJiraChangeTrackingRelevantEvent(event: LazyReviewerEvent): event is JiraChangeTrackingRelevantEvent {
   return event.type === 'jira-issues-fetched-event' ||
-         event.type === 'compacted-event'
+         event.type === 'compacted-event' ||
+         event.type === 'jira-sprint-issues-fetched-event'
 }
 
 export interface JiraStateForDelta {
@@ -140,12 +141,15 @@ export function projectJiraChangeTracking(
   jiraStatesForDelta: Map<string, JiraStateForDelta>,
   event: JiraChangeTrackingRelevantEvent
 ): JiraProjectionResult {
-  if (event.type === 'jira-issues-fetched-event') {
-    return detectJiraIssueChanges(jiraStatesForDelta, event.issues.issues)
+  switch (event.type) {
+    case 'jira-issues-fetched-event':
+      return detectJiraIssueChanges(jiraStatesForDelta, event.issues.issues)
+    case 'compacted-event':
+      return detectJiraIssueChanges(jiraStatesForDelta, projectCompactedEventJiraIssues(event))
+    case 'jira-sprint-issues-fetched-event':
+      return detectJiraIssueChanges(jiraStatesForDelta, event.issues)
+    default:
+      const _: never = event;
+      throw new Error("unreachable")
   }
-  if (event.type === 'compacted-event') {
-    return detectJiraIssueChanges(jiraStatesForDelta, projectCompactedEventJiraIssues(event))
-  }
-
-  throw new Error('non-exhaustive match')
 }

@@ -105,7 +105,6 @@ export const projectAllMrs = (state: AllMrsState, event: MrRelevantEvent): AllMr
     }
 
     case 'jira-sprint-issues-fetched-event': {
-      // Sprint issues are already converted to JiraIssue format
       event.issues.forEach(ticket => {
         currentJiraIssues.set(ticket.key, ticket);
       });

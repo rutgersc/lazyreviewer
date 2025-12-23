@@ -30,7 +30,7 @@ const initialAccumulator: ChangeTrackingState = {
 export const changesStream = Effect.fn(function* (_get: Atom.Context) {
   return (yield* EventStorage.eventsStream).pipe(
     Stream.filter((event) => isChangeTrackingRelevantEvent(event)),
-    Stream.groupedWithin(100, "0.3 seconds"),
+    Stream.groupedWithin(300, "0.3 seconds"),
     Stream.tap(() => Effect.sleep("200 millis")),
     Stream.scan(
       initialAccumulator,

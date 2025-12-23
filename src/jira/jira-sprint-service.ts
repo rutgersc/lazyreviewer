@@ -205,11 +205,15 @@ export const loadActiveSprintTree = Effect.fn("loadActiveSprintTree")(function* 
 
 // Convert JiraSprintIssue to JiraIssue for unified storage
 export const convertSprintIssueToJiraIssue = (sprintIssue: JiraSprintIssue): JiraIssue => {
-  const extractCommentBody = (body: JiraSprintIssue['fields']['comment'] extends { comments: infer C } ? C extends readonly { body: infer B }[] ? B : never : never): JiraIssue['fields']['comment']['comments'][0]['body'] => {
+
+  type SourceJiraSprintIssueCommentBody = NonNullable<JiraSprintIssue['fields']['comment']>['comments'][0]['body'];
+  type TargetJiraIssueCommentBody = JiraIssue['fields']['comment']['comments'][0]['body']
+  const extractCommentBody = (body: SourceJiraSprintIssueCommentBody): TargetJiraIssueCommentBody => {
     if (typeof body === 'string') {
       return { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: body }] }] };
     }
-    return body as JiraIssue['fields']['comment']['comments'][0]['body'];
+    const res = body as JiraIssue['fields']['comment']['comments'][0]['body'];
+    return res;
   };
 
   return {
@@ -247,11 +251,7 @@ export const convertSprintIssueToJiraIssue = (sprintIssue: JiraSprintIssue): Jir
             displayName: c.author.displayName,
             emailAddress: c.author.emailAddress,
           },
-          // body: extractCommentBody(c.body),
-          body: {
-            content: undefined, // TODOR: Fix
-            type: ''
-          },
+          body: extractCommentBody(c.body),
           created: c.created,
           updated: c.updated,
         })),
