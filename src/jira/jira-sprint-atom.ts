@@ -44,14 +44,6 @@ export const loadSprintBoardAtom = Atom.writable(
           selectedIndex: 0,
           expandedKeys,
         });
-      })
-      .catch(error => {
-        const current = ctx.get(jiraSprintBoardAtom);
-        ctx.set(jiraSprintBoardAtom, {
-          ...current,
-          isLoading: false,
-          error: error instanceof Error ? error.message : String(error),
-        });
       });
   }
 );

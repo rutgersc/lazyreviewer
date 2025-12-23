@@ -4,7 +4,7 @@ import type { ParseError } from "effect/ParseResult"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import { EventStorage } from "../events/events"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
-import type { SearchJiraIssuesError } from "../jira/jira-service"
+import type { JiraApiError } from "../jira/jira-common"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
 import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent } from "../gitlab/gitlab-graphql"
 import { loadJiraTicketsAsEvent } from "../jira/jira-service"
@@ -27,7 +27,7 @@ export type MergeRequestsCacheError =
   | string
   | FetchGitlabMrsError
   | FetchGitlabProjectMrsError
-  | SearchJiraIssuesError
+  | JiraApiError
   | BitbucketCredentialsNotConfiguredError
   | FetchBitbucketPrsError
   | BitbucketPrsJsonParseError

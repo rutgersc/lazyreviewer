@@ -1,4 +1,4 @@
-import { Data, Effect, Console, Schema } from "effect";
+import { Effect, Console, Schema } from "effect";
 import {
   JiraSprintListResponseSchema,
   JiraSprintIssuesResponseSchema,
@@ -7,25 +7,7 @@ import {
   type JiraSprintTree,
   type JiraSprintTreeNode,
 } from "./jira-sprint-schema";
-
-export class JiraSprintError extends Data.TaggedError("JiraSprintError")<{
-  cause: unknown;
-  message: string;
-}> {}
-
-const getAuthToken = (): string => {
-  if (process.env.JIRA_EMAIL && process.env.JIRA_API_TOKEN) {
-    const credentials = `${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`;
-    return Buffer.from(credentials).toString('base64');
-  } else if (process.env.JIRA_API_TOKEN_BASE64) {
-    return process.env.JIRA_API_TOKEN_BASE64;
-  }
-  throw new Error("Jira credentials not configured. Set JIRA_EMAIL and JIRA_API_TOKEN in .env");
-};
-
-const getJiraBaseUrl = (): string => {
-  return process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
-};
+import { JiraApiError, getAuthToken, getJiraBaseUrl, JIRA_ISSUE_FIELDS } from "./jira-common";
 
 export const fetchActiveSprint = Effect.fn("fetchActiveSprint")(function* (boardId: number) {
   const authToken = getAuthToken();
@@ -41,26 +23,26 @@ export const fetchActiveSprint = Effect.fn("fetchActiveSprint")(function* (board
           'Content-Type': 'application/json',
         },
       }),
-    catch: cause => new JiraSprintError({ cause, message: "Failed to fetch active sprint" })
+    catch: cause => new JiraApiError({ cause, message: "Failed to fetch active sprint" })
   });
 
   if (!response.ok) {
     const errorText = yield* Effect.tryPromise({
       try: () => response.text(),
-      catch: cause => new JiraSprintError({ cause, message: "Failed to read error response" })
+      catch: cause => new JiraApiError({ cause, message: "Failed to read error response" })
     });
     yield* Console.error("Jira API error response:", errorText);
-    throw new JiraSprintError({ cause: errorText, message: `Jira API error: ${response.status}` });
+    throw new JiraApiError({ cause: errorText, message: `Jira API error: ${response.status}` });
   }
 
   const jsonData = yield* Effect.tryPromise({
     try: () => response.json(),
-    catch: cause => new JiraSprintError({ cause, message: "Failed to parse sprint response" })
+    catch: cause => new JiraApiError({ cause, message: "Failed to parse sprint response" })
   });
 
   const result = yield* Effect.tryPromise({
     try: () => Schema.decodeUnknownPromise(JiraSprintListResponseSchema)(jsonData),
-    catch: cause => new JiraSprintError({ cause, message: "Failed to decode sprint response" })
+    catch: cause => new JiraApiError({ cause, message: "Failed to decode sprint response" })
   });
 
   const activeSprint = result.values.find(s => s.state === 'active');
@@ -70,6 +52,7 @@ export const fetchActiveSprint = Effect.fn("fetchActiveSprint")(function* (board
 export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprintId: number) {
   const authToken = getAuthToken();
   const baseUrl = getJiraBaseUrl();
+  const fields = JIRA_ISSUE_FIELDS.join(',');
 
   const allIssues: JiraSprintIssue[] = [];
   let startAt = 0;
@@ -78,7 +61,7 @@ export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprin
   while (true) {
     const response = yield* Effect.tryPromise({
       try: () => fetch(
-        `${baseUrl}/rest/agile/1.0/sprint/${sprintId}/issue?startAt=${startAt}&maxResults=${maxResults}&fields=summary,parent,status,assignee,priority,issuetype,created,updated,comment,subtasks`,
+        `${baseUrl}/rest/agile/1.0/sprint/${sprintId}/issue?startAt=${startAt}&maxResults=${maxResults}&fields=${fields}`,
         {
           method: 'GET',
           headers: {
@@ -86,26 +69,26 @@ export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprin
             'Content-Type': 'application/json',
           },
         }),
-      catch: cause => new JiraSprintError({ cause, message: "Failed to fetch sprint issues" })
+      catch: cause => new JiraApiError({ cause, message: "Failed to fetch sprint issues" })
     });
 
     if (!response.ok) {
       const errorText = yield* Effect.tryPromise({
         try: () => response.text(),
-        catch: cause => new JiraSprintError({ cause, message: "Failed to read error response" })
+        catch: cause => new JiraApiError({ cause, message: "Failed to read error response" })
       });
       yield* Console.error("Jira API error response:", errorText);
-      throw new JiraSprintError({ cause: errorText, message: `Jira API error: ${response.status}` });
+      throw new JiraApiError({ cause: errorText, message: `Jira API error: ${response.status}` });
     }
 
     const jsonData = yield* Effect.tryPromise({
       try: () => response.json(),
-      catch: cause => new JiraSprintError({ cause, message: "Failed to parse issues response" })
+      catch: cause => new JiraApiError({ cause, message: "Failed to parse issues response" })
     });
 
     const result = yield* Effect.tryPromise({
       try: () => Schema.decodeUnknownPromise(JiraSprintIssuesResponseSchema)(jsonData),
-      catch: cause => new JiraSprintError({ cause, message: "Failed to decode issues response" })
+      catch: cause => new JiraApiError({ cause, message: "Failed to decode issues response" })
     });
 
     allIssues.push(...result.issues);

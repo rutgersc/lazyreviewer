@@ -28,10 +28,13 @@ const JiraCommentContentBlockSchema = Schema.Struct({
   type: Schema.String
 });
 
-const JiraCommentBodySchema = Schema.Struct({
-  content: Schema.optional(Schema.mutable(Schema.Array(JiraCommentContentBlockSchema))),
-  type: Schema.String
-});
+const JiraCommentBodySchema = Schema.Union(
+  Schema.Struct({
+    content: Schema.optional(Schema.mutable(Schema.Array(JiraCommentContentBlockSchema))),
+    type: Schema.String
+  }),
+  Schema.String
+);
 
 const JiraSprintCommentSchema = Schema.Struct({
   id: Schema.String,
@@ -46,7 +49,7 @@ const JiraSprintCommentSchema = Schema.Struct({
 
 export const JiraSprintIssueFieldsSchema = Schema.Struct({
   summary: Schema.String,
-  parent: Schema.optional(Schema.Struct({
+  parent: Schema.optional(Schema.NullOr(Schema.Struct({
     key: Schema.String,
     fields: Schema.Struct({
       summary: Schema.String,
@@ -57,7 +60,7 @@ export const JiraSprintIssueFieldsSchema = Schema.Struct({
         name: Schema.String,
       }),
     }),
-  })),
+  }))),
   status: Schema.Struct({
     name: Schema.String,
     statusCategory: Schema.Struct({
@@ -68,19 +71,19 @@ export const JiraSprintIssueFieldsSchema = Schema.Struct({
     displayName: Schema.String,
     emailAddress: Schema.optional(Schema.String),
   }))),
-  priority: Schema.optional(Schema.Struct({
+  priority: Schema.optional(Schema.NullOr(Schema.Struct({
     name: Schema.String,
-  })),
+  }))),
   issuetype: Schema.Struct({
     name: Schema.String,
   }),
-  created: Schema.optional(Schema.String),
-  updated: Schema.optional(Schema.String),
-  comment: Schema.optional(Schema.Struct({
+  created: Schema.optional(Schema.NullOr(Schema.String)),
+  updated: Schema.optional(Schema.NullOr(Schema.String)),
+  comment: Schema.optional(Schema.NullOr(Schema.Struct({
     total: Schema.optionalWith(Schema.Number, { default: () => 0 }),
     comments: Schema.mutable(Schema.Array(JiraSprintCommentSchema))
-  })),
-  subtasks: Schema.optional(Schema.mutable(Schema.Array(Schema.Struct({
+  }))),
+  subtasks: Schema.optional(Schema.NullOr(Schema.mutable(Schema.Array(Schema.Struct({
     id: Schema.String,
     key: Schema.String,
     fields: Schema.Struct({
@@ -92,7 +95,7 @@ export const JiraSprintIssueFieldsSchema = Schema.Struct({
         name: Schema.String,
       }),
     }),
-  })))),
+  }))))),
 });
 
 export const JiraSprintIssueSchema = Schema.Struct({
