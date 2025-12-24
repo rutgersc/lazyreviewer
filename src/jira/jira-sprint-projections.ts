@@ -1,11 +1,6 @@
 import type { JiraSprint } from "./jira-sprint-schema";
 import type { JiraIssue } from "./jira-schema";
-import type {
-  AnyLazyReviewerEvent,
-  JiraSprintsLoadedEvent,
-  JiraSprintSelectedEvent
-} from "../events/events";
-import { defineProjection, type ProjectionEventType } from "../events/define-projection";
+import { defineProjection } from "../utils/define-projection";
 
 // =============================================================================
 // Sprints List Projection
@@ -20,21 +15,19 @@ export const initialSprintsState: SprintsState = {
   boardId: null,
 };
 
-export const projectSprints = (state: SprintsState, event: AnyLazyReviewerEvent): SprintsState => {
-  switch (event.type) {
-    case "jira-sprints-loaded-event": {
-      const e = event as JiraSprintsLoadedEvent;
-      console.log(`[Projection] Sprints loaded: ${e.sprints.length} sprints for board ${e.boardId}`);
+export const sprintsProjection = defineProjection({
+  initialState: initialSprintsState,
+  handlers: {
+    "jira-sprints-loaded-event": (state, event) => {
+      console.log(`[Projection] Sprints loaded: ${event.sprints.length} sprints for board ${event.boardId}`);
       return {
         ...state,
-        sprints: e.sprints,
-        boardId: e.boardId,
+        sprints: event.sprints,
+        boardId: event.boardId,
       };
-    }
-    default:
-      return state;
-  }
-};
+    },
+  },
+});
 
 // =============================================================================
 // Selected Sprint Projection
@@ -47,32 +40,29 @@ export const initialSelectionState: SelectionState = {
   selectedSprintId: null,
 };
 
-export const projectSelection = (state: SelectionState, event: AnyLazyReviewerEvent): SelectionState => {
-  switch (event.type) {
-    case "jira-sprint-selected-event": {
-      const e = event as JiraSprintSelectedEvent;
-      console.log(`[Projection] Sprint selected: ${e.sprintId}`);
+export const selectionProjection = defineProjection({
+  initialState: initialSelectionState,
+  handlers: {
+    "jira-sprint-selected-event": (state, event) => {
+      console.log(`[Projection] Sprint selected: ${event.sprintId}`);
       return {
         ...state,
-        selectedSprintId: e.sprintId,
+        selectedSprintId: event.sprintId,
       };
-    }
-    case "jira-sprints-loaded-event": {
-      const e = event as JiraSprintsLoadedEvent;
+    },
+    "jira-sprints-loaded-event": (state, event) => {
       // Auto-select first sprint if none selected
-      if (!state.selectedSprintId && e.sprints.length > 0) {
-        console.log(`[Projection] Auto-selecting first sprint: ${e.sprints[0]!.id}`);
+      if (!state.selectedSprintId && event.sprints.length > 0) {
+        console.log(`[Projection] Auto-selecting first sprint: ${event.sprints[0]!.id}`);
         return {
           ...state,
-          selectedSprintId: e.sprints[0]!.id,
+          selectedSprintId: event.sprints[0]!.id,
         };
       }
       return state;
-    }
-    default:
-      return state;
-  }
-};
+    },
+  },
+});
 
 // =============================================================================
 // Sprint Issues Projection (stores issues by sprintId)

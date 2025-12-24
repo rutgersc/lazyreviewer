@@ -1,14 +1,12 @@
 import type { LazyReviewerEvent } from "./events"
 import type { CompactedEvent } from "./event-compaction-events"
 import {
-  projectToCompactedMergeRequestsState,
-  isCompactedMergeRequestsEvent,
+  compactedMergeRequestsProjection,
   type CompactedMergeRequestEntry,
   type CompactedMergeRequestsState
 } from "../mergerequests/mergerequest-compaction-projection"
 import {
   projectToCompactedJiraIssuesState,
-  isCompactedJiraIssuesEvent,
   type CompactedJiraIssueEntry,
   type CompactedJiraIssuesState
 } from "../jira/jira-compaction-projection"
@@ -23,20 +21,14 @@ export const projectToCompactedState = (
   state: CompactedState,
   event: LazyReviewerEvent
 ): CompactedState => {
-  let newMrState = state.mergeRequests
-  let newJiraState = state.jiraIssues
-
-  if (isCompactedMergeRequestsEvent(event)) {
-    newMrState = projectToCompactedMergeRequestsState(state.mergeRequests, event)
-  }
-
-  if (isCompactedJiraIssuesEvent(event)) {
-    newJiraState = projectToCompactedJiraIssuesState(state.jiraIssues, event)
-  }
-
   return {
-    mergeRequests: newMrState,
-    jiraIssues: newJiraState
+    mergeRequests: compactedMergeRequestsProjection.isRelevantEvent(event)
+      ? compactedMergeRequestsProjection.project(state.mergeRequests, event)
+      : state.mergeRequests,
+
+    jiraIssues: projectToCompactedJiraIssuesState.isRelevantEvent(event)
+      ? projectToCompactedJiraIssuesState.project(state.jiraIssues, event)
+      : state.jiraIssues
   }
 }
 

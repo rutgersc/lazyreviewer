@@ -1,15 +1,5 @@
-import type { LazyReviewerEvent } from '../events/events'
-import type { JiraIssuesFetchedEvent, JiraSprintIssuesFetchedEvent } from '../events/jira-events'
-import type { CompactedEvent } from '../events/event-compaction-events'
 import type { JiraComment, JiraIssue } from '../jira/jira-schema'
-
-export type JiraChangeTrackingRelevantEvent = JiraIssuesFetchedEvent | CompactedEvent | JiraSprintIssuesFetchedEvent
-
-export function isJiraChangeTrackingRelevantEvent(event: LazyReviewerEvent): event is JiraChangeTrackingRelevantEvent {
-  return event.type === 'jira-issues-fetched-event' ||
-         event.type === 'compacted-event' ||
-         event.type === 'jira-sprint-issues-fetched-event'
-}
+import { defineProjection } from '../utils/define-projection'
 
 export interface JiraStateForDelta {
   status: string
@@ -133,23 +123,21 @@ const detectJiraIssueChanges = (
   return { jiraStatesForDelta, jiraDeltas }
 }
 
-const projectCompactedEventJiraIssues = (event: CompactedEvent): ReadonlyArray<JiraIssue> => {
-  return event.jiraIssues
-}
+const initialJiraChangeTrackingState: JiraProjectionResult = {
+  jiraStatesForDelta: new Map(),
+  jiraDeltas: []
+};
 
-export function projectJiraChangeTracking(
-  jiraStatesForDelta: Map<string, JiraStateForDelta>,
-  event: JiraChangeTrackingRelevantEvent
-): JiraProjectionResult {
-  switch (event.type) {
-    case 'jira-issues-fetched-event':
-      return detectJiraIssueChanges(jiraStatesForDelta, event.issues.issues)
-    case 'compacted-event':
-      return detectJiraIssueChanges(jiraStatesForDelta, projectCompactedEventJiraIssues(event))
-    case 'jira-sprint-issues-fetched-event':
-      return detectJiraIssueChanges(jiraStatesForDelta, event.issues)
-    default:
-      const _: never = event;
-      throw new Error("unreachable")
+export const jiraChangeTrackingProjection = defineProjection({
+  initialState: initialJiraChangeTrackingState,
+  handlers: {
+    "jira-issues-fetched-event": (state, event) =>
+      detectJiraIssueChanges(state.jiraStatesForDelta, event.issues.issues),
+
+    "compacted-event": (state, event) =>
+      detectJiraIssueChanges(state.jiraStatesForDelta, event.jiraIssues),
+
+    "jira-sprint-issues-fetched-event": (state, event) =>
+      detectJiraIssueChanges(state.jiraStatesForDelta, event.issues),
   }
-}
+});

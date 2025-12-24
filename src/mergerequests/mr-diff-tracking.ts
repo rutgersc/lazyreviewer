@@ -2,7 +2,7 @@ import { Data, Stream, Effect } from "effect";
 import { Atom, Result } from "@effect-atom/atom-react";
 import { EventStorage } from "../events/events";
 import { appAtomRuntime } from "../appLayerRuntime";
-import { isMrRelevantEvent, type MrRelevantEvent } from "./all-mergerequests-projection";
+import { allMrsProjection, type MrRelevantEvent } from "./all-mergerequests-projection";
 import type { MergeRequestFieldsFragment } from "../graphql/mrs.generated";
 import type { BitbucketPullRequest } from "../bitbucket/bitbucketapi";
 
@@ -202,7 +202,7 @@ export const missingMrsDiffAtom = appAtomRuntime.atom(
     return Stream.unwrap(
       Effect.gen(function* () {
         return (yield* EventStorage.eventsStream).pipe(
-          Stream.filter(isMrRelevantEvent),
+          Stream.filter(allMrsProjection.isRelevantEvent),
           Stream.scan(
             initialOpenMrsTrackingState,
             (state: OpenMrsTrackingState, event) =>

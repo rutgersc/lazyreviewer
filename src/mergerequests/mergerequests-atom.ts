@@ -25,7 +25,7 @@ import { selectedUserSelectionEntryIdAtom } from "../settings/settings-atom";
 import { allEventsIncludingCompactedAtom } from "../events/events-atom";
 import type { LazyReviewerEvent } from "../events/events";
 import { groupsAtom } from "../data/data-atom";
-import { AllMrsState, projectAllMrs, isMrRelevantEvent } from "./all-mergerequests-projection";
+import { AllMrsState, allMrsProjection } from "./all-mergerequests-projection";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 
@@ -55,18 +55,18 @@ export const allMrsAtom = appAtomRuntime.atom(
     return Stream.unwrap(
       Effect.gen(function* () {
         return (yield* EventStorage.eventsStream).pipe(
-          Stream.filter(isMrRelevantEvent),
+          Stream.filter(allMrsProjection.isRelevantEvent),
           Stream.groupedWithin(100, "0.15 seconds"),
           Stream.scan(
-            new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() }),
+            allMrsProjection.initialState,
             (state: AllMrsState, events) =>
-              Chunk.reduce(events, state, (currentState, event) => projectAllMrs(currentState, event))
+              Chunk.reduce(events, state, (currentState, event) => allMrsProjection.project(currentState, event))
           )
         );
       })
     );
   },
-  { initialValue: new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() }) }
+  { initialValue: allMrsProjection.initialState }
 ).pipe(Atom.keepAlive);
 
 export const allJiraIssuesAtom = Atom.map(
@@ -84,7 +84,7 @@ export const openMrsTrackingAtom = appAtomRuntime.atom(
     return Stream.unwrap(
       Effect.gen(function* () {
         return (yield* EventStorage.eventsStream).pipe(
-          Stream.filter(isMrRelevantEvent),
+          Stream.filter(allMrsProjection.isRelevantEvent),
           Stream.scan(
             initialOpenMrsTrackingState,
             (state: OpenMrsTrackingState, event) =>

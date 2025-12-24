@@ -4,29 +4,16 @@ import { EventStorage, type AnyLazyReviewerEvent } from "../events/events";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { fetchActiveSprints, loadSprintTreeAsEvent } from "./jira-sprint-service";
 import {
-  projectSprints,
-  initialSprintsState,
-  projectSelection,
-  initialSelectionState,
+  sprintsProjection,
+  selectionProjection,
   sprintIssuesProjection,
-  initialSprintIssuesState
 } from "./jira-sprint-projections";
-import { project, type Projection } from "../events/define-projection";
+import { project, type Projection } from "../utils/define-projection";
 import { buildSprintTree } from "./jira-sprint-service";
 
 // =============================================================================
 // Projected Atoms
 // =============================================================================
-
-// Helper to create an atom from the event stream with a projection
-const makeProjectedAtom = <S>(initial: S, project: (s: S, e: any) => S) => {
-  return appAtomRuntime.atom(
-    Stream.unwrap(EventStorage.combinedEventsStream).pipe(
-      Stream.scan(initial, project)
-    ),
-    { initialValue: initial }
-  );
-};
 
 // Helper that takes a Projection - automatically filters and projects
 const makeProjectedAtomFromProjection = <S, E extends AnyLazyReviewerEvent>(
@@ -40,21 +27,21 @@ const makeProjectedAtomFromProjection = <S, E extends AnyLazyReviewerEvent>(
 };
 
 // Sprints List
-export const sprintsStateAtom = makeProjectedAtom(initialSprintsState, projectSprints);
+const sprintsStateAtom = makeProjectedAtomFromProjection(EventStorage.combinedEventsStream, sprintsProjection);
 
 export const sprintsAtom = Atom.map(sprintsStateAtom, (result) =>
-  Result.getOrElse(result, () => initialSprintsState).sprints
+  Result.getOrElse(result, () => sprintsProjection.initialState).sprints
 );
 
 export const boardIdAtom = Atom.map(sprintsStateAtom, (result) =>
-  Result.getOrElse(result, () => initialSprintsState).boardId
+  Result.getOrElse(result, () => sprintsProjection.initialState).boardId
 );
 
 // Selection
-export const selectionStateAtom = makeProjectedAtom(initialSelectionState, projectSelection);
+const selectionStateAtom = makeProjectedAtomFromProjection(EventStorage.combinedEventsStream, selectionProjection);
 
 export const selectedSprintIdAtom = Atom.map(selectionStateAtom, (result) =>
-  Result.getOrElse(result, () => initialSelectionState).selectedSprintId
+  Result.getOrElse(result, () => selectionProjection.initialState).selectedSprintId
 );
 
 export const selectedSprintAtom = Atom.readable((get) => {
@@ -66,9 +53,8 @@ export const selectedSprintAtom = Atom.readable((get) => {
 // Sprint Issues (stored by sprintId)
 const sprintIssuesStateAtom = makeProjectedAtomFromProjection(EventStorage.inMemoryEventsStream, sprintIssuesProjection);
 
-
 export const sprintIssuesByIdAtom = Atom.map(sprintIssuesStateAtom, (result) =>
-  Result.getOrElse(result, () => initialSprintIssuesState).issuesBySprintId
+  Result.getOrElse(result, () => sprintIssuesProjection.initialState).issuesBySprintId
 );
 
 // Derived atom: check if we have cached issues for the selected sprint

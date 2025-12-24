@@ -1,43 +1,29 @@
-import type { LazyReviewerEvent } from '../events/events'
-import type { JiraChange, JiraChangeTrackingRelevantEvent } from './jira-change-tracking'
 import {
-  isJiraChangeTrackingRelevantEvent,
-  projectJiraChangeTracking,
+  jiraChangeTrackingProjection,
+  type JiraChange,
   type JiraProjectionResult,
   type JiraStateForDelta
-} from './jira-change-tracking'
-import type {
-  MrChange,
-  MrChangeTrackingRelevantEvent,
-  MrInfo,
-  NewMrChange,
-  MergedMrChange,
-  ClosedMrChange,
-  ReopenedMrChange,
-  SystemNoteChange,
-  DiffCommentChange,
-  DiscussionCommentChange
-} from './mr-change-tracking'
+} from './jira-change-tracking-projection'
 import {
-  isMrChangeTrackingRelevantEvent,
-  projectMrChangeTracking,
+  mrChangeTrackingProjection,
+  type MrChange,
+  type MrInfo,
+  type NewMrChange,
+  type MergedMrChange,
+  type ClosedMrChange,
+  type ReopenedMrChange,
+  type SystemNoteChange,
+  type DiffCommentChange,
+  type DiscussionCommentChange,
   type MrProjectionResult,
   type MrStateForDelta
-} from './mr-change-tracking'
-
-export type ChangeTrackingRelevantEvent = MrChangeTrackingRelevantEvent | JiraChangeTrackingRelevantEvent
-
-export function isChangeTrackingRelevantEvent(event: LazyReviewerEvent): event is ChangeTrackingRelevantEvent {
-  return isMrChangeTrackingRelevantEvent(event) || isJiraChangeTrackingRelevantEvent(event)
-}
+} from './mr-change-tracking-projection'
 
 export type Change = MrChange | JiraChange
 
 export {
   // MR exports
-  isMrChangeTrackingRelevantEvent,
-  projectMrChangeTracking,
-  type MrChangeTrackingRelevantEvent,
+  mrChangeTrackingProjection,
   type MrProjectionResult,
   type MrStateForDelta,
   type MrChange,
@@ -50,9 +36,7 @@ export {
   type DiffCommentChange,
   type DiscussionCommentChange,
   // Jira exports
-  isJiraChangeTrackingRelevantEvent,
-  projectJiraChangeTracking,
-  type JiraChangeTrackingRelevantEvent,
+  jiraChangeTrackingProjection,
   type JiraProjectionResult,
   type JiraStateForDelta,
   type JiraChange

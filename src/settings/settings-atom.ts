@@ -68,7 +68,6 @@ const watchSettingsStream = Effect.gen(function* () {
   const initial = parseContent(initialContent);
 
   const watchStream = fs.watch(SETTINGS_FILE).pipe(
-    Stream.tap(() => Effect.sync(() => console.log("[Settings] File watch event fired"))),
     Stream.debounce("100 millis"),
     Stream.mapEffect(() => readFileContent),
     Stream.changes,

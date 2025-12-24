@@ -1,4 +1,4 @@
-import type { AnyLazyReviewerEvent } from "./events";
+import type { AnyLazyReviewerEvent } from "../events/events";
 
 // =============================================================================
 // Event Registry - automatically maps event type strings to their interfaces
@@ -44,32 +44,6 @@ export interface Projection<S, E extends AnyLazyReviewerEvent> {
 // defineProjection - Single source of truth for projections
 // =============================================================================
 
-/**
- * Define a projection with type-safe handlers.
- *
- * The event union type, type guard, and projection function are all derived
- * from the handlers object - keeping everything in sync automatically.
- *
- * @example
- * ```ts
- * const sprintIssuesProjection = defineProjection({
- *   initialState: { issuesBySprintId: new Map() },
- *   handlers: {
- *     'jira-sprint-issues-fetched-event': (state, event) => {
- *       // event is typed as JiraSprintIssuesFetchedEvent
- *       const newMap = new Map(state.issuesBySprintId);
- *       newMap.set(event.sprintId, event.issues);
- *       return { ...state, issuesBySprintId: newMap };
- *     },
- *   },
- * });
- *
- * // Derived utilities:
- * sprintIssuesProjection.isRelevantEvent(event)  // type guard
- * sprintIssuesProjection.project(state, event)   // projection
- * type RelevantEvent = typeof sprintIssuesProjection._eventType; // event union
- * ```
- */
 export function defineProjection<
   S,
   const EventTypes extends keyof AllEventRegistry,

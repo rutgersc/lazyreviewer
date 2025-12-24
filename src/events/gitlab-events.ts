@@ -94,4 +94,11 @@ export const GitlabEventSchema = Schema.Union(
   GitlabJobHistoryFetchedEventSchema
 )
 
-export type GitlabEvent = Schema.Schema.Type<typeof GitlabEventSchema>
+// Use manually refined interfaces (with proper types) instead of schema-inferred types
+export type GitlabEvent =
+  | GitlabUserMergeRequestsFetchedEvent
+  | GitlabprojectMergeRequestsFetchedEvent
+  | GitlabSingleMrFetchedEvent
+  | GitlabJobTraceFetchedEvent
+  | GitlabPipelineFetchedEvent
+  | GitlabJobHistoryFetchedEvent

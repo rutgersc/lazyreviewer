@@ -2,23 +2,23 @@ import { describe, test, expect } from "bun:test"
 import { Effect } from "effect"
 import { appLayer } from "../appLayerRuntime"
 import { EventStorage } from "./events"
-import { AllMrsState, projectAllMrs, isMrRelevantEvent } from "../mergerequests/all-mergerequests-projection"
+import { AllMrsState, allMrsProjection } from "../mergerequests/all-mergerequests-projection"
 import { projectEventsToCompactedState, compactedStateToEvent } from "./project-to-compacted-state"
 
 describe("Event Compaction", () => {
-  test("projectAllMrs produces identical state from all events vs single compacted event", async () => {
+  test("allMrsProjection produces identical state from all events vs single compacted event", async () => {
     const program = Effect.gen(function* () {
       // 1. Load all events using EventStorage
       const allEvents = yield* EventStorage.loadAllEvents
       console.log(`Loaded ${allEvents.length} events from storage`)
 
-      // 2. Project all events through projectAllMrs to get final state
-      const mrRelevantEvents = allEvents.filter(isMrRelevantEvent)
+      // 2. Project all events through allMrsProjection to get final state
+      const mrRelevantEvents = allEvents.filter(allMrsProjection.isRelevantEvent)
       console.log(`Found ${mrRelevantEvents.length} MR-relevant events`)
 
       const stateFromAllEvents = mrRelevantEvents.reduce(
-        (state, event) => projectAllMrs(state, event),
-        new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() })
+        (state, event) => allMrsProjection.project(state, event),
+        allMrsProjection.initialState
       )
 
       console.log(`State from all events: ${stateFromAllEvents.mrsByGid.size} MRs, ${stateFromAllEvents.jiraIssuesByKey.size} Jira issues`)
@@ -29,9 +29,9 @@ describe("Event Compaction", () => {
 
       console.log(`Compacted event contains: ${compactedEvent.mrs.length} MRs, ${compactedEvent.jiraIssues.length} Jira issues`)
 
-      // 4. Project the single compacted event through projectAllMrs
-      const stateFromCompactedEvent = projectAllMrs(
-        new AllMrsState({ mrsByGid: new Map(), jiraIssuesByKey: new Map(), timestamp: new Date() }),
+      // 4. Project the single compacted event through allMrsProjection
+      const stateFromCompactedEvent = allMrsProjection.project(
+        allMrsProjection.initialState,
         compactedEvent
       )
 

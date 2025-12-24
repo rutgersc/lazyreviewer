@@ -7,7 +7,7 @@ import type {
   DiffCommentChange,
   DiscussionCommentChange
 } from '../changetracking/change-tracking-projection'
-import type { JiraCommentChange, JiraStatusChangedChange } from '../changetracking/jira-change-tracking'
+import type { JiraCommentChange, JiraStatusChangedChange } from '../changetracking/jira-change-tracking-projection'
 
 export type NotifiableChange = Extract<
   Change,

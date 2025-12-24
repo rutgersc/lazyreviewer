@@ -2,11 +2,8 @@ import { Atom } from '@effect-atom/atom-react'
 import { Chunk, Effect, Stream } from 'effect'
 import { EventStorage } from '../events/events'
 import {
-  isChangeTrackingRelevantEvent,
-  isJiraChangeTrackingRelevantEvent,
-  isMrChangeTrackingRelevantEvent,
-  projectJiraChangeTracking,
-  projectMrChangeTracking,
+  jiraChangeTrackingProjection,
+  mrChangeTrackingProjection,
   type Change,
   type JiraStateForDelta,
   type MrStateForDelta
@@ -29,19 +26,19 @@ const initialAccumulator: ChangeTrackingState = {
 
 export const changesStream = Effect.fn(function* (_get: Atom.Context) {
   return (yield* EventStorage.eventsStream).pipe(
-    Stream.filter((event) => isChangeTrackingRelevantEvent(event)),
+    Stream.filter((event) => mrChangeTrackingProjection.isRelevantEvent(event) || jiraChangeTrackingProjection.isRelevantEvent(event)),
     Stream.groupedWithin(300, "0.3 seconds"),
     Stream.tap(() => Effect.sleep("200 millis")),
     Stream.scan(
       initialAccumulator,
       (state: ChangeTrackingState, events) =>
         Chunk.reduce(events, state, (state, event) => {
-          const { mrDeltas, mrStatesForDelta } = isMrChangeTrackingRelevantEvent(event)
-            ? projectMrChangeTracking(state.mrStateForDeltaByMrId, event)
+          const { mrDeltas, mrStatesForDelta } = mrChangeTrackingProjection.isRelevantEvent(event)
+            ? mrChangeTrackingProjection.project({ mrStatesForDelta: state.mrStateForDeltaByMrId, mrDeltas: [] }, event)
             : { mrDeltas: [], mrStatesForDelta: state.mrStateForDeltaByMrId };
 
-          const { jiraDeltas, jiraStatesForDelta } = isJiraChangeTrackingRelevantEvent(event)
-            ? projectJiraChangeTracking(state.jiraStateForDeltaByIssueKey, event)
+          const { jiraDeltas, jiraStatesForDelta } = jiraChangeTrackingProjection.isRelevantEvent(event)
+            ? jiraChangeTrackingProjection.project({ jiraStatesForDelta: state.jiraStateForDeltaByIssueKey, jiraDeltas: [] }, event)
             : { jiraDeltas: [], jiraStatesForDelta: state.jiraStateForDeltaByIssueKey };
 
           const deltas = [...mrDeltas, ...jiraDeltas];

@@ -1,28 +1,11 @@
-import type { CompactedEvent } from "../events/event-compaction-events"
-import type { LazyReviewerEvent } from "../events/events"
 import type { MergeRequestFieldsFragment } from "../graphql/mrs.generated"
 import type { BitbucketPullRequest } from "../bitbucket/bitbucketapi"
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import type {
-  GitlabUserMergeRequestsFetchedEvent,
   GitlabprojectMergeRequestsFetchedEvent,
   GitlabSingleMrFetchedEvent
 } from "../events/gitlab-events"
-import type {
-  BitbucketPrsFetchedEvent,
-  BitbucketSinglePrFetchedEvent
-} from "../events/bitbucket-events"
-
-export type CompactedMergeRequestsDependentEvents =
-  | GitlabUserMergeRequestsFetchedEvent
-  | GitlabprojectMergeRequestsFetchedEvent
-  | GitlabSingleMrFetchedEvent
-  | BitbucketPrsFetchedEvent
-  | BitbucketSinglePrFetchedEvent
-
-export type CompactedMergeRequestsEvent =
-  | CompactedMergeRequestsDependentEvents
-  | CompactedEvent
+import { defineProjection, type ProjectionEventType } from "../utils/define-projection"
 
 export interface CompactedMergeRequestEntry {
   mr: MergeRequestFieldsFragment | BitbucketPullRequest
@@ -62,14 +45,6 @@ const mapSingleMrToFragment = (node: SingleMrNode): MergeRequestFieldsFragment =
   } satisfies MergeRequestFieldsFragment
 }
 
-export const isCompactedMergeRequestsEvent = (event: LazyReviewerEvent): event is CompactedMergeRequestsEvent =>
-  event.type === 'gitlab-user-mrs-fetched-event' ||
-  event.type === 'gitlab-project-mrs-fetched-event' ||
-  event.type === 'gitlab-single-mr-fetched-event' ||
-  event.type === 'bitbucket-prs-fetched-event' ||
-  event.type === 'bitbucket-single-pr-fetched-event' ||
-  event.type === 'compacted-event'
-
 const isGitlabMr = (mr: MergeRequestFieldsFragment | BitbucketPullRequest): mr is MergeRequestFieldsFragment =>
   'iid' in mr && 'project' in mr
 
@@ -100,16 +75,14 @@ const projectMrsToState = (mrs: ReadonlyArray<MergeRequestFieldsFragment | Bitbu
   return newState
 }
 
-export const projectToCompactedMergeRequestsState = (
-  state: CompactedMergeRequestsState,
-  event: CompactedMergeRequestsEvent
-): CompactedMergeRequestsState => {
-  switch (event.type) {
-    case 'compacted-event': {
-      return projectMrsToState(event.mrs)
-    }
+const initialCompactedMergeRequestsState: CompactedMergeRequestsState = new Map()
 
-    case 'gitlab-user-mrs-fetched-event': {
+export const compactedMergeRequestsProjection = defineProjection({
+  initialState: initialCompactedMergeRequestsState,
+  handlers: {
+    "compacted-event": (state, event) => projectMrsToState(event.mrs),
+
+    "gitlab-user-mrs-fetched-event": (state, event) => {
       const newState = new Map(state)
       const users = event.mrs.users?.nodes || []
       users.forEach(user => {
@@ -117,7 +90,7 @@ export const projectToCompactedMergeRequestsState = (
         const mrs = user.authoredMergeRequests?.nodes || []
         mrs.forEach(mr => {
           if (!mr) return
-          const rawMr = mr // no mapping needed
+          const rawMr = mr
           const key = getMrKey(rawMr.project.fullPath, rawMr.iid)
           newState.set(key, {
             mr: rawMr,
@@ -129,9 +102,9 @@ export const projectToCompactedMergeRequestsState = (
         })
       })
       return newState
-    }
+    },
 
-    case 'gitlab-project-mrs-fetched-event': {
+    "gitlab-project-mrs-fetched-event": (state, event) => {
       const newState = new Map(state)
       const mrs = event.mrs.project?.mergeRequests?.nodes || []
       mrs.forEach(mr => {
@@ -147,9 +120,9 @@ export const projectToCompactedMergeRequestsState = (
         })
       })
       return newState
-    }
+    },
 
-    case 'gitlab-single-mr-fetched-event': {
+    "gitlab-single-mr-fetched-event": (state, event) => {
       const newState = new Map(state)
       const mr = event.mr.project?.mergeRequest
       if (!mr) return newState
@@ -159,14 +132,14 @@ export const projectToCompactedMergeRequestsState = (
       newState.set(key, {
         mr: fragmentMr,
         forUsernames: [fragmentMr.author?.name || ''],
-        forState: 'all', // Single fetch implies specific targeting
+        forState: 'all',
         forProjectPath: event.forProjectPath,
         forIid: event.forIid
       })
       return newState
-    }
+    },
 
-    case 'bitbucket-prs-fetched-event': {
+    "bitbucket-prs-fetched-event": (state, event) => {
       const newState = new Map(state)
       const prs = event.prsResponse.values
       prs.forEach(pr => {
@@ -181,9 +154,9 @@ export const projectToCompactedMergeRequestsState = (
         })
       })
       return newState
-    }
+    },
 
-    case 'bitbucket-single-pr-fetched-event': {
+    "bitbucket-single-pr-fetched-event": (state, event) => {
       const newState = new Map(state)
       const pr = event.pr
       const repoFullName = pr.destination.repository.full_name
@@ -196,10 +169,9 @@ export const projectToCompactedMergeRequestsState = (
         forIid: pr.id
       })
       return newState
-    }
-
-    default:
-        const _: never = event;
-        throw new Error("unexpected non-exhaustive match")
+    },
   }
-}
+})
+
+// Derived from the projection
+export type CompactedMergeRequestsEvent = ProjectionEventType<typeof compactedMergeRequestsProjection>

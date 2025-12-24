@@ -15,7 +15,7 @@ import { allMrsAtom, unwrappedMergeRequestsAtom, isMergeRequestsLoadingAtom, sel
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { eventChangesReadmodelAtom } from '../changetracking/change-tracking-atom';
 import type { Change, MrChange } from '../changetracking/change-tracking-projection';
-import { FILTERED_SYSTEM_NOTE_TYPES } from '../changetracking/mr-change-tracking';
+import { FILTERED_SYSTEM_NOTE_TYPES } from '../changetracking/mr-change-tracking-projection';
 import type { LazyReviewerEvent } from '../events/events';
 import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../jira/jira-atom';
 import { useJiraScroll } from '../hooks/useJiraScroll';

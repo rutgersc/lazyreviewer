@@ -3,7 +3,7 @@ import { Effect, Stream, Console, Fiber, Chunk, Option } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserAtom } from '../settings/settings-atom';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
-import { isMrChangeTrackingRelevantEvent, isJiraChangeTrackingRelevantEvent } from '../changetracking/change-tracking-projection';
+import { mrChangeTrackingProjection, jiraChangeTrackingProjection } from '../changetracking/change-tracking-projection';
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
 import { loadSettings, saveSettings } from '../settings/settings';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
@@ -164,8 +164,8 @@ const createNotificationDaemon = (get: Atom.Context) =>
             (tracker, state) => {
               if (!state.event) return tracker;
               return {
-                lastMrId: isMrChangeTrackingRelevantEvent(state.event) ? state.event.eventId : tracker.lastMrId,
-                lastJiraId: isJiraChangeTrackingRelevantEvent(state.event) ? state.event.eventId : tracker.lastJiraId
+                lastMrId: mrChangeTrackingProjection.isRelevantEvent(state.event) ? state.event.eventId : tracker.lastMrId,
+                lastJiraId: jiraChangeTrackingProjection.isRelevantEvent(state.event) ? state.event.eventId : tracker.lastJiraId
               };
             }
           );

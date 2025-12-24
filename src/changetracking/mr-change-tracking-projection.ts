@@ -1,9 +1,3 @@
-import type { LazyReviewerEvent } from '../events/events'
-import type {
-  GitlabUserMergeRequestsFetchedEvent,
-  GitlabprojectMergeRequestsFetchedEvent,
-  GitlabSingleMrFetchedEvent
-} from '../events/gitlab-events'
 import type { CompactedEvent } from '../events/event-compaction-events'
 import {
   projectGitlabUserMrsFetchedEvent,
@@ -13,19 +7,7 @@ import {
 } from '../gitlab/gitlab-projections'
 import { mapBitbucketToGitlabMergeRequest } from '../bitbucket/bitbucket-projections'
 import type { DiscussionNote, GitlabMergeRequest } from '../gitlab/gitlab-schema'
-
-export type MrChangeTrackingRelevantEvent =
-  | GitlabUserMergeRequestsFetchedEvent
-  | GitlabprojectMergeRequestsFetchedEvent
-  | GitlabSingleMrFetchedEvent
-  | CompactedEvent
-
-export function isMrChangeTrackingRelevantEvent(event: LazyReviewerEvent): event is MrChangeTrackingRelevantEvent {
-  return event.type === 'gitlab-user-mrs-fetched-event' ||
-         event.type === 'gitlab-project-mrs-fetched-event' ||
-         event.type === 'gitlab-single-mr-fetched-event' ||
-         event.type === 'compacted-event'
-}
+import { defineProjection } from '../utils/define-projection'
 
 // Cumulative state per MR (for calculating future deltas)
 export interface MrStateForDelta {
@@ -350,20 +332,31 @@ const projectCompactedEventMrs = (event: CompactedEvent): GitlabMergeRequest[] =
   });
 };
 
-export function projectMrChangeTracking(
-  mrStatesForDelta: Map<string, MrStateForDelta>,
-  event: MrChangeTrackingRelevantEvent
-): MrProjectionResult {
-  if (event.type === "gitlab-user-mrs-fetched-event") {
-    return detectMergerequestChanges(mrStatesForDelta, projectGitlabUserMrsFetchedEvent(event));
-  } else if (event.type === "gitlab-project-mrs-fetched-event") {
-    return detectMergerequestChanges(mrStatesForDelta, projectGitlabProjectMrsFetchedEvent(event));
-  } else if (event.type === "gitlab-single-mr-fetched-event") {
-    const mr = projectGitlabSingleMrFetchedEvent(event);
-    return detectMergerequestChanges(mrStatesForDelta, mr ? [mr] : []);
-  } else if (event.type === "compacted-event") {
-    return detectMergerequestChanges(mrStatesForDelta, projectCompactedEventMrs(event));
-  }
+// =============================================================================
+// MR Change Tracking Projection - Single Source of Truth
+// =============================================================================
 
-  throw new Error("non-exhaustive match");
-}
+const initialMrChangeTrackingState: MrProjectionResult = {
+  mrStatesForDelta: new Map(),
+  mrDeltas: []
+};
+
+export const mrChangeTrackingProjection = defineProjection({
+  initialState: initialMrChangeTrackingState,
+  handlers: {
+    "gitlab-user-mrs-fetched-event": (state, event) =>
+      detectMergerequestChanges(state.mrStatesForDelta, projectGitlabUserMrsFetchedEvent(event)),
+
+    "gitlab-project-mrs-fetched-event": (state, event) =>
+      detectMergerequestChanges(state.mrStatesForDelta, projectGitlabProjectMrsFetchedEvent(event)),
+
+    "gitlab-single-mr-fetched-event": (state, event) => {
+      const mr = projectGitlabSingleMrFetchedEvent(event);
+      return detectMergerequestChanges(state.mrStatesForDelta, mr ? [mr] : []);
+    },
+
+    "compacted-event": (state, event) =>
+      detectMergerequestChanges(state.mrStatesForDelta, projectCompactedEventMrs(event)),
+  }
+});
+
