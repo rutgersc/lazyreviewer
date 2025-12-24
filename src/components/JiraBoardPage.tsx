@@ -11,7 +11,7 @@ import {
   selectedSprintAtom,
   loadSprintIssuesAtom,
   sprintTreeAtom,
-  lastFetchedSprintIdAtom,
+  hasIssuesForSelectedSprintAtom,
   selectedIssueIndexAtom,
   expandedKeysAtom,
   toggleExpandAtom,
@@ -19,7 +19,7 @@ import {
   selectSprintAtom,
   type FlatListItem,
 } from '../jira/jira-sprint-atom';
-import type { JiraSprintIssue } from '../jira/jira-sprint-schema';
+import type { JiraIssue } from '../jira/jira-schema';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
@@ -70,7 +70,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const selectedSprintId = useAtomValue(selectedSprintIdAtom);
   const selectedSprint = useAtomValue(selectedSprintAtom);
   const tree = useAtomValue(sprintTreeAtom);
-  const lastFetchedSprintId = useAtomValue(lastFetchedSprintIdAtom);
+  const hasIssuesForSelectedSprint = useAtomValue(hasIssuesForSelectedSprintAtom);
 
   // UI State
   const selectedIssueIndex = useAtomValue(selectedIssueIndexAtom);
@@ -85,13 +85,13 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
 
   // Trigger initial sprints load
   if (Result.isInitial(loadSprintsResult)) {
-      loadSprints(boardId);
-    }
+    loadSprints(boardId);
+  }
 
-  // Effect-like logic to load issues when sprint selection changes via projections
-  if (Result.isSuccess(loadSprintsResult) && selectedSprintId && Result.isInitial(loadSprintIssuesResult)) {
+  // Only fetch issues if we don't have cached data for the selected sprint
+  if (Result.isSuccess(loadSprintsResult) && selectedSprintId && !hasIssuesForSelectedSprint && !Result.isWaiting(loadSprintIssuesResult)) {
     loadSprintIssues({ sprintId: selectedSprintId, boardId });
-    }
+  }
 
   // When issues load, expand all parent keys automatically if none expanded
     if (Result.isSuccess(loadSprintIssuesResult) && tree.length > 0 && expandedKeys.size === 0) {
@@ -102,13 +102,13 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
 
   const handleSprintChange = (sprintId: number) => {
     if (storedBoardId === null) return;
-    // Clearing selection/tree state before new load
+    // Clearing selection/tree state before switching
     setSelectedIssueIndex(0);
     setExpandedKeys(new Set());
     // Trigger action to append selection event
+    // The derived sprintTreeAtom will automatically show cached data if available
+    // If not cached, the fetch logic above will trigger a fetch
     selectSprint({ sprintId, boardId: storedBoardId });
-    // Trigger action to load issues
-    loadSprintIssues({ sprintId, boardId: storedBoardId });
   };
 
   useKeyboard((key: ParsedKey) => {
@@ -179,7 +179,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     const isExpanded = expandedKeys.has(item.key);
 
     if (item.type === 'parent') {
-      const issue = item.issue as JiraSprintIssue;
+      const issue = item.issue as JiraIssue;
       const childCount = tree.find(n => n.issue.key === item.key)?.children.length ?? 0;
       const statusColor = getStatusColor(issue.fields.status.name);
       const expandIcon = childCount > 0 ? (isExpanded ? '▾' : '▸') : ' ';
@@ -221,7 +221,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       );
     }
 
-    const issue = item.issue as JiraSprintIssue;
+    const issue = item.issue as JiraIssue;
     const statusColor = getStatusColor(issue.fields.status.name);
     const treeChar = item.level > 0 ? '└─' : '';
     const icon = getIssueTypeIcon(issue.fields.issuetype.name);

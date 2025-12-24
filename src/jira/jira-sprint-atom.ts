@@ -1,6 +1,6 @@
 import { Atom, Result } from "@effect-atom/atom-react";
 import { Effect, Stream } from "effect";
-import { EventStorage } from "../events/events";
+import { EventStorage, type AnyLazyReviewerEvent } from "../events/events";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { fetchActiveSprints, loadSprintTreeAsEvent } from "./jira-sprint-service";
 import {
@@ -8,12 +8,11 @@ import {
   initialSprintsState,
   projectSelection,
   initialSelectionState,
-  projectSprintTree,
-  initialSprintTreeState,
-  type SprintsState,
-  type SelectionState,
-  type SprintTreeState
+  sprintIssuesProjection,
+  initialSprintIssuesState
 } from "./jira-sprint-projections";
+import { project, type Projection } from "../events/define-projection";
+import { buildSprintTree } from "./jira-sprint-service";
 
 // =============================================================================
 // Projected Atoms
@@ -26,6 +25,17 @@ const makeProjectedAtom = <S>(initial: S, project: (s: S, e: any) => S) => {
       Stream.scan(initial, project)
     ),
     { initialValue: initial }
+  );
+};
+
+// Helper that takes a Projection - automatically filters and projects
+const makeProjectedAtomFromProjection = <S, E extends AnyLazyReviewerEvent>(
+  stream: Effect.Effect<Stream.Stream<AnyLazyReviewerEvent, never, never>, never, EventStorage>,
+  projection: Projection<S, E>
+) => {
+  return appAtomRuntime.atom(
+    Stream.unwrap(stream).pipe(project(projection)),
+    { initialValue: projection.initialState }
   );
 };
 
@@ -53,16 +63,37 @@ export const selectedSprintAtom = Atom.readable((get) => {
   return sprints.find((s) => s.id === selectedId) ?? null;
 });
 
-// Sprint Tree
-export const sprintTreeStateAtom = makeProjectedAtom(initialSprintTreeState, projectSprintTree);
+// Sprint Issues (stored by sprintId)
+const sprintIssuesStateAtom = makeProjectedAtomFromProjection(EventStorage.inMemoryEventsStream, sprintIssuesProjection);
 
-export const lastFetchedSprintIdAtom = Atom.map(sprintTreeStateAtom, (result) =>
-  Result.getOrElse(result, () => initialSprintTreeState).lastFetchedSprintId
+
+export const sprintIssuesByIdAtom = Atom.map(sprintIssuesStateAtom, (result) =>
+  Result.getOrElse(result, () => initialSprintIssuesState).issuesBySprintId
 );
 
-export const sprintTreeAtom = Atom.map(sprintTreeStateAtom, (result) =>
-  Result.getOrElse(result, () => initialSprintTreeState).tree
-);
+// Derived atom: check if we have cached issues for the selected sprint
+export const hasIssuesForSelectedSprintAtom = Atom.readable((get) => {
+  const selectedSprintId = get(selectedSprintIdAtom);
+  const issuesBySprintId = get(sprintIssuesByIdAtom);
+  return selectedSprintId !== null && issuesBySprintId.has(selectedSprintId);
+});
+
+// Derived atom: build tree from cached issues based on selected sprint
+export const sprintTreeAtom = Atom.readable((get) => {
+  const selectedSprintId = get(selectedSprintIdAtom);
+  const issuesBySprintId = get(sprintIssuesByIdAtom);
+
+  if (selectedSprintId === null) {
+    return [];
+  }
+
+  const issues = issuesBySprintId.get(selectedSprintId);
+  if (!issues || issues.length === 0) {
+    return [];
+  }
+
+  return buildSprintTree(issues);
+});
 
 // =============================================================================
 // UI State Atoms

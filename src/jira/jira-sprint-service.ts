@@ -5,7 +5,6 @@ import {
   type JiraSprint,
   type JiraSprintIssue,
   type JiraSprintTree,
-  type JiraSprintTreeNode,
 } from "./jira-sprint-schema";
 import type { JiraIssue } from "./jira-schema";
 import type { JiraSprintIssuesFetchedEvent } from "../events/jira-events";
@@ -104,9 +103,9 @@ export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprin
   return allIssues;
 });
 
-export const buildSprintTree = (issues: JiraSprintIssue[]): JiraSprintTree => {
-  const parentMap = new Map<string, JiraSprintIssue>();
-  const childrenMap = new Map<string, JiraSprintIssue[]>();
+export const buildSprintTree = (issues: JiraIssue[]): JiraSprintTree => {
+  const parentMap = new Map<string, JiraIssue>();
+  const childrenMap = new Map<string, JiraIssue[]>();
 
   issues.forEach(issue => {
     const issueType = issue.fields.issuetype.name.toLowerCase();
@@ -126,19 +125,23 @@ export const buildSprintTree = (issues: JiraSprintIssue[]): JiraSprintTree => {
       childrenMap.set(parent.key, children);
 
       if (!parentMap.has(parent.key)) {
-        const syntheticParent: JiraSprintIssue = {
+        const syntheticParent: JiraIssue = {
           key: parent.key,
           id: '',
           self: '',
           fields: {
             summary: parent.fields.summary,
             status: {
-              name: parent.fields.status.name,
+              name: 'Unknown',
               statusCategory: { name: '' },
             },
             issuetype: parent.fields.issuetype,
             parent: undefined,
             assignee: null,
+            priority: { name: 'Medium' },
+            created: new Date().toISOString(),
+            updated: new Date().toISOString(),
+            comment: { total: 0, comments: [] },
           },
         };
         parentMap.set(parent.key, syntheticParent);
@@ -239,10 +242,10 @@ export const loadSprintTreeAsEvent = Effect.fn("loadSprintTreeAsEvent")(function
   boardId: number
 ) {
   const sprintIssues = yield* fetchSprintIssues(sprintId);
-  const tree = buildSprintTree(sprintIssues);
 
   // Convert sprint issues to JiraIssue format for unified storage
   const jiraIssues = sprintIssues.map(convertSprintIssueToJiraIssue);
+  const tree = buildSprintTree(jiraIssues);
 
   const timestamp = new Date().toISOString();
   const type = 'jira-sprint-issues-fetched-event' as const;

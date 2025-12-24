@@ -44,5 +44,6 @@ export const JiraEventSchema = Schema.Union(
   JiraSprintIssuesFetchedEventSchema
 )
 
-export type JiraEvent = Schema.Schema.Type<typeof JiraEventSchema>
+// Use the manually refined interfaces (with proper types) instead of schema-inferred types
+export type JiraEvent = JiraIssuesFetchedEvent | JiraSprintIssuesFetchedEvent
 

@@ -130,13 +130,15 @@ export const JiraSprintIssuesResponseSchema = Schema.Struct({
   issues: Schema.mutable(Schema.Array(JiraSprintIssueSchema)),
 });
 
+import type { JiraIssue } from "./jira-schema";
+
 export type JiraSprint = Schema.Schema.Type<typeof JiraSprintSchema>;
 export type JiraSprintIssue = Schema.Schema.Type<typeof JiraSprintIssueSchema>;
 export type JiraSprintIssuesResponse = Schema.Schema.Type<typeof JiraSprintIssuesResponseSchema>;
 
 export type JiraSprintTreeNode = {
-  issue: JiraSprintIssue;
-  children: JiraSprintIssue[];
+  issue: JiraIssue;
+  children: JiraIssue[];
   isExpanded: boolean;
 };
 

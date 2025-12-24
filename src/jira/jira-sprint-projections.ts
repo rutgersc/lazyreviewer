@@ -1,12 +1,11 @@
-import type { JiraSprint, JiraSprintTree } from "./jira-sprint-schema";
+import type { JiraSprint } from "./jira-sprint-schema";
+import type { JiraIssue } from "./jira-schema";
 import type {
-  InMemoryLazyReviewerEvent,
   AnyLazyReviewerEvent,
   JiraSprintsLoadedEvent,
   JiraSprintSelectedEvent
 } from "../events/events";
-import type { JiraSprintIssuesFetchedEvent } from "../events/jira-events";
-import { buildSprintTree } from "./jira-sprint-service";
+import { defineProjection, type ProjectionEventType } from "../events/define-projection";
 
 // =============================================================================
 // Sprints List Projection
@@ -76,31 +75,23 @@ export const projectSelection = (state: SelectionState, event: AnyLazyReviewerEv
 };
 
 // =============================================================================
-// Sprint Tree Projection
+// Sprint Issues Projection (stores issues by sprintId)
 // =============================================================================
-export type SprintTreeState = {
-  tree: JiraSprintTree;
-  lastFetchedSprintId: number | null;
+export type SprintIssuesState = {
+  issuesBySprintId: Map<number, JiraIssue[]>;
 };
 
-export const initialSprintTreeState: SprintTreeState = {
-  tree: [],
-  lastFetchedSprintId: null,
+export const initialSprintIssuesState: SprintIssuesState = {
+  issuesBySprintId: new Map(),
 };
 
-export const projectSprintTree = (state: SprintTreeState, event: AnyLazyReviewerEvent): SprintTreeState => {
-  switch (event.type) {
-    case "jira-sprint-issues-fetched-event": {
-      const e = event as JiraSprintIssuesFetchedEvent;
-      const tree = buildSprintTree(e.issues as any[]);
-      console.log(`[Projection] Issues fetched: ${e.issues.length} issues, tree size: ${tree.length} for sprint ${e.sprintId}`);
-      return {
-        ...state,
-        tree,
-        lastFetchedSprintId: e.sprintId,
-      };
-    }
-    default:
-      return state;
-  }
-};
+export const sprintIssuesProjection = defineProjection({
+  initialState: initialSprintIssuesState,
+  handlers: {
+    "jira-sprint-issues-fetched-event": (state, event) => {
+      const newMap = new Map(state.issuesBySprintId);
+      newMap.set(event.sprintId, event.issues);
+      return { ...state, issuesBySprintId: newMap };
+    },
+  },
+});
