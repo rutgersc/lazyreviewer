@@ -1,21 +1,18 @@
 import { Schema } from "effect"
-import type { JiraSearchResponse, JiraIssue } from "../jira/jira-schema";
+import { JiraIssueSchema, JiraSearchResponseSchema } from "../jira/jira-schema";
 import { EventIdSchema } from "./event-id";
 
 // Jira event schemas
 const JiraIssuesFetchedEventSchema = Schema.Struct({
   eventId: EventIdSchema,
   type: Schema.Literal('jira-issues-fetched-event'),
-  searchResponse: Schema.Unknown,
-  issues: Schema.Unknown,
+  // searchResponse: JiraSearchResponseSchema,
+  issues: JiraSearchResponseSchema,
   forTicketKeys: Schema.Array(Schema.String),
   timestamp: Schema.String
 })
 
-export interface JiraIssuesFetchedEvent extends Schema.Schema.Type<typeof JiraIssuesFetchedEventSchema> {
-  searchResponse: JiraSearchResponse
-  issues: JiraSearchResponse
-}
+export type JiraIssuesFetchedEvent = Schema.Schema.Type<typeof JiraIssuesFetchedEventSchema>
 
 const NumberOrStringAsNumber = Schema.transform(
   Schema.Union(Schema.Number, Schema.String),
@@ -31,19 +28,16 @@ const JiraSprintIssuesFetchedEventSchema = Schema.Struct({
   type: Schema.Literal('jira-sprint-issues-fetched-event'),
   sprintId: Schema.Number,
   boardId: NumberOrStringAsNumber,
-  issues: Schema.Unknown,
+  issues: Schema.mutable(Schema.Array(JiraIssueSchema)),
   timestamp: Schema.String
 })
 
-export interface JiraSprintIssuesFetchedEvent extends Schema.Schema.Type<typeof JiraSprintIssuesFetchedEventSchema> {
-  issues: JiraIssue[]
-}
+export type JiraSprintIssuesFetchedEvent = Schema.Schema.Type<typeof JiraSprintIssuesFetchedEventSchema>
 
 export const JiraEventSchema = Schema.Union(
   JiraIssuesFetchedEventSchema,
   JiraSprintIssuesFetchedEventSchema
 )
 
-// Use the manually refined interfaces (with proper types) instead of schema-inferred types
 export type JiraEvent = JiraIssuesFetchedEvent | JiraSprintIssuesFetchedEvent
 

@@ -1,28 +1,20 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import { useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
+import { useAtomValue, useAtomSet, Result, Atom } from '@effect-atom/atom-react';
 import { useEffect } from 'react';
 import { Colors } from '../colors';
 import {
   loadSprintsAtom,
-  sprintsAtom,
-  boardIdAtom,
-  selectedSprintIdAtom,
-  selectedSprintAtom,
   loadSprintIssuesAtom,
   sprintTreeAtom,
   hasIssuesForSelectedSprintAtom,
-  selectedIssueIndexAtom,
-  expandedKeysAtom,
-  toggleExpandAtom,
-  flattenedListAtom,
-  selectSprintAtom,
-  type FlatListItem,
+  sprintsStateAtom,
 } from '../jira/jira-sprint-atom';
 import type { JiraIssue } from '../jira/jira-schema';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
+import { sprintsProjection } from '../jira/jira-sprint-projections';
 
 interface JiraBoardPageProps {
   onClose: () => void;
@@ -51,6 +43,71 @@ const getStatusColor = (status: string): string => {
   return Colors.PRIMARY;
 };
 
+const selectedIssueIndexAtom = Atom.make<number>(0);
+export const expandedKeysAtom = Atom.make<Set<string>>(new Set<string>());
+export const selectedSprintIdAtom = Atom.make<number | null>(null);
+
+const selectedSprintAtom = Atom.readable((get) => {
+  const sprintsResult = get(sprintsStateAtom);
+  const selectedId = get(selectedSprintIdAtom);
+
+  return Result.builder(sprintsResult)
+    .onSuccess((state) => {
+      if (state._type === 'NoSprintsState') return null;
+      return state.sprints.find((s) => s.id === selectedId) ?? null;
+    })
+    .orElse(() => null);
+});
+
+const toggleExpandAtom = Atom.writable(
+  (get) => get(expandedKeysAtom),
+  (ctx, key: string) => {
+    const prev = ctx.get(expandedKeysAtom);
+    const newExpanded = new Set<string>(prev);
+    if (newExpanded.has(key)) {
+      newExpanded.delete(key);
+    } else {
+      newExpanded.add(key);
+    }
+    ctx.set(expandedKeysAtom, newExpanded);
+  }
+);
+
+type FlatListItem = {
+  type: "parent" | "child";
+  key: string;
+  issue: any;
+  level: number;
+};
+
+const flattenedListAtom = Atom.readable((get) => {
+  const tree = get(sprintTreeAtom);
+  const expandedKeys = get(expandedKeysAtom);
+  const items: FlatListItem[] = [];
+
+  tree.forEach((node) => {
+    items.push({
+      type: "parent",
+      key: node.issue.key,
+      issue: node.issue,
+      level: 0,
+    });
+
+    if (expandedKeys.has(node.issue.key)) {
+      node.children.forEach((child) => {
+        items.push({
+          type: "child",
+          key: child.key,
+          issue: child,
+          level: 1,
+        });
+      });
+    }
+  });
+
+  return items;
+});
+
 export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) {
   // Action results for loading UI
   const loadSprintsResult = useAtomValue(loadSprintsAtom);
@@ -59,14 +116,17 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   // Actions
   const loadSprints = useAtomSet(loadSprintsAtom);
   const loadSprintIssues = useAtomSet(loadSprintIssuesAtom);
-  const selectSprint = useAtomSet(selectSprintAtom);
   const toggleExpand = useAtomSet(toggleExpandAtom);
   const setSelectedIssueIndex = useAtomSet(selectedIssueIndexAtom);
   const setExpandedKeys = useAtomSet(expandedKeysAtom);
+  const setSelectedSprintId = useAtomSet(selectedSprintIdAtom);
 
   // Data (Projected)
-  const sprints = useAtomValue(sprintsAtom);
-  const storedBoardId = useAtomValue(boardIdAtom);
+  const sprintsResult = useAtomValue(sprintsStateAtom);
+  const sprints = Result.builder(sprintsResult)
+    .onSuccess((state) => state._type === 'SprintsState' ? state.sprints : [])
+    .orElse(() => []);
+
   const selectedSprintId = useAtomValue(selectedSprintIdAtom);
   const selectedSprint = useAtomValue(selectedSprintAtom);
   const tree = useAtomValue(sprintTreeAtom);
@@ -84,31 +144,22 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const issuesError = Result.isFailure(loadSprintIssuesResult) ? String(loadSprintIssuesResult.cause) : null;
 
   // Trigger initial sprints load
-  if (Result.isInitial(loadSprintsResult)) {
+  const shouldLoadSprints = Result.builder(sprintsResult)
+    .onSuccess((state) => state._type === 'NoSprintsState')
+    .orElse(() => false);
+  if (shouldLoadSprints) {
     loadSprints(boardId);
   }
-
-  // Only fetch issues if we don't have cached data for the selected sprint
-  if (Result.isSuccess(loadSprintsResult) && selectedSprintId && !hasIssuesForSelectedSprint && !Result.isWaiting(loadSprintIssuesResult)) {
-    loadSprintIssues({ sprintId: selectedSprintId, boardId });
-  }
-
-  // When issues load, expand all parent keys automatically if none expanded
-    if (Result.isSuccess(loadSprintIssuesResult) && tree.length > 0 && expandedKeys.size === 0) {
-      setExpandedKeys(new Set(tree.map(node => node.issue.key)));
-    }
 
   const selectedItem = flattenedList[selectedIssueIndex];
 
   const handleSprintChange = (sprintId: number) => {
-    if (storedBoardId === null) return;
     // Clearing selection/tree state before switching
     setSelectedIssueIndex(0);
     setExpandedKeys(new Set());
-    // Trigger action to append selection event
     // The derived sprintTreeAtom will automatically show cached data if available
     // If not cached, the fetch logic above will trigger a fetch
-    selectSprint({ sprintId, boardId: storedBoardId });
+    setSelectedSprintId(sprintId);
   };
 
   useKeyboard((key: ParsedKey) => {

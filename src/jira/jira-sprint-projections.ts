@@ -5,61 +5,22 @@ import { defineProjection } from "../utils/define-projection";
 // =============================================================================
 // Sprints List Projection
 // =============================================================================
-export type SprintsState = {
-  sprints: JiraSprint[];
-  boardId: number | null;
-};
-
-export const initialSprintsState: SprintsState = {
-  sprints: [],
-  boardId: null,
-};
+export type SprintsState =
+  | { _type: 'NoSprintsState' }
+  | {
+    _type: 'SprintsState'
+    sprints: JiraSprint[];
+  };
 
 export const sprintsProjection = defineProjection({
-  initialState: initialSprintsState,
+  initialState: { _type: 'NoSprintsState' } as SprintsState,
   handlers: {
     "jira-sprints-loaded-event": (state, event) => {
       console.log(`[Projection] Sprints loaded: ${event.sprints.length} sprints for board ${event.boardId}`);
       return {
-        ...state,
+        _type: 'SprintsState',
         sprints: event.sprints,
-        boardId: event.boardId,
-      };
-    },
-  },
-});
-
-// =============================================================================
-// Selected Sprint Projection
-// =============================================================================
-export type SelectionState = {
-  selectedSprintId: number | null;
-};
-
-export const initialSelectionState: SelectionState = {
-  selectedSprintId: null,
-};
-
-export const selectionProjection = defineProjection({
-  initialState: initialSelectionState,
-  handlers: {
-    "jira-sprint-selected-event": (state, event) => {
-      console.log(`[Projection] Sprint selected: ${event.sprintId}`);
-      return {
-        ...state,
-        selectedSprintId: event.sprintId,
-      };
-    },
-    "jira-sprints-loaded-event": (state, event) => {
-      // Auto-select first sprint if none selected
-      if (!state.selectedSprintId && event.sprints.length > 0) {
-        console.log(`[Projection] Auto-selecting first sprint: ${event.sprints[0]!.id}`);
-        return {
-          ...state,
-          selectedSprintId: event.sprints[0]!.id,
-        };
-      }
-      return state;
+      } satisfies SprintsState;
     },
   },
 });

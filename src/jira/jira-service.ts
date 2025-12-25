@@ -142,7 +142,7 @@ export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[])
     const event: JiraIssuesFetchedEvent = {
       eventId: generateEventId(timestamp, type),
       type,
-      searchResponse: emptyResponse,
+      // searchResponse: emptyResponse,
       issues: emptyResponse,
       forTicketKeys: ticketKeys,
       timestamp
@@ -153,37 +153,32 @@ export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[])
   const result = yield* searchIssues(`issuekey in (${ticketKeys.join(',')})`);
 
   const processedIssues = result.issues.map(issue => {
-    if (issue.fields.comment?.comments) {
-      const sortedComments = issue.fields.comment.comments
-        .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
-        .slice(0, 10);
+    // if (issue.fields.comment?.comments) {
+    //   const sortedComments = issue.fields.comment.comments
+    //     .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
+    //     .slice(0, 10);
 
-      return {
-        ...issue,
-        fields: {
-          ...issue.fields,
-          comment: {
-            ...issue.fields.comment,
-            comments: sortedComments
-          }
-        }
-      };
-    }
+    //   return {
+    //     ...issue,
+    //     fields: {
+    //       ...issue.fields,
+    //       comment: {
+    //         ...issue.fields.comment,
+    //         comments: sortedComments
+    //       }
+    //     }
+    //   };
+    // }
     return issue;
   });
 
-  const processedResponse: JiraSearchResponse = {
-    ...result,
-    issues: processedIssues
-  };
 
   const timestamp = new Date().toISOString();
   const type = 'jira-issues-fetched-event' as const;
   const event: JiraIssuesFetchedEvent = {
     eventId: generateEventId(timestamp, type),
     type,
-    searchResponse: result,
-    issues: processedResponse,
+    issues: result,
     forTicketKeys: ticketKeys,
     timestamp
   };

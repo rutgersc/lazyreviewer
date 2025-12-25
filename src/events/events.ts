@@ -27,16 +27,8 @@ export type JiraSprintsLoadedEvent = {
   timestamp: string;
 };
 
-export type JiraSprintSelectedEvent = {
-  type: "jira-sprint-selected-event";
-  sprintId: number;
-  boardId: number;
-  timestamp: string;
-};
-
 export type InMemoryLazyReviewerEvent =
-  | JiraSprintsLoadedEvent
-  | JiraSprintSelectedEvent;
+  | JiraSprintsLoadedEvent;
 
 // Combined type for streams that include both
 export type AnyLazyReviewerEvent =
