@@ -1,6 +1,8 @@
-import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { useKeyboard } from '@opentui/react';
+import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
+import type { Action } from '../actions/action-types';
+import { parseKeyString } from '../actions/key-matcher';
+import { paneActionsAtom } from '../actions/actions-atom';
 import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { ActivePane } from '../userselection/userSelection';
@@ -11,7 +13,7 @@ import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 interface PipelineJobsListProps {
   activePane: ActivePane;
@@ -62,46 +64,75 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
     }
   });
 
-  useKeyboard((key: ParsedKey) => {
-    if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
-    if (activeModal !== 'none') return;
-    if (pipelineJobs.length === 0) return;
+  const setPaneActions = useAtomSet(paneActionsAtom);
+  const isActive = activePane === ActivePane.InfoPane && infoPaneTab === 'pipeline';
 
-    switch (key.name) {
-      case 'j':
-      case 'down':
-        const next = Math.min(selectedPipelineJobIndex + 1, pipelineJobs.length - 1);
-        setSelectedPipelineJobIndex(next);
-        scrollToId(`pipeline-job-${next}`);
-        break;
-      case 'k':
-      case 'up':
-        const prev = Math.max(selectedPipelineJobIndex - 1, 0);
-        setSelectedPipelineJobIndex(prev);
-        scrollToId(`pipeline-job-${prev}`);
-        break;
-      case 'i':
-        const selectedJob = pipelineJobs[selectedPipelineJobIndex];
-        if (selectedJob && selectedMergeRequest) {
-          runLoadJobLog({ mergeRequest: selectedMergeRequest, job: selectedJob.job });
-        }
-        break;
-      case 'y':
-        if (pipelineJobs[selectedPipelineJobIndex]) {
-          runFetchJobHistory().then((exit) => {
-            if (exit._tag === 'Success') {
-              const { job, history, pageInfo } = exit.value;
-              setJobHistoryData(history);
-              setSelectedJobForHistory(job?.name || null);
-              setJobHistoryEndCursor(pageInfo.endCursor);
-              setJobHistoryHasNextPage(pageInfo.hasNextPage);
-            }
-            setActiveModal('jobHistory');
-          });
-        }
-        break;
+  const actions: Action[] = useMemo(() => {
+    if (pipelineJobs.length === 0) return [];
+
+    return [
+      {
+        id: 'pipeline:nav-down',
+        keys: [parseKeyString('j'), parseKeyString('down')],
+        displayKey: 'j/k, ↑/↓',
+        description: 'Navigate pipeline jobs',
+        handler: () => {
+          const next = Math.min(selectedPipelineJobIndex + 1, pipelineJobs.length - 1);
+          setSelectedPipelineJobIndex(next);
+          scrollToId(`pipeline-job-${next}`);
+        },
+      },
+      {
+        id: 'pipeline:nav-up',
+        keys: [parseKeyString('k'), parseKeyString('up')],
+        displayKey: '',
+        description: '',
+        handler: () => {
+          const prev = Math.max(selectedPipelineJobIndex - 1, 0);
+          setSelectedPipelineJobIndex(prev);
+          scrollToId(`pipeline-job-${prev}`);
+        },
+      },
+      {
+        id: 'pipeline:download-log',
+        keys: [parseKeyString('i')],
+        displayKey: 'i',
+        description: 'Download and open job log',
+        handler: () => {
+          const selectedJob = pipelineJobs[selectedPipelineJobIndex];
+          if (selectedJob && selectedMergeRequest) {
+            runLoadJobLog({ mergeRequest: selectedMergeRequest, job: selectedJob.job });
+          }
+        },
+      },
+      {
+        id: 'pipeline:job-history',
+        keys: [parseKeyString('y')],
+        displayKey: 'y',
+        description: 'View job history',
+        handler: () => {
+          if (pipelineJobs[selectedPipelineJobIndex]) {
+            runFetchJobHistory().then((exit) => {
+              if (exit._tag === 'Success') {
+                const { job, history, pageInfo } = exit.value;
+                setJobHistoryData(history);
+                setSelectedJobForHistory(job?.name || null);
+                setJobHistoryEndCursor(pageInfo.endCursor);
+                setJobHistoryHasNextPage(pageInfo.hasNextPage);
+              }
+              setActiveModal('jobHistory');
+            });
+          }
+        },
+      },
+    ];
+  }, [pipelineJobs, selectedPipelineJobIndex, selectedMergeRequest, scrollToId]);
+
+  useEffect(() => {
+    if (isActive && activeModal === 'none') {
+      setPaneActions(actions);
     }
-  });
+  }, [isActive, activeModal, actions, setPaneActions]);
   if (pipelineJobs.length === 0) {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>

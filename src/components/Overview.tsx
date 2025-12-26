@@ -1,6 +1,8 @@
-import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { useKeyboard } from '@opentui/react';
-import { useState, useRef } from 'react';
+import { TextAttributes } from '@opentui/core';
+import { useState, useRef, useMemo, useEffect } from 'react';
+import type { Action } from '../actions/action-types';
+import { parseKeyString } from '../actions/key-matcher';
+import { paneActionsAtom } from '../actions/actions-atom';
 import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
@@ -8,7 +10,7 @@ import { Colors } from '../colors';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { copyToClipboard } from '../system/clipboard';
 import { formatDiscussionsForClipboard } from '../gitlab/display/gitlabDiscussionFormatter';
-import { useAtom, useAtomValue } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
 import { selectedDiscussionIndexAtom } from '../mergerequests/mergerequests-atom';
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
@@ -76,30 +78,53 @@ export default function Overview({
       }
   };
 
-  useKeyboard((key: ParsedKey) => {
-    if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'overview') return;
-    if (activeModal !== 'none') return;
-    if (unresolvedDiscussions.length === 0) return;
+  const setPaneActions = useAtomSet(paneActionsAtom);
+  const isActive = activePane === ActivePane.InfoPane && infoPaneTab === 'overview';
 
-    switch (key.name) {
-      case 'j':
-      case 'down':
-        const nextIndex = Math.min(selectedDiscussionIndex + 1, unresolvedDiscussions.length - 1);
-        handleSelectDiscussion(nextIndex);
-        break;
-      case 'k':
-      case 'up':
-        const prevIndex = Math.max(selectedDiscussionIndex - 1, 0);
-        handleSelectDiscussion(prevIndex);
-        break;
-      case 'c':
+  const actions: Action[] = useMemo(() => [
+    {
+      id: 'overview:nav-down',
+      keys: [parseKeyString('j'), parseKeyString('down')],
+      displayKey: 'j/k, ↑/↓',
+      description: 'Navigate discussions',
+      handler: () => {
+        if (unresolvedDiscussions.length > 0) {
+          const nextIndex = Math.min(selectedDiscussionIndex + 1, unresolvedDiscussions.length - 1);
+          handleSelectDiscussion(nextIndex);
+        }
+      },
+    },
+    {
+      id: 'overview:nav-up',
+      keys: [parseKeyString('k'), parseKeyString('up')],
+      displayKey: '',
+      description: '',
+      handler: () => {
+        if (unresolvedDiscussions.length > 0) {
+          const prevIndex = Math.max(selectedDiscussionIndex - 1, 0);
+          handleSelectDiscussion(prevIndex);
+        }
+      },
+    },
+    {
+      id: 'overview:copy-url',
+      keys: [parseKeyString('c')],
+      displayKey: 'c',
+      description: 'Copy discussion URL',
+      handler: () => {
         const discussion = unresolvedDiscussions[selectedDiscussionIndex];
         if (discussion && selectedMergeRequest?.webUrl) {
           const discussionUrl = `${selectedMergeRequest.webUrl}#note_${discussion.id}`;
           copyToClipboard(discussionUrl);
         }
-        break;
-      case 'i':
+      },
+    },
+    {
+      id: 'overview:copy-all',
+      keys: [parseKeyString('i')],
+      displayKey: 'i',
+      description: 'Copy discussions to clipboard',
+      handler: () => {
         if (selectedMergeRequest) {
           const formattedDiscussions = formatDiscussionsForClipboard(selectedMergeRequest);
           copyToClipboard(formattedDiscussions).then((success) => {
@@ -112,9 +137,15 @@ export default function Overview({
             }
           });
         }
-        break;
+      },
+    },
+  ], [unresolvedDiscussions, selectedDiscussionIndex, selectedMergeRequest]);
+
+  useEffect(() => {
+    if (isActive && activeModal === 'none') {
+      setPaneActions(actions);
     }
-  });
+  }, [isActive, activeModal, actions, setPaneActions]);
 
   const content = (() => {
     // Always show MR info when there's a selected MR

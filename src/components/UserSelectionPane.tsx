@@ -1,12 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
-import { useKeyboard } from '@opentui/react';
-import { TextAttributes, type ParsedKey } from '@opentui/core';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { TextAttributes } from '@opentui/core';
+import type { Action } from '../actions/action-types';
+import { parseKeyString } from '../actions/key-matcher';
+import { paneActionsAtom } from '../actions/actions-atom';
 import type { UserSelectionEntry } from '../userselection/userSelection';
 import { ActivePane } from '../userselection/userSelection';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 import { Colors } from '../colors';
-import { activePaneAtom } from '../ui/navigation-atom';
+import { activePaneAtom, activeModalAtom } from '../ui/navigation-atom';
 import { userSelectionsAtom, selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { openUrl } from '../system/open-url';
@@ -52,49 +54,64 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
     }
   });
 
-  useKeyboard((key: ParsedKey) => {
-    if (!isActive) {
-      return;
-    }
+  const setPaneActions = useAtomSet(paneActionsAtom);
+  const activeModal = useAtomValue(activeModalAtom);
 
-    switch (key.name) {
-      case 'j':
-      case 'down': {
-        const newIndex = Math.min(highlightIndex + 1, userSelections.length - 1);
-        setHighlightIndex(newIndex);
-        scrollToItem(newIndex);
-        break;
-      }
-      case 'k':
-      case 'up': {
-        const newIndex = Math.max(highlightIndex - 1, 0);
-        setHighlightIndex(newIndex);
-        scrollToItem(newIndex);
-        break;
-      }
-      case 'space': {
-        const selectedEntry = userSelections[highlightIndex];
-        if (selectedEntry) {
-          setSelectedUserSelectionEntryId(selectedEntry.userSelectionEntryId);
-        }
-        break;
-      }
+  const actions: Action[] = useMemo(() => {
+    if (userSelections.length === 0) return [];
 
-      case 'return': {
-        // const highlightedItem = getItemByIndex(navState, highlightIndex);
-        // if (highlightedItem && highlightedItem.type === 'group') {
-        //   // Navigate into group (replace pane content) and reset highlight
-        //   setNavState(prevState => navigateIntoGroup(prevState, highlightedItem));
-        //   setHighlightIndex(0);
-        // }
-        break;
-      }
-      case 'escape':
-        // Reset highlight
-        setHighlightIndex(0);
-        break;
+    return [
+      {
+        id: 'userselection:nav-down',
+        keys: [parseKeyString('j'), parseKeyString('down')],
+        displayKey: 'j/k, ↑/↓',
+        description: 'Navigate user selections',
+        handler: () => {
+          const newIndex = Math.min(highlightIndex + 1, userSelections.length - 1);
+          setHighlightIndex(newIndex);
+          scrollToItem(newIndex);
+        },
+      },
+      {
+        id: 'userselection:nav-up',
+        keys: [parseKeyString('k'), parseKeyString('up')],
+        displayKey: '',
+        description: '',
+        handler: () => {
+          const newIndex = Math.max(highlightIndex - 1, 0);
+          setHighlightIndex(newIndex);
+          scrollToItem(newIndex);
+        },
+      },
+      {
+        id: 'userselection:select',
+        keys: [parseKeyString('space')],
+        displayKey: 'Space',
+        description: 'Select user/group',
+        handler: () => {
+          const entry = userSelections[highlightIndex];
+          if (entry) {
+            setSelectedUserSelectionEntryId(entry.userSelectionEntryId);
+          }
+        },
+      },
+      {
+        id: 'userselection:reset',
+        keys: [parseKeyString('escape')],
+        displayKey: 'Esc',
+        description: 'Reset highlight',
+        handler: () => {
+          setHighlightIndex(0);
+        },
+      },
+    ];
+  }, [userSelections, highlightIndex, scrollToItem]);
+
+  useEffect(() => {
+    if (isActive && activeModal === 'none') {
+      setPaneActions(actions);
     }
-  });
+  }, [isActive, activeModal, actions, setPaneActions]);
 
   const renderItem = (item: UserSelectionEntry, index: number) => {
     const isHighlighted = index === highlightIndex;

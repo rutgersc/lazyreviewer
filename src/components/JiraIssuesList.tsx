@@ -1,18 +1,20 @@
-import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { useKeyboard } from '@opentui/react';
+import { TextAttributes } from '@opentui/core';
 import JiraIssueInfo from './JiraIssueInfo';
+import type { Action } from '../actions/action-types';
+import { parseKeyString } from '../actions/key-matcher';
+import { paneActionsAtom } from '../actions/actions-atom';
 import { Colors } from '../colors';
 import type { JiraIssue } from '../jira/jira-schema';
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
-import { useAtom, useAtomValue } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
 import { selectedJiraIndexAtom, selectedJiraSubIndexAtom, jiraCommentFocusedAtom, selectedJiraCommentIndexAtom } from '../jira/jira-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
-import { useRef } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useJiraScroll } from '../hooks/useJiraScroll';
 
 interface JiraIssuesListProps {
@@ -111,121 +113,187 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
     }
   });
 
-  useKeyboard((key: ParsedKey) => {
-    if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'jira') return;
-    if (activeModal !== 'none') return;
-    if (jiraIssues.length === 0) return;
+  const setPaneActions = useAtomSet(paneActionsAtom);
+  const isActive = activePane === ActivePane.InfoPane && infoPaneTab === 'jira';
+
+  const actions: Action[] = useMemo(() => {
+    if (jiraIssues.length === 0) return [];
 
     const selectedIssue = jiraIssues[selectedJiraIndex];
     const hasParent = selectedIssue?.fields.parent !== undefined;
     const maxSubIndex = hasParent ? 1 : 0;
     const comments = selectedIssue?.fields.comment.comments ?? [];
 
-    // Comment-focused navigation mode
+    // Comment-focused mode actions
     if (commentFocused) {
-      switch (key.name) {
-        case 'j':
-        case 'down':
-          if (selectedCommentIndex < comments.length - 1) {
-            const newIndex = selectedCommentIndex + 1;
-            setSelectedCommentIndex(newIndex);
-            const comment = comments[newIndex];
+      return [
+        {
+          id: 'jira:comment-nav-down',
+          keys: [parseKeyString('j'), parseKeyString('down')],
+          displayKey: 'j/k, ↑/↓',
+          description: 'Navigate comments',
+          handler: () => {
+            if (selectedCommentIndex < comments.length - 1) {
+              const newIndex = selectedCommentIndex + 1;
+              setSelectedCommentIndex(newIndex);
+              const comment = comments[newIndex];
+              if (comment) scrollToId(`jira-comment-${comment.id}`);
+            }
+          },
+        },
+        {
+          id: 'jira:comment-nav-up',
+          keys: [parseKeyString('k'), parseKeyString('up')],
+          displayKey: '',
+          description: '',
+          handler: () => {
+            if (selectedCommentIndex > 0) {
+              const newIndex = selectedCommentIndex - 1;
+              setSelectedCommentIndex(newIndex);
+              const comment = comments[newIndex];
+              if (comment) scrollToId(`jira-comment-${comment.id}`);
+            }
+          },
+        },
+        {
+          id: 'jira:exit-comments',
+          keys: [parseKeyString('escape')],
+          displayKey: 'Esc',
+          description: 'Exit comment mode',
+          handler: () => {
+            setCommentFocused(false);
+            setSelectedCommentIndex(0);
+          },
+        },
+        {
+          id: 'jira:open-browser',
+          keys: [parseKeyString('i')],
+          displayKey: 'i',
+          description: 'Open issue in browser',
+          handler: () => {
+            if (selectedIssue) {
+              const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
+              const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
+              openUrl(jiraUrl);
+            }
+          },
+        },
+        {
+          id: 'jira:copy-url',
+          keys: [parseKeyString('c')],
+          displayKey: 'c',
+          description: 'Copy issue URL',
+          handler: () => {
+            if (selectedIssue) {
+              const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
+              const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
+              copyToClipboard(jiraUrl);
+            }
+          },
+        },
+      ];
+    }
+
+    // Issue-level navigation mode actions
+    return [
+      {
+        id: 'jira:nav-down',
+        keys: [parseKeyString('j'), parseKeyString('down')],
+        displayKey: 'j/k, ↑/↓',
+        description: 'Navigate Jira issues',
+        handler: () => {
+          if (selectedJiraSubIndex < maxSubIndex) {
+            const newSub = selectedJiraSubIndex + 1;
+            setSelectedJiraSubIndex(newSub);
+            scrollToId(`jira-item-${selectedJiraIndex}-${newSub}`);
+          } else if (selectedJiraIndex < jiraIssues.length - 1) {
+            const newIndex = selectedJiraIndex + 1;
+            setSelectedJiraIndex(newIndex);
+            setSelectedJiraSubIndex(0);
+            setSelectedCommentIndex(0);
+            scrollToId(`jira-item-${newIndex}-0`);
+          }
+        },
+      },
+      {
+        id: 'jira:nav-up',
+        keys: [parseKeyString('k'), parseKeyString('up')],
+        displayKey: '',
+        description: '',
+        handler: () => {
+          if (selectedJiraSubIndex > 0) {
+            const newSub = selectedJiraSubIndex - 1;
+            setSelectedJiraSubIndex(newSub);
+            scrollToId(`jira-item-${selectedJiraIndex}-${newSub}`);
+          } else if (selectedJiraIndex > 0) {
+            const newIndex = selectedJiraIndex - 1;
+            setSelectedJiraIndex(newIndex);
+            const prevIssue = jiraIssues[newIndex];
+            const prevMaxSub = prevIssue?.fields.parent ? 1 : 0;
+            setSelectedJiraSubIndex(prevMaxSub);
+            setSelectedCommentIndex(0);
+            scrollToId(`jira-item-${newIndex}-${prevMaxSub}`);
+          }
+        },
+      },
+      {
+        id: 'jira:enter-comments',
+        keys: [parseKeyString('return')],
+        displayKey: 'Enter',
+        description: 'Enter comment focus mode',
+        handler: () => {
+          if (comments.length > 0) {
+            setCommentFocused(true);
+            setSelectedCommentIndex(0);
+            const comment = comments[0];
             if (comment) scrollToId(`jira-comment-${comment.id}`);
           }
-          break;
-        case 'k':
-        case 'up':
-          if (selectedCommentIndex > 0) {
-            const newIndex = selectedCommentIndex - 1;
-            setSelectedCommentIndex(newIndex);
-            const comment = comments[newIndex];
-            if (comment) scrollToId(`jira-comment-${comment.id}`);
-          }
-          break;
-        case 'escape':
-          setCommentFocused(false);
-          setSelectedCommentIndex(0);
-          break;
-        case 'i':
+        },
+      },
+      {
+        id: 'jira:open-browser',
+        keys: [parseKeyString('i')],
+        displayKey: 'i',
+        description: 'Open issue in browser',
+        handler: () => {
           if (selectedIssue) {
             const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
             const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
             openUrl(jiraUrl);
           }
-          break;
-        case 'c':
+        },
+      },
+      {
+        id: 'jira:copy-url',
+        keys: [parseKeyString('c')],
+        displayKey: 'c',
+        description: 'Copy issue URL',
+        handler: () => {
           if (selectedIssue) {
             const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
             const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
             copyToClipboard(jiraUrl);
           }
-          break;
-      }
-      return;
-    }
-
-    // Issue-level navigation mode
-    switch (key.name) {
-      case 'j':
-      case 'down':
-        if (selectedJiraSubIndex < maxSubIndex) {
-          const newSub = selectedJiraSubIndex + 1;
-          setSelectedJiraSubIndex(newSub);
-          scrollToId(`jira-item-${selectedJiraIndex}-${newSub}`);
-        } else if (selectedJiraIndex < jiraIssues.length - 1) {
-          const newIndex = selectedJiraIndex + 1;
-          setSelectedJiraIndex(newIndex);
+        },
+      },
+      {
+        id: 'jira:reset',
+        keys: [parseKeyString('escape')],
+        displayKey: 'Esc',
+        description: 'Reset selection',
+        handler: () => {
+          setSelectedJiraIndex(0);
           setSelectedJiraSubIndex(0);
-          setSelectedCommentIndex(0);
-          scrollToId(`jira-item-${newIndex}-0`);
-        }
-        break;
-      case 'k':
-      case 'up':
-        if (selectedJiraSubIndex > 0) {
-          const newSub = selectedJiraSubIndex - 1;
-          setSelectedJiraSubIndex(newSub);
-          scrollToId(`jira-item-${selectedJiraIndex}-${newSub}`);
-        } else if (selectedJiraIndex > 0) {
-          const newIndex = selectedJiraIndex - 1;
-          setSelectedJiraIndex(newIndex);
-          const prevIssue = jiraIssues[newIndex];
-          const prevMaxSub = prevIssue?.fields.parent ? 1 : 0;
-          setSelectedJiraSubIndex(prevMaxSub);
-          setSelectedCommentIndex(0);
-          scrollToId(`jira-item-${newIndex}-${prevMaxSub}`);
-        }
-        break;
-      case 'return':
-        // Enter comment focus mode if issue has comments
-        if (comments.length > 0) {
-          setCommentFocused(true);
-          setSelectedCommentIndex(0);
-          const comment = comments[0];
-          if (comment) scrollToId(`jira-comment-${comment.id}`);
-        }
-        break;
-      case 'i':
-        if (selectedIssue) {
-          const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
-          const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
-          openUrl(jiraUrl);
-        }
-        break;
-      case 'c':
-        if (selectedIssue) {
-          const jiraBaseUrl = selectedIssue.self.split('/rest/')[0];
-          const jiraUrl = `${jiraBaseUrl}/browse/${selectedIssue.key}`;
-          copyToClipboard(jiraUrl);
-        }
-        break;
-      case 'escape':
-        // Reset selection when escaping at issue level
-        setSelectedJiraIndex(0);
-        setSelectedJiraSubIndex(0);
-        break;
+        },
+      },
+    ];
+  }, [jiraIssues, selectedJiraIndex, selectedJiraSubIndex, commentFocused, selectedCommentIndex, scrollToId]);
+
+  useEffect(() => {
+    if (isActive && activeModal === 'none') {
+      setPaneActions(actions);
     }
-  });
+  }, [isActive, activeModal, actions, setPaneActions]);
   if (jiraIssues.length === 0) {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>

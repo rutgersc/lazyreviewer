@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { useKeyboard } from "@opentui/react";
-import { TextAttributes, type ParsedKey } from "@opentui/core";
+import { TextAttributes } from "@opentui/core";
+import type { Action } from "../actions/action-types";
+import { parseKeyString } from "../actions/key-matcher";
+import { paneActionsAtom } from "../actions/actions-atom";
 import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { type PipelineStage, type PipelineJob } from "../gitlab/gitlab-schema";
 import { formatCompactTime, getAgeColor } from "../utils/formatting";
@@ -528,67 +530,64 @@ export default function MergeRequestPane({}: {}) {
   };
 
 
-  useKeyboard((key: ParsedKey) => {
-    // Only handle keys when this pane is active
-    if (!isActive) return;
+  const setPaneActions = useAtomSet(paneActionsAtom);
 
-    // Don't handle keys when modals are open (handled globally)
-    if (activeModal !== 'none') {
-      return;
-    }
-
-    switch (key.name) {
-      case 'return':
-        setActivePane(ActivePane.InfoPane);
-        break;
-      case 'escape':
-        setActivePane(ActivePane.Facts);
-        break;
-      case 'f':
-        setActiveModal('mrFilter');
-        break;
-      case 'h':
-      case 'left': {
-        break;
-      }
-      case 'l':
-      case 'right': {
-        break;
-      }
-      case '1':
-        setfilterMrState('opened');
-        break;
-      case '2':
-        setfilterMrState('merged');
-        break;
-      case '3':
-        setfilterMrState('closed');
-        break;
-      case '4':
-        setfilterMrState('locked');
-        break;
-      case '5':
-        setfilterMrState('all');
-        break;
-      case "j":
-      case "down":
+  const actions: Action[] = useMemo(() => [
+    {
+      id: 'mr:focus-info',
+      keys: [parseKeyString('return')],
+      displayKey: 'Enter',
+      description: 'Focus info pane',
+      handler: () => setActivePane(ActivePane.InfoPane),
+    },
+    {
+      id: 'mr:back',
+      keys: [parseKeyString('escape')],
+      displayKey: 'Esc',
+      description: 'Return to facts pane',
+      handler: () => setActivePane(ActivePane.Facts),
+    },
+    {
+      id: 'mr:filter',
+      keys: [parseKeyString('f')],
+      displayKey: 'f',
+      description: 'Filter MRs by state',
+      handler: () => setActiveModal('mrFilter'),
+    },
+    {
+      id: 'mr:nav-down',
+      keys: [parseKeyString('j'), parseKeyString('down')],
+      displayKey: 'j/k, ↑/↓',
+      description: 'Navigate list',
+      handler: () => {
         if (mergeRequests.length > 0) {
           const newIndex = selectedIndex < mergeRequests.length - 1 ? selectedIndex + 1 : 0;
           setSelectedMergeRequest(newIndex);
           setSelectedMRIndex(newIndex);
           scrollToItem(newIndex);
         }
-        break;
-      case "k":
-      case "up":
+      },
+    },
+    {
+      id: 'mr:nav-up',
+      keys: [parseKeyString('k'), parseKeyString('up')],
+      displayKey: '',
+      description: '',
+      handler: () => {
         if (mergeRequests.length > 0) {
           const newIndex = selectedIndex > 0 ? selectedIndex - 1 : mergeRequests.length - 1;
           setSelectedMergeRequest(newIndex);
           setSelectedMRIndex(newIndex);
           scrollToItem(newIndex);
         }
-        break;
-      case 'c':
+      },
+    },
+    {
+      id: 'mr:copy-branch',
+      keys: [parseKeyString('c')],
+      displayKey: 'c',
+      description: 'Copy branch name',
+      handler: () => {
         if (mergeRequests[selectedIndex]) {
           const sourceBranch = mergeRequests[selectedIndex].sourcebranch;
           copyToClipboard(sourceBranch).then((success) => {
@@ -601,27 +600,57 @@ export default function MergeRequestPane({}: {}) {
             }
           });
         }
-        break;
-      case 'x':
+      },
+    },
+    {
+      id: 'mr:open-browser',
+      keys: [parseKeyString('x')],
+      displayKey: 'x',
+      description: 'Open MR in browser',
+      handler: () => {
         if (mergeRequests[selectedIndex]) {
           openUrl(mergeRequests[selectedIndex].webUrl);
         }
-        break;
-      case 'g':
-        setActiveModal('gitSwitch');
-        break;
-      case 't':
-        setActiveModal('jira');
-        break;
-      case 'r':
-        setActiveModal('retarget');
-        break;
-      case 'backspace':
+      },
+    },
+    {
+      id: 'mr:git-switch',
+      keys: [parseKeyString('g')],
+      displayKey: 'g',
+      description: 'Git switch to branch',
+      handler: () => setActiveModal('gitSwitch'),
+    },
+    {
+      id: 'mr:jira',
+      keys: [parseKeyString('t')],
+      displayKey: 't',
+      description: 'Show Jira tickets',
+      handler: () => setActiveModal('jira'),
+    },
+    {
+      id: 'mr:retarget',
+      keys: [parseKeyString('r')],
+      displayKey: 'r',
+      description: 'Retarget MR to branch',
+      handler: () => setActiveModal('retarget'),
+    },
+    {
+      id: 'mr:toggle-ignore',
+      keys: [parseKeyString('backspace')],
+      displayKey: 'Backspace',
+      description: 'Toggle ignore MR',
+      handler: () => {
         if (mergeRequests[selectedIndex]) {
           toggleIgnoreMergeRequest(mergeRequests[selectedIndex].id);
         }
-        break;
-      case 'p':
+      },
+    },
+    {
+      id: 'mr:refresh-single',
+      keys: [parseKeyString('p')],
+      displayKey: 'p',
+      description: 'Refresh single MR',
+      handler: () => {
         if (mergeRequests[selectedIndex]) {
           const mr = mergeRequests[selectedIndex];
           const projectPath = mr.project.fullPath;
@@ -641,14 +670,61 @@ export default function MergeRequestPane({}: {}) {
             setTimeout(() => setCopyNotification(null), 3000);
           });
         }
-        break;
-      case 'a':
+      },
+    },
+    {
+      id: 'mr:toggle-seen',
+      keys: [parseKeyString('a')],
+      displayKey: 'a',
+      description: 'Toggle seen status',
+      handler: () => {
         if (mergeRequests[selectedIndex]) {
           toggleSeenMergeRequest(mergeRequests[selectedIndex].id);
         }
-        break;
+      },
+    },
+    {
+      id: 'mr:filter-opened',
+      keys: [parseKeyString('1')],
+      displayKey: '1-5',
+      description: 'Filter by state',
+      handler: () => setfilterMrState('opened'),
+    },
+    {
+      id: 'mr:filter-merged',
+      keys: [parseKeyString('2')],
+      displayKey: '',
+      description: '',
+      handler: () => setfilterMrState('merged'),
+    },
+    {
+      id: 'mr:filter-closed',
+      keys: [parseKeyString('3')],
+      displayKey: '',
+      description: '',
+      handler: () => setfilterMrState('closed'),
+    },
+    {
+      id: 'mr:filter-locked',
+      keys: [parseKeyString('4')],
+      displayKey: '',
+      description: '',
+      handler: () => setfilterMrState('locked'),
+    },
+    {
+      id: 'mr:filter-all',
+      keys: [parseKeyString('5')],
+      displayKey: '',
+      description: '',
+      handler: () => setfilterMrState('all'),
+    },
+  ], [mergeRequests, selectedIndex, scrollToItem]);
+
+  useEffect(() => {
+    if (isActive && activeModal === 'none') {
+      setPaneActions(actions);
     }
-  });
+  }, [isActive, activeModal, actions, setPaneActions]);
 
   // Get shared ticket info for the selected MR
   const selectedMrSharedTicket = useMemo(() => {

@@ -16,3 +16,6 @@ export const selectedUserSelectionEntryAtom = Atom.make((get) => {
   return selectedId ? byId.get(selectedId) : undefined;
 });
 
+// Highlight index for keyboard navigation (separate from committed selection)
+export const userSelectionHighlightIndexAtom = Atom.make<number>(0);
+

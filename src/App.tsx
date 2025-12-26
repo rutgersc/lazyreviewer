@@ -14,7 +14,10 @@ import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
 import JiraBoardPage from "./components/JiraBoardPage";
 import { ActivePane } from "./userselection/userSelection";
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { Action } from './actions/action-types';
+import { parseKeyString, matchesAnyKey } from './actions/key-matcher';
+import { paneActionsAtom } from './actions/actions-atom';
 import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
 import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
@@ -54,6 +57,157 @@ export default function App() {
     return issue ? [issue] : [];
   }) || [];
 
+  // Read pane actions from atom (set by active component)
+  const paneActions = useAtomValue(paneActionsAtom);
+
+  // Global actions defined inline in App.tsx
+  const globalActions: Action[] = useMemo(() => [
+    {
+      id: 'global:quit',
+      keys: [parseKeyString('q')],
+      displayKey: 'q',
+      description: 'Quit application',
+      handler: () => process.exit(),
+    },
+    {
+      id: 'global:toggle-console',
+      keys: [parseKeyString('~'), parseKeyString('z')],
+      displayKey: '~ / z',
+      description: 'Toggle debug console',
+      handler: () => renderer.console.toggle(),
+    },
+    {
+      id: 'global:event-log',
+      keys: [parseKeyString('o')],
+      displayKey: 'o',
+      description: 'Open event log',
+      handler: () => {
+        if (mergeRequests.length > 0) {
+          setActiveModal('eventLog');
+        }
+      },
+    },
+    {
+      id: 'global:refresh',
+      keys: [parseKeyString('s')],
+      displayKey: 's',
+      description: 'Refresh merge requests',
+      handler: async () => {
+        const mr = await refreshMergeRequests();
+        Console.log(mr).pipe(Effect.runPromise);
+      },
+    },
+    {
+      id: 'global:help',
+      keys: [parseKeyString('?')],
+      displayKey: '?',
+      description: 'Show help',
+      handler: () => setActiveModal('help'),
+    },
+    {
+      id: 'global:dump-state',
+      keys: [parseKeyString('0')],
+      displayKey: '0',
+      description: 'Dump state to debug/',
+      handler: async () => {
+        await dumpAllMrs();
+        setCopyNotification('State dumped to debug/');
+        setTimeout(() => setCopyNotification(null), 2000);
+      },
+    },
+    {
+      id: 'global:toggle-notifications',
+      keys: [parseKeyString('n')],
+      displayKey: 'n',
+      description: 'Toggle notifications',
+      handler: async () => {
+        await toggleNotifications();
+        setCopyNotification(notificationSettings.enabled ? 'Notifications disabled' : 'Notifications enabled');
+        setTimeout(() => setCopyNotification(null), 2000);
+      },
+    },
+    {
+      id: 'global:prev-tab',
+      keys: [parseKeyString('[')],
+      displayKey: '[ / ]',
+      description: 'Cycle info tabs',
+      handler: () => cycleInfoPaneTab('prev'),
+    },
+    {
+      id: 'global:next-tab',
+      keys: [parseKeyString(']'), parseKeyString('tab'), parseKeyString('d'), parseKeyString(';')],
+      displayKey: '',
+      description: '',
+      handler: () => cycleInfoPaneTab('next'),
+    },
+    {
+      id: 'global:jira-board',
+      keys: [parseKeyString('b')],
+      displayKey: 'b',
+      description: 'Open Jira board',
+      handler: () => {
+        if (jiraBoardId) {
+          setActiveModal('jiraBoard');
+        } else {
+          setCopyNotification('Set jiraBoardId in settings');
+          setTimeout(() => setCopyNotification(null), 2000);
+        }
+      },
+    },
+    {
+      id: 'global:scroll-down',
+      keys: [parseKeyString('ctrl+d')],
+      displayKey: 'Ctrl+D/U',
+      description: 'Scroll info pane',
+      handler: () => {
+        if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
+          getScroller('infoPane')?.('down');
+        }
+      },
+    },
+    {
+      id: 'global:scroll-up',
+      keys: [parseKeyString('ctrl+u')],
+      displayKey: '',
+      description: '',
+      handler: () => {
+        if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
+          getScroller('infoPane')?.('up');
+        }
+      },
+    },
+    {
+      id: 'global:nav-left',
+      keys: [parseKeyString('h'), parseKeyString('left')],
+      displayKey: 'h/l, ←/→',
+      description: 'Navigate panes',
+      handler: () => {
+        if (activePane === ActivePane.InfoPane) {
+          cycleInfoPaneTab('prev');
+        } else if (activePane === ActivePane.UserSelection) {
+          setActivePane(ActivePane.MergeRequests);
+        } else if (activePane === ActivePane.MergeRequests) {
+          setActivePane(ActivePane.Facts);
+        }
+      },
+    },
+    {
+      id: 'global:nav-right',
+      keys: [parseKeyString('l'), parseKeyString('right')],
+      displayKey: '',
+      description: '',
+      handler: () => {
+        if (activePane === ActivePane.InfoPane) {
+          cycleInfoPaneTab('next');
+        } else if (activePane === ActivePane.Facts) {
+          setActivePane(ActivePane.MergeRequests);
+        } else if (activePane === ActivePane.MergeRequests) {
+          setActivePane(ActivePane.UserSelection);
+        }
+      },
+    },
+  ], [activePane, mergeRequests.length, notificationSettings.enabled, jiraBoardId]);
+
   useEffect(() => {
     const onFocus = () => clearUnreadCount();
     renderer.on('focus', onFocus);
@@ -66,114 +220,28 @@ export default function App() {
     setFilterMrState(newState);
   };
 
-  useKeyboard(async (key: ParsedKey) => {
+  // Single keyboard handler for ALL actions
+  useKeyboard((key: ParsedKey) => {
     // Handle escape - close any active modal
     if (key.name === 'escape') {
       if (activeModal !== 'none') {
         setActiveModal('none');
         return;
       }
-      // If no modals open, let pane-level handlers process escape
-      return;
     }
 
-    // Don't handle other keys when a modal is open
+    // When modal is open, only process escape (handled above)
     if (activeModal !== 'none') {
       return;
     }
 
-    switch (key.name) {
-      case 'q':
-      case 'ctrl+c':
-        process.exit();
-
-      case '~':
-      case 'z':
-        renderer.console.toggle();
-        break;
-      case 'o':
-        if (mergeRequests.length > 0) {
-          setActiveModal('eventLog');
-        }
-        break;
-      case 's':
-        if (key.ctrl) {
-          // openSettingsFile();
-        } else {
-          const mr = await refreshMergeRequests();
-          Console.log(mr).pipe(Effect.runPromise);
-        }
-        break;
-      case '?':
-        setActiveModal('help');
-        break;
-      case '0':
-        await dumpAllMrs();
-        setCopyNotification('State dumped to debug/');
-        setTimeout(() => setCopyNotification(null), 2000);
-        break;
-      case 'n':
-        await toggleNotifications();
-        setCopyNotification(notificationSettings.enabled ? 'Notifications disabled' : 'Notifications enabled');
-        setTimeout(() => setCopyNotification(null), 2000);
-        break;
-      case '[':
-        cycleInfoPaneTab('prev');
-        break;
-      case ']':
-        cycleInfoPaneTab('next');
-        break;
-      case 'b':
-        if (jiraBoardId) {
-          setActiveModal('jiraBoard');
-        } else {
-          setCopyNotification('Set jiraBoardId in settings');
-          setTimeout(() => setCopyNotification(null), 2000);
-        }
-        break;
-      case 'tab':
-      case 'd':
-      case ';':
-        if (key.ctrl && key.name === 'd') {
-          // Ctrl+D for scrolling (works when MR or Info pane is active)
-          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
-            getScroller('infoPane')?.('down');
-          }
-        } else if (key.name === 'tab' || key.name === 'd' || key.name === ';') {
-          // Tab or ; for cycling tabs
-          cycleInfoPaneTab('next');
-        }
-        break;
-      case 'u':
-        if (key.ctrl) {
-          // Ctrl+U for scrolling (works when MR or Info pane is active)
-          if (activePane === ActivePane.MergeRequests || activePane === ActivePane.InfoPane) {
-            getScroller('infoPane')?.('up');
-          }
-        }
-        break;
-      case 'h':
-      case 'left':
-        if (activePane === ActivePane.InfoPane) {
-          // When in InfoPane, navigate between tabs
-          cycleInfoPaneTab('prev');
-        } else if (activePane === ActivePane.UserSelection) {
-          setActivePane(ActivePane.MergeRequests);
-        } else if (activePane === ActivePane.MergeRequests) {
-          setActivePane(ActivePane.Facts);
-        }
-        break;
-      case 'l':
-      case 'right':
-        if (activePane === ActivePane.InfoPane) {
-          // When in InfoPane, navigate between tabs
-          cycleInfoPaneTab('next');
-        } else if (activePane === ActivePane.Facts) {
-          setActivePane(ActivePane.MergeRequests);
-        } else if (activePane === ActivePane.MergeRequests) {
-          setActivePane(ActivePane.UserSelection);
-        }
-        break;
+    // Check pane actions first (more specific), then global
+    const allActions = [...paneActions, ...globalActions];
+    for (const action of allActions) {
+      if (matchesAnyKey(key, action.keys)) {
+        action.handler();
+        return;
+      }
     }
   });
 
@@ -324,7 +392,12 @@ export default function App() {
       />
 
       {/* Help Modal - rendered at app level to cover entire screen */}
-      <HelpModal isVisible={activeModal === 'help'} setCopyNotification={setCopyNotification} />
+      <HelpModal
+        isVisible={activeModal === 'help'}
+        paneActions={paneActions}
+        globalActions={globalActions}
+        setCopyNotification={setCopyNotification}
+      />
 
       {/* Jira Modal - rendered at app level to cover entire screen */}
       <JiraModal
