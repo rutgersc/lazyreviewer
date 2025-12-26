@@ -14,10 +14,9 @@ import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
 import JiraBoardPage from "./components/JiraBoardPage";
 import { ActivePane } from "./userselection/userSelection";
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Action } from './actions/action-types';
 import { parseKeyString, matchesAnyKey } from './actions/key-matcher';
-import { paneActionsAtom } from './actions/actions-atom';
 import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
 import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
@@ -57,8 +56,19 @@ export default function App() {
     return issue ? [issue] : [];
   }) || [];
 
-  // Read pane actions from atom (set by active component)
-  const paneActions = useAtomValue(paneActionsAtom);
+  // Local state for pane actions - components call callback to set their actions
+  const [paneActions, setPaneActions] = useState<Action[]>([]);
+
+  // Stable callback for components to register their actions
+  const handlePaneActionsChange = useCallback((actions: Action[]) => {
+    setPaneActions(actions);
+  }, []);
+
+  // Determine which pane is active (for passing to components)
+  const isMrPaneActive = activePane === ActivePane.MergeRequests && activeModal === 'none';
+  const isUserSelectionActive = activePane === ActivePane.UserSelection && activeModal === 'none';
+  const isInfoPaneActive = activePane === ActivePane.InfoPane && activeModal === 'none';
+  const isFactsPaneActive = activePane === ActivePane.Facts && activeModal === 'none';
 
   // Global actions defined inline in App.tsx
   const globalActions: Action[] = useMemo(() => [
@@ -299,7 +309,10 @@ export default function App() {
               backgroundColor: '#282a36'
             }}
         >
-            <FactsPane />
+            <FactsPane
+              isActive={isFactsPaneActive}
+              onActionsChange={handlePaneActionsChange}
+            />
         </box>
 
         {/* Middle panel - two stacked panes */}
@@ -316,7 +329,10 @@ export default function App() {
               backgroundColor: '#282a36'
             }}
           >
-            <MergeRequestPane />
+            <MergeRequestPane
+              isActive={isMrPaneActive}
+              onActionsChange={handlePaneActionsChange}
+            />
           </box>
 
           {/* User Selection Pane (bottom) */}
@@ -331,7 +347,10 @@ export default function App() {
               backgroundColor: '#282a36'
             }}
           >
-            <UserSelectionPane />
+            <UserSelectionPane
+              isActive={isUserSelectionActive}
+              onActionsChange={handlePaneActionsChange}
+            />
           </box>
         </box>
 
@@ -353,7 +372,11 @@ export default function App() {
               backgroundColor: '#282a36'
             }}
           >
-            <InfoPane activePane={activePane} />
+            <InfoPane
+              activePane={activePane}
+              isActive={isInfoPaneActive}
+              onActionsChange={handlePaneActionsChange}
+            />
           </box>
 
           {/* Console Pane */}

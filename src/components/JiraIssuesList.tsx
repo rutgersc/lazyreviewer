@@ -2,14 +2,12 @@ import { TextAttributes } from '@opentui/core';
 import JiraIssueInfo from './JiraIssueInfo';
 import type { Action } from '../actions/action-types';
 import { parseKeyString } from '../actions/key-matcher';
-import { paneActionsAtom } from '../actions/actions-atom';
 import { Colors } from '../colors';
 import type { JiraIssue } from '../jira/jira-schema';
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
-import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
+import { useAtom } from '@effect-atom/atom-react';
 import { selectedJiraIndexAtom, selectedJiraSubIndexAtom, jiraCommentFocusedAtom, selectedJiraCommentIndexAtom } from '../jira/jira-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
@@ -20,6 +18,8 @@ import { useJiraScroll } from '../hooks/useJiraScroll';
 interface JiraIssuesListProps {
   activePane: ActivePane;
   jiraIssues: JiraIssue[];
+  isActive: boolean;
+  onActionsChange: (actions: Action[]) => void;
 }
 
 type JiraListItem = {
@@ -29,9 +29,7 @@ type JiraListItem = {
   subIndex: number;
 };
 
-export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesListProps) {
-  const activeModal = useAtomValue(activeModalAtom);
-  const infoPaneTab = useAtomValue(infoPaneTabAtom);
+export default function JiraIssuesList({ activePane, jiraIssues, isActive, onActionsChange }: JiraIssuesListProps) {
   const [selectedJiraIndex, setSelectedJiraIndex] = useAtom(selectedJiraIndexAtom);
   const [selectedJiraSubIndex, setSelectedJiraSubIndex] = useAtom(selectedJiraSubIndexAtom);
   const [commentFocused, setCommentFocused] = useAtom(jiraCommentFocusedAtom);
@@ -112,9 +110,6 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
       });
     }
   });
-
-  const setPaneActions = useAtomSet(paneActionsAtom);
-  const isActive = activePane === ActivePane.InfoPane && infoPaneTab === 'jira';
 
   const actions: Action[] = useMemo(() => {
     if (jiraIssues.length === 0) return [];
@@ -290,10 +285,11 @@ export default function JiraIssuesList({ activePane, jiraIssues }: JiraIssuesLis
   }, [jiraIssues, selectedJiraIndex, selectedJiraSubIndex, commentFocused, selectedCommentIndex, scrollToId]);
 
   useEffect(() => {
-    if (isActive && activeModal === 'none') {
-      setPaneActions(actions);
+    if (isActive) {
+      onActionsChange(actions);
     }
-  }, [isActive, activeModal, actions, setPaneActions]);
+  }, [isActive, actions, onActionsChange]);
+
   if (jiraIssues.length === 0) {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>

@@ -2,30 +2,26 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { TextAttributes } from '@opentui/core';
 import type { Action } from '../actions/action-types';
 import { parseKeyString } from '../actions/key-matcher';
-import { paneActionsAtom } from '../actions/actions-atom';
 import type { UserSelectionEntry } from '../userselection/userSelection';
-import { ActivePane } from '../userselection/userSelection';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 import { Colors } from '../colors';
-import { activePaneAtom, activeModalAtom } from '../ui/navigation-atom';
 import { userSelectionsAtom, selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
-import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue } from '@effect-atom/atom-react';
 import { openUrl } from '../system/open-url';
 import path from 'path';
 import { selectedUserSelectionEntryIdAtom } from '../settings/settings-atom';
 
 interface UserSelectionPaneProps {
+  isActive: boolean;
+  onActionsChange: (actions: Action[]) => void;
 }
 
-export default function UserSelectionPane({ }: UserSelectionPaneProps) {
+export default function UserSelectionPane({ isActive, onActionsChange }: UserSelectionPaneProps) {
   const hasInitialized = useRef(false);
-  const activePane = useAtomValue(activePaneAtom);
   const [selectedUserSelectionEntryId, setSelectedUserSelectionEntryId] = useAtom(selectedUserSelectionEntryIdAtom);
   const userSelections = useAtomValue(userSelectionsAtom);
   const selectedEntry = useAtomValue(selectedUserSelectionEntryAtom);
-
-  const isActive = activePane === ActivePane.UserSelection;
   const [highlightIndex, setHighlightIndex] = useState(0);
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
     lookahead: 2,
@@ -53,9 +49,6 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
                          // Given previous context of `openUrl`, it seems to invoke `open` command which handles files.
     }
   });
-
-  const setPaneActions = useAtomSet(paneActionsAtom);
-  const activeModal = useAtomValue(activeModalAtom);
 
   const actions: Action[] = useMemo(() => {
     if (userSelections.length === 0) return [];
@@ -108,10 +101,10 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
   }, [userSelections, highlightIndex, scrollToItem]);
 
   useEffect(() => {
-    if (isActive && activeModal === 'none') {
-      setPaneActions(actions);
+    if (isActive) {
+      onActionsChange(actions);
     }
-  }, [isActive, activeModal, actions, setPaneActions]);
+  }, [isActive, actions, onActionsChange]);
 
   const renderItem = (item: UserSelectionEntry, index: number) => {
     const isHighlighted = index === highlightIndex;

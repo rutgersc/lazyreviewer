@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef } from 'react';
-import { useKeyboard } from '@opentui/react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useAtom, useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom, infoPaneTabAtom, nowAtom } from '../ui/navigation-atom';
+import type { Action } from '../actions/action-types';
+import { parseKeyString } from '../actions/key-matcher';
 import { targetNoteIdAtom } from './ActivityLog';
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
 import { allEventsIncludingCompactedAtom, compactAllEventsAtom } from '../events/events-atom';
@@ -116,7 +117,12 @@ function getNoteIdFromChange(change: Change): string | undefined {
   }
 }
 
-export default function FactsPane() {
+interface FactsPaneProps {
+  isActive: boolean;
+  onActionsChange: (actions: Action[]) => void;
+}
+
+export default function FactsPane({ isActive, onActionsChange }: FactsPaneProps) {
   const [activePane, setActivePane] = useAtom(activePaneAtom);
   const allEvents = resultToArray(useAtomValue(allEventsIncludingCompactedAtom));
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
@@ -147,7 +153,6 @@ export default function FactsPane() {
   const emptySummary: Change[] = [];
 
   const events = allEvents;
-  const isActive = activePane === ActivePane.Facts;
   const allMrsState = useMemo(() =>
     Result.match(allMrsResult, {
       onInitial: () => null,
@@ -286,136 +291,188 @@ export default function FactsPane() {
     }
   };
 
-  useKeyboard(async (key) => {
-    if (!isActive) return;
+  // Helper for sublist navigation
+  const selectChangeAtIndex = (idx: number) => {
+    const change = currentEventChanges[idx];
+    if (change) {
+      selectMrForChange(change);
+    }
+  };
 
+  const actions: Action[] = useMemo(() => {
+    // Different actions based on whether sublist is focused
     if (sublistFocused) {
-      // Sublist navigation - also selects the MR
-      const selectChangeAtIndex = (idx: number) => {
-        const change = currentEventChanges[idx];
-        if (change) {
-          selectMrForChange(change);
-        }
-      };
-
-      if (key.name === 'j' || key.name === 'down') {
-        const newIndex = Math.min(sublistIndex + 1, currentEventChanges.length - 1);
-        setSublistIndex(newIndex);
-        selectChangeAtIndex(newIndex);
-      } else if (key.name === 'k' || key.name === 'up') {
-        const newIndex = Math.max(sublistIndex - 1, 0);
-        setSublistIndex(newIndex);
-        selectChangeAtIndex(newIndex);
-      } else if (key.name === 'return') {
-        // Enter - activate MR pane
-        setActivePane(ActivePane.MergeRequests);
-      } else if (key.name === 'escape') {
-        setSublistFocused(false);
-        setSublistIndex(0);
-      }
-      return;
+      return [
+        {
+          id: 'facts:sublist-nav-down',
+          keys: [parseKeyString('j'), parseKeyString('down')],
+          displayKey: 'j/k, ↑/↓',
+          description: 'Navigate changes',
+          handler: () => {
+            const newIndex = Math.min(sublistIndex + 1, currentEventChanges.length - 1);
+            setSublistIndex(newIndex);
+            selectChangeAtIndex(newIndex);
+          },
+        },
+        {
+          id: 'facts:sublist-nav-up',
+          keys: [parseKeyString('k'), parseKeyString('up')],
+          displayKey: '',
+          description: '',
+          handler: () => {
+            const newIndex = Math.max(sublistIndex - 1, 0);
+            setSublistIndex(newIndex);
+            selectChangeAtIndex(newIndex);
+          },
+        },
+        {
+          id: 'facts:sublist-enter',
+          keys: [parseKeyString('return')],
+          displayKey: 'Enter',
+          description: 'Go to MR pane',
+          handler: () => {
+            setActivePane(ActivePane.MergeRequests);
+          },
+        },
+        {
+          id: 'facts:sublist-escape',
+          keys: [parseKeyString('escape')],
+          displayKey: 'Esc',
+          description: 'Exit sublist',
+          handler: () => {
+            setSublistFocused(false);
+            setSublistIndex(0);
+          },
+        },
+      ];
     }
 
-    // Event list navigation - navigate by groups, not individual events
-    if (key.name === 'j' || key.name === 'down') {
-        const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
-        const currentGroupIndex = groupedEvents.findIndex(g =>
+    // Event list navigation actions
+    return [
+      {
+        id: 'facts:nav-down',
+        keys: [parseKeyString('j'), parseKeyString('down')],
+        displayKey: 'j/k, ↑/↓',
+        description: 'Navigate events',
+        handler: () => {
+          const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
+          const currentGroupIndex = groupedEvents.findIndex(g =>
             current >= g.startIndex && current <= g.endIndex
-        );
-        // Move to the next group (earlier in time, lower index)
-        if (currentGroupIndex >= groupedEvents.length - 1) {
-            // Already at the last group, don't move
+          );
+          if (currentGroupIndex >= groupedEvents.length - 1) {
             return;
-        } else if (currentGroupIndex < 0) {
-            // Fallback - shouldn't normally happen
+          } else if (currentGroupIndex < 0) {
             setHighlightedIndex(Math.max(current - 1, 0));
-        } else {
+          } else {
             const nextGroup = groupedEvents[currentGroupIndex + 1];
             const newIndex = nextGroup ? nextGroup.endIndex : 0;
-            const newGroupIndex = currentGroupIndex + 1;
             setHighlightedIndex(newIndex);
             if (nextGroup) {
-                scrollToId(nextGroup.event.eventId);
+              scrollToId(nextGroup.event.eventId);
             }
-        }
-    } else if (key.name === 'k' || key.name === 'up') {
-        const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
-        const currentGroupIndex = groupedEvents.findIndex(g =>
+          }
+        },
+      },
+      {
+        id: 'facts:nav-up',
+        keys: [parseKeyString('k'), parseKeyString('up')],
+        displayKey: '',
+        description: '',
+        handler: () => {
+          const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
+          const currentGroupIndex = groupedEvents.findIndex(g =>
             current >= g.startIndex && current <= g.endIndex
-        );
-        // Move to the previous group (later in time, higher index)
-        if (currentGroupIndex <= 0) {
+          );
+          if (currentGroupIndex <= 0) {
             setHighlightedIndex(null);
             const firstGroup = groupedEvents[0];
             if (firstGroup) {
-                scrollToId(firstGroup.event.eventId);
+              scrollToId(firstGroup.event.eventId);
             }
-        } else {
-            const newGroupIndex = currentGroupIndex - 1;
-            const prevGroup = groupedEvents[newGroupIndex];
+          } else {
+            const prevGroup = groupedEvents[currentGroupIndex - 1];
             const newIndex = prevGroup ? prevGroup.startIndex : events.length - 1;
             setHighlightedIndex(newIndex);
             if (prevGroup) {
-                scrollToId(prevGroup.event.eventId);
+              scrollToId(prevGroup.event.eventId);
             }
-        }
-    } else if (key.name === 'return') {
-        // Enter - focus on sublist if there are changes
-        if (currentEventChanges.length > 0) {
+          }
+        },
+      },
+      {
+        id: 'facts:enter',
+        keys: [parseKeyString('return')],
+        displayKey: 'Enter',
+        description: 'Focus on changes',
+        handler: () => {
+          if (currentEventChanges.length > 0) {
             setSublistFocused(true);
             setSublistIndex(0);
-            // Select first change's MR
             const change = currentEventChanges[0];
             if (change) {
               selectMrForChange(change);
             }
-        }
-    } else if (key.name === 'g' && !key.shift) {
-      // nothing
-    } else if (key.name === 'escape') {
-        setHighlightedIndex(null);
-    } else if (key.name === 'g' && key.shift) {
-        // G - bottom (visually) -> Oldest group
-        const lastGroupIndex = groupedEvents.length - 1;
-        const oldestGroup = groupedEvents[lastGroupIndex];
-        setHighlightedIndex(oldestGroup ? oldestGroup.startIndex : 0);
-        if (oldestGroup) {
+          }
+        },
+      },
+      {
+        id: 'facts:escape',
+        keys: [parseKeyString('escape')],
+        displayKey: 'Esc',
+        description: 'Reset highlight',
+        handler: () => {
+          setHighlightedIndex(null);
+        },
+      },
+      {
+        id: 'facts:goto-bottom',
+        keys: [parseKeyString('shift+g')],
+        displayKey: 'G',
+        description: 'Go to oldest',
+        handler: () => {
+          const lastGroupIndex = groupedEvents.length - 1;
+          const oldestGroup = groupedEvents[lastGroupIndex];
+          setHighlightedIndex(oldestGroup ? oldestGroup.startIndex : 0);
+          if (oldestGroup) {
             scrollToId(oldestGroup.event.eventId);
-        }
-    } else if (key.name === 'c') {
-        // setCompactionMessage('Compacting...');
-        // try {
-        //     const result = await compactState();
-        //     setCompactionMessage(result.message);
-        //     setTimeout(() => setCompactionMessage(null), 3000);
-        // } catch (error) {
-        //     setCompactionMessage(`Compaction failed: ${error}`);
-        //     setTimeout(() => setCompactionMessage(null), 3000);
-        // }
-    } else if (key.name === 'e') {
-        const eventIndex = highlightedIndex ?? events.length - 1;
-        setCompactionMessage(highlightedIndex + 'Opening event in editor...');
-        try {
+          }
+        },
+      },
+      {
+        id: 'facts:open-editor',
+        keys: [parseKeyString('e')],
+        displayKey: 'e',
+        description: 'Open event in editor',
+        handler: async () => {
+          const eventIndex = highlightedIndex ?? events.length - 1;
+          setCompactionMessage('Opening event in editor...');
+          try {
             const filePath = await Effect.runPromise(
               EventStorage.getEventFilePath(eventIndex).pipe(
                 Effect.provide(appLayer)
               )
             );
-
             await Effect.runPromise(
               openFileInEditor(filePath).pipe(
                 Effect.provide(appLayer)
               )
             );
-
             setCompactionMessage(`Opened: ${filePath}`);
             setTimeout(() => setCompactionMessage(null), 3000);
-        } catch (error) {
+          } catch (error) {
             setCompactionMessage(`Failed to open: ${error}`);
             setTimeout(() => setCompactionMessage(null), 3000);
-        }
+          }
+        },
+      },
+    ];
+  }, [sublistFocused, sublistIndex, currentEventChanges, highlightedIndex, events.length, groupedEvents, scrollToId]);
+
+  useEffect(() => {
+    if (isActive) {
+      onActionsChange(actions);
     }
-  });
+  }, [isActive, actions, onActionsChange]);
 
   const logoBox = () => {
     const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {

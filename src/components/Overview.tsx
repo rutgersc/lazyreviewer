@@ -2,7 +2,6 @@ import { TextAttributes } from '@opentui/core';
 import { useState, useRef, useMemo, useEffect } from 'react';
 import type { Action } from '../actions/action-types';
 import { parseKeyString } from '../actions/key-matcher';
-import { paneActionsAtom } from '../actions/actions-atom';
 import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
@@ -10,26 +9,26 @@ import { Colors } from '../colors';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { copyToClipboard } from '../system/clipboard';
 import { formatDiscussionsForClipboard } from '../gitlab/display/gitlabDiscussionFormatter';
-import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
+import { useAtom, useAtomValue } from '@effect-atom/atom-react';
 import { selectedDiscussionIndexAtom } from '../mergerequests/mergerequests-atom';
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
-
-interface OverviewProps {
-  activePane: ActivePane;
-  selectedMergeRequest: MergeRequest | undefined;
-}
-
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { openUrl } from '../system/open-url';
 import { selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
 
+interface OverviewProps {
+  activePane: ActivePane;
+  selectedMergeRequest: MergeRequest | undefined;
+  isActive: boolean;
+  onActionsChange: (actions: Action[]) => void;
+}
+
 export default function Overview({
   activePane,
   selectedMergeRequest,
+  isActive,
+  onActionsChange,
 }: OverviewProps) {
-  const infoPaneTab = useAtomValue(infoPaneTabAtom);
-  const activeModal = useAtomValue(activeModalAtom);
   const [selectedDiscussionIndex, setSelectedDiscussionIndex] = useAtom(selectedDiscussionIndexAtom);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
@@ -77,9 +76,6 @@ export default function Overview({
           openUrl(discussionUrl);
       }
   };
-
-  const setPaneActions = useAtomSet(paneActionsAtom);
-  const isActive = activePane === ActivePane.InfoPane && infoPaneTab === 'overview';
 
   const actions: Action[] = useMemo(() => [
     {
@@ -142,10 +138,10 @@ export default function Overview({
   ], [unresolvedDiscussions, selectedDiscussionIndex, selectedMergeRequest]);
 
   useEffect(() => {
-    if (isActive && activeModal === 'none') {
-      setPaneActions(actions);
+    if (isActive) {
+      onActionsChange(actions);
     }
-  }, [isActive, activeModal, actions, setPaneActions]);
+  }, [isActive, actions, onActionsChange]);
 
   const content = (() => {
     // Always show MR info when there's a selected MR

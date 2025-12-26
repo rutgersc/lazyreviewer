@@ -7,6 +7,7 @@ import PipelineJobsList from './PipelineJobsList';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
+import type { Action } from '../actions/action-types';
 import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { activePaneAtom, activeModalAtom, infoPaneTabAtom, type InfoPaneTab } from '../ui/navigation-atom';
 import { selectedPipelineJobIndexAtom } from '../mergerequests/job-atom';
@@ -14,6 +15,8 @@ import { selectedMrAtom, allJiraIssuesAtom } from '../mergerequests/mergerequest
 
 interface InfoPaneProps {
   activePane: ActivePane;
+  isActive: boolean;
+  onActionsChange: (actions: Action[]) => void;
 }
 
 const TAB_LABELS: Record<InfoPaneTab, string> = {
@@ -23,7 +26,7 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
   activity: 'Activity'
 };
 
-export default function InfoPane({ activePane }: InfoPaneProps) {
+export default function InfoPane({ activePane, isActive, onActionsChange }: InfoPaneProps) {
   const setActivePane = useAtomSet(activePaneAtom);
   const activeModal = useAtomValue(activeModalAtom);
   const [infoPaneTab, setInfoPaneTab] = useAtom(infoPaneTabAtom);
@@ -88,12 +91,16 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
         return <Overview
           activePane={activePane}
           selectedMergeRequest={selectedMergeRequest}
+          isActive={isActive && infoPaneTab === 'overview'}
+          onActionsChange={onActionsChange}
         />;
 
       case 'jira':
         return <JiraIssuesList
           activePane={activePane}
           jiraIssues={jiraIssues}
+          isActive={isActive && infoPaneTab === 'jira'}
+          onActionsChange={onActionsChange}
         />;
 
       case 'pipeline':
@@ -101,6 +108,8 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
           activePane={activePane}
           pipelineJobs={pipelineJobs}
           selectedPipelineJobIndex={selectedPipelineJobIndex}
+          isActive={isActive && infoPaneTab === 'pipeline'}
+          onActionsChange={onActionsChange}
         />;
 
       case 'activity':

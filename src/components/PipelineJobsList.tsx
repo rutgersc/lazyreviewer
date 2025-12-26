@@ -2,12 +2,11 @@ import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
 import type { Action } from '../actions/action-types';
 import { parseKeyString } from '../actions/key-matcher';
-import { paneActionsAtom } from '../actions/actions-atom';
 import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { ActivePane } from '../userselection/userSelection';
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
+import { activeModalAtom } from '../ui/navigation-atom';
 import { selectedPipelineJobIndexAtom, jobHistoryDataAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryEndCursorAtom, jobHistoryHasNextPageAtom } from '../mergerequests/job-atom';
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
@@ -19,6 +18,8 @@ interface PipelineJobsListProps {
   activePane: ActivePane;
   pipelineJobs: Array<{ stage: PipelineStage; job: PipelineJob }>;
   selectedPipelineJobIndex: number;
+  isActive: boolean;
+  onActionsChange: (actions: Action[]) => void;
 }
 
 function formatDuration(seconds: number | null): string {
@@ -37,10 +38,8 @@ function formatDuration(seconds: number | null): string {
   return `${secs}s`;
 }
 
-export default function PipelineJobsList({ activePane, pipelineJobs, selectedPipelineJobIndex }: PipelineJobsListProps) {
-  const activeModal = useAtomValue(activeModalAtom);
+export default function PipelineJobsList({ activePane, pipelineJobs, selectedPipelineJobIndex, isActive, onActionsChange }: PipelineJobsListProps) {
   const setActiveModal = useAtomSet(activeModalAtom);
-  const infoPaneTab = useAtomValue(infoPaneTabAtom);
   const [, setSelectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
   const selectedMergeRequest = useAtomValue(selectedMrAtom);
   const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
@@ -63,9 +62,6 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
       }
     }
   });
-
-  const setPaneActions = useAtomSet(paneActionsAtom);
-  const isActive = activePane === ActivePane.InfoPane && infoPaneTab === 'pipeline';
 
   const actions: Action[] = useMemo(() => {
     if (pipelineJobs.length === 0) return [];
@@ -129,10 +125,11 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
   }, [pipelineJobs, selectedPipelineJobIndex, selectedMergeRequest, scrollToId]);
 
   useEffect(() => {
-    if (isActive && activeModal === 'none') {
-      setPaneActions(actions);
+    if (isActive) {
+      onActionsChange(actions);
     }
-  }, [isActive, activeModal, actions, setPaneActions]);
+  }, [isActive, actions, onActionsChange]);
+
   if (pipelineJobs.length === 0) {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>

@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from "react";
 import { TextAttributes } from "@opentui/core";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
-import { paneActionsAtom } from "../actions/actions-atom";
 import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { type PipelineStage, type PipelineJob } from "../gitlab/gitlab-schema";
 import { formatCompactTime, getAgeColor } from "../utils/formatting";
@@ -435,7 +434,12 @@ const Spinner = () => {
   );
 };
 
-export default function MergeRequestPane({}: {}) {
+interface MergeRequestPaneProps {
+  isActive: boolean;
+  onActionsChange: (actions: Action[]) => void;
+}
+
+export default function MergeRequestPane({ isActive, onActionsChange }: MergeRequestPaneProps) {
   const [getSelectedMRIndex, setSelectedMRIndex] = useAtom(selectedMrIndexAtom);
   const setSelectedMergeRequest = setSelectedMRIndex;
   const selectedIndex = getSelectedMRIndex;
@@ -469,7 +473,6 @@ export default function MergeRequestPane({}: {}) {
     });
   }
 
-  const isActive = activePane === ActivePane.MergeRequests;
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
     lookahead: 2,
@@ -529,8 +532,6 @@ export default function MergeRequestPane({}: {}) {
     return { backgroundColor: "transparent", sharedTicket: null };
   };
 
-
-  const setPaneActions = useAtomSet(paneActionsAtom);
 
   const actions: Action[] = useMemo(() => [
     {
@@ -721,10 +722,10 @@ export default function MergeRequestPane({}: {}) {
   ], [mergeRequests, selectedIndex, scrollToItem]);
 
   useEffect(() => {
-    if (isActive && activeModal === 'none') {
-      setPaneActions(actions);
+    if (isActive) {
+      onActionsChange(actions);
     }
-  }, [isActive, activeModal, actions, setPaneActions]);
+  }, [isActive, actions, onActionsChange]);
 
   // Get shared ticket info for the selected MR
   const selectedMrSharedTicket = useMemo(() => {
