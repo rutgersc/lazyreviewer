@@ -1,5 +1,6 @@
 import { Schema } from "effect"
 import { JiraIssueSchema, JiraSearchResponseSchema } from "../jira/jira-schema";
+import { JiraSprintSchema } from "../jira/jira-sprint-schema";
 import { EventIdSchema } from "./event-id";
 
 // Jira event schemas
@@ -34,10 +35,21 @@ const JiraSprintIssuesFetchedEventSchema = Schema.Struct({
 
 export type JiraSprintIssuesFetchedEvent = Schema.Schema.Type<typeof JiraSprintIssuesFetchedEventSchema>
 
+const JiraSprintsLoadedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
+  type: Schema.Literal('jira-sprints-loaded-event'),
+  boardId: Schema.Number,
+  sprints: Schema.mutable(Schema.Array(JiraSprintSchema)),
+  timestamp: Schema.String
+})
+
+export type JiraSprintsLoadedEvent = Schema.Schema.Type<typeof JiraSprintsLoadedEventSchema>
+
 export const JiraEventSchema = Schema.Union(
   JiraIssuesFetchedEventSchema,
-  JiraSprintIssuesFetchedEventSchema
+  JiraSprintIssuesFetchedEventSchema,
+  JiraSprintsLoadedEventSchema
 )
 
-export type JiraEvent = JiraIssuesFetchedEvent | JiraSprintIssuesFetchedEvent
+export type JiraEvent = JiraIssuesFetchedEvent | JiraSprintIssuesFetchedEvent | JiraSprintsLoadedEvent
 

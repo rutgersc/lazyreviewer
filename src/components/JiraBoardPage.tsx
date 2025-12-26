@@ -1,20 +1,18 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { useAtomValue, useAtomSet, Result, Atom } from '@effect-atom/atom-react';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { Colors } from '../colors';
 import {
   loadSprintsAtom,
   loadSprintIssuesAtom,
-  sprintTreeAtom,
-  hasIssuesForSelectedSprintAtom,
+  selectedSprintIssuesAtom,
   sprintsStateAtom,
 } from '../jira/jira-sprint-atom';
 import type { JiraIssue } from '../jira/jira-schema';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
-import { sprintsProjection } from '../jira/jira-sprint-projections';
 
 interface JiraBoardPageProps {
   onClose: () => void;
@@ -76,37 +74,9 @@ const toggleExpandAtom = Atom.writable(
 type FlatListItem = {
   type: "parent" | "child";
   key: string;
-  issue: any;
-  level: number;
+  issue: JiraIssue;
+  childCount: number;
 };
-
-const flattenedListAtom = Atom.readable((get) => {
-  const tree = get(sprintTreeAtom);
-  const expandedKeys = get(expandedKeysAtom);
-  const items: FlatListItem[] = [];
-
-  tree.forEach((node) => {
-    items.push({
-      type: "parent",
-      key: node.issue.key,
-      issue: node.issue,
-      level: 0,
-    });
-
-    if (expandedKeys.has(node.issue.key)) {
-      node.children.forEach((child) => {
-        items.push({
-          type: "child",
-          key: child.key,
-          issue: child,
-          level: 1,
-        });
-      });
-    }
-  });
-
-  return items;
-});
 
 export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) {
   // Action results for loading UI
@@ -129,27 +99,63 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
 
   const selectedSprintId = useAtomValue(selectedSprintIdAtom);
   const selectedSprint = useAtomValue(selectedSprintAtom);
-  const tree = useAtomValue(sprintTreeAtom);
-  const hasIssuesForSelectedSprint = useAtomValue(hasIssuesForSelectedSprintAtom);
+  const issues = useAtomValue(selectedSprintIssuesAtom);
+  const hasIssuesForSelectedSprint = issues.length > 0;
 
   // UI State
   const selectedIssueIndex = useAtomValue(selectedIssueIndexAtom);
   const expandedKeys = useAtomValue(expandedKeysAtom);
-  const flattenedList = useAtomValue(flattenedListAtom);
+
+  // Build flat list from issues - parents first, then children if expanded
+  const flattenedList = useMemo(() => {
+    const items: FlatListItem[] = [];
+
+    // Group issues: parents (no parent field) and children (have parent field)
+    const parents = issues.filter(issue => !issue.fields.parent);
+    const childrenByParentKey = new Map<string, JiraIssue[]>();
+
+    issues.forEach(issue => {
+      if (issue.fields.parent) {
+        const parentKey = issue.fields.parent.key;
+        const existing = childrenByParentKey.get(parentKey) ?? [];
+        existing.push(issue);
+        childrenByParentKey.set(parentKey, existing);
+      }
+    });
+
+    parents.forEach(parent => {
+      const children = childrenByParentKey.get(parent.key) ?? [];
+      items.push({
+        type: "parent",
+        key: parent.key,
+        issue: parent,
+        childCount: children.length,
+      });
+
+      if (expandedKeys.has(parent.key)) {
+        children.forEach(child => {
+          items.push({
+            type: "child",
+            key: child.key,
+            issue: child,
+            childCount: 0,
+          });
+        });
+      }
+    });
+
+    return items;
+  }, [issues, expandedKeys]);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
 
-  const isLoadingSprints = Result.isInitial(loadSprintsResult) || Result.isWaiting(loadSprintsResult);
+  const isLoadingSprints = Result.isWaiting(loadSprintsResult);
   const isLoadingIssues = Result.isWaiting(loadSprintIssuesResult);
   const sprintsError = Result.isFailure(loadSprintsResult) ? String(loadSprintsResult.cause) : null;
   const issuesError = Result.isFailure(loadSprintIssuesResult) ? String(loadSprintIssuesResult.cause) : null;
 
-  // Trigger initial sprints load
-  const shouldLoadSprints = Result.builder(sprintsResult)
+  const noSprintsLoaded = Result.builder(sprintsResult)
     .onSuccess((state) => state._type === 'NoSprintsState')
-    .orElse(() => false);
-  if (shouldLoadSprints) {
-    loadSprints(boardId);
-  }
+    .orElse(() => true);
 
   const selectedItem = flattenedList[selectedIssueIndex];
 
@@ -208,18 +214,35 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       case 'r':
         loadSprints(boardId);
         break;
+      case 'f':
+        if (selectedSprintId) {
+          loadSprintIssues({ sprintId: selectedSprintId, boardId });
+        }
+        break;
       case 'h':
       case 'left':
-        const currentIndex = sprints.findIndex(s => s.id === selectedSprintId);
-        if (currentIndex > 0) {
-          handleSprintChange(sprints[currentIndex - 1]!.id);
+        if (sprints.length > 0) {
+          if (selectedSprintId === null) {
+            handleSprintChange(sprints[0]!.id);
+          } else {
+            const currentIndex = sprints.findIndex(s => s.id === selectedSprintId);
+            if (currentIndex > 0) {
+              handleSprintChange(sprints[currentIndex - 1]!.id);
+            }
+          }
         }
         break;
       case 'l':
       case 'right':
-        const nextIndex = sprints.findIndex(s => s.id === selectedSprintId);
-        if (nextIndex >= 0 && nextIndex < sprints.length - 1) {
-          handleSprintChange(sprints[nextIndex + 1]!.id);
+        if (sprints.length > 0) {
+          if (selectedSprintId === null) {
+            handleSprintChange(sprints[0]!.id);
+          } else {
+            const nextIndex = sprints.findIndex(s => s.id === selectedSprintId);
+            if (nextIndex >= 0 && nextIndex < sprints.length - 1) {
+              handleSprintChange(sprints[nextIndex + 1]!.id);
+            }
+          }
         }
         break;
     }
@@ -228,12 +251,11 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const renderItem = (item: FlatListItem, index: number) => {
     const isSelected = index === selectedIssueIndex;
     const isExpanded = expandedKeys.has(item.key);
+    const issue = item.issue;
+    const statusColor = getStatusColor(issue.fields.status.name);
 
     if (item.type === 'parent') {
-      const issue = item.issue as JiraIssue;
-      const childCount = tree.find(n => n.issue.key === item.key)?.children.length ?? 0;
-      const statusColor = getStatusColor(issue.fields.status.name);
-      const expandIcon = childCount > 0 ? (isExpanded ? '▾' : '▸') : ' ';
+      const expandIcon = item.childCount > 0 ? (isExpanded ? '▾' : '▸') : ' ';
 
       return (
         <box
@@ -254,9 +276,9 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           <text style={{ fg: Colors.PRIMARY, flexShrink: 1 }} wrapMode='none'>
             {issue.fields.summary.slice(0, 50)}{issue.fields.summary.length > 50 ? '...' : ''}
           </text>
-          {childCount > 0 && (
+          {item.childCount > 0 && (
             <text style={{ fg: Colors.INFO }} wrapMode='none'>
-              ⊙ {childCount}
+              ⊙ {item.childCount}
             </text>
           )}
           <text
@@ -272,9 +294,6 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       );
     }
 
-    const issue = item.issue as JiraIssue;
-    const statusColor = getStatusColor(issue.fields.status.name);
-    const treeChar = item.level > 0 ? '└─' : '';
     const icon = getIssueTypeIcon(issue.fields.issuetype.name);
     const assignee = issue.fields.assignee?.displayName ?? 'Unassigned';
 
@@ -290,7 +309,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         }}
       >
         <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
-          {treeChar}
+          └─
         </text>
         <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
           {icon}
@@ -370,7 +389,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           ✦ Jira Board {selectedSprint ? `- ${selectedSprint.name}` : ''}
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          q: close | j/k: nav | h/l: sprint | Enter: expand | o: open | r: refresh
+          q: close | r: load sprints | f: fetch issues | h/l: sprint | j/k: nav | o: open
         </text>
         </box>
         {renderSprintTabs()}
@@ -379,23 +398,47 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         </text>
       </box>
 
-      {(isLoadingSprints || isLoadingIssues) && (
+      {isLoadingSprints && (
         <box style={{ padding: 2 }}>
           <text style={{ fg: Colors.INFO }} wrapMode='none'>
-            {isLoadingSprints ? 'Loading sprints...' : 'Loading issues...'}
+            Loading sprints...
           </text>
         </box>
       )}
 
-      {(sprintsError || issuesError) && (
+      {isLoadingIssues && (
+        <box style={{ padding: 2 }}>
+          <text style={{ fg: Colors.INFO }} wrapMode='none'>
+            Loading issues...
+          </text>
+        </box>
+      )}
+
+      {sprintsError && (
         <box style={{ padding: 2 }}>
           <text style={{ fg: Colors.ERROR }} wrapMode='none'>
-            Error: {sprintsError || issuesError}
+            Error: {sprintsError}
           </text>
         </box>
       )}
 
-      {!isLoadingSprints && !isLoadingIssues && !sprintsError && !issuesError && sprints.length === 0 && (
+      {issuesError && (
+        <box style={{ padding: 2 }}>
+          <text style={{ fg: Colors.ERROR }} wrapMode='none'>
+            Error: {issuesError}
+          </text>
+        </box>
+      )}
+
+      {!isLoadingSprints && !sprintsError && noSprintsLoaded && (
+        <box style={{ padding: 2 }}>
+          <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
+            Press 'r' to load sprints
+          </text>
+        </box>
+      )}
+
+      {!isLoadingSprints && !sprintsError && !noSprintsLoaded && sprints.length === 0 && (
         <box style={{ padding: 2 }}>
           <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
             No active sprints found
@@ -403,10 +446,10 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         </box>
       )}
 
-      {!isLoadingSprints && !isLoadingIssues && !sprintsError && !issuesError && flattenedList.length === 0 && sprints.length > 0 && (
+      {!isLoadingIssues && !issuesError && sprints.length > 0 && selectedSprintId && !hasIssuesForSelectedSprint && (
         <box style={{ padding: 2 }}>
           <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
-            No issues in selected sprint
+            Press 'f' to fetch issues for this sprint
           </text>
         </box>
       )}

@@ -3,7 +3,6 @@ import { JiraEventSchema, type JiraEvent } from "./jira-events";
 import { BitbucketEventSchema, type BitbucketEvent } from "./bitbucket-events";
 import { CompactionEventSchemaUnion, type CompactedEvent } from "./event-compaction-events";
 import { Schema } from "effect";
-import type { JiraSprint } from "../jira/jira-sprint-schema";
 
 // Persisted events - stored to disk
 export type LazyReviewerEvent =
@@ -20,15 +19,8 @@ export const EventSchema = Schema.Union(
 )
 
 // In-memory events - not persisted, transient state
-export type JiraSprintsLoadedEvent = {
-  type: "jira-sprints-loaded-event";
-  boardId: number;
-  sprints: JiraSprint[];
-  timestamp: string;
-};
-
-export type InMemoryLazyReviewerEvent =
-  | JiraSprintsLoadedEvent;
+// Currently unused but kept for future transient UI state
+export type InMemoryLazyReviewerEvent = never;
 
 // Combined type for streams that include both
 export type AnyLazyReviewerEvent =

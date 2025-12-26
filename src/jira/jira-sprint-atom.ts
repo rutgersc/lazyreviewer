@@ -1,8 +1,9 @@
 import { Atom, Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 import { EventStorage } from "../events/events";
+import { generateEventId } from "../events/event-id";
 import { appAtomRuntime, makeProjectedAtomFromProjection } from "../appLayerRuntime";
-import { fetchActiveSprints, loadSprintTreeAsEvent, buildSprintTree } from "./jira-sprint-service";
+import { fetchActiveSprints, loadSprintTreeAsEvent } from "./jira-sprint-service";
 import { sprintsProjection } from "./jira-sprint-projections";
 import { defineProjection } from "../utils/define-projection";
 import type { JiraIssue } from "./jira-schema";
@@ -13,13 +14,7 @@ import { selectedSprintIdAtom } from "../components/JiraBoardPage";
 // =============================================================================
 
 // Sprints List
-export const sprintsStateAtom = makeProjectedAtomFromProjection(EventStorage.inMemoryEventsStream, sprintsProjection)
-  .pipe(
-    Atom.map(v => {
-      return v;
-      // return v.pipe(Result.getOrElse(() => null))
-    })
-  );
+export const sprintsStateAtom = makeProjectedAtomFromProjection(EventStorage.eventsStream, sprintsProjection);
 
 export const sprintIssuesProjection = defineProjection({
   initialState: new Map<number, JiraIssue[]>(),
@@ -32,8 +27,8 @@ export const sprintIssuesProjection = defineProjection({
   },
 });
 
-const sprintIssuesByIdAtom = makeProjectedAtomFromProjection(
-  EventStorage.inMemoryEventsStream,
+export const sprintIssuesByIdAtom = makeProjectedAtomFromProjection(
+  EventStorage.eventsStream,
   sprintIssuesProjection
 ).pipe(
   Atom.map((result) => {
@@ -42,14 +37,7 @@ const sprintIssuesByIdAtom = makeProjectedAtomFromProjection(
   })
 );
 
-export const hasIssuesForSelectedSprintAtom = Atom.readable((get) => {
-  const selectedSprintId = get(selectedSprintIdAtom);
-  const issuesBySprintId = get(sprintIssuesByIdAtom);
-
-  return selectedSprintId !== null && issuesBySprintId.has(selectedSprintId);
-});
-
-export const sprintTreeAtom = Atom.readable((get) => {
+export const selectedSprintIssuesAtom = Atom.readable((get) => {
   const selectedSprintId = get(selectedSprintIdAtom);
   const issuesBySprintId = get(sprintIssuesByIdAtom);
 
@@ -57,12 +45,7 @@ export const sprintTreeAtom = Atom.readable((get) => {
     return [];
   }
 
-  const issues = issuesBySprintId.get(selectedSprintId);
-  if (!issues || issues.length === 0) {
-    return [];
-  }
-
-  return buildSprintTree(issues);
+  return issuesBySprintId.get(selectedSprintId) ?? [];
 });
 
 
@@ -74,11 +57,14 @@ export const sprintTreeAtom = Atom.readable((get) => {
 export const loadSprintsAtom = appAtomRuntime.fn((boardId: number) =>
   Effect.gen(function* () {
     const sprints = yield* fetchActiveSprints(boardId);
-    yield* EventStorage.appendInMemoryEvent({
-      type: "jira-sprints-loaded-event",
+    const timestamp = new Date().toISOString();
+    const type = "jira-sprints-loaded-event";
+    yield* EventStorage.appendEvent({
+      eventId: generateEventId(timestamp, type),
+      type,
       boardId,
       sprints,
-      timestamp: new Date().toISOString(),
+      timestamp,
     });
   })
 );

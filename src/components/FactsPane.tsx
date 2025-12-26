@@ -383,15 +383,15 @@ export default function FactsPane() {
             scrollToId(oldestGroup.event.eventId);
         }
     } else if (key.name === 'c') {
-        setCompactionMessage('Compacting...');
-        try {
-            const result = await compactState();
-            setCompactionMessage(result.message);
-            setTimeout(() => setCompactionMessage(null), 3000);
-        } catch (error) {
-            setCompactionMessage(`Compaction failed: ${error}`);
-            setTimeout(() => setCompactionMessage(null), 3000);
-        }
+        // setCompactionMessage('Compacting...');
+        // try {
+        //     const result = await compactState();
+        //     setCompactionMessage(result.message);
+        //     setTimeout(() => setCompactionMessage(null), 3000);
+        // } catch (error) {
+        //     setCompactionMessage(`Compaction failed: ${error}`);
+        //     setTimeout(() => setCompactionMessage(null), 3000);
+        // }
     } else if (key.name === 'e') {
         const eventIndex = highlightedIndex ?? events.length - 1;
         setCompactionMessage(highlightedIndex + 'Opening event in editor...');
