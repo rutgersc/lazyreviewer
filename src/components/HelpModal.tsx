@@ -10,7 +10,7 @@ import { getScroller } from '../hooks/useScrollBox';
 import { cycleInfoPaneTabAtom, infoPaneTabAtom, activePaneAtom, activeModalAtom, type InfoPaneTab } from '../ui/navigation-atom';
 import { selectedMrIndexAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom } from '../mergerequests/mergerequests-atom';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
-import { appAtomRuntime, appLayer, consoleLoggedLayer } from '../appLayerRuntime';
+import { appAtomRuntime, appLayer } from '../appLayerRuntime';
 import { Console, Effect, Layer } from 'effect';
 import { toggleIgnoreMergeRequestAtom } from '../settings/settings-atom';
 
@@ -215,10 +215,7 @@ export default function HelpModal({ isVisible, setCopyNotification }: HelpModalP
     onRefresh: async () => {
       setActiveModal('none');
       const mr = await refreshMergeRequests();
-      Console.log(mr).pipe(
-        Effect.provide(consoleLoggedLayer),
-        Effect.runPromise
-      );
+      Console.log(mr).pipe(Effect.runPromise);
     },
     onOpenSettings: async () => {
       setActiveModal('none');

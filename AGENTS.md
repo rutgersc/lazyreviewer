@@ -39,6 +39,7 @@ bun install
 ### Library Source Code (CRITICAL)
 
 **The following libraries have their source code available as git submodules in the `vendor/` directory:**
+**critical: use the vendor folder to search through the libraries instead of the one in node_modules**
 
 | Library | Submodule Path | Package |
 |---------|---------------|---------|

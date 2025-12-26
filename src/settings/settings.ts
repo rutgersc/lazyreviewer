@@ -1,56 +1,57 @@
 import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { openFileInEditor } from '../utils/open-file';
-import { Effect } from 'effect';
+import { Effect, Schema } from 'effect';
 import { appLayer } from '../appLayerRuntime';
 
 const SETTINGS_FILE = 'lazygitlab-settings.json';
 
-export type JobImportance = 'ignore' | 'low' | 'high';
+// Schema for coercing string|number to number (for user-edited JSON)
+const NumberFromStringOrNumber = Schema.transform(
+  Schema.Union(Schema.Number, Schema.String),
+  Schema.Number,
+  {
+    decode: (input) => typeof input === 'string' ? Number(input) : input,
+    encode: (n) => n
+  }
+)
 
-export interface NotificationSettings {
-  enabled: boolean;
-  lastProcessedEventId?: string;
-}
+const JobImportanceSchema = Schema.Literal('ignore', 'low', 'high')
+export type JobImportance = Schema.Schema.Type<typeof JobImportanceSchema>
 
-export interface BackgroundSyncSettings {
-  enabled: boolean;
-  syncIntervalSeconds: number;
-  syncUserSelectionEntryId?: string;
-  lastRefreshTimestamp?: string; // ISO date string of when the last background refresh occurred
-}
+const NotificationSettingsSchema = Schema.mutable(Schema.Struct({
+  enabled: Schema.Boolean,
+  lastProcessedEventId: Schema.optional(Schema.String),
+}))
+export type NotificationSettings = Schema.Schema.Type<typeof NotificationSettingsSchema>
 
-export interface Settings {
-  repositoryPaths: Record<string, string>;
-  repositoryColors: Record<string, string>;
-  ignoredMergeRequests: string[];
-  seenMergeRequests: string[];
-  pipelineJobImportance: Record<string, Record<string, JobImportance>>;
-  selectedUserSelectionEntryId?: string;
-  currentUser: string;
-  notifications: NotificationSettings;
-  backgroundSync: BackgroundSyncSettings;
-  jiraBoardId?: number;
-}
+const BackgroundSyncSettingsSchema = Schema.mutable(Schema.Struct({
+  enabled: Schema.Boolean,
+  syncIntervalSeconds: Schema.Number,
+  syncUserSelectionEntryId: Schema.optional(Schema.String),
+  lastRefreshTimestamp: Schema.optional(Schema.String),
+}))
+export type BackgroundSyncSettings = Schema.Schema.Type<typeof BackgroundSyncSettingsSchema>
 
-export const defaultNotificationSettings: NotificationSettings = {
-  enabled: false,
-};
+const SettingsSchema = Schema.mutable(Schema.Struct({
+  repositoryPaths: Schema.optionalWith(Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.String })), { default: () => ({}) }),
+  repositoryColors: Schema.optionalWith(Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.String })), { default: () => ({}) }),
+  ignoredMergeRequests: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
+  seenMergeRequests: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
+  pipelineJobImportance: Schema.optionalWith(
+    Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.mutable(Schema.Record({ key: Schema.String, value: JobImportanceSchema })) })),
+    { default: () => ({}) }
+  ),
+  selectedUserSelectionEntryId: Schema.optional(Schema.String),
+  currentUser: Schema.optionalWith(Schema.String, { default: () => 'r.schoorstra' }),
+  notifications: Schema.optionalWith(NotificationSettingsSchema, { default: () => ({ enabled: false }) }),
+  backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 60 * 15 }) }),
+  jiraBoardId: Schema.optional(NumberFromStringOrNumber),
+}))
+export type Settings = Schema.Schema.Type<typeof SettingsSchema>
 
-export const defaultBackgroundSyncSettings: BackgroundSyncSettings = {
-  enabled: false,
-  syncIntervalSeconds: 60 * 15,
-};
-
-export const defaultSettings: Settings = {
-  repositoryPaths: {},
-  repositoryColors: {},
-  ignoredMergeRequests: [],
-  seenMergeRequests: [],
-  pipelineJobImportance: {},
-  currentUser: 'r.schoorstra',
-  notifications: defaultNotificationSettings,
-  backgroundSync: defaultBackgroundSyncSettings,
-};
+// Decode empty object to get all defaults from schema
+const decodeSettings = Schema.decodeUnknownSync(SettingsSchema)
+export const defaultSettings: Settings = decodeSettings({})
 
 const allSettingsKeys: (keyof Settings)[] = [
   'repositoryPaths',
@@ -119,25 +120,14 @@ export const loadSettings = (): Settings => {
 
   const fileContent = readFileSync(SETTINGS_FILE, 'utf8');
 
-  let settings: Partial<Settings>;
+  let jsonData: unknown;
   try {
-    settings = JSON.parse(fileContent);
+    jsonData = JSON.parse(fileContent);
   } catch (error) {
     throw new Error(`Failed to parse ${SETTINGS_FILE}: ${error instanceof Error ? error.message : error}`);
   }
 
-  return {
-    ...defaultSettings,
-    ...settings,
-    notifications: {
-      ...defaultNotificationSettings,
-      ...(settings.notifications || {})
-    },
-    backgroundSync: {
-      ...defaultBackgroundSyncSettings,
-      ...(settings.backgroundSync || {})
-    }
-  };
+  return decodeSettings(jsonData);
 };
 
 export const saveSettings = (settings: Settings): void => {

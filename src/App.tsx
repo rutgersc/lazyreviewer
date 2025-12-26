@@ -23,7 +23,6 @@ import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwra
 import { toggleNotificationsAtom, notificationSettingsAtom, jiraBoardIdAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { Console, Effect } from 'effect';
-import { consoleLoggedLayer } from './appLayerRuntime';
 import { appInitAtom } from './app-init';
 import { clearUnreadCount } from './notifications/title-indicator';
 
@@ -102,10 +101,7 @@ export default function App() {
           // openSettingsFile();
         } else {
           const mr = await refreshMergeRequests();
-          Console.log(mr).pipe(
-            Effect.provide(consoleLoggedLayer),
-            Effect.runPromise
-          );
+          Console.log(mr).pipe(Effect.runPromise);
         }
         break;
       case '?':

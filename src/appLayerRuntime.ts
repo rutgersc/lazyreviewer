@@ -2,9 +2,7 @@ import { Path } from "@effect/platform"
 import { Layer, Effect, Runtime, Scope, Stream } from "effect"
 import * as FileSystem from "@effect/platform-node/NodeFileSystem"
 import * as CommandExecutor from "@effect/platform-node/NodeCommandExecutor"
-import { LogStorage } from "./logging/logStorage"
 import { Atom } from "@effect-atom/atom-react"
-import { ConsoleLogged } from "./logging/consoleLogged"
 import { EventStorage, type AnyLazyReviewerEvent } from "./events/events"
 import { JiraScrollService } from "./jira/jira-scroll-service"
 import { DiscussionScrollService } from "./discussion/discussion-scroll-service"
@@ -16,25 +14,11 @@ const commandExecutorLayer = CommandExecutor.layer.pipe(
   Layer.provide(fileSystemLayer)
 )
 
-const logStorageLayer = LogStorage.Default.pipe(
+const eventStorageLayer = EventStorage.Default.pipe(
   Layer.provide(fileSystemLayer)
 )
 
-// ConsoleLogged sets the Console in the FiberRef (via Console.setConsole)
-// so Console.log() etc use our wrapped console. It requires LogStorage.
-export const consoleLoggedLayer = ConsoleLogged.pipe(
-  Layer.provide(logStorageLayer)
-)
-
-const eventStorageLayer = EventStorage.Default.pipe(
-  Layer.provide(fileSystemLayer),
-  Layer.provide(consoleLoggedLayer)
-)
-
-// Do not rely on Registry.layer: this is likely internal to atom-effect
 export const appLayer = Layer.mergeAll(
-  consoleLoggedLayer,
-  logStorageLayer,
   eventStorageLayer,
   fileSystemLayer,
   commandExecutorLayer,
