@@ -55,19 +55,14 @@ export const fetchMergeRequestsByProject = Effect.fn("fetchMergeRequestsByProjec
 })
 
 export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (
-  selectedUserSelectionEntry: string,
   mrId: string,
   projectPath: string,
   iid: string,
-  state: MergeRequestState = 'opened'
 ) {
   yield* Console.log(`[Pipeline] Refetching pipeline for MR ${iid} (${mrId})`);
 
-  const eventStorage = yield* EventStorage;
   const pipelineEvent = yield* getMrPipelineAsEvent(projectPath, iid);
-
-  yield* eventStorage.appendEvent(pipelineEvent);
-  yield* Console.log(`[Pipeline] Pipeline event appended for MR ${iid}`);
+  yield* EventStorage.appendEvent(pipelineEvent);
 })
 
 export class RetargetMergeRequestError extends Data.TaggedError("RetargetMergeRequestError")<{

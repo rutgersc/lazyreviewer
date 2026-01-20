@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { loadSettings, saveSettings } from '../../settings/settings';
-import { getCurrentBranch, getBranchDifference } from '../../git/git-effects';
+import { getCurrentBranch } from '../../git/git-effects';
 import type { MergeRequest } from '../mergerequest-schema';
 
 export interface RepositoryBranch {
@@ -24,14 +24,15 @@ export const useRepositoryBranches = (mergeRequests: readonly MergeRequest[]): R
     const repoBranches: RepositoryBranch[] = [];
 
     for (const projectPath of projectPaths) {
-      let localPath = settings.repositoryPaths[projectPath];
+      let repoConfig = settings.repositoryPaths[projectPath];
 
-      if (!localPath) {
-        settings.repositoryPaths[projectPath] = "";
+      if (!repoConfig) {
+        settings.repositoryPaths[projectPath] = { localPath: '', remoteName: 'origin' };
         settingsModified = true;
-        localPath = "";
+        repoConfig = settings.repositoryPaths[projectPath];
       }
 
+      const localPath = repoConfig?.localPath || '';
       const currentBranch = localPath ? getCurrentBranch(localPath) : null;
       const projectName = projectPath;
 

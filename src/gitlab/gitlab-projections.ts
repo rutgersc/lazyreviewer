@@ -1,7 +1,8 @@
 import type { ProjectMRsQuery } from "../graphql/project-mrs.generated";
 import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { PipelineJob, PipelineStage, Discussion, GitlabMergeRequest, JobHistoryEntry, DiscussionNote } from "./gitlab-schema";
-import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent } from "../events/gitlab-events";
+import { MrGid, MrIid } from "./gitlab-schema";
+import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent, GitlabMrsFetchedEvent } from "../events/gitlab-events";
 import type { MergeRequestFieldsFragment, MRsQuery } from "../graphql/mrs.generated";
 import type { CompactedEvent } from "../events/event-compaction-events";
 
@@ -66,8 +67,8 @@ export const mapMrFragment = (
   const unresolvedDiscussions = resolvableDiscussions - resolvedDiscussions;
 
   return {
-    id: mr.id,
-    iid: mr.iid,
+    id: MrGid(mr.id),
+    iid: MrIid(mr.iid),
     title: mr.name!,
     jiraIssueKeys: extractElabTicketsFromTitle(mr.name!),
     webUrl: mr.webUrl!,
@@ -118,13 +119,14 @@ export const projectGitlabJobTraceFetchedEvent = (event: GitlabJobTraceFetchedEv
   return event.jobTrace || null;
 };
 
-export const projectGitlabPipelineFetchedEvent = (event: GitlabPipelineFetchedEvent): { stage: PipelineStage[] } | null => {
+export const projectGitlabPipelineFetchedEvent = (event: GitlabPipelineFetchedEvent): { iid: string; stage: PipelineStage[] } | null => {
   const mr = event.pipeline.project?.mergeRequest;
   if (!mr?.headPipeline) {
     return null;
   }
 
   const pipeline = {
+    iid: mr.headPipeline.iid,
     stage: mr.headPipeline.stages?.nodes
       ?.map(stage => ({
         name: stage?.name || '',
@@ -147,8 +149,17 @@ export const projectGitlabPipelineFetchedEvent = (event: GitlabPipelineFetchedEv
   return pipeline;
 };
 
-export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetchedEvent): JobHistoryEntry[] => {
+export interface JobHistoryResult {
+  history: JobHistoryEntry[];
+  pageInfo: {
+    hasNextPage: boolean;
+    endCursor: string | null;
+  };
+}
+
+export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetchedEvent): JobHistoryResult => {
   const pipelines = event.jobHistory.project?.pipelines?.nodes || [];
+  const pageInfo = event.jobHistory.project?.pipelines?.pageInfo || { hasNextPage: false, endCursor: null };
 
   const history: JobHistoryEntry[] = pipelines
     .filter(pipeline => pipeline?.job !== null)
@@ -174,7 +185,13 @@ export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetch
       } satisfies JobHistoryEntry;
     });
 
-  return history;
+  return {
+    history,
+    pageInfo: {
+      hasNextPage: pageInfo.hasNextPage,
+      endCursor: pageInfo.endCursor
+    }
+  };
 };
 
 export const projectGitlabSingleMrFetchedEvent = (event: GitlabSingleMrFetchedEvent): GitlabMergeRequest | null => {
@@ -191,3 +208,12 @@ export const projectGitlabMrsCompactedEvent = (event: CompactedEvent): GitlabMer
   const mrs: MergeRequestFieldsFragment[] = event.mrs.filter(mr => "discussions" in mr);
   return mrs.map(mr => mapMrFragment(mr));
 }
+
+export const projectGitlabMrsFetchedEvent = (event: GitlabMrsFetchedEvent): GitlabMergeRequest[] => {
+  const mrs = event.mrs.project?.mergeRequests?.nodes
+    ?.filter((mr): mr is NonNullable<typeof mr> => mr !== null)
+    .map(mr => mapMrFragment(mr))
+    ?? [];
+
+  return mrs;
+};

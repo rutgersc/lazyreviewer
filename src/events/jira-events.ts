@@ -1,25 +1,55 @@
 import { Schema } from "effect"
-import type { JiraSearchResponse } from "../jira/jira-schema";
+import { JiraIssueSchema, JiraSearchResponseSchema } from "../jira/jira-schema";
+import { JiraSprintSchema } from "../jira/jira-sprint-schema";
 import { EventIdSchema } from "./event-id";
 
 // Jira event schemas
 const JiraIssuesFetchedEventSchema = Schema.Struct({
   eventId: EventIdSchema,
   type: Schema.Literal('jira-issues-fetched-event'),
-  searchResponse: Schema.Unknown,
-  issues: Schema.Unknown,
+  // searchResponse: JiraSearchResponseSchema,
+  issues: JiraSearchResponseSchema,
   forTicketKeys: Schema.Array(Schema.String),
   timestamp: Schema.String
 })
 
-export interface JiraIssuesFetchedEvent extends Schema.Schema.Type<typeof JiraIssuesFetchedEventSchema> {
-  searchResponse: JiraSearchResponse
-  issues: JiraSearchResponse
-}
+export type JiraIssuesFetchedEvent = Schema.Schema.Type<typeof JiraIssuesFetchedEventSchema>
 
-export const JiraEventSchema = Schema.Union(
-  JiraIssuesFetchedEventSchema
+const NumberOrStringAsNumber = Schema.transform(
+  Schema.Union(Schema.Number, Schema.String),
+  Schema.Number,
+  {
+    decode: (input) => typeof input === 'string' ? Number(input) : input,
+    encode: (n) => n
+  }
 )
 
-export type JiraEvent = Schema.Schema.Type<typeof JiraEventSchema>
+const JiraSprintIssuesFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
+  type: Schema.Literal('jira-sprint-issues-fetched-event'),
+  sprintId: Schema.Number,
+  boardId: NumberOrStringAsNumber,
+  issues: Schema.mutable(Schema.Array(JiraIssueSchema)),
+  timestamp: Schema.String
+})
+
+export type JiraSprintIssuesFetchedEvent = Schema.Schema.Type<typeof JiraSprintIssuesFetchedEventSchema>
+
+const JiraSprintsLoadedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
+  type: Schema.Literal('jira-sprints-loaded-event'),
+  boardId: Schema.Number,
+  sprints: Schema.mutable(Schema.Array(JiraSprintSchema)),
+  timestamp: Schema.String
+})
+
+export type JiraSprintsLoadedEvent = Schema.Schema.Type<typeof JiraSprintsLoadedEventSchema>
+
+export const JiraEventSchema = Schema.Union(
+  JiraIssuesFetchedEventSchema,
+  JiraSprintIssuesFetchedEventSchema,
+  JiraSprintsLoadedEventSchema
+)
+
+export type JiraEvent = JiraIssuesFetchedEvent | JiraSprintIssuesFetchedEvent | JiraSprintsLoadedEvent
 

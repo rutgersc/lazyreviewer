@@ -1,34 +1,30 @@
-import { useState, useEffect, useRef } from 'react';
-import { useKeyboard } from '@opentui/react';
-import { TextAttributes, type ParsedKey } from '@opentui/core';
+import { useEffect, useRef } from 'react';
+import { TextAttributes } from '@opentui/core';
 import type { UserSelectionEntry } from '../userselection/userSelection';
-import { ActivePane } from '../userselection/userSelection';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 import { Colors } from '../colors';
-import { activePaneAtom } from '../ui/navigation-atom';
 import { userSelectionsAtom, selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
-import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue, Atom } from '@effect-atom/atom-react';
 import { openUrl } from '../system/open-url';
 import path from 'path';
 import { selectedUserSelectionEntryIdAtom } from '../settings/settings-atom';
 
-interface UserSelectionPaneProps {
-}
+export const highlightIndexAtom = Atom.make(0);
+export const scrollToItemRequestAtom = Atom.make<number | null>(null);
 
-export default function UserSelectionPane({ }: UserSelectionPaneProps) {
+export default function UserSelectionPane() {
   const hasInitialized = useRef(false);
-  const activePane = useAtomValue(activePaneAtom);
   const [selectedUserSelectionEntryId, setSelectedUserSelectionEntryId] = useAtom(selectedUserSelectionEntryIdAtom);
   const userSelections = useAtomValue(userSelectionsAtom);
   const selectedEntry = useAtomValue(selectedUserSelectionEntryAtom);
-
-  const isActive = activePane === ActivePane.UserSelection;
-  const [highlightIndex, setHighlightIndex] = useState(0);
+  const [highlightIndex, setHighlightIndex] = useAtom(highlightIndexAtom);
+  const [scrollToItemRequest, setScrollToItemRequest] = useAtom(scrollToItemRequestAtom);
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
     lookahead: 2,
   });
 
+  // Handle initial scroll to selected entry
   useEffect(() => {
     if (!hasInitialized.current && selectedEntry !== undefined) {
       const index = userSelections.indexOf(selectedEntry);
@@ -36,63 +32,20 @@ export default function UserSelectionPane({ }: UserSelectionPaneProps) {
       scrollToItem(index);
       hasInitialized.current = true;
     }
-  }, [selectedUserSelectionEntryId, selectedEntry]);
+  }, [selectedUserSelectionEntryId, selectedEntry, userSelections, setHighlightIndex, scrollToItem]);
+
+  // Handle scroll requests from actions
+  useEffect(() => {
+    if (scrollToItemRequest !== null) {
+      scrollToItem(scrollToItemRequest);
+      setScrollToItemRequest(null);
+    }
+  }, [scrollToItemRequest, scrollToItem, setScrollToItemRequest]);
 
   const handleTitleClick = useDoubleClick<void>({
     onDoubleClick: () => {
-      // We're assuming the process is running from the project root, or we can find the file relative to it.
-      // For simplicity in this environment, we'll try to open the file directly.
-      // Since 'openUrl' opens URLs, for local files we might need a 'file://' prefix or just the path depending on the system/implementation.
-      // However, user asked to open `src\data\usersAndGroups.ts`.
-      // Let's try constructing a file URI.
       const filePath = path.resolve('src', 'data', 'usersAndGroups.ts');
-      openUrl(filePath); // openUrl usually handles file paths if the system supports it or if we implement it that way.
-                         // If openUrl is strict about URLs, we might need `file://${filePath}`.
-                         // Given previous context of `openUrl`, it seems to invoke `open` command which handles files.
-    }
-  });
-
-  useKeyboard((key: ParsedKey) => {
-    if (!isActive) {
-      return;
-    }
-
-    switch (key.name) {
-      case 'j':
-      case 'down': {
-        const newIndex = Math.min(highlightIndex + 1, userSelections.length - 1);
-        setHighlightIndex(newIndex);
-        scrollToItem(newIndex);
-        break;
-      }
-      case 'k':
-      case 'up': {
-        const newIndex = Math.max(highlightIndex - 1, 0);
-        setHighlightIndex(newIndex);
-        scrollToItem(newIndex);
-        break;
-      }
-      case 'space': {
-        const selectedEntry = userSelections[highlightIndex];
-        if (selectedEntry) {
-          setSelectedUserSelectionEntryId(selectedEntry.userSelectionEntryId);
-        }
-        break;
-      }
-
-      case 'return': {
-        // const highlightedItem = getItemByIndex(navState, highlightIndex);
-        // if (highlightedItem && highlightedItem.type === 'group') {
-        //   // Navigate into group (replace pane content) and reset highlight
-        //   setNavState(prevState => navigateIntoGroup(prevState, highlightedItem));
-        //   setHighlightIndex(0);
-        // }
-        break;
-      }
-      case 'escape':
-        // Reset highlight
-        setHighlightIndex(0);
-        break;
+      openUrl(filePath);
     }
   });
 

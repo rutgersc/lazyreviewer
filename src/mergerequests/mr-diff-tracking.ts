@@ -2,15 +2,16 @@ import { Data, Stream, Effect } from "effect";
 import { Atom, Result } from "@effect-atom/atom-react";
 import { EventStorage } from "../events/events";
 import { appAtomRuntime } from "../appLayerRuntime";
-import { isMrRelevantEvent, type MrRelevantEvent } from "./all-mergerequests-projection";
+import { allMrsProjection, type MrRelevantEvent } from "./all-mergerequests-projection";
 import type { MergeRequestFieldsFragment } from "../graphql/mrs.generated";
 import type { BitbucketPullRequest } from "../bitbucket/bitbucketapi";
+import { MrGid } from "../gitlab/gitlab-schema";
 
 type KnownMrInfo = { state: string; authorUsername?: string; projectFullPath: string };
 
 export class OpenMrsTrackingState extends Data.TaggedClass("OpenMrsTrackingState")<{
-  readonly knownMrsById: ReadonlyMap<string, KnownMrInfo>
-  readonly detectedMissingMrIds: ReadonlySet<string>
+  readonly knownMrsById: ReadonlyMap<MrGid, KnownMrInfo>
+  readonly detectedMissingMrIds: ReadonlySet<MrGid>
 }> {}
 
 export const initialOpenMrsTrackingState = new OpenMrsTrackingState({
@@ -30,8 +31,8 @@ export const projectOpenMrsAndDetectMissing = (
   switch (event.type) {
     case 'gitlab-user-mrs-fetched-event': {
       type AccState = {
-        knownMrsById: ReadonlyMap<string, KnownMrInfo>;
-        detectedMissingMrIds: ReadonlySet<string>
+        knownMrsById: ReadonlyMap<MrGid, KnownMrInfo>;
+        detectedMissingMrIds: ReadonlySet<MrGid>
       };
 
       const initialState = {
@@ -41,7 +42,7 @@ export const projectOpenMrsAndDetectMissing = (
       const evolveDiff = (acc: AccState, username: string): AccState => {
           const userMrs = event.mrs.users?.nodes?.find(u => u?.username === username)?.authoredMergeRequests?.nodes || [];
           const validUserMrs = userMrs.filter((mr): mr is NonNullable<typeof mr> => !!(mr && mr.id));
-          const incomingIds = new Set(validUserMrs.map(mr => mr.id));
+          const incomingIds = new Set(validUserMrs.map(mr => MrGid(mr.id)));
           const currentMissing = new Set(acc.detectedMissingMrIds);
           const missingAfterArrivals = new Set(
               [...currentMissing].filter(id => !incomingIds.has(id))
@@ -55,13 +56,13 @@ export const projectOpenMrsAndDetectMissing = (
           const entriesToAdd = validUserMrs.map(
             (mr) =>
               [
-                mr.id,
+                MrGid(mr.id),
                 {
                   state: mr.state,
                   authorUsername: username,
                   projectFullPath:
                     mr.project?.fullPath ||
-                    acc.knownMrsById.get(mr.id)?.projectFullPath ||
+                    acc.knownMrsById.get(MrGid(mr.id))?.projectFullPath ||
                     "",
                 },
               ] as const);
@@ -83,13 +84,13 @@ export const projectOpenMrsAndDetectMissing = (
       // 1. Identify incoming MRs
       const projectMrs = event.mrs.project?.mergeRequests?.nodes || [];
       const validProjectMrs = projectMrs.filter((mr): mr is NonNullable<typeof mr> => !!(mr && mr.id));
-      const incomingIds = new Set(validProjectMrs.map(mr => mr.id));
+      const incomingIds = new Set(validProjectMrs.map(mr => MrGid(mr.id)));
 
       // 2. Compute new Known MRs Map (Immutable update)
       const entriesToAdd = validProjectMrs.map(mr => {
-          const authorUsername = mr.author?.username || state.knownMrsById.get(mr.id)?.authorUsername;
+          const authorUsername = mr.author?.username || state.knownMrsById.get(MrGid(mr.id))?.authorUsername;
           return [
-              mr.id,
+              MrGid(mr.id),
               {
                   state: mr.state,
                   authorUsername: authorUsername,
@@ -128,17 +129,17 @@ export const projectOpenMrsAndDetectMissing = (
       const mr = event.mr.project?.mergeRequest;
       if (mr && mr.id) {
           // 1. Update Known MRs (Immutable update)
-          const existing = state.knownMrsById.get(mr.id);
+          const existing = state.knownMrsById.get(MrGid(mr.id));
           const updatedInfo = {
               state: mr.state,
               authorUsername: mr.author?.username || existing?.authorUsername,
               projectFullPath: mr.project?.fullPath || existing?.projectFullPath || event.forProjectPath
           };
-          const newKnownMrsById = new Map([...state.knownMrsById, [mr.id, updatedInfo]]);
+          const newKnownMrsById = new Map([...state.knownMrsById, [MrGid(mr.id), updatedInfo]]);
 
           // 2. Update Missing MRs (Immutable update - remove reconciled MR)
           const newMissingMrIds = new Set(
-              [...state.detectedMissingMrIds].filter(id => id !== mr.id)
+              [...state.detectedMissingMrIds].filter(id => id !== MrGid(mr.id))
           );
 
           return new OpenMrsTrackingState({
@@ -149,10 +150,40 @@ export const projectOpenMrsAndDetectMissing = (
       return state;
     }
 
+    case 'gitlab-mrs-fetched-event': {
+      const projectPath = event.forProjectPath;
+      const projectMrs = event.mrs.project?.mergeRequests?.nodes || [];
+      const validMrs = projectMrs.filter((mr): mr is NonNullable<typeof mr> => !!(mr && mr.id));
+      const incomingIds = new Set(validMrs.map(mr => MrGid(mr.id)));
+
+      const entriesToAdd = validMrs.map(mr => {
+        const existing = state.knownMrsById.get(MrGid(mr.id));
+        return [
+          MrGid(mr.id),
+          {
+            state: mr.state,
+            authorUsername: mr.author?.username || existing?.authorUsername,
+            projectFullPath: mr.project?.fullPath || existing?.projectFullPath || projectPath
+          }
+        ] as const;
+      });
+
+      const newKnownMrsById = new Map([...state.knownMrsById, ...entriesToAdd]);
+
+      const newMissingMrIds = new Set(
+        [...state.detectedMissingMrIds].filter(id => !incomingIds.has(id))
+      );
+
+      return new OpenMrsTrackingState({
+        knownMrsById: newKnownMrsById,
+        detectedMissingMrIds: newMissingMrIds
+      });
+    }
+
     case 'compacted-event': {
       // Initialize known MRs from compacted state
       // Compaction represents the full state, so we rebuild knownMrsById from it
-      const newKnownMrsById = new Map<string, {
+      const newKnownMrsById = new Map<MrGid, {
         state: string
         authorUsername?: string
         projectFullPath: string
@@ -160,22 +191,22 @@ export const projectOpenMrsAndDetectMissing = (
 
       event.mrs.forEach((mr: MergeRequestFieldsFragment | BitbucketPullRequest) => {
         // Check if it's a GitLab MR (has 'iid' and 'project') vs Bitbucket PR
-        if ('iid' in mr && 'project' in mr) {
-          // GitLab MR
-          newKnownMrsById.set(mr.id, {
-            state: mr.state,
-            authorUsername: mr.author?.username,
-            projectFullPath: mr.project.fullPath
-          });
-        } else if ('source' in mr && 'destination' in mr) {
-          // Bitbucket PR - use destination repo full_name as id
-          const id = `bitbucket:${mr.destination.repository.full_name}:${mr.id}`;
-          newKnownMrsById.set(id, {
-            state: mr.state,
-            authorUsername: mr.author?.display_name,
-            projectFullPath: mr.destination.repository.full_name
-          });
-        }
+        // if ('iid' in mr && 'project' in mr) {
+        //   // GitLab MR
+        //   newKnownMrsById.set(MrGid(mr.id), {
+        //     state: mr.state,
+        //     authorUsername: mr.author?.username,
+        //     projectFullPath: mr.project.fullPath
+        //   });
+        // } else if ('source' in mr && 'destination' in mr) {
+        //   // Bitbucket PR - use destination repo full_name as id
+        //   const id = `bitbucket:${mr.destination.repository.full_name}:${mr.id}`;
+        //   newKnownMrsById.set(id, {
+        //     state: mr.state,
+        //     authorUsername: mr.author?.display_name,
+        //     projectFullPath: mr.destination.repository.full_name
+        //   });
+        // }
       });
 
       // Clear missing MRs since we're starting fresh from compacted state
@@ -189,6 +220,9 @@ export const projectOpenMrsAndDetectMissing = (
       // Jira events don't affect MR tracking
       return state;
 
+    case 'jira-sprint-issues-fetched-event':
+      return state; // TODOR: still fix this
+
     default:
       return exhaustive(event);
   }
@@ -199,7 +233,7 @@ export const missingMrsDiffAtom = appAtomRuntime.atom(
     return Stream.unwrap(
       Effect.gen(function* () {
         return (yield* EventStorage.eventsStream).pipe(
-          Stream.filter(isMrRelevantEvent),
+          Stream.filter(allMrsProjection.isRelevantEvent),
           Stream.scan(
             initialOpenMrsTrackingState,
             (state: OpenMrsTrackingState, event) =>

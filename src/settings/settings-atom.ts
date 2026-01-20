@@ -1,8 +1,47 @@
 import { FileSystem } from "@effect/platform"
-import { Effect, Stream, Console } from "effect"
+import { Effect, Stream, Console, Option } from "effect"
 import { appAtomRuntime } from "../appLayerRuntime"
-import { type Settings, defaultSettings, loadSettings, saveSettings } from "./settings"
+import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, defaultSettings, loadSettings, saveSettings, Settings } from "./settings"
 import { Atom, Result } from "@effect-atom/atom-react"
+import type { MrGid } from "../gitlab/gitlab-schema"
+
+// Equality helpers for selector atoms
+const arrayEquals = (a: readonly string[], b: readonly string[]): boolean => {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+};
+
+const shallowObjectEquals = <T extends object>(a: T, b: T): boolean => {
+  const keysA = Object.keys(a) as (keyof T)[];
+  const keysB = Object.keys(b) as (keyof T)[];
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+};
+
+// Helper to create a selector atom that only updates when the selected value changes
+const selectFromSettings = <T>(
+  selector: (settings: Settings) => T,
+  defaultValue: T,
+  equals: (a: T, b: T) => boolean = Object.is
+): Atom.Atom<T> =>
+  Atom.make(get => {
+    const previous = get.self<T>();
+    const newValue = Result.match(get(settingsAtom), {
+      onInitial: () => defaultValue,
+      onSuccess: ({ value }) => selector(value),
+      onFailure: () => defaultValue
+    });
+    if (Option.isSome(previous) && equals(previous.value, newValue)) {
+      return previous.value;
+    }
+    return newValue;
+  });
 
 const SETTINGS_FILE = 'lazygitlab-settings.json';
 
@@ -21,8 +60,8 @@ const watchSettingsStream = Effect.gen(function* () {
   const parseContent = (content: string): Settings => {
     try {
       return JSON.parse(content) as Settings;
-    } catch {
-      return defaultSettings;
+    } catch (error) {
+      throw new Error(`Failed to parse ${SETTINGS_FILE}: ${error instanceof Error ? error.message : error}`);
     }
   };
 
@@ -30,13 +69,9 @@ const watchSettingsStream = Effect.gen(function* () {
   const initial = parseContent(initialContent);
 
   const watchStream = fs.watch(SETTINGS_FILE).pipe(
-    Stream.tap(() => Effect.sync(() => console.log("[Settings] File watch event fired"))),
     Stream.debounce("100 millis"),
     Stream.mapEffect(() => readFileContent),
     Stream.changes,
-    Stream.tap((content) => Effect.sync(() => {
-      console.log("[Settings] File content actually changed at", new Date().toISOString());
-    })),
     Stream.map(parseContent)
   );
 
@@ -48,13 +83,17 @@ export const settingsAtom = appAtomRuntime.atom(
   { initialValue: defaultSettings }
 ).pipe(Atom.setLazy(false), Atom.keepAlive)
 
-export const ignoredMergeRequestsAtom = Atom.make(get => {
-  return Result.match(get(settingsAtom), {
-    onInitial: () => new Set<string>(),
-    onSuccess: ({ value }) => new Set<string>(value.ignoredMergeRequests),
-    onFailure: () => new Set<string>()
-  });
-});
+// Intermediate selector - only changes when ignoredMergeRequests array changes
+const ignoredMergeRequestsRawAtom = selectFromSettings(
+  s => s.ignoredMergeRequests,
+  [],
+  arrayEquals
+);
+
+// Consumer atom - only recomputes when the raw atom actually changes
+export const ignoredMergeRequestsAtom = Atom.make(get =>
+  new Set(get(ignoredMergeRequestsRawAtom))
+);
 
 export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
   Effect.gen(function* () {
@@ -72,13 +111,15 @@ export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get
   })
 );
 
-export const seenMergeRequestsAtom = Atom.make(get => {
-  return Result.match(get(settingsAtom), {
-    onInitial: () => new Set<string>(),
-    onSuccess: ({ value }) => new Set<string>(value.seenMergeRequests),
-    onFailure: () => new Set<string>()
-  });
-});
+const seenMergeRequestsRawAtom = selectFromSettings(
+  s => s.seenMergeRequests,
+  [],
+  arrayEquals
+);
+
+export const seenMergeRequestsAtom = Atom.make(get =>
+  new Set(get(seenMergeRequestsRawAtom))
+);
 
 export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
   Effect.gen(function* () {
@@ -97,14 +138,13 @@ export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) 
   })
 );
 
+const selectedUserSelectionEntryIdRawAtom = selectFromSettings(
+  s => s.selectedUserSelectionEntryId,
+  undefined as string | undefined
+);
+
 export const selectedUserSelectionEntryIdAtom = Atom.writable(
-  (get) => {
-    return Result.match(get(settingsAtom), {
-      onInitial: () => undefined,
-      onSuccess: ({ value }) => value.selectedUserSelectionEntryId,
-      onFailure: () => undefined
-    });
-  },
+  (get) => get(selectedUserSelectionEntryIdRawAtom),
   (ctx, newValue: string | undefined) => {
     const settings = loadSettings();
     console.log("selectedUserSelectionEntryIdAtom set", newValue);
@@ -113,30 +153,74 @@ export const selectedUserSelectionEntryIdAtom = Atom.writable(
   }
 );
 
-export const currentUserAtom = Atom.make(get => {
-  return Result.match(get(settingsAtom), {
-    onInitial: () => 'r.schoorstra',
-    onSuccess: ({ value }) => value.currentUser,
-    onFailure: () => 'r.schoorstra'
-  });
-});
+export const currentUserAtom = selectFromSettings(
+  s => s.currentUser,
+  'r.schoorstra'
+);
 
-export const notificationSettingsAtom = Atom.make(get => {
-  return Result.match(get(settingsAtom), {
-    onInitial: () => ({ enabled: false, syncIntervalSeconds: 60 * 10 }),
-    onSuccess: ({ value }) => value.notifications ?? { enabled: false, syncIntervalSeconds: 60 * 10 },
-    onFailure: () => ({ enabled: false, syncIntervalSeconds: 60 * 10 })
-  });
-});
+export const notificationSettingsAtom = selectFromSettings(
+  s => s.notifications ?? { enabled: false },
+  { enabled: false } as NotificationSettings,
+  shallowObjectEquals
+);
+
+export const backgroundSyncSettingsAtom = selectFromSettings(
+  s => s.backgroundSync ?? { enabled: false, syncIntervalSeconds: 60 * 15 },
+  { enabled: false, syncIntervalSeconds: 60 * 15 } as BackgroundSyncSettings,
+  shallowObjectEquals
+);
 
 export const toggleNotificationsAtom = appAtomRuntime.fn((_: void, get) =>
   Effect.gen(function* () {
     const settings = loadSettings();
     if (!settings.notifications) {
-      settings.notifications = { enabled: false, syncIntervalSeconds: 120 };
+      settings.notifications = { enabled: false };
     }
     settings.notifications.enabled = !settings.notifications.enabled;
     saveSettings(settings);
     yield* Console.log(`[Settings] Notifications ${settings.notifications.enabled ? 'enabled' : 'disabled'}`);
+  })
+);
+
+export const jiraBoardIdAtom = selectFromSettings(
+  s => s.jiraBoardId,
+  undefined as number | undefined
+);
+
+const monitoredMergeRequestsRawAtom = selectFromSettings(
+  s => Object.keys(s.monitoredMergeRequests) as MrGid[],
+  [] as MrGid[],
+  arrayEquals
+);
+
+export const monitoredMergeRequestsAtom = Atom.make(get =>
+  new Set(get(monitoredMergeRequestsRawAtom))
+);
+
+export const monitoredMrStatesAtom = selectFromSettings(
+  s => new Map(
+    Object.entries(s.monitoredMergeRequests).map(
+      ([gid, state]) => [gid as MrGid, state.completedReason] as const
+    )
+  ),
+  new Map<MrGid, MonitoredMrCompletedReason | undefined>(),
+  (a, b) => {
+    if (a.size !== b.size) return false;
+    for (const [key, val] of a) {
+      if (b.get(key) !== val) return false;
+    }
+    return true;
+  }
+);
+
+export const toggleMonitorMergeRequestAtom = appAtomRuntime.fn((mrGid: MrGid) =>
+  Effect.gen(function* () {
+    Settings.toggleMonitorMergeRequest(mrGid);
+  })
+);
+
+export const clearCompletedMonitoredMrsAtom = appAtomRuntime.fn(() =>
+  Effect.gen(function* () {
+    Settings.clearCompletedMonitoredMrs();
   })
 );

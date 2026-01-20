@@ -1,74 +1,109 @@
-import { useState, useMemo, useRef } from 'react';
-import { useKeyboard } from '@opentui/react';
-import { useAtom, useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
+import { useRef, useEffect } from 'react';
+import { useAtom, useAtomValue, useAtomSet, Result, Atom } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom, infoPaneTabAtom, nowAtom } from '../ui/navigation-atom';
 import { targetNoteIdAtom } from './ActivityLog';
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
 import { allEventsIncludingCompactedAtom, compactAllEventsAtom } from '../events/events-atom';
 import { resultToArray } from '../utils/result-helpers';
-import { EventStorage } from '../eventstore/eventStorage';
-import { openFileInEditor } from '../utils/open-file';
-import { appLayer } from '../appLayerRuntime';
-import { Effect } from 'effect';
-import { allMrsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, filterMrStateAtom } from '../mergerequests/mergerequests-atom';
-import type { MergeRequestState } from '../graphql/generated/gitlab-base-types';
-import { userSelectionsAtom } from '../userselection/userselection-atom';
-import { groupsAtom } from '../data/data-atom';
-import { selectedUserSelectionEntryIdAtom } from '../settings/settings-atom';
-import type { UserSelectionEntry, UserOrGroupId, UserGroup } from '../userselection/userSelection';
+import { allMrsAtom, unwrappedMergeRequestsAtom, isMergeRequestsLoadingAtom, selectMrByIdAtom } from '../mergerequests/mergerequests-atom';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { eventChangesReadmodelAtom } from '../changetracking/change-tracking-atom';
-import type { Change, MrChange } from '../changetracking/change-tracking-projection';
+import type { Change } from '../changetracking/change-tracking-projection';
+import { FILTERED_SYSTEM_NOTE_TYPES, isMrChange } from '../changetracking/mr-change-tracking-projection';
+import { groupChanges } from '../changetracking/change-grouping';
 import type { LazyReviewerEvent } from '../events/events';
-import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../jira/jira-atom';
 import { useJiraScroll } from '../hooks/useJiraScroll';
 import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
+import { getAgeColor } from '../utils/formatting';
+import { backgroundFetchAtom } from '../notifications/notification-sync-atom';
+import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from './JiraIssuesList';
 
-const isMrChange = (change: Change): change is MrChange => {
-  switch (change.type) {
-    case 'new-mr':
-    case 'merged-mr':
-    case 'closed-mr':
-    case 'reopened-mr':
-    case 'system-note':
-    case 'diff-comment':
-    case 'discussion-comment':
-      return true;
-    case 'new-jira-issue':
-    case 'jira-status-changed':
-    case 'jira-comment':
-      return false;
-    default:
-      return false;
+const formatTimeUntil = (targetDate: Date): string => {
+  const now = Date.now();
+  const diffMs = targetDate.getTime() - now;
+
+  if (diffMs <= 0) return 'now';
+
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
   }
+  return `${seconds}s`;
 };
 
+const isFilteredSystemNote = (change: Change): boolean =>
+  change.type === 'system-note' && FILTERED_SYSTEM_NOTE_TYPES.has(change.systemNoteType);
+
+function getJiraPrefix(change: Change): string {
+  if (isMrChange(change)) {
+    const key = change.mr.jiraIssueKeys[0];
+    return key ? `[${key}] ` : '';
+  }
+  // Jira changes
+  if (change.type === 'new-jira-issue' || change.type === 'jira-status-changed' || change.type === 'jira-comment') {
+    return `[${change.issue.issueKey}] `;
+  }
+  return '';
+}
+
 function getChangeDescription(change: Change): { badge: string; color: string; text: string } {
+  const jira = getJiraPrefix(change);
   switch (change.type) {
     case 'new-mr':
-      return { badge: '📋', color: '#50fa7b', text: `New: ${change.mr.mrName} (${change.mr.mrAuthor})` };
+      return { badge: '📋', color: '#50fa7b', text: `${jira}New MR: ${change.mr.mrName} (${change.mr.mrAuthor})` };
     case 'merged-mr':
-      return { badge: '✓', color: '#bd93f9', text: `Merged: ${change.mr.mrName}` };
+      return { badge: '✓ ', color: '#bd93f9', text: `${jira}Merged: ${change.mr.mrName}` };
     case 'closed-mr':
-      return { badge: '✗', color: '#ff5555', text: `Closed: ${change.mr.mrName}` };
+      return { badge: '✗', color: '#ff5555', text: `${jira}Closed: ${change.mr.mrName}` };
     case 'reopened-mr':
-      return { badge: '↻', color: '#ffb86c', text: `Reopened: ${change.mr.mrName}` };
+      return { badge: '↻', color: '#ffb86c', text: `${jira}Reopened: ${change.mr.mrName}` };
     case 'system-note':
-      return { badge: '⚙', color: '#6272a4', text: `${change.author}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
+      return { badge: '⚙ ', color: '#6272a4', text: `${jira}${change.author}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
+    case 'system-notes-compacted':
+      const author = change.authors[0];
+      switch (change.systemNoteType) {
+        case 'commits-added':
+          return {
+            badge: '⚙ ',
+            color: '#6272a4',
+            text: `${jira}${author}: added ${change.count} commits`
+          };
+        case 'approved':
+          return {
+            badge: '⚙ ',
+            color: '#6272a4',
+            text: `${jira}${author}: approved this merge request ${change.count} times`
+          };
+        case 'mentioned-in-mr':
+          return {
+            badge: '⚙ ',
+            color: '#6272a4',
+            text: `${jira}${author}: mentioned in ${change.count} merge requests`
+          };
+        default:
+          return {
+            badge: '⚙ ',
+            color: '#6272a4',
+            text: `${jira}${author}: ${change.count} system notes`
+          };
+      }
     case 'diff-comment':
       const lineInfo = change.line ? `:${change.line}` : '';
       const fileName = change.filePath.split('/').pop() ?? change.filePath;
-      return { badge: '📝', color: '#8be9fd', text: `${change.author} on ${fileName}${lineInfo}` };
+      return { badge: '📝', color: '#8be9fd', text: `${jira}${change.author} on ${fileName}${lineInfo}` };
     case 'discussion-comment':
-      return { badge: '💬', color: '#ffb86c', text: `${change.author} commented on ${change.mr.mrName}` };
+      return { badge: '💬', color: '#ffb86c', text: `${jira}${change.author} commented on ${change.mr.mrName}` };
     case 'new-jira-issue':
-      return { badge: '🧩', color: '#50fa7b', text: `New Jira: ${change.issue.issueKey} - ${change.issue.summary}` };
+      return { badge: '🧩', color: '#50fa7b', text: `${jira}New Jira: ${change.issue.summary}` };
     case 'jira-status-changed':
-      return { badge: '🔄', color: '#bd93f9', text: `Jira ${change.issue.issueKey}: ${change.fromStatus ? `${change.fromStatus} → ` : ''}${change.toStatus}` };
+      return { badge: '🔄', color: '#bd93f9', text: `${jira}${change.fromStatus ? `${change.fromStatus} → ` : ''}${change.toStatus}` };
     case 'jira-comment':
-      return { badge: '💬', color: '#8be9fd', text: `${change.author} commented on ${change.issue.issueKey}` };
+      return { badge: '💬', color: '#8be9fd', text: `${jira}${change.author} commented` };
     default:
       const _: never = change;
       throw new Error("unreachable")
@@ -86,366 +121,265 @@ function getNoteIdFromChange(change: Change): string | undefined {
   }
 }
 
-interface MrSuggestion {
-  mrName: string;
-  author: string;
-  state: string;
-  suggestedSelection: UserSelectionEntry | null;
-}
+export const sublistFocusedAtom = Atom.make(false);
+export const sublistIndexAtom = Atom.make(0);
+export const highlightedIndexAtom = Atom.make<number | null>(null);
 
-function getUsernamesFromSelection(
-  entry: UserSelectionEntry,
-  groups: readonly UserGroup[]
-): Set<string> {
-  const usernames = new Set<string>();
+  const emptyChange: Change[] = [];
 
-  const processId = (id: UserOrGroupId) => {
-    if (id.type === 'userId') {
-      usernames.add(id.id);
-    } else if (id.type === 'groupId') {
-      const group = groups.find(g => g.id.id === id.id);
-      if (group) {
-        group.children.forEach(processId);
-      }
-    }
-  };
+export const currentEventChangesAtom = Atom.readable<Change[]>(get => {
+  const allEvents = resultToArray(get(allEventsIncludingCompactedAtom));
+  const highlightedIndex = get(highlightedIndexAtom);
 
-  entry.selection.forEach(processId);
-  return usernames;
-}
+  const currentEventIndex = highlightedIndex ?? allEvents.length - 1;
+  const currentEvent = allEvents[currentEventIndex];
 
-function findSelectionForAuthor(
-  author: string,
-  userSelections: readonly UserSelectionEntry[],
-  groups: readonly UserGroup[]
-): UserSelectionEntry | null {
-  for (const entry of userSelections) {
-    const usernames = getUsernamesFromSelection(entry, groups);
-    if (usernames.has(author)) {
-      return entry;
-    }
-  }
-  return null;
-}
-
-export default function FactsPane() {
-  const [activePane, setActivePane] = useAtom(activePaneAtom);
-  const allEvents = resultToArray(useAtomValue(allEventsIncludingCompactedAtom));
-  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
-  const [compactionMessage, setCompactionMessage] = useState<string | null>(null);
-  const [sublistFocused, setSublistFocused] = useState(false);
-  const [sublistIndex, setSublistIndex] = useState(0);
-  const [suggestion, setSuggestion] = useState<MrSuggestion | null>(null);
-  const compactState = useAtomSet(compactAllEventsAtom, { mode: 'promise' });
-  const allMrsResult = useAtomValue(allMrsAtom);
-  const [, setSelectedMrIndex] = useAtom(selectedMrIndexAtom);
-  const filteredMrs = useAtomValue(unwrappedMergeRequestsAtom);
-  const userSelections = useAtomValue(userSelectionsAtom);
-  const groups = useAtomValue(groupsAtom);
-  const setSelectedUserSelectionEntryId = useAtomSet(selectedUserSelectionEntryIdAtom);
-  const setFilterMrState = useAtomSet(filterMrStateAtom);
-  const setInfoPaneTab = useAtomSet(infoPaneTabAtom);
-  const setTargetNoteId = useAtomSet(targetNoteIdAtom);
-  const { scroll: scrollToDiscussion } = useDiscussionScroll();
-  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
-  const setSelectedJiraIndex = useAtomSet(selectedJiraIndexAtom);
-  const setSelectedJiraSubIndex = useAtomSet(selectedJiraSubIndexAtom);
-  const { scroll: scrollJira } = useJiraScroll();
-  const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
-  const now = useAtomValue(nowAtom);
-
-  const lastCompactionIndex = allEvents.findLastIndex(
-    event => event.type === 'compacted-event'
-  );
-
-  const emptySummary: Change[] = [];
-
-  const events = allEvents;
-  const isActive = activePane === ActivePane.Facts;
-  const allMrsState = useMemo(() =>
-    Result.match(allMrsResult, {
-      onInitial: () => null,
-      onFailure: () => null,
-      onSuccess: (state) => state.value
-    }), [allMrsResult]);
-
-  // Get current event's changes for sublist navigation
-  const eventChangesReadmodel = useAtomValue(eventChangesReadmodelAtom);
-  const emptyDeltasByEventId = useMemo(() => new Map<string, Change[]>(), []);
+  const eventChangesReadmodel = get(eventChangesReadmodelAtom);
+  const emptyDeltasByEventId = new Map<string, Change[]>();
   const deltasByEventId = eventChangesReadmodel.pipe(
     Result.map(v => v.deltasByEventId),
     Result.getOrElse(() => emptyDeltasByEventId)
   );
 
-  const getDeltaOrDefault = (ev: LazyReviewerEvent | undefined) =>
-    deltasByEventId.get(ev?.eventId ?? "") ?? emptySummary;
+  const getDeltas = (ev: LazyReviewerEvent | undefined) => {
+    const rawDeltas = (deltasByEventId.get(ev?.eventId ?? "") ?? emptyChange)
+      .filter(c => !isFilteredSystemNote(c));
+    return groupChanges(rawDeltas).reverse();
+  };
 
-  const currentEventIndex = highlightedIndex ?? events.length - 1;
-  const currentEvent = events[currentEventIndex];
-  // Extract the specific deltas for the current event
-  const currentEventDeltas = currentEvent ? deltasByEventId.get(currentEvent.eventId) : undefined;
-  const currentSummary = useMemo(
-    () => getDeltaOrDefault(currentEvent),
-    [currentEvent, currentEventDeltas]
+  return getDeltas(currentEvent);
+});
+
+// Event group for navigation
+export interface EventGroup {
+  type: 'single' | 'range';
+  startIndex: number;
+  endIndex: number;
+  event: LazyReviewerEvent;
+}
+
+export const scrollToEventIdRequestAtom = Atom.make<string | null>(null);
+
+export const compactionMessageAtom = Atom.make<string | null>(null);
+
+export const displayEventsAtom = Atom.readable((get) => {
+});
+
+const deltasByEventIdAtom = Atom.readable((get) => {
+  const eventChangesReadmodel = get(eventChangesReadmodelAtom);
+  const emptyDeltasByEventId = new Map<string, Change[]>();
+
+  return eventChangesReadmodel.pipe(
+    Result.map(v => v.deltasByEventId),
+    Result.getOrElse(() => emptyDeltasByEventId)
   );
+});
 
-  // We want to display newest events at the top.
-  const displayEvents = useMemo(() => {
-    return [...events].reverse().slice(0, 100);
-  }, [events]);
+type ClassifiedEvent = {
+  event: LazyReviewerEvent;
+  originalIndex: number;
+  grouping: 'single' | 'range';
+};
 
-  // Group consecutive events without summaries into ranges
-  interface EventGroup {
-    type: 'single' | 'range';
-    startIndex: number;
-    endIndex: number;
-    event: typeof events[0];
-  }
-
-  // Use a ref to avoid re-renders on every Map reference change
-  // Only recalculate when the Map size changes (new entries added)
-  const deltasByEventIdRef = useRef(deltasByEventId);
-  deltasByEventIdRef.current = deltasByEventId;
-  const deltasByEventIdSize = deltasByEventId.size;
-
-  const groupedEvents: EventGroup[] = useMemo(() => {
-    const deltas = deltasByEventIdRef.current;
-    const grouped: EventGroup[] = [];
-    for (let i = 0; i < displayEvents.length; i++) {
-      const reversedIndex = i;
-      const originalIndex = events.length - 1 - reversedIndex;
-      const event = displayEvents[i];
-      if (!event) continue;
-
-      const summary = getDeltaOrDefault(event);
-      const hasSummary = summary.length > 0;
-
-      if (!hasSummary) {
-        // Check if we can extend the last range
-        const lastGroup = grouped[grouped.length - 1];
-        if (lastGroup && lastGroup.type === 'range' && lastGroup.startIndex === originalIndex + 1) {
-          lastGroup.startIndex = originalIndex;
-        } else if (lastGroup && lastGroup.type === 'single' && lastGroup.startIndex === originalIndex + 1) {
-          // Check if the last single event also has no summary
-          const lastSummary = getDeltaOrDefault(lastGroup.event);
-          const lastHasSummary = lastSummary.length > 0;
-
-          if (!lastHasSummary) {
-            // Convert single to range
-            lastGroup.type = 'range';
-            lastGroup.startIndex = originalIndex;
-          } else {
-            grouped.push({ type: 'single', startIndex: originalIndex, endIndex: originalIndex, event });
-          }
-        } else {
-          grouped.push({ type: 'single', startIndex: originalIndex, endIndex: originalIndex, event });
-        }
-      } else {
-        grouped.push({ type: 'single', startIndex: originalIndex, endIndex: originalIndex, event });
-      }
+const groupClassifiedEvents = (events: ClassifiedEvent[]): EventGroup[] =>
+  events.reduce<EventGroup[]>((groups, { event, originalIndex, grouping }) => {
+    // Singles always start a new group
+    if (grouping === 'single') {
+      return [...groups, { type: 'single', startIndex: originalIndex, endIndex: originalIndex, event }];
     }
-    return grouped;
-  }, [displayEvents, events.length, allMrsState, deltasByEventIdSize]);
 
-  // Helper to select MR and show suggestion if not in filtered list
-  // If noteId is provided, also navigate to the specified tab and select that note
-  const selectMrById = (mrId: string, mrName: string, noteId?: string, navigateTo?: 'overview' | 'activity') => {
-    const mrIndex = filteredMrs.findIndex(mr => mr.id === mrId);
-    if (mrIndex >= 0) {
-      setSelectedMrIndex(mrIndex);
-      setSuggestion(null);
+    // Range: check if we can continue the previous group
+    const lastGroup = groups[groups.length - 1];
+    const canContinue = lastGroup?.type === 'range' && lastGroup.startIndex === originalIndex + 1;
 
-      // If a specific note is requested, navigate to the appropriate tab
-      if (noteId && navigateTo) {
-        setInfoPaneTab(navigateTo);
-        if (navigateTo === 'overview') {
-          // Use the scroll service - it will wait for the handler if needed
-          void scrollToDiscussion(noteId);
-        } else {
-          setTargetNoteId(noteId);
-        }
+    if (canContinue) {
+      return [...groups.slice(0, -1), { ...lastGroup, startIndex: originalIndex }];
+    }
+
+    // Start a new range group
+    return [...groups, { type: 'range', startIndex: originalIndex, endIndex: originalIndex, event }];
+  }, []);
+
+export const groupedEventsAtom = Atom.readable<EventGroup[]>((get) => {
+  const allEvents = resultToArray(get(allEventsIncludingCompactedAtom));
+  const deltasByEventId = get(deltasByEventIdAtom);
+  const displayEvents = [...allEvents].reverse().slice(0, 50);
+
+  const hasVisibleDeltas = (ev: LazyReviewerEvent): boolean => {
+    const rawDeltas = deltasByEventId.get(ev.eventId) ?? emptyChange;
+    return groupChanges(rawDeltas.filter(c => !isFilteredSystemNote(c))).length > 0;
+  };
+
+  const firstWithChanges = displayEvents.findIndex(ev => ev && hasVisibleDeltas(ev));
+
+  // Step 1: Classify each event as 'single' or 'range'
+  const classified: ClassifiedEvent[] = displayEvents
+    .map((event, displayIndex) => {
+      if (!event) return null;
+      const originalIndex = allEvents.length - 1 - displayIndex;
+      const canBeRanged = firstWithChanges >= 0 && displayIndex >= firstWithChanges && !hasVisibleDeltas(event);
+      return { event, originalIndex, grouping: canBeRanged ? 'range' as const : 'single' as const };
+    })
+    .filter((e): e is ClassifiedEvent => e !== null);
+
+  // Step 2: Reduce consecutive 'range' events into groups
+  const grouped = groupClassifiedEvents(classified);
+
+  return grouped;
+});
+
+export const selectMrForChangeAtom = Atom.fnSync((change: Change, get) => {
+  const selectMrAndNavigate = (mrId: string, noteId?: string, navigateTo?: 'overview' | 'activity') => {
+    get.registry.set(selectMrByIdAtom, { mrId });
+
+    if (noteId && navigateTo) {
+      get.registry.set(infoPaneTabAtom, navigateTo);
+      if (navigateTo === 'activity') {
+        get.registry.set(targetNoteIdAtom, noteId);
       }
-    } else {
-      // MR not in filtered list - show suggestion with author and state
-      const mr = allMrsState?.mrsByGid.get(mrId);
-      if (mr) {
-        const suggestedSelection = findSelectionForAuthor(mr.author, userSelections, groups);
-        setSuggestion({ mrName, author: mr.author, state: mr.state, suggestedSelection });
-      }
+      // TODOR: handle 'overview' case with scrollToDiscussion
     }
   };
 
-  const selectMrForChange = (change: Change) => {
-    if (isMrChange(change)) {
-      const noteId = getNoteIdFromChange(change);
-      // For discussion comments, navigate to overview tab to show in unresolved discussions
-      // For system notes, navigate to activity tab
-      const navigateTo: 'overview' | 'activity' | undefined =
-        change.type === 'diff-comment' || change.type === 'discussion-comment'
-          ? 'overview'
-          : change.type === 'system-note'
-            ? 'activity'
-            : undefined;
-      selectMrById(change.mr.mrId, change.mr.mrName, noteId, navigateTo);
+  if (isMrChange(change)) {
+    // Handle compacted changes - navigate to the MR, but don't try to navigate to specific note
+    if (change.type === 'system-notes-compacted') {
+      get.registry.set(selectMrByIdAtom, { mrId: change.mr.mrId });
       return;
     }
 
-    if (change.type === 'jira-comment' || change.type === 'jira-status-changed' || change.type === 'new-jira-issue') {
-      const issueKey = change.issue.issueKey;
-      const inFiltered = filteredMrs.find(mr => mr.jiraIssueKeys?.includes(issueKey));
-      const fromAll = inFiltered
-        ? inFiltered
-        : allMrsState
-          ? Array.from(allMrsState.mrsByGid.values()).find(mr => mr.jiraIssueKeys?.includes(issueKey))
+    const noteId = getNoteIdFromChange(change);
+    const navigateTo: 'overview' | 'activity' | undefined =
+      change.type === 'diff-comment' || change.type === 'discussion-comment'
+        ? 'overview'
+        : change.type === 'system-note'
+          ? 'activity'
           : undefined;
 
-      if (fromAll) {
-        console.log('selecting jira issue', issueKey, change);
-        setInfoPaneTab('jira');
-        selectMrById(fromAll.id, fromAll.title ?? issueKey);
-        const issueIndex = fromAll.jiraIssueKeys.findIndex(k => k === issueKey);
-        setSelectedJiraIndex(issueIndex >= 0 ? issueIndex : 0);
-        setSelectedJiraSubIndex(0);
-        void scrollJira(issueKey, change.type === 'jira-comment' ? change.commentId : undefined);
-      }
+    selectMrAndNavigate(change.mr.mrId, noteId, navigateTo);
+    return;
+  }
+
+  if (change.type === 'jira-comment' || change.type === 'jira-status-changed' || change.type === 'new-jira-issue') {
+    const filteredMrs = get(unwrappedMergeRequestsAtom);
+    const allMrsResult = get(allMrsAtom);
+
+    const allMrsState = Result.match(allMrsResult, {
+      onInitial: () => null,
+      onFailure: () => null,
+      onSuccess: (state) => state.value
+    });
+
+    const issueKey = change.issue.issueKey;
+    const inFiltered = filteredMrs.find(mr => mr.jiraIssueKeys?.includes(issueKey));
+    const fromAll = inFiltered
+      ? inFiltered
+      : allMrsState
+        ? Array.from(allMrsState.mrsByGid.values()).find(mr => mr.jiraIssueKeys?.includes(issueKey))
+        : undefined;
+
+    if (fromAll) {
+      get.registry.set(infoPaneTabAtom, 'jira');
+      selectMrAndNavigate(fromAll.id);
+      const issueIndex = fromAll.jiraIssueKeys.findIndex(k => k === issueKey);
+      get.registry.set(selectedJiraIndexAtom, issueIndex >= 0 ? issueIndex : 0);
+      get.registry.set(selectedJiraSubIndexAtom, 0);
+
+      const { scroll: scrollJira } = useJiraScroll();
+      void scrollJira(issueKey, change.type === 'jira-comment' ? change.commentId : undefined);
     }
+  }
+});
+
+export default function FactsPane() {
+  const [, setActivePane] = useAtom(activePaneAtom);
+  const allEvents = resultToArray(useAtomValue(allEventsIncludingCompactedAtom));
+  const [highlightedIndex, setHighlightedIndex] = useAtom(highlightedIndexAtom);
+  const compactionMessage = useAtomValue(compactionMessageAtom);
+  const [sublistFocused, setSublistFocused] = useAtom(sublistFocusedAtom);
+  const [sublistIndex, setSublistIndex] = useAtom(sublistIndexAtom);
+  const selectMrForChange = useAtomSet(selectMrForChangeAtom);
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+  const [scrollToEventIdRequest, setScrollToEventIdRequest] = useAtom(scrollToEventIdRequestAtom);
+  const groupedEvents = useAtomValue(groupedEventsAtom);
+  const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
+  const now = useAtomValue(nowAtom);
+  const backgroundSyncStatus = useAtomValue(backgroundFetchAtom);
+
+  const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
+
+  const lastCompactionIndex = allEvents.findLastIndex(
+    event => event.type === 'compacted-event'
+  );
+
+  // Handle scroll requests from actions
+  useEffect(() => {
+    if (scrollToEventIdRequest) {
+      scrollToId(scrollToEventIdRequest);
+      setScrollToEventIdRequest(null);
+    }
+  }, [scrollToEventIdRequest, scrollToId, setScrollToEventIdRequest]);
+
+  // Get current event's changes for sublist navigation
+  const eventChangesReadmodel = useAtomValue(eventChangesReadmodelAtom);
+  const deltasByEventId = eventChangesReadmodel.pipe(
+    Result.map(v => v.deltasByEventId),
+    Result.getOrElse(() => new Map<string, Change[]>())
+  );
+
+  const getDeltas = (ev: LazyReviewerEvent | undefined) => {
+    const rawDeltas = (deltasByEventId.get(ev?.eventId ?? "") ?? emptyChange)
+      .filter(c => !isFilteredSystemNote(c));
+    return groupChanges(rawDeltas).reverse();
   };
 
-  useKeyboard(async (key) => {
-    if (!isActive) return;
+  const logoBox = () => {
+    const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {
 
-    if (sublistFocused) {
-      // Sublist navigation - also selects the MR
-      const selectChangeAtIndex = (idx: number) => {
-        const change = currentSummary[idx];
-        if (change) {
-          selectMrForChange(change);
+      const res = Result.match(status, {
+        onInitial: (s) => {
+          return "initial";
+        },
+        onFailure: (f) => {
+          return `onFailure: ${f.cause.toString()}`
+        },
+        onSuccess: (backgroundSyncStatus) => {
+          switch (backgroundSyncStatus.value._tag) {
+            case 'syncDisabled':
+              return "sync disabled";
+            case 'syncPending':
+               return `syncing '${backgroundSyncStatus.value.userSelection.name}' in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
+            case 'syncing':
+               return `refreshing '${backgroundSyncStatus.value.userSelection.name}'...`;
+            case 'syncPerformed':
+               return `refreshed ${backgroundSyncStatus.value}: took ${backgroundSyncStatus.value.duration}`;
+            default:
+              const _: never = backgroundSyncStatus.value;
+          }
         }
-      };
+      })
 
-      if (key.name === 'j' || key.name === 'down') {
-        const newIndex = Math.min(sublistIndex + 1, currentSummary.length - 1);
-        setSublistIndex(newIndex);
-        selectChangeAtIndex(newIndex);
-      } else if (key.name === 'k' || key.name === 'up') {
-        const newIndex = Math.max(sublistIndex - 1, 0);
-        setSublistIndex(newIndex);
-        selectChangeAtIndex(newIndex);
-      } else if (key.name === 'return') {
-        // Enter - activate MR pane
-        setActivePane(ActivePane.MergeRequests);
-      } else if (key.name === 'escape') {
-        setSublistFocused(false);
-        setSublistIndex(0);
-        setSuggestion(null);
-      }
-      return;
+      return (
+        <text fg="#6272a4" wrapMode="none">
+          {res}
+        </text>
+      );
     }
 
-    // Event list navigation - navigate by groups, not individual events
-    if (key.name === 'j' || key.name === 'down') {
-        setSuggestion(null);
-        const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
-        const currentGroupIndex = groupedEvents.findIndex(g =>
-            current >= g.startIndex && current <= g.endIndex
-        );
-        // Move to the next group (earlier in time, lower index)
-        if (currentGroupIndex >= groupedEvents.length - 1) {
-            // Already at the last group, don't move
-            return;
-        } else if (currentGroupIndex < 0) {
-            // Fallback - shouldn't normally happen
-            setHighlightedIndex(Math.max(current - 1, 0));
-        } else {
-            const nextGroup = groupedEvents[currentGroupIndex + 1];
-            const newIndex = nextGroup ? nextGroup.endIndex : 0;
-            const newGroupIndex = currentGroupIndex + 1;
-            setHighlightedIndex(newIndex);
-            if (nextGroup) {
-                scrollToId(nextGroup.event.eventId);
-            }
+    return (
+      <box key="logo-box" width="100%" height={6} flexDirection="column" style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#282a36' }}>
+        <text fg="#44475a" wrapMode="none">{'╭─────────────────────╮'}</text>
+        <text fg="#44475a" wrapMode="none">{'│    LazyGitLab 🦊    │'}</text>
+        <text fg="#44475a" wrapMode="none">{'╰─────────────────────╯'}</text>
+        {isLoading
+          ? (
+              <text fg="#8be9fd" wrapMode="none">
+                  refreshing...
+              </text>)
+          : autoRefreshDisplay(backgroundSyncStatus)
         }
-    } else if (key.name === 'k' || key.name === 'up') {
-        setSuggestion(null);
-        const current = highlightedIndex === null ? events.length - 1 : highlightedIndex;
-        const currentGroupIndex = groupedEvents.findIndex(g =>
-            current >= g.startIndex && current <= g.endIndex
-        );
-        // Move to the previous group (later in time, higher index)
-        if (currentGroupIndex <= 0) {
-            setHighlightedIndex(null);
-            const firstGroup = groupedEvents[0];
-            if (firstGroup) {
-                scrollToId(firstGroup.event.eventId);
-            }
-        } else {
-            const newGroupIndex = currentGroupIndex - 1;
-            const prevGroup = groupedEvents[newGroupIndex];
-            const newIndex = prevGroup ? prevGroup.startIndex : events.length - 1;
-            setHighlightedIndex(newIndex);
-            if (prevGroup) {
-                scrollToId(prevGroup.event.eventId);
-            }
-        }
-    } else if (key.name === 'return') {
-        // Enter - focus on sublist if there are changes
-        if (currentSummary.length > 0) {
-            setSublistFocused(true);
-            setSublistIndex(0);
-            // Select first change's MR
-            const change = currentSummary[0];
-            if (change) {
-              selectMrForChange(change);
-            }
-        }
-    } else if (key.name === 'g' && !key.shift) {
-      // nothing
-    } else if (key.name === 'escape') {
-        setHighlightedIndex(null);
-        setSuggestion(null);
-    } else if (key.name === 'g' && key.shift) {
-        // G - bottom (visually) -> Oldest group
-        setSuggestion(null);
-        const lastGroupIndex = groupedEvents.length - 1;
-        const oldestGroup = groupedEvents[lastGroupIndex];
-        setHighlightedIndex(oldestGroup ? oldestGroup.startIndex : 0);
-        if (oldestGroup) {
-            scrollToId(oldestGroup.event.eventId);
-        }
-    } else if (key.name === 'c') {
-        setCompactionMessage('Compacting...');
-        try {
-            const result = await compactState();
-            setCompactionMessage(result.message);
-            setTimeout(() => setCompactionMessage(null), 3000);
-        } catch (error) {
-            setCompactionMessage(`Compaction failed: ${error}`);
-            setTimeout(() => setCompactionMessage(null), 3000);
-        }
-    } else if (key.name === 'e') {
-        const eventIndex = highlightedIndex ?? events.length - 1;
-        setCompactionMessage('Opening event in editor...');
-        try {
-            const filePath = await Effect.runPromise(
-              EventStorage.getEventFilePath(eventIndex).pipe(
-                Effect.provide(appLayer)
-              )
-            );
-
-            await Effect.runPromise(
-              openFileInEditor(filePath).pipe(
-                Effect.provide(appLayer)
-              )
-            );
-
-            setCompactionMessage(`Opened: ${filePath}`);
-            setTimeout(() => setCompactionMessage(null), 3000);
-        } catch (error) {
-            setCompactionMessage(`Failed to open: ${error}`);
-            setTimeout(() => setCompactionMessage(null), 3000);
-        }
-    }
-  });
+      </box>);
+  }
 
   return (
     <box
@@ -454,7 +388,7 @@ export default function FactsPane() {
       width="100%"
       onMouseDown={() => setActivePane(ActivePane.Facts)}
     >
-        {/* Suggestion box - reserved space to prevent list jumping */}
+        {/* Logo box - reserved space to prevent list jumping */}
         <box
             width="100%"
             height={6}
@@ -463,59 +397,7 @@ export default function FactsPane() {
                 marginBottom: 1,
             }}
         >
-            {suggestion ? (
-                <box
-                    key="suggestion-box"
-                    width="100%"
-                    flexDirection="column"
-                    style={{
-                        border: true,
-                        borderColor: '#ffb86c',
-                    }}
-                >
-                    <box height={1} width="100%" flexDirection="row">
-                        <text fg="#ffb86c" wrapMode="none">
-                            {' ⚠ MR not in view'}
-                        </text>
-                    </box>
-                    <box height={1} width="100%" flexDirection="row">
-                        <text fg="#f8f8f2" wrapMode="none">
-                            {` Author: ${suggestion.author}, State: ${suggestion.state}`}
-                        </text>
-                    </box>
-                    {suggestion.suggestedSelection ? (
-                        <box
-                            height={1}
-                            width="100%"
-                            flexDirection="row"
-                            onMouseDown={() => {
-                                if (suggestion.suggestedSelection) {
-                                    setSelectedUserSelectionEntryId(suggestion.suggestedSelection.userSelectionEntryId);
-                                    setFilterMrState(suggestion.state as MergeRequestState);
-                                    setSuggestion(null);
-                                }
-                            }}
-                        >
-                            <text fg="#282a36" bg="#50fa7b" wrapMode="none">
-                                {` Switch to "${suggestion.suggestedSelection.name}" (${suggestion.state}) `}
-                            </text>
-                        </box>
-                    ) : (
-                        <box height={1} width="100%" flexDirection="row">
-                            <text fg="#6272a4" wrapMode="none">
-                                {' (no matching selection found)'}
-                            </text>
-                        </box>
-                    )}
-                </box>
-            ) : (
-                <box key="logo-box" width="100%" height={6} flexDirection="column" style={{ justifyContent: 'center', backgroundColor: '#282a36' }}>
-                    <text fg="#44475a" wrapMode="none">{'  ╭─────────────────────╮'}</text>
-                    <text fg="#44475a" wrapMode="none">{'  │    LazyGitLab 🦊    │'}</text>
-                    <text fg="#44475a" wrapMode="none">{'  │     Event Log       │'}</text>
-                    <text fg="#44475a" wrapMode="none">{'  ╰─────────────────────╯'}</text>
-                </box>
-            )}
+            {logoBox()}
         </box>
         {compactionMessage && (
             <box height={1} width="100%" flexDirection="row">
@@ -547,11 +429,11 @@ export default function FactsPane() {
                 const isCompacted = lastCompactionIndex >= 0 && group.startIndex < lastCompactionIndex;
 
                 // Check if this range is highlighted or selected
-                const currentHighlight = highlightedIndex === null ? events.length - 1 : highlightedIndex;
+                const currentHighlight = highlightedIndex === null ? allEvents.length - 1 : highlightedIndex;
                 const isHighlighted = currentHighlight >= group.startIndex && currentHighlight <= group.endIndex;
                 const isSelected = false; // currentSelection >= group.startIndex && currentSelection <= group.endIndex;
 
-                let color = isCompacted ? '#e1cd39ff' : '#44475a';
+                let color = isCompacted ? '#e1cd39ff' : '#c8c9caff';
                 let backgroundColor: string | undefined = undefined;
 
                 if (isSelected && isHighlighted) {
@@ -567,7 +449,6 @@ export default function FactsPane() {
                 const handleRangeClick = () => {
                     setHighlightedIndex(group.startIndex);
                     setSublistFocused(false);
-                    setSuggestion(null);
                 };
 
                 return (
@@ -590,7 +471,7 @@ export default function FactsPane() {
             // Render single event normally
             const originalIndex = group.startIndex;
             const event = group.event;
-            const isHighlighted = highlightedIndex === originalIndex || (highlightedIndex === null && originalIndex === events.length - 1);
+            const isHighlighted = highlightedIndex === originalIndex || (highlightedIndex === null && originalIndex === allEvents.length - 1);
             const isSelected = false; // selectedIndex === originalIndex || (selectedIndex === null && originalIndex === events.length - 1);
             const isCompacted = lastCompactionIndex >= 0 && originalIndex < lastCompactionIndex;
             const isCompactionEvent = event.type === 'compacted-event';
@@ -614,9 +495,9 @@ export default function FactsPane() {
                 backgroundColor = '#3a3d4e';
             }
 
-            const displayIndex = originalIndex.toString(); //.padEnd(4, ' ');
-            const summary = getDeltaOrDefault(event);
-            const hasSummary = summary.length > 0;
+            const displayIndex = ' ' + originalIndex.toString().padEnd(4, ' ');
+            const eventDeltas = getDeltas(event);
+            const hasEventDeltas = eventDeltas.length > 0;
 
             const handleEventClick = () => {
                 const now = Date.now();
@@ -625,25 +506,26 @@ export default function FactsPane() {
 
                 lastClickRef.current = { eventId: event.eventId, time: now };
 
-                if (isDoubleClick && summary.length > 0) {
+                if (isDoubleClick && eventDeltas.length > 0) {
                     // Double-click: focus on sublist (like pressing Enter)
                     setHighlightedIndex(originalIndex);
                     setSublistFocused(true);
                     setSublistIndex(0);
-                    const change = summary[0];
+                    const change = eventDeltas[0];
                     if (change) {
-                        selectMrForChange(change);
+                      // TODOR:
+                        // selectMrForChange(change);
                     }
                 } else {
                     // Single click: just highlight
                     setHighlightedIndex(originalIndex);
                     setSublistFocused(false);
-                    const change = summary[0];
+                    const change = eventDeltas[0];
                     if (change) {
-                        selectMrForChange(change);
+                      //TODOR:
+                        // selectMrForChange(change);
                     } else {
-                        setSuggestion(null);
-                    }
+                        }
                 }
             };
 
@@ -651,6 +533,7 @@ export default function FactsPane() {
                 setHighlightedIndex(originalIndex);
                 setSublistFocused(true);
                 setSublistIndex(i);
+
                 selectMrForChange(change);
             };
             const formatRelativeTime = (date: Date) => {
@@ -673,13 +556,13 @@ export default function FactsPane() {
                 <box key={group.event.eventId} id={group.event.eventId} flexDirection="column" width="100%">
                     <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
                         <text fg={color} bg={backgroundColor} wrapMode="word">
-                            {' '}{displayIndex}
+                            {displayIndex}
                         </text>
                         <text fg={color} bg={backgroundColor} wrapMode="word">
-                            {` > ${event.type}`}
+                            {`>> ${event.type}`}
                         </text>
                     </box>
-                    {!hasSummary && (
+                    {!hasEventDeltas && (
                         <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
                             <text fg="#44475a" bg="#1e1f29">
                                 {'      —'}
@@ -687,20 +570,21 @@ export default function FactsPane() {
                             <box flexGrow={1} height={1} style={{ backgroundColor: '#1e1f29' }} />
                         </box>
                     )}
-                    {summary.map((change, i) => {
+                    {eventDeltas.map((change, i) => {
                         const isSelected = isHighlighted && sublistFocused && i === sublistIndex;
                         const { badge, color: changeColor, text } = getChangeDescription(change);
 
                         const formattedDate = change.changedAt
                           ? formatRelativeTime(change.changedAt).padEnd(3, ' ')
                           : '?  ';
+                        const dateColor = change.changedAt ? getAgeColor(change.changedAt, now) : Colors.SECONDARY;
 
                         return (
                             <box key={i} height={1} width="100%" flexDirection='row' onMouseDown={() => handleChangeClick(i, change)}>
                                 <box width={4} flexShrink={0} height={1}>
                                     <text
                                         wrapMode='none'
-                                        fg={Colors.PRIMARY}
+                                        fg={dateColor}
                                         bg={isSelected ? '#44475a' : '#1e1f29'}
                                         style={{attributes: TextAttributes.DIM}}
                                     >

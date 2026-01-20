@@ -1,14 +1,14 @@
-import { Effect, Data } from "effect"
+import { Effect, Data, Console } from "effect"
 import type { PlatformError } from "@effect/platform/Error"
 import type { ParseError } from "effect/ParseResult"
-import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
+import type { MergeRequest, MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import { EventStorage } from "../events/events"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
-import type { SearchJiraIssuesError } from "../jira/jira-service"
+import type { JiraApiError } from "../jira/jira-common"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
-import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent } from "../gitlab/gitlab-graphql"
+import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getSingleMrAsEvent } from "../gitlab/gitlab-graphql"
 import { loadJiraTicketsAsEvent } from "../jira/jira-service"
-import { projectGitlabProjectMrsFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
+import { projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
 import { OpenMrsTrackingState } from "./mr-diff-tracking"
 
 export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
@@ -27,7 +27,7 @@ export type MergeRequestsCacheError =
   | string
   | FetchGitlabMrsError
   | FetchGitlabProjectMrsError
-  | SearchJiraIssuesError
+  | JiraApiError
   | BitbucketCredentialsNotConfiguredError
   | FetchBitbucketPrsError
   | BitbucketPrsJsonParseError
@@ -79,3 +79,10 @@ export const decideFetchProjectMrs = (
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
   yield* EventStorage.appendEvent(jiraEvent)
 })
+
+export const decideFetchSingleMr = Effect.fn(function* (projectFullPath: string, mrIid) {
+  const mrEvent = yield* getSingleMrAsEvent(projectFullPath, mrIid);
+  yield* EventStorage.appendEvent(mrEvent);
+  const gitlabMr = projectGitlabSingleMrFetchedEvent(mrEvent);
+  return gitlabMr;
+});

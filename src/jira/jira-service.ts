@@ -1,7 +1,5 @@
-import { Data, Effect, Console, Schema } from "effect";
+import { Effect, Console, Schema } from "effect";
 import {
-  JiraStatusNameSchema,
-  JiraCommentSchema,
   JiraIssueSchema,
   JiraSearchResponseSchema,
   type JiraStatusName,
@@ -10,8 +8,8 @@ import {
   type JiraSearchResponse
 } from "./jira-schema";
 import type { JiraIssuesFetchedEvent } from "../events/jira-events";
-import { EventStorage, type LazyReviewerEvent } from "../events/events";
 import { generateEventId } from "../events/event-id";
+import { JiraApiError, getAuthToken, getJiraBaseUrl, JIRA_ISSUE_FIELDS } from "./jira-common";
 
 export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
 
@@ -85,72 +83,53 @@ export const extractTextFromJiraComment = (comment: JiraComment): string => {
   }
 };
 
-export class SearchJiraIssuesError extends Data.TaggedError("SearchJiraIssuesError")<{
-  cause: unknown;
-  data?: string
-}> { }
+const searchIssues = Effect.fn("searchIssues")(function* (jql: string, maxResults: number = 100) {
+  const baseUrl = getJiraBaseUrl();
+  const authToken = getAuthToken();
 
-const searchIssues = Effect.fn("searchIssues")(function* (baseUrl: string, apiToken: string, jql: string, maxResults: number = 100) {
-  // documentation: https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/#api-rest-api-3-search-jql-post
   const response = yield* Effect.tryPromise({
     try: () => fetch(
       `${baseUrl}/rest/api/3/search/jql`,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${apiToken}`,
+          'Authorization': `Basic ${authToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           jql,
           maxResults,
-          fields: [
-            'summary',
-            'parent',
-            'status',
-            'assignee',
-            'priority',
-            'issuetype',
-            'created',
-            'updated',
-            'comment',
-            'parent.issuetype'
-          ],
+          fields: [...JIRA_ISSUE_FIELDS, 'parent.issuetype'],
         })
       }),
-    catch: cause => new SearchJiraIssuesError({ cause })
+    catch: cause => new JiraApiError({ cause, message: "Failed to search issues" })
   });
 
   if (!response.ok) {
     const errorText = yield* Effect.tryPromise({
       try: () => response.text(),
-      catch: cause => new SearchJiraIssuesError({ cause })
+      catch: cause => new JiraApiError({ cause, message: "Failed to read error response" })
     });
     yield* Console.error("Jira API error response:", errorText);
-    throw new Error(`Jira API error: ${response.status} ${response.statusText} - ${errorText}`);
+    throw new JiraApiError({ cause: errorText, message: `Jira API error: ${response.status}` });
   }
 
   const jsonData = yield* Effect.tryPromise({
     try: () => response.json(),
-    catch: cause => new SearchJiraIssuesError({ cause })
+    catch: cause => new JiraApiError({ cause, message: "Failed to parse response" })
   });
 
   return yield* Effect.tryPromise({
     try: () => Schema.decodeUnknownPromise(JiraSearchResponseSchema)(jsonData),
-    catch: cause => new SearchJiraIssuesError({ cause, data: jsonData })
+    catch: cause => new JiraApiError({ cause, message: "Failed to decode response" })
   });
 })
-
-export class FetchJiraTicketsFailedError extends Data.TaggedError("Error1")<{
-  cause: unknown;
-}> { }
 
 export const loadJiraTickets = Effect.fn(function* (ticketKeys: string[]) {
   const event = yield* loadJiraTicketsAsEvent(ticketKeys);
   return projectJiraIssuesFetchedEvent(event);
 })
 
-// Event-returning wrapper function
 export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[]) {
   if (ticketKeys.length === 0) {
     const emptyResponse: JiraSearchResponse = {
@@ -163,7 +142,7 @@ export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[])
     const event: JiraIssuesFetchedEvent = {
       eventId: generateEventId(timestamp, type),
       type,
-      searchResponse: emptyResponse,
+      // searchResponse: emptyResponse,
       issues: emptyResponse,
       forTicketKeys: ticketKeys,
       timestamp
@@ -171,54 +150,35 @@ export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[])
     return event;
   }
 
-  let authToken: string;
-
-  if (process.env.JIRA_EMAIL && process.env.JIRA_API_TOKEN) {
-    const credentials = `${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`;
-    authToken = Buffer.from(credentials).toString('base64');
-  } else if (process.env.JIRA_API_TOKEN_BASE64) {
-    authToken = process.env.JIRA_API_TOKEN_BASE64;
-  } else {
-    throw new Error("Jira credentials not configured. Set JIRA_EMAIL and JIRA_API_TOKEN in .env");
-  }
-
-  const result = yield* searchIssues(
-    'https://scisure.atlassian.net',
-    authToken,
-    `issuekey in (${ticketKeys.join(',')})`);
+  const result = yield* searchIssues(`issuekey in (${ticketKeys.join(',')})`);
 
   const processedIssues = result.issues.map(issue => {
-    if (issue.fields.comment?.comments) {
-      const sortedComments = issue.fields.comment.comments
-        .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
-        .slice(0, 10);
+    // if (issue.fields.comment?.comments) {
+    //   const sortedComments = issue.fields.comment.comments
+    //     .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
+    //     .slice(0, 10);
 
-      return {
-        ...issue,
-        fields: {
-          ...issue.fields,
-          comment: {
-            ...issue.fields.comment,
-            comments: sortedComments
-          }
-        }
-      };
-    }
+    //   return {
+    //     ...issue,
+    //     fields: {
+    //       ...issue.fields,
+    //       comment: {
+    //         ...issue.fields.comment,
+    //         comments: sortedComments
+    //       }
+    //     }
+    //   };
+    // }
     return issue;
   });
 
-  const processedResponse: JiraSearchResponse = {
-    ...result,
-    issues: processedIssues
-  };
 
   const timestamp = new Date().toISOString();
   const type = 'jira-issues-fetched-event' as const;
   const event: JiraIssuesFetchedEvent = {
     eventId: generateEventId(timestamp, type),
     type,
-    searchResponse: result,
-    issues: processedResponse,
+    issues: result,
     forTicketKeys: ticketKeys,
     timestamp
   };

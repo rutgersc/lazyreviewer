@@ -1,0 +1,16 @@
+query GitlabMRs($projectPath: ID!, $iids: [String!]) {
+  project(fullPath: $projectPath) {
+    id
+    name
+    path
+    fullPath
+    mergeRequests(iids: $iids) {
+      nodes {
+        ...MergeRequestFields
+      }
+      pageInfo {
+        hasNextPage
+      }
+    }
+  }
+}

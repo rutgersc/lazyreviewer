@@ -1,31 +1,15 @@
-import type { LazyReviewerEvent } from '../events/events'
-import type {
-  GitlabUserMergeRequestsFetchedEvent,
-  GitlabprojectMergeRequestsFetchedEvent,
-  GitlabSingleMrFetchedEvent
-} from '../events/gitlab-events'
 import type { CompactedEvent } from '../events/event-compaction-events'
 import {
   projectGitlabUserMrsFetchedEvent,
   projectGitlabProjectMrsFetchedEvent,
   projectGitlabSingleMrFetchedEvent,
-  mapMrFragment
+  mapMrFragment,
+  projectGitlabMrsFetchedEvent
 } from '../gitlab/gitlab-projections'
 import { mapBitbucketToGitlabMergeRequest } from '../bitbucket/bitbucket-projections'
 import type { DiscussionNote, GitlabMergeRequest } from '../gitlab/gitlab-schema'
-
-export type MrChangeTrackingRelevantEvent =
-  | GitlabUserMergeRequestsFetchedEvent
-  | GitlabprojectMergeRequestsFetchedEvent
-  | GitlabSingleMrFetchedEvent
-  | CompactedEvent
-
-export function isMrChangeTrackingRelevantEvent(event: LazyReviewerEvent): event is MrChangeTrackingRelevantEvent {
-  return event.type === 'gitlab-user-mrs-fetched-event' ||
-         event.type === 'gitlab-project-mrs-fetched-event' ||
-         event.type === 'gitlab-single-mr-fetched-event' ||
-         event.type === 'compacted-event'
-}
+import { defineProjection } from '../utils/define-projection'
+import type { Change } from './change-tracking-projection'
 
 // Cumulative state per MR (for calculating future deltas)
 export interface MrStateForDelta {
@@ -41,10 +25,11 @@ interface MrDelta {
 }
 
 // Info about an MR for display purposes
-interface MrInfo {
+export interface MrInfo {
   mrId: string;
   mrName: string;
   mrAuthor: string;
+  jiraIssueKeys: string[];
 }
 
 // Individual MR change types - flat list of what happened
@@ -72,8 +57,35 @@ export interface ReopenedMrChange {
   changedAt: Date;
 }
 
+export type SystemNoteType =
+  | 'commits-added'
+  | 'approved'
+  | 'mentioned-in-mr'
+  | 'branch-deleted'
+  | 'left-review-comments'
+  | 'changed-description'
+  | 'changed-target-branch'
+  | 'changed-line'
+  | 'changed-title'
+  | 'resolved-all-threads'
+  | 'assigned'
+  | 'unassigned'
+  | 'unknown';
+
+export const FILTERED_SYSTEM_NOTE_TYPES: ReadonlySet<SystemNoteType> = new Set([
+  'left-review-comments',
+  'changed-description',
+  'changed-target-branch',
+  'changed-line',
+  'changed-title',
+  'resolved-all-threads',
+  'assigned',
+  'unassigned',
+]);
+
 export interface SystemNoteChange {
   type: 'system-note';
+  systemNoteType: SystemNoteType;
   mr: MrInfo;
   noteId: string;
   body: string;
@@ -101,12 +113,24 @@ export interface DiscussionCommentChange {
   changedAt: Date;
 }
 
+export interface SystemNotesCompactedChange {
+  type: 'system-notes-compacted';
+  systemNoteType: SystemNoteType;
+  mr: MrInfo;
+  count: number;
+  noteIds: string[];       // All note IDs that were compacted
+  authors: string[];       // Will contain single author (all have same due to grouping)
+  changedAt: Date;         // Latest timestamp (for age display)
+  earliestChangedAt: Date; // Earliest timestamp (for list ordering)
+}
+
 export type MrChange =
   | NewMrChange
   | MergedMrChange
   | ClosedMrChange
   | ReopenedMrChange
   | SystemNoteChange
+  | SystemNotesCompactedChange
   | DiffCommentChange
   | DiscussionCommentChange;
 
@@ -115,6 +139,27 @@ export interface MrProjectionResult {
   mrStatesForDelta: Map<string, MrStateForDelta>
   mrDeltas: MrChange[]
 }
+
+export const isMrChange = (change: Change): change is MrChange => {
+  switch (change.type) {
+    case 'new-mr':
+    case 'merged-mr':
+    case 'closed-mr':
+    case 'reopened-mr':
+    case 'system-note':
+    case 'system-notes-compacted':
+    case 'diff-comment':
+    case 'discussion-comment':
+      return true;
+    case 'new-jira-issue':
+    case 'jira-status-changed':
+    case 'jira-comment':
+      return false;
+    default:
+      return false;
+  }
+};
+
 
 const getMrCumulativeState = (mr: GitlabMergeRequest): MrStateForDelta => ({
   mrStatus: mr.state,
@@ -150,15 +195,15 @@ const detectMergerequestChanges = (
   latestGitlabMrs: GitlabMergeRequest[]
 ): MrProjectionResult => {
 
-  const determineMrStatusChange = (stateDelta: string | undefined, mrInfo: MrInfo, changedAt: Date): MrChange | undefined => {
+  const determineMrStatusChange = (stateDelta: string | undefined, mrInfo: MrInfo, updatedAt: Date): MrChange | undefined => {
     if (stateDelta === 'opened') {
-      return { type: 'new-mr', mr: mrInfo, changedAt: changedAt };
+      return { type: 'new-mr', mr: mrInfo, changedAt: updatedAt };
     } else if (stateDelta === 'merged') {
-      return { type: 'merged-mr', mr: mrInfo, changedAt: changedAt };
+      return { type: 'merged-mr', mr: mrInfo, changedAt: updatedAt };
     } else if (stateDelta === 'closed') {
-      return { type: 'closed-mr', mr: mrInfo, changedAt: changedAt };
+      return { type: 'closed-mr', mr: mrInfo, changedAt: updatedAt };
     } else if (stateDelta === 'reopened') {
-      return { type: 'reopened-mr', mr: mrInfo, changedAt: changedAt };
+      return { type: 'reopened-mr', mr: mrInfo, changedAt: updatedAt };
     }
   }
 
@@ -169,23 +214,64 @@ const detectMergerequestChanges = (
     mrInfo: MrInfo
   ): MrChange => {
 
-    const determineSystemNoteChange = (note: DiscussionNote): SystemNoteChange => {
+    const parseSystemNoteType = (body: string): SystemNoteType => {
       // added 1 commit\n\n<ul><li>
       // added 3 commits
-      // left review comments
-      // changed the description
-      // changed target branch from
-      // changed this line in
+      if (body.startsWith('added ') && body.includes('commit')) {
+        return 'commits-added';
+      }
       // approved this merge request
-      // <p>changed title from <code
+      if (body.startsWith('approved this merge request')) {
+        return 'approved';
+      }
       // mentioned in merge request !768
       // mentioned in merge request BlackLotus!775
-      // resolved all threads
-      // assigned to @ArjenPost
-      // unassigned @m.bures
+      if (body.startsWith('mentioned in merge request')) {
+        return 'mentioned-in-mr';
+      }
       // deleted the `ELAB-18404__Support_export_samples_query_in_BL_StrawberryShake` branch
+      if (body.startsWith('deleted the ') && body.includes('branch')) {
+        return 'branch-deleted';
+      }
+      // left review comments
+      if (body.startsWith('left review comments')) {
+        return 'left-review-comments';
+      }
+      // changed the description
+      if (body.startsWith('changed the description')) {
+        return 'changed-description';
+      }
+      // changed target branch from
+      if (body.startsWith('changed target branch')) {
+        return 'changed-target-branch';
+      }
+      // changed this line in
+      if (body.startsWith('changed this line')) {
+        return 'changed-line';
+      }
+      // <p>changed title from <code
+      if (body.includes('changed title from')) {
+        return 'changed-title';
+      }
+      // resolved all threads
+      if (body.startsWith('resolved all threads')) {
+        return 'resolved-all-threads';
+      }
+      // assigned to @ArjenPost
+      if (body.startsWith('assigned to')) {
+        return 'assigned';
+      }
+      // unassigned @m.bures
+      if (body.startsWith('unassigned')) {
+        return 'unassigned';
+      }
+      return 'unknown';
+    };
+
+    const determineSystemNoteChange = (note: DiscussionNote): SystemNoteChange => {
       return {
         type: "system-note",
+        systemNoteType: parseSystemNoteType(note.body),
         mr: mrInfo,
         noteId: note.id,
         body: note.body,
@@ -197,6 +283,7 @@ const detectMergerequestChanges = (
     if (!note) {
       return {
         type: "system-note",
+        systemNoteType: 'unknown',
         mr: mrInfo,
         noteId: noteId,
         body: "unknown (is this a bug?)",
@@ -250,8 +337,8 @@ const detectMergerequestChanges = (
     const delta = calcDelta(mr.id, previousState, latestState);
 
     if (delta.stateDelta !== undefined || delta.commentsDelta.size > 0) {
-      const mrInfo: MrInfo = { mrId: delta.mrId, mrName: mr?.title ?? "unknown", mrAuthor: mr.author };
-      const mrStatusChange = determineMrStatusChange(delta.stateDelta, mrInfo, mr.createdAt);
+      const mrInfo: MrInfo = { mrId: delta.mrId, mrName: mr?.title ?? "unknown", mrAuthor: mr.author, jiraIssueKeys: mr.jiraIssueKeys };
+      const mrStatusChange = determineMrStatusChange(delta.stateDelta, mrInfo, mr.updatedAt);
       const noteChanges = [...delta.commentsDelta].map((noteId) => {
         const found = mr ? findNoteById(mr, noteId) : undefined;
         return determineNoteChange(noteId, found?.discussionId ?? '', found?.note, mrInfo);
@@ -280,20 +367,35 @@ const projectCompactedEventMrs = (event: CompactedEvent): GitlabMergeRequest[] =
   });
 };
 
-export function projectMrChangeTracking(
-  mrStatesForDelta: Map<string, MrStateForDelta>,
-  event: MrChangeTrackingRelevantEvent
-): MrProjectionResult {
-  if (event.type === "gitlab-user-mrs-fetched-event") {
-    return detectMergerequestChanges(mrStatesForDelta, projectGitlabUserMrsFetchedEvent(event));
-  } else if (event.type === "gitlab-project-mrs-fetched-event") {
-    return detectMergerequestChanges(mrStatesForDelta, projectGitlabProjectMrsFetchedEvent(event));
-  } else if (event.type === "gitlab-single-mr-fetched-event") {
-    const mr = projectGitlabSingleMrFetchedEvent(event);
-    return detectMergerequestChanges(mrStatesForDelta, mr ? [mr] : []);
-  } else if (event.type === "compacted-event") {
-    return detectMergerequestChanges(mrStatesForDelta, projectCompactedEventMrs(event));
-  }
+// =============================================================================
+// MR Change Tracking Projection - Single Source of Truth
+// =============================================================================
 
-  throw new Error("non-exhaustive match");
-}
+const initialMrChangeTrackingState: MrProjectionResult = {
+  mrStatesForDelta: new Map(),
+  mrDeltas: []
+};
+
+export const mrChangeTrackingProjection = defineProjection({
+  initialState: initialMrChangeTrackingState,
+  handlers: {
+    "gitlab-user-mrs-fetched-event": (state, event) =>
+      detectMergerequestChanges(state.mrStatesForDelta, projectGitlabUserMrsFetchedEvent(event)),
+
+    "gitlab-project-mrs-fetched-event": (state, event) =>
+      detectMergerequestChanges(state.mrStatesForDelta, projectGitlabProjectMrsFetchedEvent(event)),
+
+    "gitlab-single-mr-fetched-event": (state, event) => {
+      const mr = projectGitlabSingleMrFetchedEvent(event);
+      return detectMergerequestChanges(state.mrStatesForDelta, mr ? [mr] : []);
+    },
+
+    "gitlab-mrs-fetched-event": (state, event) => {
+      return detectMergerequestChanges(state.mrStatesForDelta, projectGitlabMrsFetchedEvent(event));
+    },
+
+    "compacted-event": (state, event) =>
+      detectMergerequestChanges(state.mrStatesForDelta, projectCompactedEventMrs(event)),
+  }
+});
+

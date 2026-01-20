@@ -1,19 +1,24 @@
 import { FileSystem, Path } from "@effect/platform"
-import { Effect, Schema, Stream, PubSub, Console } from "effect"
-import { EventSchema, type LazyReviewerEvent } from "../events/events"
+import { Effect, Schema, Stream, PubSub, Console, Ref } from "effect"
+import { EventSchema, type LazyReviewerEvent, type InMemoryLazyReviewerEvent, type AnyLazyReviewerEvent } from "../events/events"
 
 const EVENTS_DIR = "storage/events"
+
 
 export class EventStorage extends Effect.Service<EventStorage>()("EventStorage", {
   accessors: true,
   effect: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem
     const path = yield* Path.Path
-    const console = yield* Console.Console;
 
     const eventsDir = path.join(EVENTS_DIR)
 
+    // Persisted events pubsub
     const eventsPubSub = yield* PubSub.unbounded<LazyReviewerEvent>()
+
+    // In-memory events storage + pubsub
+    const inMemoryEventsRef = yield* Ref.make<InMemoryLazyReviewerEvent[]>([])
+    const inMemoryEventsPubSub = yield* PubSub.unbounded<InMemoryLazyReviewerEvent>()
 
     // Ensure events directory exists
     yield* fs.makeDirectory(eventsDir, { recursive: true }).pipe(
@@ -48,7 +53,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     }
 
     const loadEventsImpl = (fromLastCompaction: boolean) => Effect.gen(function* () {
-      yield* console.log(`[EventStorage] loading ${fromLastCompaction ? 'from last compaction' : 'all events'}..`)
+      yield* Console.log(`[EventStorage] loading ${fromLastCompaction ? 'from last compaction' : 'all events'}..`)
 
       // Read directory
       const files = yield* fs.readDirectory(eventsDir).pipe(
@@ -71,10 +76,10 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
         ? parsedFiles.slice(lastCompactionIndex)
         : parsedFiles
 
-      yield* console.log(
-        `[EventStorage] Found ${parsedFiles.length} total events, ` +
-        `loading ${eventsToLoad.length}`
-      )
+      // yield* Console.log(
+      //   `[EventStorage] Found ${parsedFiles.length} total events, ` +
+      //   `loading ${eventsToLoad.length}`
+      // )
 
       // Load and parse each event file with Schema validation
       const events = yield* Effect.all(
@@ -93,7 +98,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
           }).pipe(
             Effect.catchAll((error) =>
               Effect.gen(function* () {
-                yield* console.log(`Failed to load event file ${parsed.filename}: ${error}`)
+                yield* Console.log(`Failed to load event file ${parsed.filename}: ${error}`)
                 return null
               })
             )
@@ -124,8 +129,8 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       const filename = `${nextNumber}_${event.eventId}.json`
       const filePath = path.join(eventsDir, filename)
 
-      // Write event to file
-      const eventJson = JSON.stringify(event, null, 2)
+      const encodeEvent = Schema.encodeSync(EventSchema)
+      const eventJson = JSON.stringify(encodeEvent(event), null, 2)
 
       yield* Console.log(`[EventStorage] Appended: ${filename}`)
       yield* fs.writeFileString(filePath, eventJson)
@@ -182,12 +187,71 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       return path.join(eventsDir, file.filename)
     })
 
+    // Append in-memory event (not persisted to disk)
+    const appendInMemoryEvent = (event: InMemoryLazyReviewerEvent) =>
+      Effect.gen(function* () {
+        yield* Ref.update(inMemoryEventsRef, (events) => [...events, event])
+        yield* PubSub.publish(inMemoryEventsPubSub, event)
+      })
+
+    // Stream of just in-memory events
+    const inMemoryEventsStream = Stream.unwrapScoped(
+      Effect.gen(function* () {
+        const historicalEvents = yield* Ref.get(inMemoryEventsRef)
+        const newEventsStream = Stream.fromPubSub(inMemoryEventsPubSub)
+
+        return Stream.concat(
+          Stream.fromIterable(historicalEvents),
+          newEventsStream
+        )
+      })
+    )
+
+    // Combined stream of both persisted and in-memory events
+    const combinedEventsStream = Stream.unwrapScoped(
+      Effect.gen(function* () {
+        // Subscribe to pubsubs BEFORE loading historical events
+        // This ensures no events are lost between loading and subscribing
+        const persistedQueue = yield* PubSub.subscribe(eventsPubSub)
+        const inMemoryQueue = yield* PubSub.subscribe(inMemoryEventsPubSub)
+
+        // Load historical events
+        const persistedEvents = yield* loadEvents
+        const memoryEvents = yield* Ref.get(inMemoryEventsRef)
+
+        const historicalEvents: AnyLazyReviewerEvent[] = [
+          ...persistedEvents,
+          ...memoryEvents
+        ]
+
+        // Create streams from the queues
+        const newPersistedStream = Stream.fromQueue(persistedQueue).pipe(
+          Stream.map((e): AnyLazyReviewerEvent => e)
+        )
+        const newInMemoryStream = Stream.fromQueue(inMemoryQueue).pipe(
+          Stream.map((e): AnyLazyReviewerEvent => e)
+        )
+
+        return Stream.concat(
+          Stream.fromIterable(historicalEvents),
+          Stream.merge(newPersistedStream, newInMemoryStream)
+        )
+      })
+    )
+
+    // Clear in-memory events
+    const clearInMemoryEvents = Ref.set(inMemoryEventsRef, [] as InMemoryLazyReviewerEvent[])
+
     return {
       loadEvents,
       loadAllEvents,
       appendEvent,
+      appendInMemoryEvent,
       eventsStream,
       allEventsStream,
+      inMemoryEventsStream,
+      combinedEventsStream,
+      clearInMemoryEvents,
       getEventFilePath
     } as const
   })

@@ -11,13 +11,11 @@ export class JiraScrollService extends Effect.Service<JiraScrollService>()("Jira
     const register = (handler: Handler) =>
       Effect.gen(function* () {
         yield* Ref.set(handlerRef, Option.some(handler));
-        console.log('handler registered', handler);
       });
 
     const scroll = (req: ScrollRequest) =>
       Effect.gen(function* () {
         const maybe = yield* Ref.get(handlerRef);
-        console.log('scroll called', req, maybe);
         if (Option.isSome(maybe)) {
           yield* Effect.sync(() => maybe.value(req));
         }

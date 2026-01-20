@@ -8,6 +8,8 @@ import type { SingleMrQuery } from "../graphql/single-mr.generated";
 import type { ProjectPipelinesJobHistoryQuery } from "../graphql/project-pipelines-job-history.generated";
 import { MRsQuerySchema } from "../graphql/schemas/mrs.schema";
 import { EventIdSchema } from "./event-id";
+import { SingleMrQuerySchema } from "../graphql/schemas/single-mr.schema";
+import { GitlabMRsQuerySchema } from "../graphql/schemas/gitlab-mrs.schema";
 
 // GitLab event schemas
 const GitlabUserMergeRequestsFetchedEventSchema = Schema.Struct({
@@ -47,6 +49,17 @@ const GitlabSingleMrFetchedEventSchema = Schema.Struct({
 export interface GitlabSingleMrFetchedEvent extends Schema.Schema.Type<typeof GitlabSingleMrFetchedEventSchema> {
   mr: SingleMrQuery
 }
+
+const GitlabMrsFetchedEventSchema = Schema.Struct({
+  eventId: EventIdSchema,
+  type: Schema.Literal('gitlab-mrs-fetched-event'),
+  mrs: GitlabMRsQuerySchema,
+  forProjectPath: Schema.String,
+  forIids: Schema.Array(Schema.String),
+  timestamp: Schema.String
+})
+
+export interface GitlabMrsFetchedEvent extends Schema.Schema.Type<typeof GitlabMrsFetchedEventSchema> { };
 
 const GitlabJobTraceFetchedEventSchema = Schema.Struct({
   eventId: EventIdSchema,
@@ -89,9 +102,18 @@ export const GitlabEventSchema = Schema.Union(
   GitlabUserMergeRequestsFetchedEventSchema,
   GitlabProjectMergeRequestsFetchedEventSchema,
   GitlabSingleMrFetchedEventSchema,
+  GitlabMrsFetchedEventSchema,
   GitlabJobTraceFetchedEventSchema,
   GitlabPipelineFetchedEventSchema,
   GitlabJobHistoryFetchedEventSchema
 )
 
-export type GitlabEvent = Schema.Schema.Type<typeof GitlabEventSchema>
+// Use manually refined interfaces (with proper types) instead of schema-inferred types
+export type GitlabEvent =
+  | GitlabUserMergeRequestsFetchedEvent
+  | GitlabprojectMergeRequestsFetchedEvent
+  | GitlabSingleMrFetchedEvent
+  | GitlabMrsFetchedEvent
+  | GitlabJobTraceFetchedEvent
+  | GitlabPipelineFetchedEvent
+  | GitlabJobHistoryFetchedEvent

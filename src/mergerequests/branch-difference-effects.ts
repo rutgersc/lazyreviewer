@@ -8,7 +8,8 @@ export async function fetchBranchDifferences(mergeRequests: MergeRequest[]): Pro
   const differenceMap = new Map<string, BranchDifference>();
 
   const promises = mergeRequests.map(async (mr) => {
-    const localPath = settings.repositoryPaths[mr.project.path];
+    const repoConfig = settings.repositoryPaths[mr.project.path];
+    const localPath = repoConfig?.localPath;
 
     if (localPath) {
       const difference = getBranchDifference(localPath, mr.targetbranch, mr.sourcebranch);

@@ -1,14 +1,5 @@
-import type { LazyReviewerEvent } from '../events/events'
-import type { JiraIssuesFetchedEvent } from '../events/jira-events'
-import type { CompactedEvent } from '../events/event-compaction-events'
 import type { JiraComment, JiraIssue } from '../jira/jira-schema'
-
-export type JiraChangeTrackingRelevantEvent = JiraIssuesFetchedEvent | CompactedEvent
-
-export function isJiraChangeTrackingRelevantEvent(event: LazyReviewerEvent): event is JiraChangeTrackingRelevantEvent {
-  return event.type === 'jira-issues-fetched-event' ||
-         event.type === 'compacted-event'
-}
+import { defineProjection } from '../utils/define-projection'
 
 export interface JiraStateForDelta {
   status: string
@@ -132,20 +123,21 @@ const detectJiraIssueChanges = (
   return { jiraStatesForDelta, jiraDeltas }
 }
 
-const projectCompactedEventJiraIssues = (event: CompactedEvent): ReadonlyArray<JiraIssue> => {
-  return event.jiraIssues
-}
+const initialJiraChangeTrackingState: JiraProjectionResult = {
+  jiraStatesForDelta: new Map(),
+  jiraDeltas: []
+};
 
-export function projectJiraChangeTracking(
-  jiraStatesForDelta: Map<string, JiraStateForDelta>,
-  event: JiraChangeTrackingRelevantEvent
-): JiraProjectionResult {
-  if (event.type === 'jira-issues-fetched-event') {
-    return detectJiraIssueChanges(jiraStatesForDelta, event.issues.issues)
-  }
-  if (event.type === 'compacted-event') {
-    return detectJiraIssueChanges(jiraStatesForDelta, projectCompactedEventJiraIssues(event))
-  }
+export const jiraChangeTrackingProjection = defineProjection({
+  initialState: initialJiraChangeTrackingState,
+  handlers: {
+    "jira-issues-fetched-event": (state, event) =>
+      detectJiraIssueChanges(state.jiraStatesForDelta, event.issues.issues),
 
-  throw new Error('non-exhaustive match')
-}
+    "compacted-event": (state, event) =>
+      detectJiraIssueChanges(state.jiraStatesForDelta, event.jiraIssues),
+
+    "jira-sprint-issues-fetched-event": (state, event) =>
+      detectJiraIssueChanges(state.jiraStatesForDelta, event.issues),
+  }
+});

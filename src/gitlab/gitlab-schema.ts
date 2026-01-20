@@ -1,5 +1,13 @@
-import { Schema} from "effect";
+import { Schema, Brand } from "effect";
 import type { CiJobStatus } from "../graphql/generated/gitlab-base-types";
+import { MergeRequestStateSchema } from "../graphql/generated/gitlab-base-types.schema";
+
+// Branded types for type-safe MR identifiers (zero runtime overhead)
+export type MrGid = string & Brand.Brand<"MrGid">
+export type MrIid = string & Brand.Brand<"MrIid">
+
+export const MrGid = Brand.nominal<MrGid>()
+export const MrIid = Brand.nominal<MrIid>()
 
 export const PipelineJobSchema = Schema.Struct({
   id: Schema.String,
@@ -56,8 +64,8 @@ export const DiscussionSchema = Schema.Struct({
 }).annotations({ identifier: "Discussion" })
 
 export const GitlabMergeRequestSchema = Schema.Struct({
-  id: Schema.String,
-  iid: Schema.String,
+  id: Schema.String.pipe(Schema.fromBrand(MrGid)),
+  iid: Schema.String.pipe(Schema.fromBrand(MrIid)),
   title: Schema.String,
   jiraIssueKeys: Schema.mutable(Schema.Array(Schema.String)),
   webUrl: Schema.String,
@@ -72,7 +80,7 @@ export const GitlabMergeRequestSchema = Schema.Struct({
   avatarUrl: Schema.NullOr(Schema.String),
   createdAt: Schema.Date,
   updatedAt: Schema.Date,
-  state: Schema.String,
+  state: MergeRequestStateSchema,
   approvedBy: Schema.mutable(Schema.Array(Schema.Struct({
     id: Schema.String,
     name: Schema.String,

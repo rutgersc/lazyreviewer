@@ -1,22 +1,30 @@
-import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { useKeyboard } from '@opentui/react';
+import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
 import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
 import { ActivePane } from '../userselection/userSelection';
-import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
-import { selectedPipelineJobIndexAtom, jobHistoryDataAtom, jobHistoryLoadingAtom, selectedJobForHistoryAtom, loadJobLogAtom, fetchJobHistoryAtom, jobHistoryLimitAtom } from '../mergerequests/job-atom';
+import { useAtom, useAtomValue, useAtomSet, Atom } from '@effect-atom/atom-react';
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 import { useEffect } from 'react';
+import type { MergeRequest } from './MergeRequestPane';
+import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
+import { loadJobLogAtom } from '../mergerequests/open-pipelinejob-log-atom';
 
 interface PipelineJobsListProps {
-  activePane: ActivePane;
-  pipelineJobs: Array<{ stage: PipelineStage; job: PipelineJob }>;
   selectedPipelineJobIndex: number;
+}
+
+export const requestScrollPipelineJobsListToJob = Atom.make<string | null>(null);
+
+export const getPipelineJobsFromMr = (selectedMergeRequest: MergeRequest | undefined) => {
+  return !selectedMergeRequest?.pipeline?.stage
+    ? []
+    : selectedMergeRequest.pipeline.stage.flatMap((stage: PipelineStage) =>
+        stage.jobs.map((job: PipelineJob) => ({ stage, job }))
+      );
 }
 
 function formatDuration(seconds: number | null): string {
@@ -35,19 +43,21 @@ function formatDuration(seconds: number | null): string {
   return `${secs}s`;
 }
 
-export default function PipelineJobsList({ activePane, pipelineJobs, selectedPipelineJobIndex }: PipelineJobsListProps) {
-  const activeModal = useAtomValue(activeModalAtom);
-  const setActiveModal = useAtomSet(activeModalAtom);
-  const infoPaneTab = useAtomValue(infoPaneTabAtom);
+export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJobsListProps) {
   const [, setSelectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
   const selectedMergeRequest = useAtomValue(selectedMrAtom);
-  const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
-  const setJobHistoryLoading = useAtomSet(jobHistoryLoadingAtom);
-  const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
-  const setJobHistoryLimit = useAtomSet(jobHistoryLimitAtom);
   const runLoadJobLog = useAtomSet(loadJobLogAtom);
-  const runFetchJobHistory = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+  const [scrollToItemRequest, setScrollToItemRequest] = useAtom(requestScrollPipelineJobsListToJob);
+
+  const pipelineJobs = getPipelineJobsFromMr(selectedMergeRequest)
+
+  useEffect(() => {
+    if (scrollToItemRequest !== null) {
+      scrollToId(scrollToItemRequest);
+      setScrollToItemRequest(null);
+    }
+  }, [scrollToItemRequest, scrollToId, setScrollToItemRequest]);
 
   const handleJobClick = useDoubleClick<number>({
     onSingleClick: (index) => {
@@ -62,45 +72,6 @@ export default function PipelineJobsList({ activePane, pipelineJobs, selectedPip
     }
   });
 
-  useKeyboard((key: ParsedKey) => {
-    if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'pipeline') return;
-    if (activeModal !== 'none') return;
-    if (pipelineJobs.length === 0) return;
-
-    switch (key.name) {
-      case 'j':
-      case 'down':
-        const next = Math.min(selectedPipelineJobIndex + 1, pipelineJobs.length - 1);
-        setSelectedPipelineJobIndex(next);
-        scrollToId(`pipeline-job-${next}`);
-        break;
-      case 'k':
-      case 'up':
-        const prev = Math.max(selectedPipelineJobIndex - 1, 0);
-        setSelectedPipelineJobIndex(prev);
-        scrollToId(`pipeline-job-${prev}`);
-        break;
-      case 'i':
-        const selectedJob = pipelineJobs[selectedPipelineJobIndex];
-        if (selectedJob && selectedMergeRequest) {
-          runLoadJobLog({ mergeRequest: selectedMergeRequest, job: selectedJob.job });
-        }
-        break;
-      case 'y':
-        if (pipelineJobs[selectedPipelineJobIndex]) {
-          setJobHistoryLimit(15); // Reset to default limit
-          runFetchJobHistory().then((exit) => {
-            if (exit._tag === 'Success') {
-              const { job, history } = exit.value;
-              setJobHistoryData(history);
-              setSelectedJobForHistory(job?.name || null);
-            }
-            setActiveModal('jobHistory');
-          });
-        }
-        break;
-    }
-  });
   if (pipelineJobs.length === 0) {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>

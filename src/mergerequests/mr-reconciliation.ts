@@ -3,12 +3,13 @@ import { Result } from "@effect-atom/atom-react";
 import { useAtomValue, useAtomSet, useAtom } from "@effect-atom/atom-react";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { allMrsAtom } from "../mergerequests/mergerequests-atom";
-import { getSingleMrAsEvent } from "../gitlab/gitlab-graphql";
+import { getMrsAsEvent } from "../gitlab/gitlab-graphql";
 import { EventStorage } from "../events/events";
 import { missingMrsDiffAtom, isReconcilingAtom } from "./mr-diff-tracking";
 import type { AllMrsState } from "./all-mergerequests-projection";
+import type { MrGid } from "../gitlab/gitlab-schema";
 
-export const reconcileMrsAtom = appAtomRuntime.fn((missingIds: string[], get) =>
+export const reconcileMrsAtom = appAtomRuntime.fn((missingIds: MrGid[], get) =>
   Effect.gen(function* () {
       yield* Console.log(`[Reconcile] Starting reconciliation for ${missingIds.length} MRs`);
 
@@ -23,20 +24,28 @@ export const reconcileMrsAtom = appAtomRuntime.fn((missingIds: string[], get) =>
           return;
       }
 
-      yield* Effect.forEach(missingIds, (id) =>
-          Effect.gen(function*() {
-              const mr = allMrs?.mrsByGid.get(id);
-              if (mr) {
-                   yield* Console.log(`[Reconcile] Fetching update for ${mr.title} (!${mr.iid})`);
-                   const event = yield* getSingleMrAsEvent(mr.project.fullPath, mr.iid);
-                   yield* EventStorage.appendEvent(event);
-              } else {
-                  yield* Console.log(`[Reconcile] Cannot reconcile MR ${id}: not found in cache`);
-              }
+      const mrsToFetch = missingIds
+        .map(gid => allMrs?.mrsByGid.get(gid))
+        .filter(mr => mr != null);
+
+      const mrsByProject = mrsToFetch.reduce((acc, mr) => {
+        const projectPath = mr.project.fullPath;
+        const existing = acc.get(projectPath) ?? [];
+        return acc.set(projectPath, [...existing, mr.iid]);
+      }, new Map<string, string[]>());
+
+      yield* Effect.forEach(
+        Array.from(mrsByProject.entries()),
+        ([projectPath, iids]) =>
+          Effect.gen(function* () {
+            yield* Console.log(`[Reconcile] Fetching ${iids.length} MRs for project ${projectPath}`);
+            const event = yield* getMrsAsEvent(projectPath, iids);
+            yield* EventStorage.appendEvent(event);
           }).pipe(
-              Effect.catchAll(err => Console.error(`[Reconcile] Failed to fetch MR ${id}`, err))
-          )
-      , { concurrency: 3 });
+            Effect.catchAll(err => Console.error(`[Reconcile] Failed to fetch MRs for ${projectPath}`, err))
+          ),
+        { concurrency: 3 }
+      );
 
       yield* Console.log(`[Reconcile] Reconciliation complete`);
   })
@@ -48,9 +57,9 @@ export const useReconcileMissingMrs = () => {
     const reconcileAction = useAtomSet(reconcileMrsAtom, { mode: 'promise' });
 
     const missingIds = Result.match(stateResult, {
-        onInitial: () => [] as string[],
+        onInitial: () => [] as MrGid[],
         onSuccess: (success) => Array.from(success.value.detectedMissingMrIds),
-        onFailure: () => [] as string[]
+        onFailure: () => [] as MrGid[]
     });
 
     const reconcile = () => {

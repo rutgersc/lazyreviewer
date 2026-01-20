@@ -1,4 +1,5 @@
 import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/gitlab-graphql";
+import { MrGid, MrIid } from "../gitlab/gitlab-schema";
 import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import type { BitbucketPullRequest, BitbucketComment } from "./bitbucketapi";
@@ -98,8 +99,8 @@ export function mapBitbucketToGitlabMergeRequest(
   const resolvableDiscussions = discussions.filter(d => d.resolvable).length;
 
   return {
-    id: `bitbucket-${workspace}-${repoSlug}-${pr.id}`,
-    iid: String(pr.id),
+    id: MrGid(`bitbucket-${workspace}-${repoSlug}-${pr.id}`),
+    iid: MrIid(String(pr.id)),
     title: pr.title,
     jiraIssueKeys: extractElabTicketsFromTitle(pr.title),
     webUrl: pr.links.html.href,
@@ -114,7 +115,7 @@ export function mapBitbucketToGitlabMergeRequest(
     avatarUrl: null,
     createdAt: new Date(pr.created_on),
     updatedAt: new Date(pr.updated_on),
-    state: mapBitbucketStateToGitlab(pr.state),
+    state: 'closed', // TODOR: (fix state mapping) mapBitbucketStateToGitlab(pr.state),
     approvedBy,
     resolvableDiscussions,
     resolvedDiscussions,

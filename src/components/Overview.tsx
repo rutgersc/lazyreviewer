@@ -1,35 +1,33 @@
-import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { useKeyboard } from '@opentui/react';
-import { useState, useRef } from 'react';
+import { TextAttributes } from '@opentui/core';
+import { useRef, useEffect } from 'react';
 import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
-import { copyToClipboard } from '../system/clipboard';
-import { formatDiscussionsForClipboard } from '../gitlab/display/gitlabDiscussionFormatter';
-import { useAtom, useAtomValue } from '@effect-atom/atom-react';
-import { infoPaneTabAtom, activeModalAtom } from '../ui/navigation-atom';
+import { useAtom, useAtomValue, Atom } from '@effect-atom/atom-react';
 import { selectedDiscussionIndexAtom } from '../mergerequests/mergerequests-atom';
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
+import { useAutoScroll } from '../hooks/useAutoScroll';
+import { openUrl } from '../system/open-url';
+import { selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
+
+// Atoms for overview pane state
+export const copyNotificationAtom = Atom.make<string | null>(null);
+export const scrollToDiscussionRequestAtom = Atom.make<number | null>(null);
 
 interface OverviewProps {
   activePane: ActivePane;
   selectedMergeRequest: MergeRequest | undefined;
 }
 
-import { useAutoScroll } from '../hooks/useAutoScroll';
-import { openUrl } from '../system/open-url';
-import { selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
-
 export default function Overview({
   activePane,
   selectedMergeRequest,
 }: OverviewProps) {
-  const infoPaneTab = useAtomValue(infoPaneTabAtom);
-  const activeModal = useAtomValue(activeModalAtom);
   const [selectedDiscussionIndex, setSelectedDiscussionIndex] = useAtom(selectedDiscussionIndexAtom);
-  const [copyNotification, setCopyNotification] = useState<string | null>(null);
+  const [copyNotification, setCopyNotification] = useAtom(copyNotificationAtom);
+  const [scrollToDiscussionRequest, setScrollToDiscussionRequest] = useAtom(scrollToDiscussionRequestAtom);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
   const selectedUserSelectionEntry = useAtomValue(selectedUserSelectionEntryAtom);
 
@@ -37,6 +35,14 @@ export default function Overview({
       setSelectedDiscussionIndex(index);
       scrollToId(`discussion-${index}`);
   };
+
+  // Handle scroll requests from actions
+  useEffect(() => {
+    if (scrollToDiscussionRequest !== null) {
+      scrollToId(`discussion-${scrollToDiscussionRequest}`);
+      setScrollToDiscussionRequest(null);
+    }
+  }, [scrollToDiscussionRequest, scrollToId, setScrollToDiscussionRequest]);
 
   const unresolvedDiscussions = selectedMergeRequest?.discussions.filter(d => d.resolvable && !d.resolved) || [];
 
@@ -75,46 +81,6 @@ export default function Overview({
           openUrl(discussionUrl);
       }
   };
-
-  useKeyboard((key: ParsedKey) => {
-    if (activePane !== ActivePane.InfoPane || infoPaneTab !== 'overview') return;
-    if (activeModal !== 'none') return;
-    if (unresolvedDiscussions.length === 0) return;
-
-    switch (key.name) {
-      case 'j':
-      case 'down':
-        const nextIndex = Math.min(selectedDiscussionIndex + 1, unresolvedDiscussions.length - 1);
-        handleSelectDiscussion(nextIndex);
-        break;
-      case 'k':
-      case 'up':
-        const prevIndex = Math.max(selectedDiscussionIndex - 1, 0);
-        handleSelectDiscussion(prevIndex);
-        break;
-      case 'c':
-        const discussion = unresolvedDiscussions[selectedDiscussionIndex];
-        if (discussion && selectedMergeRequest?.webUrl) {
-          const discussionUrl = `${selectedMergeRequest.webUrl}#note_${discussion.id}`;
-          copyToClipboard(discussionUrl);
-        }
-        break;
-      case 'i':
-        if (selectedMergeRequest) {
-          const formattedDiscussions = formatDiscussionsForClipboard(selectedMergeRequest);
-          copyToClipboard(formattedDiscussions).then((success) => {
-            if (success) {
-              setCopyNotification('Copied discussions!');
-              setTimeout(() => setCopyNotification(null), 2000);
-            } else {
-              setCopyNotification('Copy failed!');
-              setTimeout(() => setCopyNotification(null), 2000);
-            }
-          });
-        }
-        break;
-    }
-  });
 
   const content = (() => {
     // Always show MR info when there's a selected MR

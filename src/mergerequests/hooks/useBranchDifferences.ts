@@ -10,7 +10,8 @@ export const useBranchDifferences = (mergeRequests: MergeRequest[]): Map<string,
     const differenceMap = new Map<string, BranchDifference>();
 
     for (const mr of mergeRequests) {
-      const localPath = settings.repositoryPaths[mr.project.path];
+      const repoConfig = settings.repositoryPaths[mr.project.path];
+      const localPath = repoConfig?.localPath;
 
       if (localPath) {
         const difference = getBranchDifference(localPath, mr.targetbranch, mr.sourcebranch);

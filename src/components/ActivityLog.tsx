@@ -10,10 +10,10 @@ import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
 import { useAtom, useAtomValue, useAtomSet, Result, Atom } from "@effect-atom/atom-react";
 import { infoPaneTabAtom, activeModalAtom } from "../ui/navigation-atom";
-import { loadJobLogAtom } from "../mergerequests/job-atom";
 import { allJiraIssuesAtom } from "../mergerequests/mergerequests-atom";
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useEffect } from 'react';
+import { loadJobLogAtom } from "../mergerequests/open-pipelinejob-log-atom";
 
 export const selectedActivityIndexAtom = Atom.make<number>(0);
 export const targetNoteIdAtom = Atom.make<string | null>(null);

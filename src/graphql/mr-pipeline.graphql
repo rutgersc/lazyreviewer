@@ -1,29 +1,60 @@
+fragment PipelineField on Pipeline {
+  active
+  iid
+  stages {
+    __typename
+    nodes {
+      id
+      name
+      jobs {
+        nodes {
+          id
+          webPath
+          name
+          status
+          failureMessage
+          startedAt
+          duration
+          finishedAt
+          active
+        }
+      }
+      status
+    }
+  }
+}
+
+query GetJobStatus($fullPath: ID!, $jobId: JobID!) {
+  project(fullPath: $fullPath) {
+    job(id: $jobId) {
+      status
+      finishedAt
+    }
+  }
+}
+
 query MRPipeline($projectPath: ID!, $iid: String!) {
   project(fullPath: $projectPath) {
     mergeRequest(iid: $iid) {
       id
       iid
+      state
       headPipeline {
-        active
+
+        ...PipelineField
+      }
+    }
+  }
+}
+
+query MRPipelines($projectPath: ID!, $iids: [String!]) {
+  project(fullPath: $projectPath) {
+    mergeRequests(iids: $iids) {
+      nodes {
+        id
         iid
-        stages {
-          __typename
-          nodes {
-            id
-            name
-            jobs {
-              nodes {
-                id
-                webPath
-                name
-                status
-                failureMessage
-                startedAt
-                duration
-              }
-            }
-            status
-          }
+        headPipeline {
+          ...PipelineField
         }
       }
     }

@@ -7,10 +7,10 @@ import PipelineJobsList from './PipelineJobsList';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../gitlab/gitlab-graphql';
-import { useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { Atom, useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { activePaneAtom, activeModalAtom, infoPaneTabAtom, type InfoPaneTab } from '../ui/navigation-atom';
-import { selectedPipelineJobIndexAtom } from '../mergerequests/job-atom';
 import { selectedMrAtom, allJiraIssuesAtom } from '../mergerequests/mergerequests-atom';
+import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
 
 interface InfoPaneProps {
   activePane: ActivePane;
@@ -23,6 +23,18 @@ const TAB_LABELS: Record<InfoPaneTab, string> = {
   activity: 'Activity'
 };
 
+export const selectedMergeRequestJiraIssuesAtom = Atom.readable(get => {
+  const selectedMergeRequest = get(selectedMrAtom);
+  const jiraIssuesMap = get(allJiraIssuesAtom);
+
+  return selectedMergeRequest?.jiraIssueKeys.flatMap(key => {
+    const issue = jiraIssuesMap.get(key);
+    return issue
+      ? [issue]
+      : [];
+  }) || [];
+});
+
 export default function InfoPane({ activePane }: InfoPaneProps) {
   const setActivePane = useAtomSet(activePaneAtom);
   const activeModal = useAtomValue(activeModalAtom);
@@ -30,19 +42,6 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
   const [selectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
 
   const selectedMergeRequest = useAtomValue(selectedMrAtom);
-
-  const pipelineJobs = !selectedMergeRequest?.pipeline?.stage
-    ? []
-    : selectedMergeRequest.pipeline.stage.flatMap((stage: PipelineStage) =>
-        stage.jobs.map((job: PipelineJob) => ({ stage, job }))
-      );
-
-  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
-
-  const jiraIssues = selectedMergeRequest?.jiraIssueKeys.flatMap(key => {
-    const issue = jiraIssuesMap.get(key);
-    return issue ? [issue] : [];
-  }) || [];
 
   useKeyboard((key: ParsedKey) => {
     if (activePane !== ActivePane.InfoPane) return;
@@ -91,15 +90,10 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
         />;
 
       case 'jira':
-        return <JiraIssuesList
-          activePane={activePane}
-          jiraIssues={jiraIssues}
-        />;
+        return <JiraIssuesList />;
 
       case 'pipeline':
         return <PipelineJobsList
-          activePane={activePane}
-          pipelineJobs={pipelineJobs}
           selectedPipelineJobIndex={selectedPipelineJobIndex}
         />;
 

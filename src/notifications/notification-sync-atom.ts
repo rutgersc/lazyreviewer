@@ -1,74 +1,31 @@
 import { Atom, Result } from '@effect-atom/atom-react';
-import { Effect, Stream, Console } from 'effect';
+import { Effect, Stream, Console, Fiber, Chunk, Option } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserAtom } from '../settings/settings-atom';
-import { userSelectionsByIdAtom } from '../userselection/userselection-atom';
-import { groupsAtom } from '../data/data-atom';
-import { extractSelectionData } from '../userselection/userSelection';
-import { decideFetchUserMrs, decideFetchProjectMrs } from '../mergerequests/decide-fetch-mrs';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
+import { mrChangeTrackingProjection, jiraChangeTrackingProjection } from '../changetracking/change-tracking-projection';
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
 import { loadSettings, saveSettings } from '../settings/settings';
-import { incrementUnreadCount } from './title-indicator';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
+import { BackgroundSyncService, type BackgroundSyncStatus } from './background-sync-service';
+
+// Re-export for consumers
+export type { BackgroundSyncStatus } from './background-sync-service';
+
+// Module-level singleton state for notification daemon
+let notificationDaemonFiber: Fiber.RuntimeFiber<void, unknown> | undefined;
 
 /**
- * Background fetch scheduler - periodically fetches MRs for configured syncUserSelectionEntryId
+ * Background fetch atom - subscribes to the service's status stream.
  */
-const backgroundFetchStream = Effect.fn("backgroundFetchStream")(function* (get: Atom.Context) {
-  return Stream.repeatEffect(
-    Effect.gen(function* () {
-      const settingsResult = get.registry.get(settingsAtom);
-      const settings = Result.match(settingsResult, {
-        onInitial: () => null,
-        onFailure: () => null,
-        onSuccess: (s) => s.value
-      });
-
-      if (!settings || !settings.notifications.enabled) {
-        yield* Effect.sleep('30 seconds');
-        return;
-      }
-
-      const syncUserSelectionEntryId = settings.notifications.syncUserSelectionEntryId;
-      if (!syncUserSelectionEntryId) {
-        yield* Console.error('[BackgroundSync] syncUserSelectionEntryId not configured');
-        yield* Effect.sleep('30 seconds');
-        return;
-      }
-
-      const userSelectionsById = get.registry.get(userSelectionsByIdAtom);
-      const matchingSelection = userSelectionsById.get(syncUserSelectionEntryId);
-
-      if (!matchingSelection) {
-        yield* Console.error(`[BackgroundSync] No userSelection for id "${syncUserSelectionEntryId}"`);
-        yield* Effect.sleep('30 seconds');
-        return;
-      }
-
-      const groups = get.registry.get(groupsAtom);
-      const cacheKey = extractSelectionData(matchingSelection, groups, 'opened');
-
-      yield* Console.log(`[BackgroundSync] Fetching MRs for "${matchingSelection.name}"`);
-
-      yield* Effect.catchAllCause(
-        cacheKey._tag === 'UserMRs'
-          ? decideFetchUserMrs(cacheKey.usernames as string[], 'opened')
-          : decideFetchProjectMrs(cacheKey.projectPath, 'opened'),
-        (cause) => Console.error('[BackgroundSync] Fetch failed:', cause)
-      );
-
-      yield* Effect.sleep(`${settings.notifications.syncIntervalSeconds} seconds`);
-    })
-  );
-});
-
 export const backgroundFetchAtom = appAtomRuntime.atom(
-  (get) => Stream.unwrap(backgroundFetchStream(get)),
-  { initialValue: undefined }
+  (_get) => Effect.map(
+    BackgroundSyncService,
+    (service) => Stream.fromPubSub(service.statusPubSub)
+  ).pipe(Stream.unwrap),
+  { initialValue: { _tag: 'syncDisabled' } as BackgroundSyncStatus }
 ).pipe(Atom.keepAlive);
-
 
 const buildNotificationContext = (get: Atom.Context): NotificationContext => {
   const currentUser = get.registry.get(currentUserAtom);
@@ -100,100 +57,144 @@ const buildNotificationContext = (get: Atom.Context): NotificationContext => {
   };
 };
 
-const processStateChangeToNotification = (acc: ChangeTrackingState, get: Atom.Context) => {
-  return Effect.gen(function* () {
-    if (!acc.event) return;
+const formatChange = (change: NotifiableChange) => {
+  switch (change.type) {
+    case 'new-mr': return { title: `🔔 ${change.mr.mrAuthor} created MR ${change.mr.mrName}`, body: `[NEW MR] ${change.mr.mrName}` };
+    case 'merged-mr': return { title: `🔔 ${change.mr.mrName} merged`, body: `[MERGED MR] ${change.mr.mrName}` };
+    case 'closed-mr': return { title: `🔔 ${change.mr.mrName} closed`, body: `[CLOSED MR] ${change.mr.mrName}` };
+    case 'reopened-mr': return { title: `🔔 ${change.mr.mrName} got reopened`, body: `[REOPENED MR] ${change.mr.mrName}` };
+    case 'diff-comment': return { title: `🔔 ${change.author} commented on ${change.mr.mrName}`, body: `[DIFF COMMENT] ${change.mr.mrName}` };
+    case 'discussion-comment': return { title: `🔔 ${change.author} commented on ${change.mr.mrName}`, body: `[DISCUSSION COMMENT] ${change.mr.mrName}` };
+    case 'jira-comment': return { title: `🔔 ${change.author} commented on ${change.issue.issueKey}`, body: `[JIRA COMMENT] ${change.issue.issueKey}` };
+    case 'jira-status-changed': return { title: `🔔 status of ${change.issue.issueKey} changed to ${change.toStatus}`, body: `[JIRA STATUS CHANGED] ${change.issue.issueKey}` };
+  }
+};
 
-    const deltas = acc.deltasByEventId.get(acc.event.eventId);
-    if (!deltas || deltas.length === 0) return;
+const createNotificationPayload = (changes: NotifiableChange[]): NotificationPayload => {
+  if (changes.length === 1) {
+    return formatChange(changes[0]!);
+  }
 
-    // Update last processed event ID
-    const currentSettings = loadSettings();
-    currentSettings.notifications.lastProcessedEventId = acc.event.eventId;
-    saveSettings(currentSettings);
-
-    // Check if notifications are enabled
-    const settingsResult = get.registry.get(settingsAtom);
-    const notificationsEnabled = Result.match(settingsResult, {
-      onInitial: () => false,
-      onFailure: () => false,
-      onSuccess: (s) => s.value.notifications.enabled
-    });
-
-    if (!notificationsEnabled) return;
-
-    // Build context and filter notifiable changes
-    const context = buildNotificationContext(get);
-    const notifiableChanges = deltas
-      .map(change => determineNotification(change, context))
-      .filter((result): result is Extract<NotificationFilterResult, { notify: true }> => result.notify)
-      .map(change => change.change);
-
-    if (notifiableChanges.length === 0) return;
-
-    const createNotification = (changes: NotifiableChange[]): NotificationPayload => {
-      const formatChange = (change: NotifiableChange) => {
-        switch (change.type) {
-          case 'new-mr': return { title: `🔔 ${change.mr.mrAuthor} created MR ${change.mr.mrName}`, body: `[NEW MR] ${change.mr.mrName}` };
-          case 'merged-mr': return { title: `🔔 ${change.mr.mrName} merged`, body: `[MERGED MR] ${change.mr.mrName}` };
-          case 'closed-mr': return { title: `🔔 ${change.mr.mrName} closed`, body: `[CLOSED MR] ${change.mr.mrName}` };
-          case 'reopened-mr': return { title: `🔔 ${change.mr.mrName} got reopened`, body: `[REOPENED MR] ${change.mr.mrName}` };
-          case 'diff-comment': return { title: `🔔 ${change.author} commented on ${change.mr.mrName}`, body: `[DIFF COMMENT] ${change.mr.mrName}` };
-          case 'discussion-comment': return { title: `🔔 ${change.author} commented on ${change.mr.mrName}`, body: `[DISCUSSION COMMENT] ${change.mr.mrName}` };
-          case 'jira-comment': return { title: `🔔 ${change.author} commented on ${change.issue.issueKey}`, body: `[JIRA COMMENT] ${change.issue.issueKey}` };
-          case 'jira-status-changed': return { title: `🔔 status of ${change.issue.issueKey} changed to ${change.toStatus}`, body: `[JIRA STATUS CHANGED] ${change.issue.issueKey}` };
-        }
-      }
-
-      const newMrs = changes.filter(c => c.type === 'new-mr').length;
-      const mergedMrs = changes.filter(c => c.type === 'merged-mr').length;
-      const closedMrs = changes.filter(c => c.type === 'closed-mr').length;
-      const reopenedMrs = changes.filter(c => c.type === 'reopened-mr').length;
-      const diffComments = changes.filter(c => c.type === 'diff-comment').length;
-      const discussionComments = changes.filter(c => c.type === 'discussion-comment').length;
-      const jiraComments = changes.filter(c => c.type === 'jira-comment').length;
-      const jiraStatusChanged = changes.filter(c => c.type === 'jira-status-changed').length;
-
-      if (changes.length === 1) {
-        return formatChange(changes[0]!);
-      }
-
-      if (changes.length < 5) {
-        return {
-          title: "New changes",
-          body: changes.map(formatChange).join('\n')
-        };
-      }
-
-      return {
-        title: "New changes",
-        body: `${newMrs} new MRs, \n
-${mergedMrs} merged MRs, \n
-${closedMrs} closed MRs, \n
-${reopenedMrs} reopened MRs, \n
-${diffComments} diff comments, \n
-${discussionComments} discussion comments, \n
-${jiraComments} JIRA comments, \n
-${jiraStatusChanged} JIRA status changes`
-      }
+  if (changes.length < 5) {
+    return {
+      title: "New changes",
+      body: changes.map(c => formatChange(c).body).join('\n')
     };
+  }
 
-    yield* sendSystemNotification(createNotification(notifiableChanges));
-    incrementUnreadCount(notifiableChanges.length);
-  })
-}
+  const newMrs = changes.filter(c => c.type === 'new-mr').length;
+  const mergedMrs = changes.filter(c => c.type === 'merged-mr').length;
+  const closedMrs = changes.filter(c => c.type === 'closed-mr').length;
+  const reopenedMrs = changes.filter(c => c.type === 'reopened-mr').length;
+  const diffComments = changes.filter(c => c.type === 'diff-comment').length;
+  const discussionComments = changes.filter(c => c.type === 'discussion-comment').length;
+  const jiraComments = changes.filter(c => c.type === 'jira-comment').length;
+  const jiraStatusChanged = changes.filter(c => c.type === 'jira-status-changed').length;
 
-const notificationStream = Effect.fn("notificationStream")(function* (get: Atom.Context) {
-  const settings = loadSettings();
-  const lastProcessedTimestamp = settings.notifications.lastProcessedEventId;
+  return {
+    title: "New changes",
+    body: `${newMrs} new MRs, \n${mergedMrs} merged MRs, \n${closedMrs} closed MRs, \n${reopenedMrs} reopened MRs, \n${diffComments} diff comments, \n${discussionComments} discussion comments, \n${jiraComments} JIRA comments, \n${jiraStatusChanged} JIRA status changes`
+  };
+};
 
-  return (yield* changesStream(get)).pipe(
-    Stream.dropUntil(acc => !lastProcessedTimestamp || acc.event?.eventId === lastProcessedTimestamp),
-    Stream.tap((acc) => processStateChangeToNotification(acc, get))
-  );
-});
+const stateToNotificationPayload = (acc: ChangeTrackingState, context: NotificationContext): NotificationPayload | undefined => {
+  if (!acc.event) return undefined;
 
-export const notificationStreamAtom = appAtomRuntime.atom(
-  (get) => Stream.unwrap(notificationStream(get)),
-  { initialValue: undefined }
-).pipe(Atom.keepAlive);
+  const deltas = acc.deltasByEventId.get(acc.event.eventId);
+  if (!deltas || deltas.length === 0) return undefined;
+
+  const notifiableChanges = deltas
+    .map(change => determineNotification(change, context))
+    .filter((result): result is Extract<NotificationFilterResult, { notify: true }> => result.notify)
+    .map(result => result.change);
+
+  if (notifiableChanges.length === 0) return undefined;
+
+  return createNotificationPayload(notifiableChanges);
+};
+
+const createNotificationDaemon = (get: Atom.Context) =>
+  Effect.gen(function* () {
+    yield* Console.log('[NotificationDaemon] Starting');
+
+    const settings = loadSettings();
+    const lastProcessedTimestamp = settings.notifications.lastProcessedEventId;
+
+    const stream = (yield* changesStream(get)).pipe(
+      Stream.groupedWithin(3000, "2 seconds"),
+      Stream.dropUntil(acc => {
+        if (!lastProcessedTimestamp) {
+          return true; // stop drop
+        }
+
+        const hasLastProcessedEvent = acc.pipe(
+          Chunk.findFirst(change => change.event?.eventId == lastProcessedTimestamp),
+          Option.isSome);
+
+        console.log(`[NotificationDaemon] dropUntil = ${hasLastProcessedEvent}, lastProcessedTimestamp: ${lastProcessedTimestamp}, thing: ${acc.length}`)
+
+        return hasLastProcessedEvent; // if has the event, stop dropping
+      }),
+      Stream.tap((acc) => {
+        return Effect.gen(function* () {
+          // Check if notifications are enabled
+          const settingsResult = get.registry.get(settingsAtom);
+          const notificationsEnabled = Result.match(settingsResult, {
+            onInitial: () => false,
+            onFailure: () => false,
+            onSuccess: (s) => s.value.notifications.enabled
+          });
+
+          // The actual last event (for persisting lastProcessedEventId)
+          const actualLastState = acc.pipe(Chunk.last);
+
+          // Persist the actual last event ID regardless of notification setting
+          if (Option.isSome(actualLastState) && actualLastState.value.event) {
+            const currentSettings = loadSettings();
+            currentSettings.notifications.lastProcessedEventId = actualLastState.value.event.eventId;
+            saveSettings(currentSettings);
+          }
+
+          if (!notificationsEnabled) return;
+
+          // Single scan to find last event ID of each type
+          const { lastMrId, lastJiraId } = Chunk.reduce(
+            acc,
+            { lastMrId: undefined as string | undefined, lastJiraId: undefined as string | undefined },
+            (tracker, state) => {
+              if (!state.event) return tracker;
+              return {
+                lastMrId: mrChangeTrackingProjection.isRelevantEvent(state.event) ? state.event.eventId : tracker.lastMrId,
+                lastJiraId: jiraChangeTrackingProjection.isRelevantEvent(state.event) ? state.event.eventId : tracker.lastJiraId
+              };
+            }
+          );
+
+          // Build target set (filters undefined, dedupes naturally)
+          const targetEventIds = new Set([lastMrId, lastJiraId].filter((id): id is string => id !== undefined));
+
+          // Filter → map → filter pipeline
+          const context = buildNotificationContext(get);
+          const payloads = Chunk.toArray(acc)
+            .filter(state => state.event !== undefined && targetEventIds.has(state.event.eventId))
+            .map(state => stateToNotificationPayload(state, context))
+            .filter((p): p is NotificationPayload => p !== undefined);
+
+          for (const payload of payloads) {
+            yield* sendSystemNotification(payload);
+          }
+        })
+      })
+    );
+
+    yield* Stream.runDrain(stream);
+  });
+
+export const ensureNotificationDaemon = (get: Atom.Context) =>
+  Effect.gen(function* () {
+    if (notificationDaemonFiber) {
+      return;
+    }
+
+    notificationDaemonFiber = yield* Effect.forkDaemon(createNotificationDaemon(get));
+  });
