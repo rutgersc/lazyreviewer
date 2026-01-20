@@ -12,7 +12,6 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
   const registry = get.registry;
 
   const selectedMergeRequest = get(selectedMrAtom);
-  const selectedPipelineJobIndex = get(selectedPipelineJobIndexAtom);
   const pipelineJobs = getPipelineJobsFromMr(selectedMergeRequest);
 
   if (pipelineJobs.length === 0) return [];
@@ -24,9 +23,12 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
       displayKey: 'j/k, ↑/↓',
       description: 'Navigate pipeline jobs',
       handler: () => {
-        const next = Math.min(selectedPipelineJobIndex + 1, pipelineJobs.length - 1);
+        const currentMr = registry.get(selectedMrAtom);
+        const jobs = getPipelineJobsFromMr(currentMr);
+        const currentIndex = registry.get(selectedPipelineJobIndexAtom);
+        const next = Math.min(currentIndex + 1, jobs.length - 1);
         registry.set(selectedPipelineJobIndexAtom, next);
-        registry.set(requestScrollPipelineJobsListToJobAtom, `pipeline-job-${next}`)
+        registry.set(requestScrollPipelineJobsListToJobAtom, `pipeline-job-${next}`);
       },
     },
     {
@@ -35,9 +37,10 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
       displayKey: '',
       description: '',
       handler: () => {
-        const prev = Math.max(selectedPipelineJobIndex - 1, 0);
+        const currentIndex = registry.get(selectedPipelineJobIndexAtom);
+        const prev = Math.max(currentIndex - 1, 0);
         registry.set(selectedPipelineJobIndexAtom, prev);
-        registry.set(requestScrollPipelineJobsListToJobAtom, `pipeline-job-${prev}`)
+        registry.set(requestScrollPipelineJobsListToJobAtom, `pipeline-job-${prev}`);
       },
     },
     {
@@ -46,9 +49,12 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
       displayKey: 'i',
       description: 'Download and open job log',
       handler: () => {
-        const selectedJob = pipelineJobs[selectedPipelineJobIndex];
-        if (selectedJob && selectedMergeRequest) {
-          registry.set(loadJobLogAtom, { mergeRequest: selectedMergeRequest, job: selectedJob.job });
+        const currentMr = registry.get(selectedMrAtom);
+        const jobs = getPipelineJobsFromMr(currentMr);
+        const currentIndex = registry.get(selectedPipelineJobIndexAtom);
+        const selectedJob = jobs[currentIndex];
+        if (selectedJob && currentMr) {
+          registry.set(loadJobLogAtom, { mergeRequest: currentMr, job: selectedJob.job });
         }
       },
     },
@@ -58,14 +64,14 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
       displayKey: 'y',
       description: 'View job history',
       handler: () => {
-        if (pipelineJobs[selectedPipelineJobIndex]) {
+        const currentMr = registry.get(selectedMrAtom);
+        const jobs = getPipelineJobsFromMr(currentMr);
+        const currentIndex = registry.get(selectedPipelineJobIndexAtom);
 
-          // this is the impl of useAtomSet with { mode: 'promiseExit' }
-          const promise = Effect.runPromiseExit(
+        if (jobs[currentIndex]) {
+          Effect.runPromiseExit(
             Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
-          )
-
-          promise.then((exit) => {
+          ).then((exit) => {
             if (exit._tag === 'Success') {
               const { job, history, pageInfo } = exit.value;
               registry.set(jobHistoryDataAtom, history);

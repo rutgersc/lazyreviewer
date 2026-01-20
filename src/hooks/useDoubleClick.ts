@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 
 interface UseDoubleClickOptions<T> {
   onSingleClick?: (item: T) => void;
@@ -8,19 +8,24 @@ interface UseDoubleClickOptions<T> {
 
 export function useDoubleClick<T>({ onSingleClick, onDoubleClick, latency = 300 }: UseDoubleClickOptions<T>) {
   const lastClickRef = useRef<{ item: T; time: number } | null>(null);
+  const onSingleClickRef = useRef(onSingleClick);
+  const onDoubleClickRef = useRef(onDoubleClick);
 
-  const handleClick = (item: T) => {
+  onSingleClickRef.current = onSingleClick;
+  onDoubleClickRef.current = onDoubleClick;
+
+  const handleClick = useCallback((item: T) => {
     const now = Date.now();
     const lastClick = lastClickRef.current;
 
     if (lastClick && lastClick.item === item && (now - lastClick.time) < latency) {
-      onDoubleClick?.(item);
+      onDoubleClickRef.current?.(item);
       lastClickRef.current = null;
     } else {
       lastClickRef.current = { item, time: now };
-      onSingleClick?.(item);
+      onSingleClickRef.current?.(item);
     }
-  };
+  }, [latency]);
 
   return handleClick;
 }
