@@ -7,6 +7,7 @@ import type { Action } from '../actions/action-types';
 import { infoPaneTabAtom, activePaneAtom, activeModalAtom, type InfoPaneTab } from '../ui/navigation-atom';
 import { paneActionsForDisplayAtom } from '../actions/pane-actions-atoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { useDoubleClick } from '../hooks/useDoubleClick';
 
 interface HelpModalProps {
   isVisible: boolean;
@@ -23,11 +24,14 @@ interface KeyBinding {
 const KeyRow = ({
   binding,
   isSelected,
+  onMouseDown,
 }: {
   binding: KeyBinding;
   isSelected: boolean;
+  onMouseDown?: () => void;
 }) => (
   <box
+    onMouseDown={onMouseDown}
     style={{
       flexDirection: "row",
       backgroundColor: isSelected ? Colors.SELECTED : 'transparent',
@@ -100,6 +104,19 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
   const globalKeys = actionsToKeyBindings(globalActions);
   const allKeys = [...paneKeys, ...globalKeys];
 
+  const executeAction = (index: number) => {
+    const binding = allKeys[index];
+    if (binding?.action) {
+      setActiveModal('none');
+      binding.action();
+    }
+  };
+
+  const handleRowClick = useDoubleClick<number>({
+    onSingleClick: (index) => setSelectedIndex(index),
+    onDoubleClick: (index) => executeAction(index),
+  });
+
   // Reset selection when modal opens or pane changes
   React.useEffect(() => {
     if (isVisible) {
@@ -120,11 +137,7 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
         setSelectedIndex(prev => Math.max(prev - 1, 0));
         break;
       case 'return':
-        const selectedBinding = allKeys[selectedIndex];
-        if (selectedBinding?.action) {
-          setActiveModal('none');
-          selectedBinding.action();
-        }
+        executeAction(selectedIndex);
         break;
     }
   });
@@ -167,7 +180,7 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
             </text>
             <box style={{ flexDirection: "column", marginBottom: 1 }}>
               {paneKeys.map((binding, index) => (
-                <KeyRow key={index} binding={binding} isSelected={index === selectedIndex} />
+                <KeyRow key={index} binding={binding} isSelected={index === selectedIndex} onMouseDown={() => handleRowClick(index)} />
               ))}
             </box>
 
@@ -188,6 +201,7 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
               key={index}
               binding={binding}
               isSelected={paneKeys.length + index === selectedIndex}
+              onMouseDown={() => handleRowClick(paneKeys.length + index)}
             />
           ))}
         </box>

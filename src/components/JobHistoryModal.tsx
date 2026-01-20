@@ -27,6 +27,8 @@ export const jobHistoryHasNextPageAtom = Atom.make<boolean>(false);
 
 export const fetchJobHistoryAtom = appAtomRuntime.fn((_: void, get) =>
   Effect.gen(function* () {
+
+    console.log("step 3")
     const selectedMr = get(selectedMrAtom);
     const selectedPipelineJobIndex = get(selectedPipelineJobIndexAtom);
     const limit = get(jobHistoryLimitAtom);
