@@ -224,3 +224,16 @@ export const clearCompletedMonitoredMrsAtom = appAtomRuntime.fn(() =>
     Settings.clearCompletedMonitoredMrs();
   })
 );
+
+const projectMonitoredJobsRawAtom = selectFromSettings(
+  s => s.projectMonitoredJobs,
+  {} as Record<string, string[]>,
+  shallowObjectEquals
+);
+
+export const projectMonitoredJobsAtom = Atom.make(get => {
+  const raw = get(projectMonitoredJobsRawAtom);
+  return new Map(
+    Object.entries(raw).map(([project, jobs]) => [project, new Set(jobs)])
+  );
+});

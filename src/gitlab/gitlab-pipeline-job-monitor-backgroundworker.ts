@@ -42,7 +42,7 @@ const backgroundWorker =
 
     const allMrsState = yield* MrStateService.get
 
-    // Fetch unique repos once before processing MRs concurrently
+    // Git-fetch unique repos once before processing MRs concurrently
     const uniqueRepos = [
       ...new Map(
         monitoredMrs
@@ -64,9 +64,7 @@ const backgroundWorker =
     }
 
     const monitorMr = (mrIid: MrGid) => Effect.gen(function* () {
-
       const mr = allMrsState.mrsByGid.get(mrIid);
-
       if (!mr) {
         return yield* Effect.fail({ type: 'mrNotAvailable' as const, message: `${mrIid} is not found in ${allMrsState.mrsByGid.keys().toArray().join(", ")}` });
       }
@@ -209,15 +207,17 @@ const backgroundWorker =
       onLeft: (error) => {
         return Console.log("[PipelineJobMonitor] `Failed to poll mr: ", error)
       },
-      onRight: (polls) => {
+      onRight: (polls) => Effect.gen(function* () {
 
-        const withoutSkipped = polls
+        const nonSkipped = polls
           .filter(p => p.type !== 'skipped')
           .values()
           .toArray();
 
-        return Console.log("[PipelineJobMonitor] Poll complete:", withoutSkipped)
-      }
+        if (nonSkipped.length > 0) {
+          yield* Console.log("[PipelineJobMonitor] Poll complete:", nonSkipped)
+        }
+      })
     })
 
   })
@@ -228,7 +228,7 @@ export class PipelineJobMonitor extends Effect.Service<PipelineJobMonitor>()("Pi
     yield* Effect.sleep('10 seconds').pipe(
       Effect.andThen(
         backgroundWorker.pipe(
-          Effect.catchAllCause((cause) => Console.log('[PipelineJobMonitor] Error during poll:', cause)),
+          Effect.catchAllCause((cause) => Console.log('[PipelineJobMonitor] Unhandled error during poll:', cause)),
           Effect.andThen(Effect.sleep('30 seconds')),
           Effect.forever
         )

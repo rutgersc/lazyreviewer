@@ -12,6 +12,7 @@ import { useEffect } from 'react';
 import type { MergeRequest } from './MergeRequestPane';
 import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
 import { loadJobLogAtom } from '../mergerequests/open-pipelinejob-log-atom';
+import { projectMonitoredJobsAtom } from '../settings/settings-atom';
 
 interface PipelineJobsListProps {
   selectedPipelineJobIndex: number;
@@ -51,6 +52,10 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
   const [scrollToItemRequest, setScrollToItemRequest] = useAtom(requestScrollPipelineJobsListToJob);
 
   const pipelineJobs = getPipelineJobsFromMr(selectedMergeRequest)
+  const projectMonitoredJobs = useAtomValue(projectMonitoredJobsAtom);
+  const trackedJobNames = selectedMergeRequest
+    ? projectMonitoredJobs.get(selectedMergeRequest.project.fullPath) ?? new Set<string>()
+    : new Set<string>();
 
   useEffect(() => {
     if (scrollToItemRequest !== null) {
@@ -98,44 +103,53 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
     >
     <box style={{ flexDirection: "column", gap: 1 }}>
       <box style={{ flexDirection: "column", gap: 0 }}>
-        {pipelineJobs.map(({ stage, job }, index) => (
-          <box
-            key={job.id}
-            id={`pipeline-job-${index}`}
-            onMouseDown={() => handleJobClick(index)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 1,
-              backgroundColor: index === selectedPipelineJobIndex ? Colors.SELECTED : 'transparent'
-            }}
-          >
-            <text
-              style={{ fg: getJobStatusDisplay(job.status).color, attributes: TextAttributes.DIM }}
-              wrapMode='none'
+        {pipelineJobs.map(({ stage, job }, index) => {
+          const isMonitoredJob = trackedJobNames.has(job.name);
+
+          return (
+            <box
+              key={job.id}
+              id={`pipeline-job-${index}`}
+              onMouseDown={() => handleJobClick(index)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 1,
+                backgroundColor: index === selectedPipelineJobIndex ? Colors.SELECTED : 'transparent',
+              }}
             >
-              {getJobStatusDisplay(job.status).symbol}
-            </text>
-            <text
-              style={{ fg: Colors.SUPPORTING, width: 8 }}
-              wrapMode='none'
-            >
-              {formatDuration(job.duration)}
-            </text>
-            <text
-              style={{ fg: Colors.NEUTRAL }}
-              wrapMode='none'
-            >
-              {`${stage.name}: `}
-            </text>
-            <text
-              style={{ fg: Colors.PRIMARY }}
-              wrapMode='none'
-            >
-              {job.name}
-            </text>
-          </box>
-        ))}
+              <text
+                style={{ fg: getJobStatusDisplay(job.status).color, attributes: TextAttributes.DIM }}
+                wrapMode='none'
+              >
+                {getJobStatusDisplay(job.status).symbol}
+              </text>
+              <text
+                style={{ fg: Colors.SUPPORTING, width: 8 }}
+                wrapMode='none'
+              >
+                {formatDuration(job.duration)}
+              </text>
+              <text
+                style={{ fg: Colors.NEUTRAL }}
+                wrapMode='none'
+              >
+                {`${stage.name}: `}
+              </text>
+              <text
+                style={{ fg: isMonitoredJob ? Colors.WARNING : Colors.PRIMARY }}
+                wrapMode='none'
+              >
+                {job.name}
+              </text>
+              {isMonitoredJob && (
+                <text style={{ fg: Colors.WARNING }} wrapMode='none'>
+                  {' (job monitored)'}
+                </text>
+              )}
+            </box>
+          );
+        })}
       </box>
 
       <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
