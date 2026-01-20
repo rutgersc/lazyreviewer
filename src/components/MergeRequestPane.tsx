@@ -695,9 +695,10 @@ export default function MergeRequestPane() {
                 backgroundColor: highlightInfo.backgroundColor,
               }}
             >
-              <text style={{ fg: isMonitored ? '#ff79c6' : 'transparent' }} wrapMode='none'>
-                {isMonitored ? '| ' : '  '}
-              </text>
+              <box style={{
+                width: 1,
+                backgroundColor: isMonitored ? '#ff79c6' : 'transparent',
+              }} />
               <box style={{ flexDirection: "column", flexGrow: 1 }}>
                 {isIgnored ? (
                   <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} isMyMr={isMyMr} now={now} />

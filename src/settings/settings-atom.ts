@@ -237,3 +237,20 @@ export const projectMonitoredJobsAtom = Atom.make(get => {
     Object.entries(raw).map(([project, jobs]) => [project, new Set(jobs)])
   );
 });
+
+export const toggleMonitorJobAtom = appAtomRuntime.fn(
+  ({ projectFullPath, jobName }: { projectFullPath: string; jobName: string }) =>
+    Effect.gen(function* () {
+      const settings = loadSettings();
+      const currentJobs = new Set(settings.projectMonitoredJobs[projectFullPath] ?? []);
+
+      if (currentJobs.has(jobName)) {
+        currentJobs.delete(jobName);
+      } else {
+        currentJobs.add(jobName);
+      }
+
+      settings.projectMonitoredJobs[projectFullPath] = Array.from(currentJobs);
+      saveSettings(settings);
+    })
+);
