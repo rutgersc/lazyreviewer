@@ -254,3 +254,27 @@ export const toggleMonitorJobAtom = appAtomRuntime.fn(
       saveSettings(settings);
     })
 );
+
+export const toggleJobImportanceAtom = appAtomRuntime.fn(
+  ({ projectFullPath, jobName }: { projectFullPath: string; jobName: string }) =>
+    Effect.gen(function* () {
+      const settings = loadSettings();
+      const projectJobs = (settings.pipelineJobImportance[projectFullPath] ??= {});
+      const currentImportance = projectJobs[jobName] ?? 'low';
+      projectJobs[jobName] = currentImportance === 'high' ? 'low' : 'high';
+      saveSettings(settings);
+    })
+);
+
+const pipelineJobImportanceRawAtom = selectFromSettings(
+  s => s.pipelineJobImportance,
+  {} as Record<string, Record<string, string>>,
+  shallowObjectEquals
+);
+
+export const pipelineJobImportanceAtom = Atom.make(get => {
+  const raw = get(pipelineJobImportanceRawAtom);
+  return new Map(
+    Object.entries(raw).map(([project, jobs]) => [project, new Map(Object.entries(jobs))])
+  );
+});

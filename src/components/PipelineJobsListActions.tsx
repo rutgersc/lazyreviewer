@@ -7,7 +7,7 @@ import { getPipelineJobsFromMr, requestScrollPipelineJobsListToJob as requestScr
 import { Effect } from 'effect';
 import { fetchJobHistoryAtom, jobHistoryDataAtom, jobHistoryEndCursorAtom, jobHistoryHasNextPageAtom, selectedJobForHistoryAtom, selectedPipelineJobIndexAtom } from './JobHistoryModal';
 import { loadJobLogAtom } from '../mergerequests/open-pipelinejob-log-atom';
-import { toggleMonitorJobAtom } from '../settings/settings-atom';
+import { toggleJobImportanceAtom, toggleMonitorJobAtom } from '../settings/settings-atom';
 
 export const pipelineJobsListActionsAtom = Atom.make((get) => {
   const registry = get.registry;
@@ -106,6 +106,24 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
         const selectedJob = jobs[currentIndex];
         if (selectedJob && currentMr) {
           registry.set(toggleMonitorJobAtom, {
+            projectFullPath: currentMr.project.fullPath,
+            jobName: selectedJob.job.name,
+          });
+        }
+      },
+    },
+    {
+      id: 'pipeline:toggle-job-importance',
+      keys: [parseKeyString('t')],
+      displayKey: 't',
+      description: 'Toggle job importance',
+      handler: () => {
+        const currentMr = registry.get(selectedMrAtom);
+        const jobs = getPipelineJobsFromMr(currentMr);
+        const currentIndex = registry.get(selectedPipelineJobIndexAtom);
+        const selectedJob = jobs[currentIndex];
+        if (selectedJob && currentMr) {
+          registry.set(toggleJobImportanceAtom, {
             projectFullPath: currentMr.project.fullPath,
             jobName: selectedJob.job.name,
           });

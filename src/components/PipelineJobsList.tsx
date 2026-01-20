@@ -12,7 +12,7 @@ import { useEffect } from 'react';
 import type { MergeRequest } from './MergeRequestPane';
 import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
 import { loadJobLogAtom } from '../mergerequests/open-pipelinejob-log-atom';
-import { projectMonitoredJobsAtom } from '../settings/settings-atom';
+import { pipelineJobImportanceAtom, projectMonitoredJobsAtom } from '../settings/settings-atom';
 
 interface PipelineJobsListProps {
   selectedPipelineJobIndex: number;
@@ -56,6 +56,10 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
   const trackedJobNames = selectedMergeRequest
     ? projectMonitoredJobs.get(selectedMergeRequest.project.fullPath) ?? new Set<string>()
     : new Set<string>();
+  const jobImportanceMap = useAtomValue(pipelineJobImportanceAtom);
+  const projectJobImportance = selectedMergeRequest
+    ? jobImportanceMap.get(selectedMergeRequest.project.fullPath) ?? new Map<string, string>()
+    : new Map<string, string>();
 
   useEffect(() => {
     if (scrollToItemRequest !== null) {
@@ -104,6 +108,7 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
     <box style={{ flexDirection: "column", gap: 1 }}>
       <box style={{ flexDirection: "column", gap: 0 }}>
         {pipelineJobs.map(({ stage, job }, index) => {
+          const isHighImportance = projectJobImportance.get(job.name) === 'high';
           const isMonitoredJob = trackedJobNames.has(job.name);
 
           return (
@@ -145,6 +150,11 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
               {isMonitoredJob && (
                 <text style={{ fg: Colors.WARNING }} wrapMode='none'>
                   {' (job monitored)'}
+                </text>
+              )}
+              {isHighImportance && (
+                <text style={{ fg: Colors.SECONDARY }} wrapMode='none'>
+                  {'■ '}
                 </text>
               )}
             </box>
