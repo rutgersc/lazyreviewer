@@ -1,5 +1,5 @@
 import { parseKeyString } from '../actions/key-matcher';
-import { Atom, Registry } from '@effect-atom/atom-react';
+import { Atom, Registry, useAtomSet } from '@effect-atom/atom-react';
 import { activeModalAtom } from '../ui/navigation-atom';
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
@@ -74,9 +74,11 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
         if (jobs[currentIndex]) {
         console.log("step 2")
 
-          Effect.runPromiseExit(
-            Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
-          ).then((exit) => {
+        registry.set(fetchJobHistoryAtom, 0);
+
+        const promise = Effect.runPromiseExit(
+          Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
+        ).then((exit) => {
             console.log("result", exit)
             if (exit._tag === 'Success') {
               const { job, history, pageInfo } = exit.value;

@@ -35,6 +35,7 @@ export const PipelineFieldFragmentSchema: Schema.Schema<PipelineFieldFragment> =
 })
 
 import type { GetJobStatusQuery } from "../mr-pipeline.generated"
+import { CiJobStatusSchema } from "../generated/gitlab-base-types.schema"
 
 export const GetJobStatusQuerySchema: Schema.Schema<GetJobStatusQuery> = Schema.Struct({
   project: Schema.NullOr(Schema.Struct({
@@ -47,6 +48,7 @@ export const GetJobStatusQuerySchema: Schema.Schema<GetJobStatusQuery> = Schema.
 
 import type { MrPipelineQuery } from "../mr-pipeline.generated"
 import { MergeRequestStateSchema } from "../generated/gitlab-base-types.schema"
+import { PipelineFieldFragmentSchema } from "./mrs.schema"
 
 export const MrPipelineQuerySchema: Schema.Schema<MrPipelineQuery> = Schema.Struct({
   project: Schema.NullOr(Schema.Struct({
@@ -60,6 +62,7 @@ export const MrPipelineQuerySchema: Schema.Schema<MrPipelineQuery> = Schema.Stru
 })
 
 import type { MrPipelinesQuery } from "../mr-pipeline.generated"
+import { PipelineFieldFragmentSchema } from "./mrs.schema"
 
 export const MrPipelinesQuerySchema: Schema.Schema<MrPipelinesQuery> = Schema.Struct({
   project: Schema.NullOr(Schema.Struct({

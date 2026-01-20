@@ -178,10 +178,18 @@ export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetch
         pipelineCreatedAt: pipeline!.createdAt || '',
         pipelineSource: pipeline!.source || '',
         webPath: job.webPath || null,
+        shortShaCommit: job.shortSha,
         isDevelopBranch: pipeline!.ref === 'develop',
         mergeRequestIid: pipeline!.mergeRequest?.iid || null,
         mergeRequestTitle: pipeline!.mergeRequest?.title || null,
-        mergeRequestAuthor: pipeline!.mergeRequest?.author?.username || null
+        mergeRequestAuthor: pipeline!.mergeRequest?.author?.username || null,
+        runner: !job.runner
+          ? null
+          : {
+            description: job.runner.description ?? "",
+            shortSha: job.runner.shortSha ?? ""
+          }
+
       } satisfies JobHistoryEntry;
     });
 

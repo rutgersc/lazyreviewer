@@ -35,6 +35,8 @@ export const ProjectPipelinesJobHistoryQuerySchema: Schema.Schema<ProjectPipelin
           failureMessage: Schema.NullOr(Schema.String),
           startedAt: Schema.NullOr(Schema.String),
           duration: Schema.NullOr(Schema.Number),
+          commitPath: Schema.NullOr(Schema.String),
+          shortSha: Schema.String,
           runner: Schema.NullOr(Schema.Struct({
             id: Schema.Unknown,
             description: Schema.NullOr(Schema.String),

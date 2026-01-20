@@ -16,6 +16,7 @@ query ProjectPipelinesJobHistory($projectPath: ID!, $jobName: String!, $first: I
         mergeRequest {
           iid
           title
+          sourceBranch
           author {
             username
           }
@@ -28,6 +29,7 @@ query ProjectPipelinesJobHistory($projectPath: ID!, $jobName: String!, $first: I
           failureMessage
           startedAt
           duration
+          commitPath
           runner {
             id
             description

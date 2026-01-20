@@ -9,6 +9,7 @@ import { appAtomRuntime } from '../appLayerRuntime';
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 import { Console, Effect } from 'effect';
 import { fetchJobHistory } from '../gitlab/gitlab-graphql';
+import type { JobHistoryEntry } from '../gitlab/gitlab-schema';
 
 interface JobHistoryModalProps {
   isVisible: boolean;
@@ -17,25 +18,22 @@ interface JobHistoryModalProps {
 
 export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
-export const jobHistoryDataAtom = Atom.make<any[]>([]);
+export const jobHistoryDataAtom = Atom.make<JobHistoryEntry[]>([]);
 export const selectedJobForHistoryAtom = Atom.make<string | null>(null);
 export const jobHistoryLimitAtom = Atom.make<number>(15);
 
 export const jobHistoryEndCursorAtom = Atom.make<string | null>(null);
 export const jobHistoryHasNextPageAtom = Atom.make<boolean>(false);
 
-
-export const fetchJobHistoryAtom = appAtomRuntime.fn((_: void, get) =>
+export const fetchJobHistoryAtom = appAtomRuntime.fn((_: number, get) =>
   Effect.gen(function* () {
-
-    console.log("step 3")
     const selectedMr = get(selectedMrAtom);
     const selectedPipelineJobIndex = get(selectedPipelineJobIndexAtom);
     const limit = get(jobHistoryLimitAtom);
 
     if (!selectedMr) {
       yield* Console.log('[JobHistory] No MR selected');
-      return { job: null, history: [] as any[], pageInfo: { hasNextPage: false, endCursor: null as string | null } };
+      return { job: null, history: [] as JobHistoryEntry[], pageInfo: { hasNextPage: false, endCursor: null as string | null } };
     }
 
     const jobs = selectedMr.pipeline.stage.flatMap((stage: any) => stage.jobs);
@@ -43,7 +41,7 @@ export const fetchJobHistoryAtom = appAtomRuntime.fn((_: void, get) =>
 
     if (!selectedJob) {
       yield* Console.log('[JobHistory] No job selected');
-      return { job: null, history: [] as any[], pageInfo: { hasNextPage: false, endCursor: null as string | null } };
+      return { job: null, history: [] as JobHistoryEntry[], pageInfo: { hasNextPage: false, endCursor: null as string | null } };
     }
 
     yield* Console.log(`[JobHistory] Fetching history for ${selectedJob.name} (limit: ${limit})`);
@@ -99,8 +97,12 @@ const loadMoreJobHistoryAtom = appAtomRuntime.fn((_: void, get) =>
 
     yield* Console.log(`[JobHistory] Fetched ${result.history.length} more entries`);
 
+    for(const bla of result.history) {
+      console.log("historyEntry", bla);
+    }
+
     // Append new entries to existing history
-    const newHistory = [...currentHistory, ...result.history];
+    const newHistory: JobHistoryEntry[] = [...currentHistory, ...result.history];
 
     return { history: newHistory, pageInfo: result.pageInfo, appended: true };
   })
@@ -210,23 +212,13 @@ export default function JobHistoryModal({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'transparent',
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000
+        width: '100%',
+        height: '100%',
+        backgroundColor: Colors.BACKGROUND,
+        zIndex: 9999
       }}
     >
-      <box
-        style={{
-          width: '90%',
-          height: '85%',
-          border: true,
-          borderColor: Colors.NEUTRAL,
-          backgroundColor: Colors.BACKGROUND,
-          flexDirection: 'column',
-          overflow: 'hidden'
-        }}
-      >
+
         {/* Header */}
         <box style={{ padding: 1, border: true, borderColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK, flexShrink: 0 }}>
           <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
@@ -298,10 +290,17 @@ export default function JobHistoryModal({
                         {formatDuration(entry.duration)}
                       </text>
 
+                      {/* commit */}
+                      <text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>
+                        {entry.shortShaCommit}
+                      </text>
+
                       {/* Runner */}
                       <text style={{ fg: Colors.SUPPORTING, width: 20 }} wrapMode='none'>
-                        {entry.runnerDescription || entry.runnerShortSha
-                          ? `${entry.runnerShortSha ? `(${entry.runnerShortSha}) ` : ''}${entry.runnerDescription || '-'}`
+                        {entry.runner?.description || entry.runner?.shortSha
+                          ? `${entry.runner?.shortSha
+                              ? `(${entry.runner.shortSha}) `
+                              : ''}${entry.runner.description || '-'}`
                           : '-'}
                       </text>
 
@@ -361,7 +360,7 @@ export default function JobHistoryModal({
         </scrollbox>
 
         {/* Footer */}
-        <box style={{
+        {/* <box style={{
           padding: 1,
           border: true,
           borderColor: Colors.NEUTRAL,
@@ -376,8 +375,7 @@ export default function JobHistoryModal({
           <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
             {hasNextPage ? 'j/k: navigate • enter: open • m: load more • esc: close' : 'j/k: navigate • enter: open • esc: close'}
           </text>
-        </box>
+        </box> */}
       </box>
-    </box>
   );
 }

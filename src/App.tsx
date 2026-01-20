@@ -417,10 +417,12 @@ export default function App() {
       />
 
       {/* Job History Modal - rendered at app level to cover entire screen */}
-      <JobHistoryModal
-        isVisible={activeModal === 'jobHistory'}
-        onClose={() => setActiveModal('none')}
-      />
+      {activeModal === 'jobHistory' && (
+        <JobHistoryModal
+          isVisible={true}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
 
       {/* Event Log Pane - fullscreen overlay */}
       {activeModal === 'eventLog' && (

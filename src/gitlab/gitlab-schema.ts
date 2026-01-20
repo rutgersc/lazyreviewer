@@ -109,10 +109,15 @@ export interface JobHistoryEntry {
   pipelineCreatedAt: string;
   pipelineSource: string;
   webPath: string | null;
+  shortShaCommit: string | null;
   isDevelopBranch: boolean;
   mergeRequestIid: string | null;
   mergeRequestTitle: string | null;
   mergeRequestAuthor: string | null;
+  runner: {
+    description: string,
+    shortSha: string
+  } | null
 }
 
 export type PipelineJob = Schema.Schema.Type<typeof PipelineJobSchema>

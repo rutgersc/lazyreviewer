@@ -10,6 +10,7 @@ import { MRsQuerySchema } from "../graphql/schemas/mrs.schema";
 import { EventIdSchema } from "./event-id";
 import { SingleMrQuerySchema } from "../graphql/schemas/single-mr.schema";
 import { GitlabMRsQuerySchema } from "../graphql/schemas/gitlab-mrs.schema";
+import { ProjectPipelinesJobHistoryQuerySchema } from "../graphql/schemas/project-pipelines-job-history.schema";
 
 // GitLab event schemas
 const GitlabUserMergeRequestsFetchedEventSchema = Schema.Struct({
@@ -88,15 +89,13 @@ export interface GitlabPipelineFetchedEvent extends Schema.Schema.Type<typeof Gi
 const GitlabJobHistoryFetchedEventSchema = Schema.Struct({
   eventId: EventIdSchema,
   type: Schema.Literal('gitlab-jobhistory-fetched-event'),
-  jobHistory: Schema.Unknown,
+  jobHistory: ProjectPipelinesJobHistoryQuerySchema,
   forProjectPath: Schema.String,
   forJobName: Schema.String,
   timestamp: Schema.String
 })
 
-export interface GitlabJobHistoryFetchedEvent extends Schema.Schema.Type<typeof GitlabJobHistoryFetchedEventSchema> {
-  jobHistory: ProjectPipelinesJobHistoryQuery
-}
+export interface GitlabJobHistoryFetchedEvent extends Schema.Schema.Type<typeof GitlabJobHistoryFetchedEventSchema> { }
 
 export const GitlabEventSchema = Schema.Union(
   GitlabUserMergeRequestsFetchedEventSchema,
