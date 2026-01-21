@@ -32,9 +32,14 @@ const FETCH_HEAD_MAX_AGE_MINUTES = 5;
 const backgroundWorker =
   Effect.gen(function* () {
     const settings = loadSettings()
-    const monitoredMrs = Object.keys(settings.monitoredMergeRequests)
-      .filter(key => key !== null)
-      .map(key => MrGid(key))
+    const monitoredMrs = Object.entries(settings.monitoredMergeRequests)
+      .filter(entry => {
+        const key = entry[0];
+        const value = entry[1];
+
+        return key !== null && !value.completedReason
+      })
+      .map(entry => MrGid(entry[0]))
 
     if (monitoredMrs.length === 0) {
       return

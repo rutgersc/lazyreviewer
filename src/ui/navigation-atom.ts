@@ -34,9 +34,10 @@ export const cycleInfoPaneTabAtom = Atom.writable(
   }
 );
 
-export const nowAtom = Atom.readable(
-  () => new Date(),
-  (refresh) => {
-    setInterval(() => refresh(nowAtom), 60_000);
-  }
-);
+export const nowAtom = Atom.readable((get) => {
+  const intervalId = setInterval(() => {
+    get.setSelf(new Date());
+  }, 60_000);
+  get.addFinalizer(() => clearInterval(intervalId));
+  return new Date();
+});
