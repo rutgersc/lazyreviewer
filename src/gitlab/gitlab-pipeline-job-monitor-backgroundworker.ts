@@ -150,6 +150,9 @@ const backgroundWorker =
         return yield* Effect.fail({ type: 'missingJobs' as const });
       }
 
+      const isNewPipeline = !existingMrPipelineState ||
+        existingMrPipelineState.pipelineIid !== headPipeline.iid;
+
       const inProgressJobs = relevantJobs.filter(({ existingJobState, currentJob }) => {
         return !isJobDone(existingJobState) && !isJobDone(currentJob.status)
       });
@@ -177,12 +180,14 @@ const backgroundWorker =
         yield* handleFinishedJob(finishedJob);
       }
 
-      if (newlyFinishedJobs.length > 0) {
+      const shouldRefreshMr = isNewPipeline || newlyFinishedJobs.length > 0;
+      if (shouldRefreshMr) {
         yield* decideFetchSingleMr(mr.project.fullPath, mr.iid).pipe(
           Effect.mapError(e => ({ type: 'mrRefreshError' as const, e }))
         );
 
-        yield* Console.log(`[PipelineJobMonitor] Refreshed MR state for !${mr.title}`);
+        const reason = isNewPipeline ? 'new pipeline detected' : 'jobs finished';
+        yield* Console.log(`[PipelineJobMonitor] Refreshed MR state for !${mr.title} (${reason})`);
       }
 
       settings.monitoredMergeRequests[mr.id] = {

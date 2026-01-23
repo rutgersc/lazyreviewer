@@ -74,6 +74,7 @@ export const mapMrFragment = (
     webUrl: mr.webUrl!,
     sourcebranch: mr.sourceBranch,
     targetbranch: mr.targetBranch,
+    detailedMergeStatus: mr.detailedMergeStatus ?? null,
     project: {
       name: mr.project.name,
       path: mr.project.path,

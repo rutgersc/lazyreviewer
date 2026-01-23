@@ -6,6 +6,7 @@ fragment MergeRequestFields on MergeRequest {
   webUrl
   sourceBranch
   targetBranch
+  detailedMergeStatus
   project {
     name
     path

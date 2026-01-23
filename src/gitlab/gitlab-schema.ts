@@ -1,6 +1,6 @@
 import { Schema, Brand } from "effect";
-import type { CiJobStatus } from "../graphql/generated/gitlab-base-types";
-import { MergeRequestStateSchema } from "../graphql/generated/gitlab-base-types.schema";
+import type { CiJobStatus, DetailedMergeStatus } from "../graphql/generated/gitlab-base-types";
+import { MergeRequestStateSchema, DetailedMergeStatusSchema } from "../graphql/generated/gitlab-base-types.schema";
 
 // Branded types for type-safe MR identifiers (zero runtime overhead)
 export type MrGid = string & Brand.Brand<"MrGid">
@@ -71,6 +71,7 @@ export const GitlabMergeRequestSchema = Schema.Struct({
   webUrl: Schema.String,
   sourcebranch: Schema.String,
   targetbranch: Schema.String,
+  detailedMergeStatus: Schema.NullOr(DetailedMergeStatusSchema),
   project: Schema.Struct({
     name: Schema.String,
     path: Schema.String,

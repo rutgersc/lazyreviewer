@@ -47,6 +47,24 @@ const getJiraStatusColor = (statusName: string | undefined): string => {
   return Colors.PRIMARY;
 };
 
+const getMergeBlockedLabel = (status: string | null): string | null => {
+  switch (status) {
+    case 'NEED_REBASE': return 'needs rebase';
+    case 'CONFLICT': return 'conflicts';
+    case 'BLOCKED_STATUS': return 'blocked';
+    case 'DRAFT_STATUS': return 'draft';
+    case 'MERGE_TIME': return 'scheduled';
+    case 'EXTERNAL_STATUS_CHECKS': return 'ext checks';
+    case 'LOCKED_PATHS': return 'locked';
+    case 'LOCKED_LFS_FILES': return 'lfs locked';
+    case 'JIRA_ASSOCIATION': return 'jira required';
+    case 'TITLE_NOT_MATCHING': return 'title mismatch';
+    case 'SECURITY_POLICIES_VIOLATIONS': return 'security';
+    case 'COMMITS_STATUS': return 'commits';
+    default: return null;
+  }
+};
+
 
 const TimeColumnAuthorTitle = ({
   mr,
@@ -262,6 +280,22 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
       </box>
 
       <PipelineStagesWithJobStatuses mr={mr} />
+
+      {(() => {
+        const blockedLabel = getMergeBlockedLabel(mr.detailedMergeStatus);
+        if (!blockedLabel) return null;
+        return (
+          <text
+            style={{
+              fg: Colors.ERROR,
+              attributes: TextAttributes.BOLD,
+            }}
+            wrapMode='none'
+          >
+            [{blockedLabel}]
+          </text>
+        );
+      })()}
       </box>
     </box>
   );
