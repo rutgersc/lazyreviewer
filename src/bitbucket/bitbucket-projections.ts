@@ -106,6 +106,7 @@ export function mapBitbucketToGitlabMergeRequest(
     webUrl: pr.links.html.href,
     sourcebranch: pr.source.branch.name,
     targetbranch: pr.destination.branch.name,
+    detailedMergeStatus: null,
     project: {
       name: pr.destination.repository.name || repoSlug,
       path: repoSlug,

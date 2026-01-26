@@ -1,6 +1,6 @@
 import { Schema } from "effect"
 import type { MergeRequestFieldsFragment, MRsQuery } from "../mrs.generated"
-import { MergeRequestStateSchema, CiJobStatusSchema } from "../generated/gitlab-base-types.schema"
+import { DetailedMergeStatusSchema, MergeRequestStateSchema, CiJobStatusSchema } from "../generated/gitlab-base-types.schema"
 
 export const MergeRequestFieldsFragmentSchema: Schema.Schema<MergeRequestFieldsFragment> = Schema.Struct({
   id: Schema.Any,
@@ -10,6 +10,7 @@ export const MergeRequestFieldsFragmentSchema: Schema.Schema<MergeRequestFieldsF
   webUrl: Schema.NullOr(Schema.String),
   sourceBranch: Schema.String,
   targetBranch: Schema.String,
+  detailedMergeStatus: Schema.NullOr(DetailedMergeStatusSchema),
   project: Schema.Struct({
     name: Schema.String,
     path: Schema.String,
