@@ -114,6 +114,7 @@ export type Scalars = {
   TimelogID: { input: any; output: any; }
   TodoID: { input: any; output: any; }
   TodoableID: { input: any; output: any; }
+  TypesNamespaceID: { input: any; output: any; }
   UntrustedRegexp: { input: any; output: any; }
   Upload: { input: any; output: any; }
   UploadID: { input: any; output: any; }
@@ -123,6 +124,7 @@ export type Scalars = {
   WikiPageMetaID: { input: any; output: any; }
   WorkItemID: { input: any; output: any; }
   WorkItemsRelatedWorkItemLinkID: { input: any; output: any; }
+  WorkItemsSavedViewsSavedViewID: { input: any; output: any; }
   WorkItemsTypeID: { input: any; output: any; }
 };
 
@@ -350,7 +352,7 @@ export type AchievementUserAchievementsArgs = {
 
 /** The connection type for Achievement. */
 export type AchievementConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<AchievementEdge>>>;
@@ -358,6 +360,12 @@ export type AchievementConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Achievement>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Achievement. */
+export type AchievementConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -1089,6 +1097,8 @@ export type AutocompletedUser = Todoable & User & {
   readonly callouts: Maybe<UserCalloutConnection>;
   /** User's default commit email. */
   readonly commitEmail: Maybe<Scalars['String']['output']>;
+  /** Indicates if the user has composite identity enforcement enabled. */
+  readonly compositeIdentityEnforced: Scalars['Boolean']['output'];
   /** Projects the user has contributed to. */
   readonly contributedProjects: Maybe<ProjectConnection>;
   /** Timestamp of when the user was created. */
@@ -1393,9 +1403,10 @@ export type AutocompletedUserPersonalAccessTokensArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   lastUsedAfter: InputMaybe<Scalars['Time']['input']>;
-  revoked?: InputMaybe<Scalars['Boolean']['input']>;
+  revoked: InputMaybe<Scalars['Boolean']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
   sort?: InputMaybe<AccessTokenSort>;
-  state?: InputMaybe<AccessTokenState>;
+  state: InputMaybe<AccessTokenState>;
 };
 
 
@@ -2365,7 +2376,7 @@ export type CiCatalogResourceComponentEdge = {
 
 /** The connection type for CiCatalogResource. */
 export type CiCatalogResourceConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CiCatalogResourceEdge>>>;
@@ -2373,6 +2384,12 @@ export type CiCatalogResourceConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<CiCatalogResource>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for CiCatalogResource. */
+export type CiCatalogResourceConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -2461,7 +2478,7 @@ export type CiCatalogResourceVersionComponentsArgs = {
 
 /** The connection type for CiCatalogResourceVersion. */
 export type CiCatalogResourceVersionConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CiCatalogResourceVersionEdge>>>;
@@ -2469,6 +2486,12 @@ export type CiCatalogResourceVersionConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<CiCatalogResourceVersion>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for CiCatalogResourceVersion. */
+export type CiCatalogResourceVersionConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -2769,6 +2792,11 @@ export type CiConfigVariable = {
 
 /** Histogram of durations for a group of CI/CD jobs or pipelines. */
 export type CiDurationStatistics = {
+  /**
+   * Mean (average) duration. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly mean: Maybe<Scalars['Duration']['output']>;
   /**
    * 50th percentile. 50% of the durations are lower than this value. Introduced in GitLab 15.8: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 15.8.
@@ -3240,6 +3268,8 @@ export type CiJobAnalytics = {
   readonly rateOfSuccess: Maybe<Scalars['Float']['output']>;
   /** Stage information. */
   readonly stage: Maybe<CiStage>;
+  /** Statistics for the jobs. */
+  readonly statistics: Maybe<CiJobAnalyticsStatistics>;
 };
 
 /** Aggregation functions available for CI/CD job analytics */
@@ -3306,6 +3336,28 @@ export type CiJobAnalyticsSort =
   | 'SUCCESS_RATE_ASC'
   /** Sort by success rate in descending order. */
   | 'SUCCESS_RATE_DESC';
+
+/** Statistics for CI/CD job analytics */
+export type CiJobAnalyticsStatistics = {
+  /** Count of jobs, optionally filtered by status. */
+  readonly count: Maybe<Scalars['BigInt']['output']>;
+  /** Duration statistics for the jobs. */
+  readonly durationStatistics: Maybe<CiDurationStatistics>;
+  /** Percentage of jobs, optionally filtered by status. */
+  readonly rate: Maybe<Scalars['Float']['output']>;
+};
+
+
+/** Statistics for CI/CD job analytics */
+export type CiJobAnalyticsStatisticsCountArgs = {
+  status: InputMaybe<PipelineAnalyticsJobStatus>;
+};
+
+
+/** Statistics for CI/CD job analytics */
+export type CiJobAnalyticsStatisticsRateArgs = {
+  status: InputMaybe<PipelineAnalyticsJobStatus>;
+};
 
 export type CiJobArtifact = {
   /** URL for downloading the artifact's file. */
@@ -3658,7 +3710,7 @@ export type CiJobTokenAuthLog = {
 
 /** The connection type for CiJobTokenAuthLog. */
 export type CiJobTokenAuthLogConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CiJobTokenAuthLogEdge>>>;
@@ -3666,6 +3718,12 @@ export type CiJobTokenAuthLogConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<CiJobTokenAuthLog>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for CiJobTokenAuthLog. */
+export type CiJobTokenAuthLogConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -3777,7 +3835,7 @@ export type CiJobTokenScopeAllowlistEntry = {
 
 /** The connection type for CiJobTokenScopeAllowlistEntry. */
 export type CiJobTokenScopeAllowlistEntryConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CiJobTokenScopeAllowlistEntryEdge>>>;
@@ -3787,48 +3845,18 @@ export type CiJobTokenScopeAllowlistEntryConnection = {
   readonly pageInfo: PageInfo;
 };
 
+
+/** The connection type for CiJobTokenScopeAllowlistEntry. */
+export type CiJobTokenScopeAllowlistEntryConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
+};
+
 /** An edge in a connection. */
 export type CiJobTokenScopeAllowlistEntryEdge = {
   /** A cursor for use in pagination. */
   readonly cursor: Scalars['String']['output'];
   /** The item at the end of the edge. */
   readonly node: Maybe<CiJobTokenScopeAllowlistEntry>;
-};
-
-/** Autogenerated input type of CiJobTokenScopeAutopopulateAllowlist */
-export type CiJobTokenScopeAutopopulateAllowlistInput = {
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
-  /** Project in which to autopopulate the allowlist. */
-  readonly projectPath: Scalars['ID']['input'];
-};
-
-/** Autogenerated return type of CiJobTokenScopeAutopopulateAllowlist. */
-export type CiJobTokenScopeAutopopulateAllowlistPayload = {
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: Maybe<Scalars['String']['output']>;
-  /** Errors encountered during the mutation. */
-  readonly errors: ReadonlyArray<Scalars['String']['output']>;
-  /** Status of the autopopulation process. */
-  readonly status: Scalars['String']['output'];
-};
-
-/** Autogenerated input type of CiJobTokenScopeClearAllowlistAutopopulations */
-export type CiJobTokenScopeClearAllowlistAutopopulationsInput = {
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
-  /** Project in which to autopopulate the allowlist. */
-  readonly projectPath: Scalars['ID']['input'];
-};
-
-/** Autogenerated return type of CiJobTokenScopeClearAllowlistAutopopulations. */
-export type CiJobTokenScopeClearAllowlistAutopopulationsPayload = {
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: Maybe<Scalars['String']['output']>;
-  /** Errors encountered during the mutation. */
-  readonly errors: ReadonlyArray<Scalars['String']['output']>;
-  /** Status of the autopopulation process. */
-  readonly status: Scalars['String']['output'];
 };
 
 /** Direction of access. */
@@ -4094,6 +4122,8 @@ export type CiManualVariableEdge = {
 export type CiPipelineCreationRequest = {
   /** Error message if pipeline creation failed. */
   readonly error: Maybe<Scalars['String']['output']>;
+  /** Pipeline object created by the request. */
+  readonly pipeline: Maybe<Pipeline>;
   /** ID of the created pipeline if creation was successful. */
   readonly pipelineId: Maybe<Scalars['CiPipelineID']['output']>;
   /** Current status of the pipeline creation. */
@@ -4335,7 +4365,7 @@ export type CiRunnerAccessLevel =
 
 /** The connection type for CiRunner. */
 export type CiRunnerConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CiRunnerEdge>>>;
@@ -4343,6 +4373,12 @@ export type CiRunnerConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<CiRunner>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for CiRunner. */
+export type CiRunnerConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type CiRunnerCreationMethod =
@@ -4406,7 +4442,7 @@ export type CiRunnerManager = {
 
 /** The connection type for CiRunnerManager. */
 export type CiRunnerManagerConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CiRunnerManagerEdge>>>;
@@ -4414,6 +4450,12 @@ export type CiRunnerManagerConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<CiRunnerManager>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for CiRunnerManager. */
+export type CiRunnerManagerConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -4633,7 +4675,7 @@ export type ClusterAgentActivityEvent = {
 
 /** The connection type for ClusterAgentActivityEvent. */
 export type ClusterAgentActivityEventConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ClusterAgentActivityEventEdge>>>;
@@ -4641,6 +4683,12 @@ export type ClusterAgentActivityEventConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<ClusterAgentActivityEvent>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for ClusterAgentActivityEvent. */
+export type ClusterAgentActivityEventConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -4703,7 +4751,7 @@ export type ClusterAgentAuthorizationUserAccessEdge = {
 
 /** The connection type for ClusterAgent. */
 export type ClusterAgentConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ClusterAgentEdge>>>;
@@ -4711,6 +4759,12 @@ export type ClusterAgentConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<ClusterAgent>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for ClusterAgent. */
+export type ClusterAgentConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of ClusterAgentDelete */
@@ -4758,7 +4812,7 @@ export type ClusterAgentToken = {
 
 /** The connection type for ClusterAgentToken. */
 export type ClusterAgentTokenConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ClusterAgentTokenEdge>>>;
@@ -4766,6 +4820,12 @@ export type ClusterAgentTokenConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<ClusterAgentToken>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for ClusterAgentToken. */
+export type ClusterAgentTokenConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of ClusterAgentTokenCreate */
@@ -6524,9 +6584,10 @@ export type CurrentUserPersonalAccessTokensArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   lastUsedAfter: InputMaybe<Scalars['Time']['input']>;
-  revoked?: InputMaybe<Scalars['Boolean']['input']>;
+  revoked: InputMaybe<Scalars['Boolean']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
   sort?: InputMaybe<AccessTokenSort>;
-  state?: InputMaybe<AccessTokenState>;
+  state: InputMaybe<AccessTokenState>;
 };
 
 
@@ -6769,7 +6830,7 @@ export type CustomEmoji = {
 
 /** The connection type for CustomEmoji. */
 export type CustomEmojiConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CustomEmojiEdge>>>;
@@ -6777,6 +6838,12 @@ export type CustomEmojiConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<CustomEmoji>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for CustomEmoji. */
+export type CustomEmojiConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -8626,7 +8693,7 @@ export type ErrorTrackingStackTrace = {
 
 /** The connection type for ErrorTrackingStackTrace. */
 export type ErrorTrackingStackTraceConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ErrorTrackingStackTraceEdge>>>;
@@ -8634,6 +8701,12 @@ export type ErrorTrackingStackTraceConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<ErrorTrackingStackTrace>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for ErrorTrackingStackTrace. */
+export type ErrorTrackingStackTraceConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -8724,6 +8797,16 @@ export type GrafanaIntegration = {
   readonly updatedAt: Scalars['Time']['output'];
 };
 
+/** Attributes for a granular scope of an access token. */
+export type GranularScopeInput = {
+  /** Access to configure for the granular scope. */
+  readonly access: AccessTokenGranularScopeAccess;
+  /** List of permissions for the granular scope. */
+  readonly permissions: ReadonlyArray<Scalars['String']['input']>;
+  /** IDs of groups or projects to associate with each granular scope. */
+  readonly resourceIds: InputMaybe<ReadonlyArray<Scalars['GlobalID']['input']>>;
+};
+
 export type Group = GroupInterface & Todoable & {
   /**
    * Achievements for the namespace. Returns `null` if the `achievements` feature flag is disabled. Introduced in GitLab 15.8: **Status**: Experiment.
@@ -8735,6 +8818,10 @@ export type Group = GroupInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.0.
    */
   readonly achievementsPath: Maybe<Scalars['String']['output']>;
+  /** Admin path for editing group. Only available to admins. */
+  readonly adminEditPath: Maybe<Scalars['String']['output']>;
+  /** Admin path of the group. Only available to admins. */
+  readonly adminShowPath: Maybe<Scalars['String']['output']>;
   /**
    * Indicates if the group or any ancestor is archived. Introduced in GitLab 18.3: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.3.
@@ -8899,6 +8986,11 @@ export type Group = GroupInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.3.
    */
   readonly mergeRequestsEnabled: Scalars['Boolean']['output'];
+  /**
+   * Metadata information for the namespace. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly metadata: Maybe<NamespaceMetadata>;
   /** Milestones of the group. */
   readonly milestones: Maybe<MilestoneConnection>;
   /** Name of the group. */
@@ -8954,6 +9046,11 @@ export type Group = GroupInterface & Todoable & {
   readonly rootStorageStatistics: Maybe<RootStorageStatistics>;
   /** Find runners visible to the current user. */
   readonly runners: Maybe<CiRunnerConnection>;
+  /**
+   * Saved views associated with the namespace. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly savedViews: Maybe<WorkItemSavedViewTypeConnection>;
   /** Indicates if sharing a project with another group within the group is prevented. */
   readonly shareWithGroupLock: Maybe<Scalars['Boolean']['output']>;
   /** List of shared groups this group was invited to. */
@@ -9398,6 +9495,18 @@ export type GroupRunnersArgs = {
 };
 
 
+export type GroupSavedViewsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  id: InputMaybe<Scalars['WorkItemsSavedViewsSavedViewID']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<WorkItemsSavedViewsSort>;
+  subscribedOnly: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
 export type GroupSharedGroupsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -9556,7 +9665,7 @@ export type GroupWorkItemsWidgetsArgs = {
 
 /** The connection type for Group. */
 export type GroupConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<GroupEdge>>>;
@@ -9564,6 +9673,12 @@ export type GroupConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Group>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Group. */
+export type GroupConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type GroupDataTransfer = {
@@ -9607,7 +9722,7 @@ export type GroupInterface = {
 
 /** The connection type for GroupInterface. */
 export type GroupInterfaceConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<GroupInterfaceEdge>>>;
@@ -9615,6 +9730,12 @@ export type GroupInterfaceConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<GroupInterface>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for GroupInterface. */
+export type GroupInterfaceConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -9811,6 +9932,44 @@ export type GroupNamespaceMarkdownPathsAutocompleteSourcesPathArgs = {
 
 export type GroupNamespaceMarkdownPathsMarkdownPreviewPathArgs = {
   iid: InputMaybe<Scalars['String']['input']>;
+};
+
+export type GroupNamespaceMetadata = NamespaceMetadata & {
+  /**
+   * ID of the group. Returns null for user namespaces. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly groupId: Maybe<Scalars['String']['output']>;
+  /**
+   * Whether the group has any projects. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly hasProjects: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * User preference for initial sort order. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly initialSort: Maybe<Scalars['String']['output']>;
+  /**
+   * Whether issue repositioning is disabled for the namespace. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly isIssueRepositioningDisabled: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Maximum allowed attachment size (humanized). Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly maxAttachmentSize: Maybe<Scalars['String']['output']>;
+  /**
+   * Whether to show the new work item link. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly showNewWorkItem: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Time tracking limit to hours setting. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly timeTrackingLimitToHours: Maybe<Scalars['Boolean']['output']>;
 };
 
 /** User permission on groups */
@@ -10631,7 +10790,7 @@ export type IssueTimelogsArgs = {
 
 /** The connection type for Issue. */
 export type IssueConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<IssueEdge>>>;
@@ -10639,6 +10798,12 @@ export type IssueConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Issue>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Issue. */
+export type IssueConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -11471,7 +11636,7 @@ export type Label = LabelInterface & {
 
 /** The connection type for Label. */
 export type LabelConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<LabelEdge>>>;
@@ -11479,6 +11644,12 @@ export type LabelConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Label>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Label. */
+export type LabelConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of LabelCreate */
@@ -12525,9 +12696,10 @@ export type MergeRequestAssigneePersonalAccessTokensArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   lastUsedAfter: InputMaybe<Scalars['Time']['input']>;
-  revoked?: InputMaybe<Scalars['Boolean']['input']>;
+  revoked: InputMaybe<Scalars['Boolean']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
   sort?: InputMaybe<AccessTokenSort>;
-  state?: InputMaybe<AccessTokenState>;
+  state: InputMaybe<AccessTokenState>;
 };
 
 
@@ -12673,7 +12845,7 @@ export type MergeRequestAssigneeUserAchievementsArgs = {
 
 /** The connection type for MergeRequestAssignee. */
 export type MergeRequestAssigneeConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MergeRequestAssigneeEdge>>>;
@@ -12681,6 +12853,12 @@ export type MergeRequestAssigneeConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<MergeRequestAssignee>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for MergeRequestAssignee. */
+export type MergeRequestAssigneeConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -13007,9 +13185,10 @@ export type MergeRequestAuthorPersonalAccessTokensArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   lastUsedAfter: InputMaybe<Scalars['Time']['input']>;
-  revoked?: InputMaybe<Scalars['Boolean']['input']>;
+  revoked: InputMaybe<Scalars['Boolean']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
   sort?: InputMaybe<AccessTokenSort>;
-  state?: InputMaybe<AccessTokenState>;
+  state: InputMaybe<AccessTokenState>;
 };
 
 
@@ -13155,7 +13334,7 @@ export type MergeRequestAuthorUserAchievementsArgs = {
 
 /** The connection type for MergeRequest. */
 export type MergeRequestConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MergeRequestEdge>>>;
@@ -13165,6 +13344,12 @@ export type MergeRequestConnection = {
   readonly pageInfo: PageInfo;
   /** Total sum of time to merge, in seconds, for the collection of merge requests. */
   readonly totalTimeToMerge: Maybe<Scalars['Float']['output']>;
+};
+
+
+/** The connection type for MergeRequest. */
+export type MergeRequestConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of MergeRequestCreate */
@@ -13538,9 +13723,10 @@ export type MergeRequestParticipantPersonalAccessTokensArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   lastUsedAfter: InputMaybe<Scalars['Time']['input']>;
-  revoked?: InputMaybe<Scalars['Boolean']['input']>;
+  revoked: InputMaybe<Scalars['Boolean']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
   sort?: InputMaybe<AccessTokenSort>;
-  state?: InputMaybe<AccessTokenState>;
+  state: InputMaybe<AccessTokenState>;
 };
 
 
@@ -13686,7 +13872,7 @@ export type MergeRequestParticipantUserAchievementsArgs = {
 
 /** The connection type for MergeRequestParticipant. */
 export type MergeRequestParticipantConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MergeRequestParticipantEdge>>>;
@@ -13694,6 +13880,12 @@ export type MergeRequestParticipantConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<MergeRequestParticipant>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for MergeRequestParticipant. */
+export type MergeRequestParticipantConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -14059,9 +14251,10 @@ export type MergeRequestReviewerPersonalAccessTokensArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   lastUsedAfter: InputMaybe<Scalars['Time']['input']>;
-  revoked?: InputMaybe<Scalars['Boolean']['input']>;
+  revoked: InputMaybe<Scalars['Boolean']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
   sort?: InputMaybe<AccessTokenSort>;
-  state?: InputMaybe<AccessTokenState>;
+  state: InputMaybe<AccessTokenState>;
 };
 
 
@@ -14207,7 +14400,7 @@ export type MergeRequestReviewerUserAchievementsArgs = {
 
 /** The connection type for MergeRequestReviewer. */
 export type MergeRequestReviewerConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MergeRequestReviewerEdge>>>;
@@ -14215,6 +14408,12 @@ export type MergeRequestReviewerConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<MergeRequestReviewer>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for MergeRequestReviewer. */
+export type MergeRequestReviewerConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -15358,10 +15557,6 @@ export type Mutation = {
   readonly catalogResourcesDestroy: Maybe<CatalogResourcesDestroyPayload>;
   readonly ciJobTokenScopeAddGroupOrProject: Maybe<CiJobTokenScopeAddGroupOrProjectPayload>;
   readonly ciJobTokenScopeAddProject: Maybe<CiJobTokenScopeAddProjectPayload>;
-  /** @deprecated **Status**: Experiment. Introduced in GitLab 17.9. */
-  readonly ciJobTokenScopeAutopopulateAllowlist: Maybe<CiJobTokenScopeAutopopulateAllowlistPayload>;
-  /** @deprecated **Status**: Experiment. Introduced in GitLab 17.9. */
-  readonly ciJobTokenScopeClearAllowlistAutopopulations: Maybe<CiJobTokenScopeClearAllowlistAutopopulationsPayload>;
   readonly ciJobTokenScopeRemoveGroup: Maybe<CiJobTokenScopeRemoveGroupPayload>;
   readonly ciJobTokenScopeRemoveProject: Maybe<CiJobTokenScopeRemoveProjectPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.6. */
@@ -15576,6 +15771,11 @@ export type Mutation = {
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.5. */
   readonly organizationUserUpdate: Maybe<OrganizationUserUpdatePayload>;
   readonly pagesMarkOnboardingComplete: Maybe<PagesMarkOnboardingCompletePayload>;
+  /**
+   * Creates a personal access token for the current user. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly personalAccessTokenCreate: Maybe<PersonalAccessTokenCreatePayload>;
   readonly pipelineCancel: Maybe<PipelineCancelPayload>;
   readonly pipelineCreate: Maybe<PipelineCreatePayload>;
   readonly pipelineDestroy: Maybe<PipelineDestroyPayload>;
@@ -15777,6 +15977,36 @@ export type Mutation = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 16.3.
    */
   readonly workItemRemoveLinkedItems: Maybe<WorkItemRemoveLinkedItemsPayload>;
+  /**
+   * Creates a saved view. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly workItemSavedViewCreate: Maybe<WorkItemSavedViewCreatePayload>;
+  /**
+   * Deletes a saved view. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly workItemSavedViewDelete: Maybe<WorkItemSavedViewDeletePayload>;
+  /**
+   * Reorders a saved view for the current user. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly workItemSavedViewReorder: Maybe<WorkItemSavedViewReorderPayload>;
+  /**
+   * Subscribes the current user to a saved view. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly workItemSavedViewSubscribe: Maybe<WorkItemSavedViewSubscribePayload>;
+  /**
+   * Unsubscribes the current user to a saved view. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly workItemSavedViewUnsubscribe: Maybe<WorkItemSavedViewUnsubscribePayload>;
+  /**
+   * Updates a saved view. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly workItemSavedViewUpdate: Maybe<WorkItemSavedViewUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 16.3. */
   readonly workItemSubscribe: Maybe<WorkItemSubscribePayload>;
   /**
@@ -15923,16 +16153,6 @@ export type MutationCiJobTokenScopeAddGroupOrProjectArgs = {
 
 export type MutationCiJobTokenScopeAddProjectArgs = {
   input: CiJobTokenScopeAddProjectInput;
-};
-
-
-export type MutationCiJobTokenScopeAutopopulateAllowlistArgs = {
-  input: CiJobTokenScopeAutopopulateAllowlistInput;
-};
-
-
-export type MutationCiJobTokenScopeClearAllowlistAutopopulationsArgs = {
-  input: CiJobTokenScopeClearAllowlistAutopopulationsInput;
 };
 
 
@@ -16526,6 +16746,11 @@ export type MutationPagesMarkOnboardingCompleteArgs = {
 };
 
 
+export type MutationPersonalAccessTokenCreateArgs = {
+  input: PersonalAccessTokenCreateInput;
+};
+
+
 export type MutationPipelineCancelArgs = {
   input: PipelineCancelInput;
 };
@@ -17036,6 +17261,36 @@ export type MutationWorkItemRemoveLinkedItemsArgs = {
 };
 
 
+export type MutationWorkItemSavedViewCreateArgs = {
+  input: WorkItemSavedViewCreateInput;
+};
+
+
+export type MutationWorkItemSavedViewDeleteArgs = {
+  input: WorkItemSavedViewDeleteInput;
+};
+
+
+export type MutationWorkItemSavedViewReorderArgs = {
+  input: WorkItemSavedViewReorderInput;
+};
+
+
+export type MutationWorkItemSavedViewSubscribeArgs = {
+  input: WorkItemSavedViewSubscribeInput;
+};
+
+
+export type MutationWorkItemSavedViewUnsubscribeArgs = {
+  input: WorkItemSavedViewUnsubscribeInput;
+};
+
+
+export type MutationWorkItemSavedViewUpdateArgs = {
+  input: WorkItemSavedViewUpdateInput;
+};
+
+
 export type MutationWorkItemSubscribeArgs = {
   input: WorkItemSubscribeInput;
 };
@@ -17141,6 +17396,11 @@ export type Namespace = Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.3.
    */
   readonly mergeRequestsEnabled: Scalars['Boolean']['output'];
+  /**
+   * Metadata information for the namespace. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly metadata: Maybe<NamespaceMetadata>;
   /** Name of the namespace. */
   readonly name: Scalars['String']['output'];
   /** Namespace settings for the namespace. */
@@ -17157,6 +17417,11 @@ export type Namespace = Todoable & {
   readonly requestAccessEnabled: Maybe<Scalars['Boolean']['output']>;
   /** Aggregated storage statistics of the namespace. Only available for root namespaces. */
   readonly rootStorageStatistics: Maybe<RootStorageStatistics>;
+  /**
+   * Saved views associated with the namespace. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly savedViews: Maybe<WorkItemSavedViewTypeConnection>;
   /** Shared runners availability for the namespace and its descendants. */
   readonly sharedRunnersSetting: Maybe<SharedRunnersSetting>;
   /**
@@ -17254,6 +17519,18 @@ export type NamespaceProjectsArgs = {
   withIssuesEnabled: InputMaybe<Scalars['Boolean']['input']>;
   withMergeRequestsEnabled: InputMaybe<Scalars['Boolean']['input']>;
   withNamespaceDomainPages: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type NamespaceSavedViewsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  id: InputMaybe<Scalars['WorkItemsSavedViewsSavedViewID']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<WorkItemsSavedViewsSort>;
+  subscribedOnly: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
@@ -17391,6 +17668,11 @@ export type NamespaceAvailableFeatures = {
    */
   readonly hasDesignManagementFeature: Scalars['Boolean']['output'];
   /**
+   * Whether Duo remote flows are enabled for the namespace. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly hasDuoRemoteFlowsFeature: Scalars['Boolean']['output'];
+  /**
    * Whether epics are enabled for the namespace. Introduced in GitLab 18.1: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
    */
@@ -17445,6 +17727,11 @@ export type NamespaceAvailableFeatures = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
    */
   readonly hasSubepicsFeature: Scalars['Boolean']['output'];
+  /**
+   * Whether work item planning view is enabled for the namespace. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly hasWorkItemPlanningViewFeature: Scalars['Boolean']['output'];
   /**
    * Whether work item statuses are enabled for the namespace. Introduced in GitLab 18.3: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.3.
@@ -17501,6 +17788,39 @@ export type NamespaceEdge = {
   readonly node: Maybe<Namespace>;
 };
 
+export type NamespaceMetadata = {
+  /**
+   * ID of the group. Returns null for user namespaces. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly groupId: Maybe<Scalars['String']['output']>;
+  /**
+   * User preference for initial sort order. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly initialSort: Maybe<Scalars['String']['output']>;
+  /**
+   * Whether issue repositioning is disabled for the namespace. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly isIssueRepositioningDisabled: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Maximum allowed attachment size (humanized). Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly maxAttachmentSize: Maybe<Scalars['String']['output']>;
+  /**
+   * Whether to show the new work item link. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly showNewWorkItem: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Time tracking limit to hours setting. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly timeTrackingLimitToHours: Maybe<Scalars['Boolean']['output']>;
+};
+
 export type NamespacePermissions = {
   /** If `true`, the user can perform `admin_issue` on this resource */
   readonly adminIssue: Scalars['Boolean']['output'];
@@ -17516,9 +17836,9 @@ export type NamespacePermissions = {
   readonly importIssues: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `import_work_items` on this resource */
   readonly importWorkItems: Scalars['Boolean']['output'];
-  /** If `true`, the user can perform `read_crm_contact` on this resource */
+  /** If `true`, the user can read CRM contacts. */
   readonly readCrmContact: Scalars['Boolean']['output'];
-  /** If `true`, the user can perform `read_crm_organization` on this resource */
+  /** If `true`, the user can read CRM organizations. */
   readonly readCrmOrganization: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `read_namespace` on this resource */
   readonly readNamespace: Scalars['Boolean']['output'];
@@ -17880,7 +18200,7 @@ export type NoteAwardEmojiArgs = {
 
 /** The connection type for Note. */
 export type NoteConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<NoteEdge>>>;
@@ -17888,6 +18208,12 @@ export type NoteConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Note>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Note. */
+export type NoteConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of NoteConvertToThread */
@@ -18113,7 +18439,7 @@ export type OrganizationProjectsArgs = {
 
 /** The connection type for Organization. */
 export type OrganizationConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<OrganizationEdge>>>;
@@ -18121,6 +18447,12 @@ export type OrganizationConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Organization>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Organization. */
+export type OrganizationConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of OrganizationCreate */
@@ -18460,7 +18792,7 @@ export type PackageBaseTagsArgs = {
 
 /** The connection type for PackageBase. */
 export type PackageBaseConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PackageBaseEdge>>>;
@@ -18468,6 +18800,12 @@ export type PackageBaseConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<PackageBase>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for PackageBase. */
+export type PackageBaseConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -18492,7 +18830,7 @@ export type PackageComposerJsonType = {
 
 /** The connection type for Package. */
 export type PackageConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PackageEdge>>>;
@@ -18500,6 +18838,12 @@ export type PackageConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Package>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Package. */
+export type PackageConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Represents a package dependency. */
@@ -19094,7 +19438,7 @@ export type PagesDeployment = {
 
 /** The connection type for PagesDeployment. */
 export type PagesDeploymentConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PagesDeploymentEdge>>>;
@@ -19102,6 +19446,12 @@ export type PagesDeploymentConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<PagesDeployment>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for PagesDeployment. */
+export type PagesDeploymentConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -19157,6 +19507,8 @@ export type PersonalAccessToken = {
   readonly id: Scalars['ID']['output'];
   /** Timestamp of when the personal access token was last used. */
   readonly lastUsedAt: Maybe<Scalars['Time']['output']>;
+  /** IP addresses where the personal access token was recently used. */
+  readonly lastUsedIps: ReadonlyArray<Scalars['String']['output']>;
   /** Name of the personal access token. */
   readonly name: Scalars['String']['output'];
   /** Whether the personal access token has been revoked. */
@@ -19173,6 +19525,30 @@ export type PersonalAccessTokenConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<PersonalAccessToken>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+/** Autogenerated input type of PersonalAccessTokenCreate */
+export type PersonalAccessTokenCreateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Description of the token. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** Expiration date of the token. */
+  readonly expiresAt: InputMaybe<Scalars['ISO8601Date']['input']>;
+  /** List of granular scopes to assign to the token. */
+  readonly granularScopes: ReadonlyArray<GranularScopeInput>;
+  /** Name of the token. */
+  readonly name: Scalars['String']['input'];
+};
+
+/** Autogenerated return type of PersonalAccessTokenCreate. */
+export type PersonalAccessTokenCreatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Created personal access token. */
+  readonly token: Maybe<PersonalAccessToken>;
 };
 
 /** An edge in a connection. */
@@ -19217,6 +19593,8 @@ export type Pipeline = PipelineInterface & {
   readonly duration: Maybe<Scalars['Int']['output']>;
   /** Pipeline error messages. */
   readonly errorMessages: Maybe<PipelineMessageConnection>;
+  /** Number of failed jobs in the pipeline, including trigger jobs and external jobs. */
+  readonly failedJobsCount: Scalars['Int']['output'];
   /** Reason why the pipeline failed. */
   readonly failureReason: Maybe<Scalars['String']['output']>;
   /** Timestamp of the pipeline's completion. */
@@ -19491,7 +19869,7 @@ export type PipelineConfigSourceEnum =
 
 /** The connection type for Pipeline. */
 export type PipelineConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PipelineEdge>>>;
@@ -19499,6 +19877,12 @@ export type PipelineConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Pipeline>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Pipeline. */
+export type PipelineConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Represents pipeline counts for the project */
@@ -19733,7 +20117,7 @@ export type PipelineScheduleVariablesArgs = {
 
 /** The connection type for PipelineSchedule. */
 export type PipelineScheduleConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PipelineScheduleEdge>>>;
@@ -19741,6 +20125,12 @@ export type PipelineScheduleConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<PipelineSchedule>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for PipelineSchedule. */
+export type PipelineScheduleConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of PipelineScheduleCreate */
@@ -20024,7 +20414,7 @@ export type PipelineTrigger = {
 
 /** The connection type for PipelineTrigger. */
 export type PipelineTriggerConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PipelineTriggerEdge>>>;
@@ -20032,6 +20422,12 @@ export type PipelineTriggerConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<PipelineTrigger>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for PipelineTrigger. */
+export type PipelineTriggerConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of PipelineTriggerCreate */
@@ -20112,6 +20508,10 @@ export type PipelineVariablesDefaultRoleType =
   | 'OWNER';
 
 export type Project = ProjectInterface & Todoable & {
+  /** Admin path for editing project. Only available to admins. */
+  readonly adminEditPath: Maybe<Scalars['String']['output']>;
+  /** Admin path of the project. Only available to admins. */
+  readonly adminShowPath: Maybe<Scalars['String']['output']>;
   /** Agent configurations defined by the project */
   readonly agentConfigurations: Maybe<AgentConfigurationConnection>;
   /** A single Alert Management alert of the project. */
@@ -20649,9 +21049,7 @@ export type ProjectBoardsArgs = {
 
 export type ProjectBranchRulesArgs = {
   after: InputMaybe<Scalars['String']['input']>;
-  before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
-  last: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -21465,7 +21863,7 @@ export type ProjectCiCdSettingsUpdatePayload = {
 
 /** The connection type for Project. */
 export type ProjectConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ProjectEdge>>>;
@@ -21473,6 +21871,12 @@ export type ProjectConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Project>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Project. */
+export type ProjectConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type ProjectDataTransfer = {
@@ -21616,7 +22020,7 @@ export type ProjectInterface = {
 
 /** The connection type for ProjectInterface. */
 export type ProjectInterfaceConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ProjectInterfaceEdge>>>;
@@ -21624,6 +22028,12 @@ export type ProjectInterfaceConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<ProjectInterface>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for ProjectInterface. */
+export type ProjectInterfaceConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -21818,6 +22228,44 @@ export type ProjectNamespaceMarkdownPathsAutocompleteSourcesPathArgs = {
 
 export type ProjectNamespaceMarkdownPathsMarkdownPreviewPathArgs = {
   iid: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ProjectNamespaceMetadata = NamespaceMetadata & {
+  /**
+   * Default branch of the project. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly defaultBranch: Maybe<Scalars['String']['output']>;
+  /**
+   * ID of the group. Returns null for user namespaces. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly groupId: Maybe<Scalars['String']['output']>;
+  /**
+   * User preference for initial sort order. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly initialSort: Maybe<Scalars['String']['output']>;
+  /**
+   * Whether issue repositioning is disabled for the namespace. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly isIssueRepositioningDisabled: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Maximum allowed attachment size (humanized). Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly maxAttachmentSize: Maybe<Scalars['String']['output']>;
+  /**
+   * Whether to show the new work item link. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly showNewWorkItem: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Time tracking limit to hours setting. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly timeTrackingLimitToHours: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type ProjectPermissions = {
@@ -23066,7 +23514,7 @@ export type ReleaseAssetsInput = {
 
 /** The connection type for Release. */
 export type ReleaseConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ReleaseEdge>>>;
@@ -23074,6 +23522,12 @@ export type ReleaseConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Release>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Release. */
+export type ReleaseConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of ReleaseCreate */
@@ -24055,7 +24509,7 @@ export type SavedReply = {
 
 /** The connection type for SavedReply. */
 export type SavedReplyConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<SavedReplyEdge>>>;
@@ -24063,6 +24517,12 @@ export type SavedReplyConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<SavedReply>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for SavedReply. */
+export type SavedReplyConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of SavedReplyCreate */
@@ -24925,6 +25385,11 @@ export type Subscription = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
    */
   readonly ciPipelineStatusesUpdated: Maybe<Pipeline>;
+  /**
+   * Triggered when jobs in a stage are updated. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly ciStageUpdated: Maybe<CiJob>;
   /** Triggered when the assignees of an issuable are updated. */
   readonly issuableAssigneesUpdated: Maybe<Issuable>;
   /** Triggered when the due date or start date of an issuable is updated. */
@@ -25005,6 +25470,11 @@ export type SubscriptionCiPipelineStatusUpdatedArgs = {
 
 export type SubscriptionCiPipelineStatusesUpdatedArgs = {
   projectId: Scalars['ProjectID']['input'];
+};
+
+
+export type SubscriptionCiStageUpdatedArgs = {
+  stageId: Scalars['CiStageID']['input'];
 };
 
 
@@ -25309,7 +25779,7 @@ export type TerraformState = {
 
 /** The connection type for TerraformState. */
 export type TerraformStateConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<TerraformStateEdge>>>;
@@ -25317,6 +25787,12 @@ export type TerraformStateConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<TerraformState>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for TerraformState. */
+export type TerraformStateConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of TerraformStateDelete */
@@ -25416,7 +25892,7 @@ export type TestCase = {
 
 /** The connection type for TestCase. */
 export type TestCaseConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<TestCaseEdge>>>;
@@ -25424,6 +25900,12 @@ export type TestCaseConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<TestCase>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for TestCase. */
+export type TestCaseConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -25534,7 +26016,7 @@ export type TestSuiteSummary = {
 
 /** The connection type for TestSuiteSummary. */
 export type TestSuiteSummaryConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<TestSuiteSummaryEdge>>>;
@@ -25542,6 +26024,12 @@ export type TestSuiteSummaryConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<TestSuiteSummary>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for TestSuiteSummary. */
+export type TestSuiteSummaryConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -25809,7 +26297,7 @@ export type Timelog = {
 
 /** The connection type for Timelog. */
 export type TimelogConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<TimelogEdge>>>;
@@ -25819,6 +26307,12 @@ export type TimelogConnection = {
   readonly pageInfo: PageInfo;
   /** Total time spent in seconds. */
   readonly totalSpentTime: Scalars['BigInt']['output'];
+};
+
+
+/** The connection type for Timelog. */
+export type TimelogConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of TimelogCreate */
@@ -25976,7 +26470,7 @@ export type TodoActionEnum =
 
 /** The connection type for Todo. */
 export type TodoConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<TodoEdge>>>;
@@ -25984,6 +26478,12 @@ export type TodoConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<Todo>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for Todo. */
+export type TodoConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of TodoCreate */
@@ -27226,9 +27726,10 @@ export type UserPersonalAccessTokensArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   lastUsedAfter: InputMaybe<Scalars['Time']['input']>;
-  revoked?: InputMaybe<Scalars['Boolean']['input']>;
+  revoked: InputMaybe<Scalars['Boolean']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
   sort?: InputMaybe<AccessTokenSort>;
-  state?: InputMaybe<AccessTokenState>;
+  state: InputMaybe<AccessTokenState>;
 };
 
 
@@ -27397,7 +27898,7 @@ export type UserAchievement = {
 
 /** The connection type for UserAchievement. */
 export type UserAchievementConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<UserAchievementEdge>>>;
@@ -27405,6 +27906,12 @@ export type UserAchievementConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<UserAchievement>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for UserAchievement. */
+export type UserAchievementConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -27518,6 +28025,8 @@ export type UserCalloutEdge = {
 export type UserCalloutFeatureNameEnum =
   /** Callout feature name for active_user_count_threshold. */
   | 'ACTIVE_USER_COUNT_THRESHOLD'
+  /** Callout feature name for ai_experiment_sast_fp_detection. */
+  | 'AI_EXPERIMENT_SAST_FP_DETECTION'
   /** Callout feature name for branch_rules_info_callout. */
   | 'BRANCH_RULES_INFO_CALLOUT'
   /** Callout feature name for branch_rules_tip_callout. */
@@ -27668,10 +28177,14 @@ export type UserCalloutFeatureNameEnum =
   | 'VULNERABILITY_ARCHIVAL'
   /** Callout feature name for vulnerability_report_grouping. */
   | 'VULNERABILITY_REPORT_GROUPING'
+  /** Callout feature name for vulnerability_report_limited_experience. */
+  | 'VULNERABILITY_REPORT_LIMITED_EXPERIENCE'
   /** Callout feature name for web_ide_alert_dismissed. */
   | 'WEB_IDE_ALERT_DISMISSED'
   /** Callout feature name for web_ide_ci_environments_guidance. */
   | 'WEB_IDE_CI_ENVIRONMENTS_GUIDANCE'
+  /** Callout feature name for work_item_consolidated_list_feedback. */
+  | 'WORK_ITEM_CONSOLIDATED_LIST_FEEDBACK'
   /** Callout feature name for work_item_epic_feedback. */
   | 'WORK_ITEM_EPIC_FEEDBACK';
 
@@ -27989,9 +28502,10 @@ export type UserCorePersonalAccessTokensArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   lastUsedAfter: InputMaybe<Scalars['Time']['input']>;
-  revoked?: InputMaybe<Scalars['Boolean']['input']>;
+  revoked: InputMaybe<Scalars['Boolean']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
   sort?: InputMaybe<AccessTokenSort>;
-  state?: InputMaybe<AccessTokenState>;
+  state: InputMaybe<AccessTokenState>;
 };
 
 
@@ -28137,7 +28651,7 @@ export type UserCoreUserAchievementsArgs = {
 
 /** The connection type for UserCore. */
 export type UserCoreConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<UserCoreEdge>>>;
@@ -28145,6 +28659,12 @@ export type UserCoreConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<UserCore>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for UserCore. */
+export type UserCoreConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -28161,7 +28681,7 @@ export type UserGroupCallout = {
   /** Name of the feature that the callout is for. */
   readonly featureName: UserGroupCalloutFeatureName;
   /** Group id that the callout applies. */
-  readonly groupId: Scalars['ID']['output'];
+  readonly groupId: Scalars['GroupID']['output'];
 };
 
 /** The connection type for UserGroupCallout. */
@@ -28216,8 +28736,6 @@ export type UserGroupCalloutFeatureName =
   | 'CI_MINUTES_LIMIT_ALERT_WARNING_STAGE'
   /** Callout feature name for compliance_framework_settings_moved_callout. */
   | 'COMPLIANCE_FRAMEWORK_SETTINGS_MOVED_CALLOUT'
-  /** Callout feature name for duo_agent_platform_requested. */
-  | 'DUO_AGENT_PLATFORM_REQUESTED'
   /** Callout feature name for enforcement_at_limit_alert. */
   | 'ENFORCEMENT_AT_LIMIT_ALERT'
   /** Callout feature name for expired_duo_enterprise_trial_widget. */
@@ -28260,6 +28778,8 @@ export type UserGroupCalloutFeatureName =
   | 'USAGE_QUOTA_TRIAL_ALERT'
   /** Callout feature name for user_reached_limit_free_plan_alert. */
   | 'USER_REACHED_LIMIT_FREE_PLAN_ALERT'
+  /** Callout feature name for virtual_registry_permission_change_alert. */
+  | 'VIRTUAL_REGISTRY_PERMISSION_CHANGE_ALERT'
   /** Callout feature name for web_hook_disabled. */
   | 'WEB_HOOK_DISABLED';
 
@@ -28373,6 +28893,39 @@ export type UserNamespaceMarkdownPathsMarkdownPreviewPathArgs = {
   iid: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UserNamespaceMetadata = NamespaceMetadata & {
+  /**
+   * ID of the group. Returns null for user namespaces. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly groupId: Maybe<Scalars['String']['output']>;
+  /**
+   * User preference for initial sort order. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly initialSort: Maybe<Scalars['String']['output']>;
+  /**
+   * Whether issue repositioning is disabled for the namespace. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly isIssueRepositioningDisabled: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Maximum allowed attachment size (humanized). Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly maxAttachmentSize: Maybe<Scalars['String']['output']>;
+  /**
+   * Whether to show the new work item link. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly showNewWorkItem: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Time tracking limit to hours setting. Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly timeTrackingLimitToHours: Maybe<Scalars['Boolean']['output']>;
+};
+
 export type UserPermissions = {
   /** If `true`, the user can perform `create_snippet` on this resource */
   readonly createSnippet: Scalars['Boolean']['output'];
@@ -28402,11 +28955,6 @@ export type UserPreferences = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.2.
    */
   readonly organizationGroupsProjectsSort: Maybe<OrganizationGroupProjectSort>;
-  /**
-   * Whether Project Studio is enabled for the user. Introduced in GitLab 18.4: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.4.
-   */
-  readonly projectStudioEnabled: Scalars['Boolean']['output'];
   /** Sort order for projects. */
   readonly projectsSort: Maybe<ProjectSort>;
   /**
@@ -28518,8 +29066,6 @@ export type UserType =
   | 'HUMAN'
   /** Import user */
   | 'IMPORT_USER'
-  /** Migration bot */
-  | 'MIGRATION_BOT'
   /** Placeholder */
   | 'PLACEHOLDER'
   /** Project bot */
@@ -29144,7 +29690,7 @@ export type WorkItemClosingMergeRequestEdge = {
 
 /** The connection type for WorkItem. */
 export type WorkItemConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<WorkItemEdge>>>;
@@ -29152,6 +29698,12 @@ export type WorkItemConnection = {
   readonly nodes: Maybe<ReadonlyArray<Maybe<WorkItem>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for WorkItem. */
+export type WorkItemConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of WorkItemConvert */
@@ -29556,6 +30108,304 @@ export type WorkItemResolveDiscussionsInput = {
   readonly noteableId: Scalars['NoteableID']['input'];
 };
 
+/** Autogenerated input type of WorkItemSavedViewCreate */
+export type WorkItemSavedViewCreateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Description of the saved view. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** Display settings associated with the saved view. */
+  readonly displaySettings: Scalars['JSON']['input'];
+  /** Filters associated with the saved view. */
+  readonly filters: WorkItemSavedViewFilterInput;
+  /** Name of the saved view. */
+  readonly name: Scalars['String']['input'];
+  /** Full path of the namespace to create the saved view in. */
+  readonly namespacePath: Scalars['ID']['input'];
+  /** Whether the saved view is private. Default is true. */
+  readonly private: InputMaybe<Scalars['Boolean']['input']>;
+  /** Sort option associated with the saved view. */
+  readonly sort: WorkItemSort;
+};
+
+/** Autogenerated return type of WorkItemSavedViewCreate. */
+export type WorkItemSavedViewCreatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Created saved view. */
+  readonly savedView: Maybe<WorkItemSavedViewType>;
+};
+
+/** Autogenerated input type of WorkItemSavedViewDelete */
+export type WorkItemSavedViewDeleteInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the saved view. */
+  readonly id: Scalars['WorkItemsSavedViewsSavedViewID']['input'];
+};
+
+/** Autogenerated return type of WorkItemSavedViewDelete. */
+export type WorkItemSavedViewDeletePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Deleted saved view. */
+  readonly savedView: Maybe<WorkItemSavedViewType>;
+};
+
+export type WorkItemSavedViewFilterInput = {
+  /** Filter values for assignee usernames filter(maximum is 100 usernames). */
+  readonly assigneeUsernames: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter values for assignee wildcard id filter. Incompatible with `assigneeUsernames`. */
+  readonly assigneeWildcardId: InputMaybe<AssigneeWildcardId>;
+  /** Filter value for author username filter. */
+  readonly authorUsername: InputMaybe<Scalars['String']['input']>;
+  /** Filter value for closed after filter. */
+  readonly closedAfter: InputMaybe<Scalars['Time']['input']>;
+  /** Filter value for closed before filter. */
+  readonly closedBefore: InputMaybe<Scalars['Time']['input']>;
+  /** Filter value for confidential filter. */
+  readonly confidential: InputMaybe<Scalars['Boolean']['input']>;
+  /** Filter value for created after filter. */
+  readonly createdAfter: InputMaybe<Scalars['Time']['input']>;
+  /** Filter value for created before filter. */
+  readonly createdBefore: InputMaybe<Scalars['Time']['input']>;
+  /** Filter value for crm contact id filter. */
+  readonly crmContactId: InputMaybe<Scalars['String']['input']>;
+  /** Filter value for crm organization id filter. */
+  readonly crmOrganizationId: InputMaybe<Scalars['String']['input']>;
+  /** Filter value for due after filter. */
+  readonly dueAfter: InputMaybe<Scalars['Time']['input']>;
+  /** Filter value for due before filter. */
+  readonly dueBefore: InputMaybe<Scalars['Time']['input']>;
+  /** Filter value for exclude group work items filter. */
+  readonly excludeGroupWorkItems: InputMaybe<Scalars['Boolean']['input']>;
+  /** Filter value for exclude projects filter. */
+  readonly excludeProjects: InputMaybe<Scalars['Boolean']['input']>;
+  /** Filter value for full path filter. */
+  readonly fullPath: InputMaybe<Scalars['ID']['input']>;
+  /** Filter value for hierarchy filter. */
+  readonly hierarchyFilters: InputMaybe<HierarchyFilterInput>;
+  /** Filter value for IID filter. */
+  readonly iid: InputMaybe<Scalars['String']['input']>;
+  /** "Filter value for in filter. */
+  readonly in: InputMaybe<ReadonlyArray<IssuableSearchableField>>;
+  /** Filter value for include descendant work items filter. */
+  readonly includeDescendantWorkItems: InputMaybe<Scalars['Boolean']['input']>;
+  /** Filter value for include descendants filter. */
+  readonly includeDescendants: InputMaybe<Scalars['Boolean']['input']>;
+  /** Filter value for label name filter. (maximum is 100 labels). */
+  readonly labelName: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for milestone title filter. (maximum is 100 milestones). */
+  readonly milestoneTitle: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for milestone wildcard id filter. Incompatible with `milestoneTitle`. */
+  readonly milestoneWildcardId: InputMaybe<MilestoneWildcardId>;
+  /** Filter value for my reaction emoji filter. */
+  readonly myReactionEmoji: InputMaybe<Scalars['String']['input']>;
+  /** Filter value for not filter. */
+  readonly not: InputMaybe<WorkItemSavedViewNegatedFilterInput>;
+  /** Filter values for or filter. */
+  readonly or: InputMaybe<WorkItemSavedViewUnionedFilterInput>;
+  /** Filter value for release tag filter (maximum is 100 tags). */
+  readonly releaseTag: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for release tag wildcard id filter. */
+  readonly releaseTagWildcardId: InputMaybe<ReleaseTagWildcardId>;
+  /** Filter value for search filter. */
+  readonly search: InputMaybe<Scalars['String']['input']>;
+  /** Filter value for state filter. */
+  readonly state: InputMaybe<IssuableState>;
+  /** Filter value for subscribed filter. */
+  readonly subscribed: InputMaybe<SubscriptionStatus>;
+  /** Filter value for types filter. */
+  readonly types: InputMaybe<ReadonlyArray<IssueType>>;
+  /** Filter value for updated after filter. */
+  readonly updatedAfter: InputMaybe<Scalars['Time']['input']>;
+  /** Filter value for updated before filter. */
+  readonly updatedBefore: InputMaybe<Scalars['Time']['input']>;
+};
+
+export type WorkItemSavedViewFilterWarningType = {
+  /** Name of the field associated with the warning. */
+  readonly field: Scalars['String']['output'];
+  /** Message associated with the warning. */
+  readonly message: Scalars['String']['output'];
+};
+
+export type WorkItemSavedViewNegatedFilterInput = {
+  /** Filter value for not assignee username filter. (maximum is 100 usernames). */
+  readonly assigneeUsernames: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for not author username filter. (maximum is 100 usernames). */
+  readonly authorUsername: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for not label name filter. (maximum is 100 labels). */
+  readonly labelName: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for not milestone title filter.(maximum is 100 milestones). */
+  readonly milestoneTitle: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for not milestone wildcard id filter. */
+  readonly milestoneWildcardId: InputMaybe<NegatedMilestoneWildcardId>;
+  /** Filter value for not my reaction emoji filter. */
+  readonly myReactionEmoji: InputMaybe<Scalars['String']['input']>;
+  /** Filter work items by global IDs who don't belong to parent items (maximum is 100 IDs). */
+  readonly parentIds: InputMaybe<ReadonlyArray<Scalars['WorkItemID']['input']>>;
+  /** File value for not release tag filter. (maximum is 100 tags). */
+  readonly releaseTag: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for not types filter. */
+  readonly types: InputMaybe<ReadonlyArray<IssueType>>;
+};
+
+/** Autogenerated input type of WorkItemSavedViewReorder */
+export type WorkItemSavedViewReorderInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the saved view to be reordered. */
+  readonly id: Scalars['WorkItemsSavedViewsSavedViewID']['input'];
+  /** Global ID of a saved view that should be placed after the saved view. */
+  readonly moveAfterId: InputMaybe<Scalars['WorkItemsSavedViewsSavedViewID']['input']>;
+  /** Global ID of a saved view that should be placed before the saved view. */
+  readonly moveBeforeId: InputMaybe<Scalars['WorkItemsSavedViewsSavedViewID']['input']>;
+};
+
+/** Autogenerated return type of WorkItemSavedViewReorder. */
+export type WorkItemSavedViewReorderPayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Reordered saved view. */
+  readonly savedView: Maybe<WorkItemSavedViewType>;
+};
+
+/** Autogenerated input type of WorkItemSavedViewSubscribe */
+export type WorkItemSavedViewSubscribeInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the saved view to subscribe to. */
+  readonly id: Scalars['WorkItemsSavedViewsSavedViewID']['input'];
+};
+
+/** Autogenerated return type of WorkItemSavedViewSubscribe. */
+export type WorkItemSavedViewSubscribePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Subscribed saved view. */
+  readonly savedView: Maybe<WorkItemSavedViewType>;
+};
+
+export type WorkItemSavedViewType = {
+  /** Description of the saved view. */
+  readonly description: Maybe<Scalars['String']['output']>;
+  /** Display settings associated with the saved view. */
+  readonly displaySettings: Maybe<Scalars['JSON']['output']>;
+  /** Warnings associated with the filter values. */
+  readonly filterWarnings: Maybe<ReadonlyArray<WorkItemSavedViewFilterWarningType>>;
+  /** Filters associated with the saved view. */
+  readonly filters: Maybe<Scalars['JSON']['output']>;
+  /** ID of the saved view. */
+  readonly id: Scalars['WorkItemsSavedViewsSavedViewID']['output'];
+  /** Name of the saved view. */
+  readonly name: Scalars['String']['output'];
+  /** ID of the namespace of the saved view. */
+  readonly namespaceId: Scalars['TypesNamespaceID']['output'];
+  /** Whether the saved view is private. */
+  readonly private: Scalars['Boolean']['output'];
+  /** URL to auto subscribe users to the view. */
+  readonly shareUrl: Scalars['String']['output'];
+  /** Sort option associated with the saved view. */
+  readonly sort: Maybe<WorkItemSort>;
+  /**
+   * Work items associated with the saved view. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly workItems: Maybe<WorkItemConnection>;
+};
+
+
+export type WorkItemSavedViewTypeWorkItemsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** The connection type for WorkItemSavedViewType. */
+export type WorkItemSavedViewTypeConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<WorkItemSavedViewTypeEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<WorkItemSavedViewType>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** An edge in a connection. */
+export type WorkItemSavedViewTypeEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<WorkItemSavedViewType>;
+};
+
+export type WorkItemSavedViewUnionedFilterInput = {
+  /** Filter value for unioned assignee usernames filter. (maximum is 100 usernames). */
+  readonly assigneeUsernames: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for unioned author usernames filter. (maximum is 100 usernames). */
+  readonly authorUsernames: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Filter value for unioned label names filter.(maximum is 100 labels). */
+  readonly labelNames: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+};
+
+/** Autogenerated input type of WorkItemSavedViewUnsubscribe */
+export type WorkItemSavedViewUnsubscribeInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the saved view to unsubscribe to. */
+  readonly id: Scalars['WorkItemsSavedViewsSavedViewID']['input'];
+};
+
+/** Autogenerated return type of WorkItemSavedViewUnsubscribe. */
+export type WorkItemSavedViewUnsubscribePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Unsubscribed saved view. */
+  readonly savedView: Maybe<WorkItemSavedViewType>;
+};
+
+/** Autogenerated input type of WorkItemSavedViewUpdate */
+export type WorkItemSavedViewUpdateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Description of the saved view. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** Display settings associated with the saved view. */
+  readonly displaySettings: InputMaybe<Scalars['JSON']['input']>;
+  /** Filters associated with the saved view. */
+  readonly filters: InputMaybe<WorkItemSavedViewFilterInput>;
+  /** Global ID of the saved view. */
+  readonly id: Scalars['WorkItemsSavedViewsSavedViewID']['input'];
+  /** Name of the saved view. */
+  readonly name: InputMaybe<Scalars['String']['input']>;
+  /** Whether the saved view is private. */
+  readonly private: InputMaybe<Scalars['Boolean']['input']>;
+  /** Sorting option associated with the saved view. */
+  readonly sort: InputMaybe<WorkItemSort>;
+};
+
+/** Autogenerated return type of WorkItemSavedViewUpdate. */
+export type WorkItemSavedViewUpdatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Updated saved view. */
+  readonly savedView: Maybe<WorkItemSavedViewType>;
+};
+
 /** Values for sorting work items */
 export type WorkItemSort =
   /** Closed time by ascending order. Introduced in GitLab 17.10: **Status**: Experiment. */
@@ -29687,7 +30537,7 @@ export type WorkItemTimelog = {
 
 /** The connection type for WorkItemTimelog. */
 export type WorkItemTimelogConnection = {
-  /** Total count of collection. */
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<WorkItemTimelogEdge>>>;
@@ -29697,6 +30547,12 @@ export type WorkItemTimelogConnection = {
   readonly pageInfo: PageInfo;
   /** Total time spent in seconds. */
   readonly totalSpentTime: Scalars['BigInt']['output'];
+};
+
+
+/** The connection type for WorkItemTimelog. */
+export type WorkItemTimelogConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An edge in a connection. */
@@ -30577,6 +31433,29 @@ export type WorkItemsCsvImportPayload = {
   /** Import request result message. */
   readonly message: Maybe<Scalars['String']['output']>;
 };
+
+/** Values for sorting saved views */
+export type WorkItemsSavedViewsSort =
+  /** Created at ascending order. */
+  | 'CREATED_ASC'
+  /** Created at descending order. */
+  | 'CREATED_DESC'
+  /** Ordered by id. */
+  | 'ID'
+  /** Relative position by ascending order. If user is logged out, or explicitly subscribed is not passed, falls back to id sort. */
+  | 'RELATIVE_POSITION'
+  /** Updated at ascending order. */
+  | 'UPDATED_ASC'
+  /** Updated at descending order. */
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Represents an X.509 certificate. */
 export type X509Certificate = {

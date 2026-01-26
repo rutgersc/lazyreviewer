@@ -1,7 +1,5 @@
-import * as Types from '../generated/gitlab-base-types';
-
 import { Schema } from "effect"
-import type { MergeRequestFieldsFragment } from "../mrs.generated"
+import type { MergeRequestFieldsFragment, MRsQuery } from "../mrs.generated"
 import { MergeRequestStateSchema, CiJobStatusSchema } from "../generated/gitlab-base-types.schema"
 
 export const MergeRequestFieldsFragmentSchema: Schema.Schema<MergeRequestFieldsFragment> = Schema.Struct({
@@ -94,8 +92,6 @@ export const MergeRequestFieldsFragmentSchema: Schema.Schema<MergeRequestFieldsF
     }))
   }))
 })
-
-import type { MRsQuery } from "../mrs.generated"
 
 export const MRsQuerySchema: Schema.Schema<MRsQuery> = Schema.Struct({
   users: Schema.NullOr(Schema.Struct({

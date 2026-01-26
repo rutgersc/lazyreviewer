@@ -28,6 +28,7 @@ query ProjectPipelinesJobHistory($projectPath: ID!, $jobName: String!, $first: I
           status
           failureMessage
           startedAt
+          shortSha
           duration
           commitPath
           runner {

@@ -1,5 +1,3 @@
-import * as Types from '../generated/gitlab-base-types';
-
 import { Schema } from "effect"
 import type { ProjectPipelinesJobHistoryQuery } from "../project-pipelines-job-history.generated"
 import { PipelineStatusEnumSchema, CiJobStatusSchema } from "../generated/gitlab-base-types.schema"
@@ -23,6 +21,7 @@ export const ProjectPipelinesJobHistoryQuerySchema: Schema.Schema<ProjectPipelin
         mergeRequest: Schema.NullOr(Schema.Struct({
           iid: Schema.String,
           title: Schema.String,
+          sourceBranch: Schema.String,
           author: Schema.NullOr(Schema.Struct({
             username: Schema.String
           }))
@@ -34,9 +33,9 @@ export const ProjectPipelinesJobHistoryQuerySchema: Schema.Schema<ProjectPipelin
           status: Schema.NullOr(CiJobStatusSchema),
           failureMessage: Schema.NullOr(Schema.String),
           startedAt: Schema.NullOr(Schema.String),
+          shortSha: Schema.String,
           duration: Schema.NullOr(Schema.Number),
           commitPath: Schema.NullOr(Schema.String),
-          shortSha: Schema.String,
           runner: Schema.NullOr(Schema.Struct({
             id: Schema.Unknown,
             description: Schema.NullOr(Schema.String),

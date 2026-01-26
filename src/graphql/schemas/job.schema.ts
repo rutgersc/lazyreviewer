@@ -1,5 +1,3 @@
-import * as Types from '../generated/gitlab-base-types';
-
 import { Schema } from "effect"
 import type { JobTraceQuery } from "../job.generated"
 import { CiJobStatusSchema } from "../generated/gitlab-base-types.schema"

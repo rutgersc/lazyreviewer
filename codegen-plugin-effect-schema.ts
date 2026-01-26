@@ -1,17 +1,12 @@
 import type { PluginFunction, Types } from '@graphql-codegen/plugin-helpers';
 import type {
   GraphQLSchema,
-  GraphQLNamedType,
   GraphQLObjectType,
   GraphQLInterfaceType,
-  GraphQLScalarType,
-  GraphQLEnumType,
   SelectionSetNode,
   FieldNode,
   FragmentSpreadNode,
   GraphQLOutputType,
-  GraphQLList,
-  GraphQLNonNull,
 } from 'graphql';
 import {
   isObjectType,
@@ -25,6 +20,11 @@ import {
 
 interface EffectSchemaPluginConfig {
   baseTypesPath?: string;
+  // Maps fragment names to their source file (without extension)
+  // Auto-populated by the custom preset
+  fragmentSources?: Record<string, string>;
+  // When using the custom preset, specifies which file to generate for
+  targetFile?: string;
 }
 
 interface GeneratorContext {
@@ -36,6 +36,7 @@ interface GeneratorContext {
 
 /**
  * GraphQL Code Generator plugin for Effect Schema generation
+ * Works with near-operation-file preset to generate per-file schemas
  */
 export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
   schema: GraphQLSchema,
@@ -49,81 +50,62 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
     fragmentsUsed: new Set(),
   };
 
-  const imports: string[] = ['import { Schema } from "effect"'];
-  const schemas: Array<{
+  const fragmentSources = config.fragmentSources || {};
+  const baseTypesPath = config.baseTypesPath || './generated/gitlab-base-types.schema';
+
+  // Collect all fragments and queries from documents
+  const fragments: Array<{
+    fragmentName: string;
+    schemaBody: string;
+    enumImports: string[];
+    sourceFileName?: string;
+  }> = [];
+
+  const queries: Array<{
     queryType: string;
     schemaBody: string;
     enumImports: string[];
     fragmentImports: string[];
     sourceFileName?: string;
   }> = [];
-  const fragmentSchemas: Array<{
-    fragmentName: string;
-    schemaBody: string;
-    enumImports: string[];
-    sourceFileName?: string;
-  }> = [];
-  const queryTypes: string[] = [];
 
-  // Helper: Get indent string
   const indent = (level = ctx.indentLevel): string => '  '.repeat(level);
 
-  // Helper: Convert GraphQL type to Effect Schema
-  const typeToSchema = (
-    type: GraphQLOutputType,
-    fieldNode?: FieldNode
-  ): string => {
-    // Handle NonNull wrapper
+  const typeToSchema = (type: GraphQLOutputType, fieldNode?: FieldNode): string => {
     if (isNonNullType(type)) {
       return typeToSchema(type.ofType, fieldNode);
     }
 
-    // Handle List wrapper
     if (isListType(type)) {
       const elementType = type.ofType;
       const isElementNullable = !isNonNullType(elementType);
-
-      // Process the element type (will unwrap NonNull if needed)
       let elementSchema = typeToSchema(elementType, fieldNode);
-
-      // Wrap with NullOr if the element is nullable
       if (isElementNullable) {
         elementSchema = `Schema.NullOr(${elementSchema})`;
       }
-
       return `Schema.Array(\n${indent(ctx.indentLevel + 1)}${elementSchema}\n${indent()})`;
     }
 
     const namedType = getNamedType(type);
 
-    // Handle scalar types
     if (isScalarType(namedType)) {
       switch (namedType.name) {
-        case 'String':
-          return 'Schema.String';
+        case 'String': return 'Schema.String';
         case 'Int':
-        case 'Float':
-          return 'Schema.Number';
-        case 'Boolean':
-          return 'Schema.Boolean';
-        case 'ID':
-          return 'Schema.Any'; // GraphQL ID scalar
-        // Custom scalars configured in codegen.ts
+        case 'Float': return 'Schema.Number';
+        case 'Boolean': return 'Schema.Boolean';
+        case 'ID': return 'Schema.Any';
         case 'Time':
-        case 'Date':
-          return 'Schema.String';
-        default:
-          return 'Schema.Unknown'; // Other custom scalars
+        case 'Date': return 'Schema.String';
+        default: return 'Schema.Unknown';
       }
     }
 
-    // Handle enum types
     if (isEnumType(namedType)) {
       ctx.enumsUsed.add(namedType.name);
       return `${namedType.name}Schema`;
     }
 
-    // Handle object and interface types - need to process selection set
     if (isObjectType(namedType) || isInterfaceType(namedType)) {
       if (fieldNode?.selectionSet) {
         return selectionSetToSchema(fieldNode.selectionSet, namedType);
@@ -133,7 +115,6 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
     return 'Schema.Unknown';
   };
 
-  // Helper: Convert SelectionSet to Schema.Struct
   const selectionSetToSchema = (
     selectionSet: SelectionSetNode,
     parentType: GraphQLObjectType | GraphQLInterfaceType
@@ -144,7 +125,6 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
     const fragmentSpreads: string[] = [];
 
     for (const selection of selectionSet.selections) {
-      // Handle fragment spreads
       if (selection.kind === 'FragmentSpread') {
         const fragmentSpread = selection as FragmentSpreadNode;
         const fragmentName = fragmentSpread.name.value;
@@ -158,22 +138,18 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
       const fieldNode = selection as FieldNode;
       const fieldName = fieldNode.name.value;
 
-      // Handle __typename specially - it's always a literal of the type name
       if (fieldName === '__typename') {
         fields.push(`${indent()}__typename: Schema.Literal('${parentType.name}')`);
         continue;
       }
 
-      // Get the field definition from the parent type
       const fieldDef = parentType.getFields()[fieldName];
       if (!fieldDef) continue;
 
       const fieldType = fieldDef.type;
       const isNullable = !isNonNullType(fieldType);
-
       let fieldSchema = typeToSchema(fieldType, fieldNode);
 
-      // Wrap with NullOr if nullable
       if (isNullable) {
         fieldSchema = `Schema.NullOr(${fieldSchema})`;
       }
@@ -181,24 +157,19 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
       fields.push(`${indent()}${fieldName}: ${fieldSchema}`);
     }
 
-    // If we have fragment spreads and no fields, just reference the fragment schema
     if (fragmentSpreads.length === 1 && fields.length === 0) {
       ctx.indentLevel--;
       return `${fragmentSpreads[0]}FragmentSchema`;
     }
 
-    // If we have fragment spreads with additional fields, extend the fragment
     if (fragmentSpreads.length > 0 && fields.length > 0) {
       ctx.indentLevel--;
-      // Use Schema.extend to merge fragment with additional fields
       const additionalFields = `Schema.Struct({\n${fields.join(',\n')}\n${indent(ctx.indentLevel)}})`;
       return `Schema.extend(${fragmentSpreads[0]}FragmentSchema, ${additionalFields})`;
     }
 
-    // If we have multiple fragment spreads but no additional fields
     if (fragmentSpreads.length > 0 && fields.length === 0) {
       ctx.indentLevel--;
-      // If multiple fragments, use the first one (this is a simplification)
       return `${fragmentSpreads[0]}FragmentSchema`;
     }
 
@@ -210,44 +181,32 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
     return result;
   };
 
-  // Process each document
+  // Process documents
   for (const doc of documents) {
     if (!doc.document) continue;
 
-    // Get the source filename (e.g., "mrs.graphql" -> "mrs")
     const sourceFileName = doc.location
       ? doc.location.replace(/\\/g, '/').split('/').pop()?.replace('.graphql', '')
       : undefined;
 
     for (const definition of doc.document.definitions) {
-      // Process fragment definitions
       if (definition.kind === 'FragmentDefinition') {
         const fragmentName = definition.name.value;
         const typeName = definition.typeCondition.name.value;
-
-        // Get the type the fragment is defined on
         const fragmentType = schema.getType(typeName);
+
         if (!fragmentType || (!isObjectType(fragmentType) && !isInterfaceType(fragmentType))) {
           continue;
         }
 
-        // Reset context for this fragment
         ctx.indentLevel = 0;
         ctx.enumsUsed.clear();
         ctx.fragmentsUsed.clear();
 
-        // Generate schema from selection set
         const schemaBody = selectionSetToSchema(definition.selectionSet, fragmentType);
-
-        // Collect enums used in this fragment
         const enumImports = Array.from(ctx.enumsUsed);
 
-        fragmentSchemas.push({
-          fragmentName,
-          schemaBody,
-          enumImports,
-          sourceFileName,
-        });
+        fragments.push({ fragmentName, schemaBody, enumImports, sourceFileName });
         continue;
       }
 
@@ -258,127 +217,106 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
       if (!operationName) continue;
 
       const queryTypeName = `${operationName}Query`;
-      queryTypes.push(queryTypeName);
-
-      // Get the root query type
       const queryType = schema.getQueryType();
       if (!queryType) continue;
 
-      // Reset context for this query
       ctx.indentLevel = 0;
       ctx.enumsUsed.clear();
       ctx.fragmentsUsed.clear();
 
-      // Generate schema from selection set
       const schemaBody = selectionSetToSchema(definition.selectionSet, queryType);
-
-      // Collect enums and fragments used in this query
       const enumImports = Array.from(ctx.enumsUsed);
       const fragmentImports = Array.from(ctx.fragmentsUsed);
 
-      schemas.push({
-        queryType: queryTypeName,
-        schemaBody,
-        enumImports,
-        fragmentImports,
-        sourceFileName,
-      });
+      queries.push({ queryType: queryTypeName, schemaBody, enumImports, fragmentImports, sourceFileName });
     }
   }
 
-  // Helper: Convert PascalCase to kebab-case
-  // Handles acronyms properly (e.g., "MRs" -> "mrs", "MRPipeline" -> "mr-pipeline")
-  const toKebabCase = (str: string): string => {
-    return str
-      // Handle acronyms: MRPipeline -> MR-Pipeline, but NOT MRs -> M-Rs
-      // Only split if we have 2+ capitals followed by capital+lowercase
-      .replace(/([A-Z]{2,})([A-Z][a-z])/g, '$1-$2')
-      // Insert dash before uppercase letter that follows a lowercase letter
-      .replace(/([a-z\d])([A-Z])/g, '$1-$2')
-      .toLowerCase();
-  };
-
-  // Helper: Convert kebab-case to PascalCase (matching GraphQL Codegen's normalization)
-  // e.g., "mr-pipeline" -> "MrPipeline", "job-status" -> "JobStatus"
-  const toPascalCase = (str: string): string => {
-    return str
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join('');
-  };
-
-  // Helper: Normalize PascalCase names the same way GraphQL Codegen does
-  // Converts multiple consecutive capitals followed by PascalCase to normalized form
-  // e.g., "MRPipeline" -> "MrPipeline", "SingleMR" -> "SingleMr", but "MRs" -> "MRs"
+  // Normalize operation name (e.g., "MRPipeline" -> "MrPipeline")
   const normalizeOperationName = (name: string): string => {
     return name.replace(/([A-Z]{2,})([A-Z][a-z])/g, (_, capitals, rest) => {
-      // Keep first capital, lowercase the middle capitals, keep the rest
       return capitals.charAt(0) + capitals.slice(1).toLowerCase() + rest;
     });
   };
 
-  // Build output for fragments
-  const fragmentOutput = fragmentSchemas.map(({ fragmentName, schemaBody, enumImports, sourceFileName }) => {
-    const fileName = sourceFileName || toKebabCase(fragmentName);
-    const fragmentTypeName = `${fragmentName}Fragment`;
+  // Determine the current file name - use targetFile from preset if available
+  const targetFile = config.targetFile;
+  const currentFileName = targetFile || fragments[0]?.sourceFileName || queries[0]?.sourceFileName;
 
-    // Derive the relative path prefix from baseTypesPath
-    const baseTypesPath = config.baseTypesPath || './generated/gitlab-base-types.schema';
-    const relativePrefix = baseTypesPath.startsWith('../') ? '../' : './';
+  // Filter to only items for the target file
+  const targetFragments = targetFile
+    ? fragments.filter(f => f.sourceFileName === targetFile)
+    : fragments;
+  const targetQueries = targetFile
+    ? queries.filter(q => q.sourceFileName === targetFile)
+    : queries;
 
-    const localImports = [`import type { ${fragmentTypeName} } from "${relativePrefix}${fileName}.generated"`];
+  // Build deduplicated imports
+  const typeImports = new Set<string>();
+  const enumImports = new Set<string>();
+  const fragmentImportsByFile = new Map<string, Set<string>>();
 
-    if (enumImports.length > 0) {
-      const enumSchemas = enumImports.map((e: string) => `${e}Schema`).join(', ');
-      localImports.push(`import { ${enumSchemas} } from "${baseTypesPath}"`);
-    }
+  // Local fragment names (defined in this file)
+  const localFragmentNames = new Set(targetFragments.map(f => f.fragmentName));
 
-    return `${localImports.join('\n')}
+  // Process fragments for this file
+  for (const { fragmentName, enumImports: enums } of targetFragments) {
+    typeImports.add(`${fragmentName}Fragment`);
+    enums.forEach(e => enumImports.add(e));
+  }
 
-export const ${fragmentName}FragmentSchema: Schema.Schema<${fragmentTypeName}> = ${schemaBody}
-`;
-  }).join('\n');
+  // Process queries for this file
+  for (const { queryType, enumImports: enums, fragmentImports: frags } of targetQueries) {
+    typeImports.add(normalizeOperationName(queryType));
+    enums.forEach(e => enumImports.add(e));
 
-  // Build output for each query's schema
-  const queryOutput = schemas.map(({ queryType, schemaBody, enumImports, fragmentImports, sourceFileName }) => {
-    // Use source filename if available, otherwise fallback to kebab-case conversion
-    const fileName = sourceFileName || toKebabCase(queryType.replace('Query', ''));
-    // Normalize the query type name to match GraphQL Codegen's normalization
-    const normalizedQueryType = normalizeOperationName(queryType);
+    // Handle fragment imports from other files
+    for (const fragName of frags) {
+      if (localFragmentNames.has(fragName)) continue;
 
-    // Derive the relative path prefix from baseTypesPath (e.g., '../' if baseTypesPath starts with '../')
-    const baseTypesPath = config.baseTypesPath || './generated/gitlab-base-types.schema';
-    const relativePrefix = baseTypesPath.startsWith('../') ? '../' : './';
-
-    const localImports = [`import type { ${normalizedQueryType} } from "${relativePrefix}${fileName}.generated"`];
-
-    if (enumImports.length > 0) {
-      const enumSchemas = enumImports.map((e: string) => `${e}Schema`).join(', ');
-      localImports.push(`import { ${enumSchemas} } from "${baseTypesPath}"`);
-    }
-
-    if (fragmentImports.length > 0) {
-      // Only import fragments if we're not in the file where they're defined
-      // Fragments are defined in mrs.schema.ts, so skip import if fileName is "mrs"
-      if (fileName !== 'mrs') {
-        const fragmentSchemas = fragmentImports.map((f: string) => `${f}FragmentSchema`).join(', ');
-        // Import fragment schemas from mrs.schema.ts (where fragments are defined)
-        // Note: This assumes all fragments are in mrs.schema.ts - adjust if fragments are in other files
-        localImports.push(`import { ${fragmentSchemas} } from "./mrs.schema"`);
+      const sourceFile = fragmentSources[fragName];
+      if (sourceFile && sourceFile !== currentFileName) {
+        if (!fragmentImportsByFile.has(sourceFile)) {
+          fragmentImportsByFile.set(sourceFile, new Set());
+        }
+        fragmentImportsByFile.get(sourceFile)!.add(`${fragName}FragmentSchema`);
       }
     }
+  }
 
-    return `${localImports.join('\n')}
+  // Build import statements
+  const importStatements: string[] = [];
 
-export const ${normalizedQueryType}Schema: Schema.Schema<${normalizedQueryType}> = ${schemaBody}
-`;
-  }).join('\n');
+  if (typeImports.size > 0 && currentFileName) {
+    importStatements.push(`import type { ${[...typeImports].join(', ')} } from "../${currentFileName}.generated"`);
+  }
 
-  // Combine fragment schemas and query schemas
-  const output = [fragmentOutput, queryOutput].filter(Boolean).join('\n');
+  if (enumImports.size > 0) {
+    importStatements.push(`import { ${[...enumImports].map(e => `${e}Schema`).join(', ')} } from "${baseTypesPath}"`);
+  }
+
+  for (const [sourceFile, fragSchemas] of fragmentImportsByFile) {
+    importStatements.push(`import { ${[...fragSchemas].join(', ')} } from "./${sourceFile}.schema"`);
+  }
+
+  // Build schema definitions
+  const schemaDefinitions: string[] = [];
+
+  for (const { fragmentName, schemaBody } of targetFragments) {
+    schemaDefinitions.push(`export const ${fragmentName}FragmentSchema: Schema.Schema<${fragmentName}Fragment> = ${schemaBody}`);
+  }
+
+  for (const { queryType, schemaBody } of targetQueries) {
+    const normalized = normalizeOperationName(queryType);
+    schemaDefinitions.push(`export const ${normalized}Schema: Schema.Schema<${normalized}> = ${schemaBody}`);
+  }
+
+  const output = schemaDefinitions.length > 0
+    ? `${importStatements.join('\n')}\n\n${schemaDefinitions.join('\n\n')}\n`
+    : '';
 
   return {
-    prepend: imports,
+    prepend: ['import { Schema } from "effect"'],
     content: output,
   };
 };

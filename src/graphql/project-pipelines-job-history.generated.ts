@@ -11,7 +11,7 @@ export type ProjectPipelinesJobHistoryQueryVariables = Types.Exact<{
 }>;
 
 
-export type ProjectPipelinesJobHistoryQuery = { readonly project: { readonly id: string, readonly pipelines: { readonly pageInfo: { readonly hasNextPage: boolean, readonly endCursor: string | null }, readonly nodes: ReadonlyArray<{ readonly id: string, readonly iid: string, readonly ref: string | null, readonly createdAt: string, readonly status: Types.PipelineStatusEnum, readonly source: string | null, readonly mergeRequest: { readonly iid: string, readonly title: string, readonly author: { readonly username: string } | null } | null, readonly job: { readonly id: any | null, readonly webPath: string | null, readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly failureMessage: string | null, readonly startedAt: string | null, readonly duration: number | null, readonly commitPath: string | null, readonly shortSha: string, readonly runner: { readonly id: any, readonly description: string | null, readonly shortSha: string | null } | null } | null } | null> | null } | null } | null };
+export type ProjectPipelinesJobHistoryQuery = { readonly project: { readonly id: string, readonly pipelines: { readonly pageInfo: { readonly hasNextPage: boolean, readonly endCursor: string | null }, readonly nodes: ReadonlyArray<{ readonly id: string, readonly iid: string, readonly ref: string | null, readonly createdAt: string, readonly status: Types.PipelineStatusEnum, readonly source: string | null, readonly mergeRequest: { readonly iid: string, readonly title: string, readonly sourceBranch: string, readonly author: { readonly username: string } | null } | null, readonly job: { readonly id: any | null, readonly webPath: string | null, readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly failureMessage: string | null, readonly startedAt: string | null, readonly shortSha: string, readonly duration: number | null, readonly commitPath: string | null, readonly runner: { readonly id: any, readonly description: string | null, readonly shortSha: string | null } | null } | null } | null> | null } | null } | null };
 
 
 export const ProjectPipelinesJobHistoryDocument = gql`
@@ -33,6 +33,7 @@ export const ProjectPipelinesJobHistoryDocument = gql`
         mergeRequest {
           iid
           title
+          sourceBranch
           author {
             username
           }
@@ -44,9 +45,9 @@ export const ProjectPipelinesJobHistoryDocument = gql`
           status
           failureMessage
           startedAt
+          shortSha
           duration
           commitPath
-          shortSha
           runner {
             id
             description

@@ -1,5 +1,3 @@
-import * as Types from '../generated/gitlab-base-types';
-
 import { Schema } from "effect"
 import type { GitlabMRsQuery } from "../gitlab-mrs.generated"
 import { MergeRequestFieldsFragmentSchema } from "./mrs.schema"

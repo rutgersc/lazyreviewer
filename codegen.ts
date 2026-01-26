@@ -1,5 +1,6 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
 import * as dotenv from 'dotenv';
+import { preset as effectSchemaPreset } from './codegen-preset-effect-schema';
 
 dotenv.config();
 
@@ -42,11 +43,10 @@ const config: CodegenConfig = {
     },
     // Effect Schema generation - files in schemas/ subdirectory
     'src/graphql/schemas/': {
-      preset: 'near-operation-file',
+      preset: effectSchemaPreset,
       presetConfig: {
         extension: '.schema.ts',
         baseTypesPath: '../generated/gitlab-base-types.schema',
-        folder: 'schemas',
       },
       plugins: [
         './codegen-plugin-effect-schema.ts',
