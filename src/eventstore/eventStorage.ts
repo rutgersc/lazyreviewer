@@ -4,6 +4,23 @@ import { EventSchema, type LazyReviewerEvent, type InMemoryLazyReviewerEvent, ty
 
 const EVENTS_DIR = "storage/events"
 
+// Migration: add missing fields to old events before schema validation
+const migrateEventJson = (data: unknown): unknown => {
+  if (typeof data !== 'object' || data === null) return data
+  if (Array.isArray(data)) return data.map(migrateEventJson)
+
+  const obj = data as Record<string, unknown>
+  const migrated = Object.fromEntries(
+    Object.entries(obj).map(([k, v]) => [k, migrateEventJson(v)])
+  )
+
+  // Add detailedMergeStatus: null to MR objects (identified by having iid + sourceBranch)
+  if ('iid' in migrated && 'sourceBranch' in migrated && !('detailedMergeStatus' in migrated)) {
+    migrated.detailedMergeStatus = null
+  }
+
+  return migrated
+}
 
 export class EventStorage extends Effect.Service<EventStorage>()("EventStorage", {
   accessors: true,
@@ -89,7 +106,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
             const content = yield* fs.readFileString(filePath)
 
             const jsonData = yield* Effect.try({
-              try: () => JSON.parse(content),
+              try: () => migrateEventJson(JSON.parse(content)),
               catch: (error) => new Error(`JSON parse error: ${error}`)
             })
             const event = yield* Schema.decodeUnknown(EventSchema)(jsonData)
