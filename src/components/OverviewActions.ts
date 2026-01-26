@@ -6,13 +6,13 @@ import { copyToClipboard } from "../system/clipboard";
 import { formatDiscussionsForClipboard } from "../gitlab/display/gitlabDiscussionFormatter";
 import { copyNotificationAtom, scrollToDiscussionRequestAtom } from "./Overview";
 
+const getUnresolvedDiscussions = (registry: import("@effect-atom/atom-react").Registry.Registry) => {
+  const selectedMr = registry.get(selectedMrAtom);
+  return selectedMr?.discussions.filter(d => d.resolvable && !d.resolved) ?? [];
+};
+
 export const overviewActionsAtom = Atom.make((get) => {
-  const selectedMr = get(selectedMrAtom);
   const registry = get.registry;
-
-  if (!selectedMr) return [];
-
-  const unresolvedDiscussions = selectedMr.discussions.filter(d => d.resolvable && !d.resolved);
 
   const actions: Action[] = [
     {
@@ -21,6 +21,7 @@ export const overviewActionsAtom = Atom.make((get) => {
       displayKey: 'j/k, ↑/↓',
       description: 'Navigate discussions',
       handler: () => {
+        const unresolvedDiscussions = getUnresolvedDiscussions(registry);
         const selectedDiscussionIndex = registry.get(selectedDiscussionIndexAtom);
         if (unresolvedDiscussions.length > 0) {
           const nextIndex = Math.min(selectedDiscussionIndex + 1, unresolvedDiscussions.length - 1);
@@ -35,6 +36,7 @@ export const overviewActionsAtom = Atom.make((get) => {
       displayKey: '',
       description: '',
       handler: () => {
+        const unresolvedDiscussions = getUnresolvedDiscussions(registry);
         const selectedDiscussionIndex = registry.get(selectedDiscussionIndexAtom);
         if (unresolvedDiscussions.length > 0) {
           const prevIndex = Math.max(selectedDiscussionIndex - 1, 0);
@@ -49,6 +51,7 @@ export const overviewActionsAtom = Atom.make((get) => {
       displayKey: 'c',
       description: 'Copy discussion URL',
       handler: () => {
+        const unresolvedDiscussions = getUnresolvedDiscussions(registry);
         const selectedDiscussionIndex = registry.get(selectedDiscussionIndexAtom);
         const selectedMr = registry.get(selectedMrAtom);
         const discussion = unresolvedDiscussions[selectedDiscussionIndex];

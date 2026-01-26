@@ -12,11 +12,6 @@ import { toggleJobImportanceAtom, toggleMonitorJobAtom } from '../settings/setti
 export const pipelineJobsListActionsAtom = Atom.make((get) => {
   const registry = get.registry;
 
-  const selectedMergeRequest = get(selectedMrAtom);
-  const pipelineJobs = getPipelineJobsFromMr(selectedMergeRequest);
-
-  if (pipelineJobs.length === 0) return [];
-
   return [
     {
       id: 'pipeline:nav-down',

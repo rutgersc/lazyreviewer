@@ -10,7 +10,7 @@ import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useDoubleClick } from "../hooks/useDoubleClick";
 import { Colors } from "../colors";
 import { useRepositoryBranches } from "../mergerequests/hooks/useRepositoryBranches";
-import { loadSettings } from "../settings/settings";
+import { type JobImportance } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { filterPipelineJobs } from "../gitlab/display/pipelineJobFiltering";
@@ -22,7 +22,7 @@ import { currentUserAtom } from "../settings/settings-atom";
 import type { JiraIssue } from "../jira/jira-schema";
 import { missingMrsDiffAtom, isReconcilingAtom } from "../mergerequests/mr-diff-tracking";
 import { useReconcileMissingMrs } from "../mergerequests/mr-reconciliation";
-import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom } from "../settings/settings-atom";
+import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom, repositoryColorsAtom, pipelineJobImportanceAtom } from "../settings/settings-atom";
 
 export const scrollToItemRequestAtom = Atom.make<number | null>(null);
 export const copyNotificationRequestAtom = Atom.make<string | null>(null);
@@ -104,12 +104,11 @@ const TimeColumnAuthorTitle = ({
   </box>
 );
 
-const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
-  const settings = loadSettings();
+const PipelineStagesWithJobStatuses = ({ mr, pipelineJobImportance }: { mr: MergeRequest; pipelineJobImportance: Record<string, Record<string, JobImportance>> }) => {
   const filteredData = filterPipelineJobs(
     mr.pipeline?.stage || [],
     mr.project.fullPath,
-    settings.pipelineJobImportance
+    pipelineJobImportance
   );
 
   const PipelineJobComponent = (props: { job: PipelineJob; key?: string | number }) => {
@@ -160,9 +159,7 @@ const PipelineStagesWithJobStatuses = ({ mr }: { mr: MergeRequest }) => {
   );
 };
 
-const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap, jiraIssuesMap, now }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue>; now: Date }) => {
-  const currentUser = useAtomValue(currentUserAtom);
-  const seenMergeRequests = useAtomValue(seenMergeRequestsAtom);
+const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, branchDifferenceMap, jiraIssuesMap, now, currentUser, seenMergeRequests, pipelineJobImportance }: { mr: MergeRequest; isActiveInLocalRepo: boolean; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue>; now: Date; currentUser: string; seenMergeRequests: Set<string>; pipelineJobImportance: Record<string, Record<string, JobImportance>> }) => {
   const isSeen = seenMergeRequests.has(mr.id);
   const isApprovedByMe = mr.approvedBy.some(approver => approver.username === currentUser);
   const isMyMr = mr.author === currentUser;
@@ -279,7 +276,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
         })()}
       </box>
 
-      <PipelineStagesWithJobStatuses mr={mr} />
+      <PipelineStagesWithJobStatuses mr={mr} pipelineJobImportance={pipelineJobImportance} />
 
       {(() => {
         const blockedLabel = getMergeBlockedLabel(mr.detailedMergeStatus);
@@ -498,7 +495,17 @@ export default function MergeRequestPane() {
 
   const repositoryBranches = useRepositoryBranches(mergeRequests);
   const branchDifferences = useAtomValue(branchDifferencesAtom);
-  const settings = loadSettings();
+  const repositoryColors = useAtomValue(repositoryColorsAtom);
+  const seenMergeRequests = useAtomValue(seenMergeRequestsAtom);
+  const pipelineJobImportanceMap = useAtomValue(pipelineJobImportanceAtom);
+  const pipelineJobImportance = useMemo(() =>
+    Object.fromEntries(
+      [...pipelineJobImportanceMap].map(([project, jobs]) =>
+        [project, Object.fromEntries([...jobs])]
+      )
+    ) as Record<string, Record<string, JobImportance>>,
+    [pipelineJobImportanceMap]
+  );
 
   // Create a map of project path to current branch
   const projectBranchMap = useMemo(() => {
@@ -716,7 +723,7 @@ export default function MergeRequestPane() {
           const isIgnored = ignoredMergeRequests.has(mr.id);
           const isMonitored = monitoredMergeRequests.has(mr.id);
           const highlightInfo = getMrHighlightInfo(mr, index);
-          const repoColor = settings.repositoryColors[mr.project.fullPath];
+          const repoColor = repositoryColors[mr.project.fullPath];
           const isMyMr = mr.author === currentUser;
           const isOutOfDate = missingIds.includes(mr.id);
 
@@ -739,7 +746,7 @@ export default function MergeRequestPane() {
                 ) : (
                   <>
                     <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} now={now} />
-                    <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} />
+                    <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
                   </>
                 )}
               </box>

@@ -278,3 +278,15 @@ export const pipelineJobImportanceAtom = Atom.make(get => {
     Object.entries(raw).map(([project, jobs]) => [project, new Map(Object.entries(jobs))])
   );
 });
+
+export const repositoryColorsAtom = selectFromSettings(
+  s => s.repositoryColors,
+  {} as Record<string, string>,
+  shallowObjectEquals
+);
+
+export const repositoryPathsAtom = selectFromSettings(
+  s => s.repositoryPaths,
+  {} as Record<string, { localPath: string; remoteName: string }>,
+  shallowObjectEquals
+);

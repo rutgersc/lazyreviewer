@@ -10,9 +10,14 @@ import { copyToClipboard } from "../system/clipboard";
 import { openUrl } from "../system/open-url";
 import { copyNotificationRequestAtom, scrollToItemRequestAtom } from "./MergeRequestPane";
 
+const getSelectedMr = (registry: Registry.Registry) => {
+  const mergeRequests = registry.get(unwrappedMergeRequestsAtom);
+  const selectedIndex = registry.get(selectedMrIndexAtom);
+  return mergeRequests[selectedIndex];
+};
+
 export const mrActionsAtom = Atom.make((get) => {
-  const mergeRequests = get(unwrappedMergeRequestsAtom);
-  const selectedIndex = get(selectedMrIndexAtom);
+  const mergeRequestsLength = get(unwrappedMergeRequestsAtom).length;
   const registry = get.registry;
 
   const actions: Action[] = [
@@ -43,8 +48,9 @@ export const mrActionsAtom = Atom.make((get) => {
       displayKey: 'j/k, ↑/↓',
       description: 'Navigate list',
       handler: () => {
-        if (mergeRequests.length > 0) {
-          const newIndex = selectedIndex < mergeRequests.length - 1 ? selectedIndex + 1 : 0;
+        if (mergeRequestsLength > 0) {
+          const selectedIndex = registry.get(selectedMrIndexAtom);
+          const newIndex = selectedIndex < mergeRequestsLength - 1 ? selectedIndex + 1 : 0;
           registry.set(selectedMrIndexAtom, newIndex);
           registry.set(scrollToItemRequestAtom, newIndex);
         }
@@ -56,8 +62,9 @@ export const mrActionsAtom = Atom.make((get) => {
       displayKey: '',
       description: '',
       handler: () => {
-        if (mergeRequests.length > 0) {
-          const newIndex = selectedIndex > 0 ? selectedIndex - 1 : mergeRequests.length - 1;
+        if (mergeRequestsLength > 0) {
+          const selectedIndex = registry.get(selectedMrIndexAtom);
+          const newIndex = selectedIndex > 0 ? selectedIndex - 1 : mergeRequestsLength - 1;
           registry.set(selectedMrIndexAtom, newIndex);
           registry.set(scrollToItemRequestAtom, newIndex);
         }
@@ -69,7 +76,7 @@ export const mrActionsAtom = Atom.make((get) => {
       displayKey: 'c',
       description: 'Copy branch name',
       handler: () => {
-        const mr = mergeRequests[selectedIndex];
+        const mr = getSelectedMr(registry);
         if (mr) {
           const sourceBranch = mr.sourcebranch;
           copyToClipboard(sourceBranch).then((success) => {
@@ -92,7 +99,7 @@ export const mrActionsAtom = Atom.make((get) => {
       displayKey: 'x',
       description: 'Open MR in browser',
       handler: () => {
-        const mr = mergeRequests[selectedIndex];
+        const mr = getSelectedMr(registry);
         if (mr) {
           openUrl(mr.webUrl);
         }
@@ -118,7 +125,7 @@ export const mrActionsAtom = Atom.make((get) => {
       displayKey: 'm',
       description: 'Toggle monitor MR',
       handler: () => {
-        const mr = mergeRequests[selectedIndex];
+        const mr = getSelectedMr(registry);
         if (mr) {
           registry.set(toggleMonitorMergeRequestAtom, mr.id);
         }
@@ -144,7 +151,7 @@ export const mrActionsAtom = Atom.make((get) => {
       displayKey: 'Backspace',
       description: 'Toggle ignore MR',
       handler: () => {
-        const mr = mergeRequests[selectedIndex];
+        const mr = getSelectedMr(registry);
         if (mr) {
           registry.set(toggleIgnoreMergeRequestAtom, mr.id);
         }
@@ -156,7 +163,7 @@ export const mrActionsAtom = Atom.make((get) => {
       displayKey: 'p',
       description: 'Refresh single MR',
       handler: () => {
-        const mr = mergeRequests[selectedIndex];
+        const mr = getSelectedMr(registry);
         if (mr) {
           registry.set(copyNotificationRequestAtom, `Refreshing MR...`);
           registry.set(refetchSelectedMrAtom, undefined);
@@ -183,7 +190,7 @@ export const mrActionsAtom = Atom.make((get) => {
       displayKey: 'a',
       description: 'Toggle seen status',
       handler: () => {
-        const mr = mergeRequests[selectedIndex];
+        const mr = getSelectedMr(registry);
         if (mr) {
           registry.set(toggleSeenMergeRequestAtom, mr.id);
         }

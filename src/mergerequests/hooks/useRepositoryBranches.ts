@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { loadSettings, saveSettings } from '../../settings/settings';
+import { useAtomValue } from '@effect-atom/atom-react';
+import { repositoryPathsAtom } from '../../settings/settings-atom';
 import { getCurrentBranch } from '../../git/git-effects';
 import type { MergeRequest } from '../mergerequest-schema';
 
@@ -16,38 +17,24 @@ export interface BranchDifference {
 }
 
 export const useRepositoryBranches = (mergeRequests: readonly MergeRequest[]): RepositoryBranch[] => {
+  const repositoryPaths = useAtomValue(repositoryPathsAtom);
+
   return useMemo(() => {
-    const settings = loadSettings();
     const projectPaths = new Set(mergeRequests.map(mr => mr.project.fullPath));
-    let settingsModified = false;
 
-    const repoBranches: RepositoryBranch[] = [];
+    return [...projectPaths]
+      .map(projectPath => {
+        const repoConfig = repositoryPaths[projectPath];
+        const localPath = repoConfig?.localPath || '';
+        const currentBranch = localPath ? getCurrentBranch(localPath) : null;
 
-    for (const projectPath of projectPaths) {
-      let repoConfig = settings.repositoryPaths[projectPath];
-
-      if (!repoConfig) {
-        settings.repositoryPaths[projectPath] = { localPath: '', remoteName: 'origin' };
-        settingsModified = true;
-        repoConfig = settings.repositoryPaths[projectPath];
-      }
-
-      const localPath = repoConfig?.localPath || '';
-      const currentBranch = localPath ? getCurrentBranch(localPath) : null;
-      const projectName = projectPath;
-
-      repoBranches.push({
-        projectPath,
-        projectName,
-        localPath,
-        currentBranch
-      });
-    }
-
-    if (settingsModified) {
-      saveSettings(settings);
-    }
-
-    return repoBranches.sort((a, b) => a.projectName.localeCompare(b.projectName));
-  }, [mergeRequests]);
+        return {
+          projectPath,
+          projectName: projectPath,
+          localPath,
+          currentBranch
+        };
+      })
+      .sort((a, b) => a.projectName.localeCompare(b.projectName));
+  }, [mergeRequests, repositoryPaths]);
 };
