@@ -163,9 +163,19 @@ const backgroundWorker =
 
       type Job = (typeof newlyFinishedJobs)[number]
 
+      const jobCounts = relevantJobs.reduce(
+        (acc, { currentJob }) => {
+          if (currentJob.status === 'SUCCESS') return { ...acc, success: acc.success + 1 }
+          if (currentJob.status === 'FAILED') return { ...acc, failed: acc.failed + 1 }
+          return acc
+        },
+        { success: 0, failed: 0, total: relevantJobs.length }
+      )
+
       const handleFinishedJob = Effect.fn(function* ({ currentJob }: Job) {
+        const countSummary = `(${jobCounts.success},${jobCounts.failed})/${jobCounts.total}`
         yield* sendSystemNotification({
-          title: `Job done: ${currentJob.name}: ${currentJob.status}`,
+          title: `${currentJob.name}: ${currentJob.status} ${countSummary}`,
           body: `${mr.project.path}!${mr.iid}`
         }).pipe(Effect.fork)
 
