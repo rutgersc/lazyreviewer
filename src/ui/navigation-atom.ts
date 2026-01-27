@@ -5,7 +5,7 @@ export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
 
 export type ActiveModal =
   | 'none'
-  | 'mrFilter'
+  | 'mrSort'
   | 'gitSwitch'
   | 'help'
   | 'jira'

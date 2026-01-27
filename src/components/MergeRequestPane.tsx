@@ -27,10 +27,14 @@ import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeReque
 export const scrollToItemRequestAtom = Atom.make<number | null>(null);
 export const copyNotificationRequestAtom = Atom.make<string | null>(null);
 
-const getJiraStatusColor = (statusName: string | undefined): string => {
+const getJiraStatusColor = (statusName: string | undefined, mrState: string): string => {
   if (!statusName) return Colors.PRIMARY;
 
   const status = statusName.toLowerCase();
+
+  if (status.includes('merged') && mrState !== 'merged') {
+    return Colors.ERROR;
+  }
 
   if (status.includes('merge requested') || status.includes('ready for merge')) {
     return Colors.SUCCESS;
@@ -212,8 +216,8 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
             {isSeen
               ? `❓ ${mr.approvedBy.length}`
               : isApprovedByMe
-              ? `✅ ${mr.approvedBy.length}`
-              : `👍 ${mr.approvedBy.length}`}
+              ? `☒  ${mr.approvedBy.length}`
+              : `☐  ${mr.approvedBy.length}`}
           </text>
         </box>
 
@@ -237,11 +241,11 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
         <text
           style={{
             fg: jiraIssues.length > 0
-              ? getJiraStatusColor(jiraIssues[0]?.fields.status.name)
+              ? getJiraStatusColor(jiraIssues[0]?.fields.status.name, mr.state)
               : Colors.PRIMARY,
             attributes:
               jiraIssues.length > 0
-                ? (getJiraStatusColor(jiraIssues[0]?.fields.status.name) === Colors.PRIMARY ? TextAttributes.DIM : undefined)
+                ? (getJiraStatusColor(jiraIssues[0]?.fields.status.name, mr.state) === Colors.PRIMARY ? TextAttributes.DIM : undefined)
                 : TextAttributes.DIM,
           }}
           wrapMode='none'

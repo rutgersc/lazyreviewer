@@ -1,30 +1,28 @@
 import React from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
-import { type MergeRequestState } from '../graphql/generated/gitlab-base-types';
+import type { MrSortOrder } from '../mergerequests/mergerequests-atom';
 
-interface MrStateFilterModalProps {
+interface MrSortModalProps {
   isVisible: boolean;
-  currentState: MergeRequestState;
-  onStateSelect: (state: MergeRequestState) => void;
+  currentSortOrder: MrSortOrder;
+  onSortOrderSelect: (sortOrder: MrSortOrder) => void;
   onClose: () => void;
 }
 
-const MR_STATES: Array<{ key: MergeRequestState; label: string; description: string }> = [
-  { key: 'opened', label: 'Open', description: 'Currently open merge requests' },
-  { key: 'merged', label: 'Merged', description: 'Successfully merged requests' },
-  { key: 'closed', label: 'Closed', description: 'Closed without merging' },
-  { key: 'all', label: 'All', description: 'All merge requests regardless of state' },
+const SORT_OPTIONS: Array<{ key: MrSortOrder; label: string; description: string }> = [
+  { key: 'updatedAt', label: 'Last Updated', description: 'Most recently updated first' },
+  { key: 'createdAt', label: 'Created Date', description: 'Most recently created first' },
 ];
 
-export default function MrStateFilterModal({
+export default function MrSortModal({
   isVisible,
-  currentState,
-  onStateSelect,
+  currentSortOrder,
+  onSortOrderSelect,
   onClose
-}: MrStateFilterModalProps) {
+}: MrSortModalProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(
-    MR_STATES.findIndex(state => state.key === currentState)
+    SORT_OPTIONS.findIndex(opt => opt.key === currentSortOrder)
   );
 
   useKeyboard((key: ParsedKey) => {
@@ -33,15 +31,15 @@ export default function MrStateFilterModal({
     switch (key.name) {
       case 'j':
       case 'down':
-        setSelectedIndex(prev => Math.min(prev + 1, MR_STATES.length - 1));
+        setSelectedIndex(prev => Math.min(prev + 1, SORT_OPTIONS.length - 1));
         break;
       case 'k':
       case 'up':
         setSelectedIndex(prev => Math.max(prev - 1, 0));
         break;
       case 'return':
-        if (MR_STATES[selectedIndex]) {
-          onStateSelect(MR_STATES[selectedIndex].key);
+        if (SORT_OPTIONS[selectedIndex]) {
+          onSortOrderSelect(SORT_OPTIONS[selectedIndex].key);
           onClose();
         }
         break;
@@ -69,7 +67,7 @@ export default function MrStateFilterModal({
           borderColor: "#50fa7b",
           backgroundColor: '#282a36',
           padding: 2,
-          width: 70,
+          width: 60,
           flexDirection: "column"
         }}
       >
@@ -77,13 +75,13 @@ export default function MrStateFilterModal({
           style={{ fg: '#50fa7b', marginBottom: 1, attributes: TextAttributes.BOLD }}
           wrapMode='none'
         >
-          🔍 Filter Merge Requests by State
+          Sort Merge Requests
         </text>
 
         <box style={{ flexDirection: "column", gap: 0.5 }}>
-          {MR_STATES.map((state, index) => (
+          {SORT_OPTIONS.map((option, index) => (
             <box
-              key={state.key}
+              key={option.key}
               style={{
                 flexDirection: "row",
                 backgroundColor: index === selectedIndex ? '#44475a' : 'transparent',
@@ -96,10 +94,10 @@ export default function MrStateFilterModal({
                   style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD }}
                   wrapMode='none'
                 >
-                  {currentState === state.key ? "●" : " "}
+                  {currentSortOrder === option.key ? "●" : " "}
                 </text>
               </box>
-              <box style={{ width: 12 }}>
+              <box style={{ width: 16 }}>
                 <text
                   style={{
                     fg: index === selectedIndex ? '#f8f8f2' : '#bd93f9',
@@ -107,7 +105,7 @@ export default function MrStateFilterModal({
                   }}
                   wrapMode='none'
                 >
-                  {state.label}
+                  {option.label}
                 </text>
               </box>
               <box style={{ flexGrow: 1 }}>
@@ -115,7 +113,7 @@ export default function MrStateFilterModal({
                   style={{ fg: '#bd93f9', attributes: TextAttributes.DIM }}
                   wrapMode='none'
                 >
-                  {state.description}
+                  {option.description}
                 </text>
               </box>
             </box>
@@ -126,7 +124,7 @@ export default function MrStateFilterModal({
           style={{ fg: '#bd93f9', marginTop: 1, attributes: TextAttributes.DIM }}
           wrapMode='none'
         >
-          Use j/k to navigate, Return to select, Esc to cancel
+          j/k to navigate, Return to select, Esc to cancel
         </text>
       </box>
     </box>

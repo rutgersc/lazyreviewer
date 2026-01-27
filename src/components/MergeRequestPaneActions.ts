@@ -36,11 +36,11 @@ export const mrActionsAtom = Atom.make((get) => {
       handler: () => registry.set(activePaneAtom, ActivePane.Facts),
     },
     {
-      id: 'mr:filter',
+      id: 'mr:sort',
       keys: [parseKeyString('f')],
       displayKey: 'f',
-      description: 'Filter MRs by state',
-      handler: () => registry.set(activeModalAtom, 'mrFilter'),
+      description: 'Sort MRs',
+      handler: () => registry.set(activeModalAtom, 'mrSort'),
     },
     {
       id: 'mr:nav-down',

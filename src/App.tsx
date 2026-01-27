@@ -5,7 +5,7 @@ import MergeRequestPane from "./components/MergeRequestPane";
 import InfoPane from "./components/InfoPane";
 import ConsolePane from "./components/ConsolePane";
 import FactsPane from "./components/FactsPane";
-import MrStateFilterModal from "./components/MrStateFilterModal";
+import MrSortModal from "./components/MrSortModal";
 import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal from "./components/HelpModal";
 import JiraModal from "./components/JiraModal";
@@ -23,7 +23,7 @@ import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
 import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom, allJiraIssuesAtom } from './mergerequests/mergerequests-atom';
+import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom, allJiraIssuesAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
 import { toggleNotificationsAtom, notificationSettingsAtom, jiraBoardIdAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { Console, Effect } from 'effect';
@@ -50,6 +50,7 @@ export default function App() {
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
+  const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
   const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
   const jiraBoardId = useAtomValue(jiraBoardIdAtom);
 
@@ -221,6 +222,10 @@ export default function App() {
     setFilterMrState(newState);
   };
 
+  const handleSortOrderSelect = (newSortOrder: MrSortOrder) => {
+    setSortOrder(newSortOrder);
+  };
+
   // Single keyboard handler for ALL actions
   useKeyboard((key: ParsedKey) => {
     // Handle escape - close any active modal
@@ -372,11 +377,11 @@ export default function App() {
         </box>
       </box>
 
-      {/* MR State Filter Modal - rendered at app level to cover entire screen */}
-      <MrStateFilterModal
-        isVisible={activeModal === 'mrFilter'}
-        currentState={filterMrState}
-        onStateSelect={handleStateSelect}
+      {/* MR Sort Modal - rendered at app level to cover entire screen */}
+      <MrSortModal
+        isVisible={activeModal === 'mrSort'}
+        currentSortOrder={sortOrder}
+        onSortOrderSelect={handleSortOrderSelect}
         onClose={() => setActiveModal('none')}
       />
 

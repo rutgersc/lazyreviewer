@@ -56,6 +56,9 @@ export const branchDifferencesAtom = Atom.make<Map<string, BranchDifference>>(ne
 
 export const filterMrStateAtom = Atom.make<MergeRequestState>('opened');
 
+export type MrSortOrder = 'updatedAt' | 'createdAt';
+export const mrSortOrderAtom = Atom.make<MrSortOrder>('updatedAt');
+
 export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 
 export const allMrsAtom = appAtomRuntime.atom(
@@ -91,7 +94,7 @@ export const openMrsTrackingAtom = appAtomRuntime.atom(
   { initialValue: initialOpenMrsTrackingState }
 ).pipe(Atom.keepAlive);
 
-const filterMrsByCacheKey = (allMrs: ReadonlyMap<MrGid, MergeRequest>, cacheKey: CacheKey): readonly MergeRequest[] => {
+const filterMrsByCacheKey = (allMrs: ReadonlyMap<MrGid, MergeRequest>, cacheKey: CacheKey, sortOrder: MrSortOrder): readonly MergeRequest[] => {
   const filtered: MergeRequest[] = [];
 
   allMrs.forEach(mr => {
@@ -110,8 +113,7 @@ const filterMrsByCacheKey = (allMrs: ReadonlyMap<MrGid, MergeRequest>, cacheKey:
     }
   });
 
-  // Sort by updated date descending
-  return filtered.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  return filtered.sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
 };
 
 // Filtered MRs based on current user selection and state
@@ -122,6 +124,7 @@ export const filteredMrsAtom = Atom.make((get) => {
   }
 
   const filterMrState = get(filterMrStateAtom);
+  const sortOrder = get(mrSortOrderAtom);
   const groupsList = get(groupsAtom);
   const cacheKey = extractSelectionData(selectionEntry, groupsList, filterMrState);
 
@@ -129,7 +132,7 @@ export const filteredMrsAtom = Atom.make((get) => {
 
   return Result.match(allMrsResult, {
     onInitial: () => [] as readonly MergeRequest[],
-    onSuccess: (state) => filterMrsByCacheKey(state.value.mrsByGid, cacheKey),
+    onSuccess: (state) => filterMrsByCacheKey(state.value.mrsByGid, cacheKey, sortOrder),
     onFailure: () => [] as readonly MergeRequest[]
   });
 });
@@ -380,11 +383,12 @@ export const selectMrByIdAtom = Atom.writable(
     if (suggestedSelection) {
       const newState = mr.state as MergeRequestState;
       const selectionUsernames = getUsernamesFromSelection(suggestedSelection, groups);
+      const sortOrder = ctx.get(mrSortOrderAtom);
 
       // Compute the new filtered list
       const newFilteredMrs = Array.from(allMrsState.mrsByGid.values())
         .filter(m => m.state === newState && selectionUsernames.has(m.author))
-        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+        .sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
 
       const newMrIndex = newFilteredMrs.findIndex(m => m.id === mrId);
 
