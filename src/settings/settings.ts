@@ -20,6 +20,9 @@ const NumberFromStringOrNumber = Schema.transform(
 const JobImportanceSchema = Schema.Literal('ignore', 'low', 'high', 'hidden')
 export type JobImportance = Schema.Schema.Type<typeof JobImportanceSchema>
 
+const MrSortOrderSchema = Schema.Literal('updatedAt', 'createdAt')
+export type MrSortOrder = Schema.Schema.Type<typeof MrSortOrderSchema>
+
 const NotificationSettingsSchema = Schema.mutable(Schema.Struct({
   enabled: Schema.Boolean,
   lastProcessedEventId: Schema.optional(Schema.String),
@@ -96,6 +99,7 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
   notifications: Schema.optionalWith(NotificationSettingsSchema, { default: () => ({ enabled: false }) }),
   backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 60 * 15 }) }),
   jiraBoardId: Schema.optional(NumberFromStringOrNumber),
+  mrSortOrder: Schema.optionalWith(MrSortOrderSchema, { default: () => 'updatedAt' as const }),
 }))
 export type Settings = Schema.Schema.Type<typeof SettingsSchema>
 

@@ -1,7 +1,7 @@
 import { FileSystem } from "@effect/platform"
 import { Effect, Stream, Console, Option } from "effect"
 import { appAtomRuntime } from "../appLayerRuntime"
-import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, defaultSettings, loadSettings, saveSettings, Settings } from "./settings"
+import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, type MrSortOrder, defaultSettings, loadSettings, saveSettings, Settings } from "./settings"
 import { Atom, Result } from "@effect-atom/atom-react"
 import type { MrGid } from "../gitlab/gitlab-schema"
 
@@ -289,4 +289,18 @@ export const repositoryPathsAtom = selectFromSettings(
   s => s.repositoryPaths,
   {} as Record<string, { localPath: string; remoteName: string }>,
   shallowObjectEquals
+);
+
+const mrSortOrderRawAtom = selectFromSettings(
+  s => s.mrSortOrder ?? 'updatedAt',
+  'updatedAt' as MrSortOrder
+);
+
+export const mrSortOrderAtom = Atom.writable(
+  (get) => get(mrSortOrderRawAtom),
+  (ctx, newValue: MrSortOrder) => {
+    const settings = loadSettings();
+    settings.mrSortOrder = newValue;
+    saveSettings(settings);
+  }
 );

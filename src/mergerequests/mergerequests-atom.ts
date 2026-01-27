@@ -25,13 +25,13 @@ import { writeFileSync } from 'fs';
 import { join } from 'path';
 import type { JiraIssue } from "../jira/jira-service";
 import { selectedUserSelectionEntryAtom, userSelectionsAtom } from "../userselection/userselection-atom";
-import { selectedUserSelectionEntryIdAtom } from "../settings/settings-atom";
+import { selectedUserSelectionEntryIdAtom, mrSortOrderAtom } from "../settings/settings-atom";
 import { allEventsIncludingCompactedAtom } from "../events/events-atom";
 import type { LazyReviewerEvent } from "../events/events";
 import { groupsAtom } from "../data/data-atom";
 import { AllMrsState, allMrsProjection } from "./all-mergerequests-projection";
 import { stream } from "@effect/platform/Template";
-import { ensurePipelineJobsInSettings } from "../settings/settings";
+import { ensurePipelineJobsInSettings, type MrSortOrder } from "../settings/settings";
 import { MrStateService } from "./mr-state-service";
 import type { MrGid } from "../gitlab/gitlab-schema";
 
@@ -56,8 +56,8 @@ export const branchDifferencesAtom = Atom.make<Map<string, BranchDifference>>(ne
 
 export const filterMrStateAtom = Atom.make<MergeRequestState>('opened');
 
-export type MrSortOrder = 'updatedAt' | 'createdAt';
-export const mrSortOrderAtom = Atom.make<MrSortOrder>('updatedAt');
+export { mrSortOrderAtom } from "../settings/settings-atom";
+export type { MrSortOrder } from "../settings/settings";
 
 export const selectedDiscussionIndexAtom = Atom.make<number>(0);
 
