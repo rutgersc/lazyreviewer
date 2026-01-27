@@ -6,6 +6,7 @@ const kimberley = { type: 'userId', id: 'kimberley'  } satisfies UserId;
 const rp = { type: 'userId', id: 'Rinze-PieterJonker'  } satisfies UserId;
 const martin = { type: 'userId', id: 'm.bures'  } satisfies UserId;
 const heiner = { type: 'userId', id: 'h.behrends'  } satisfies UserId;
+const tomas = { type: 'userId', id: 'TomasAugustinas'  } satisfies UserId;
 const arjen = { type: 'userId', id: 'ArjenPost'  } satisfies UserId;
 const chen = { type: 'userId', id: 'c.zrubavel'  } satisfies UserId;
 const harold = { type: 'userId', id: 'h.harkema'  } satisfies UserId;
@@ -22,6 +23,7 @@ export const users: UserSelection[] = [
   { type: 'user', id: kimberley },
   { type: 'user', id: rp },
   { type: 'user', id: martin },
+  { type: 'user', id: tomas },
   { type: 'user', id: arjen },
   { type: 'user', id: chen },
   { type: 'user', id: harold },
@@ -40,7 +42,7 @@ export const groups: UserGroup[] = [
   { type: 'group',
     name: 'Florence BE',
     id: florenceBEId,
-    children: [ rutger, menno ]
+    children: [ rutger, menno, tomas ]
   },
   { type: 'group',
     name: 'Florence FE',
@@ -50,7 +52,7 @@ export const groups: UserGroup[] = [
   { type: 'group',
     name: 'Florence',
     id: florenceId,
-    children: [ florenceFEId, florenceBEId, ]
+    children: [ florenceFEId, florenceBEId ]
   },
   // { type: 'group',
   //   name: 'Erlenmeyer FE',
@@ -69,9 +71,13 @@ const userSelectionData = [
     name: 'r.schoorstra',
     selection: [ rutger ]
   },
-    {
+  {
     name: 'menno',
     selection: [ menno ]
+  },
+  {
+    name: 'tomas',
+    selection: [ tomas ]
   },
   {
     name: 'florenceBE',
