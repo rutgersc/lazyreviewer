@@ -39,7 +39,7 @@ export const loadJobLogInternal = Effect.fn(function* (
 
 const openFile = (filePath: string) => {
   if (process.platform === "win32") {
-    execSync(`cmd /c start "" "${filePath}"`);
+    execSync(`wt -w 0 nt pwsh -NoExit -Command "nvim '${filePath}'"`);
   } else if (process.platform === "darwin") {
     execSync(`open "${filePath}"`);
   } else {
