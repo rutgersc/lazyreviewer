@@ -1,6 +1,6 @@
 import { Schema } from "effect"
 import { JiraIssueSchema, JiraSearchResponseSchema } from "../jira/jira-schema";
-import { JiraSprintSchema } from "../jira/jira-sprint-schema";
+import { JiraSprintSchema } from "../jiraboard/schema";
 import { EventIdSchema } from "./event-id";
 
 // Jira event schemas

@@ -12,7 +12,7 @@ import JiraModal from "./components/JiraModal";
 import RetargetModal from "./components/RetargetModal";
 import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
-import JiraBoardPage from "./components/JiraBoardPage";
+import { JiraBoardPage } from "./jiraboard";
 import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage";
 import { ActivePane } from "./userselection/userSelection";
 import { useEffect, useMemo, useState } from 'react';

@@ -3,17 +3,19 @@ import { Effect } from "effect";
 import { EventStorage } from "../events/events";
 import { generateEventId } from "../events/event-id";
 import { appAtomRuntime, makeProjectedAtomFromProjection } from "../appLayerRuntime";
-import { fetchActiveSprints, loadSprintTreeAsEvent } from "./jira-sprint-service";
-import { sprintsProjection } from "./jira-sprint-projections";
+import { fetchActiveSprints, loadSprintTreeAsEvent } from "./service";
+import { sprintsProjection } from "./projections";
 import { defineProjection } from "../utils/define-projection";
-import type { JiraIssue } from "./jira-schema";
-import { selectedSprintIdAtom } from "../components/JiraBoardPage";
+import type { JiraIssue } from "../jira/jira-schema";
 
-// =============================================================================
+// UI State Atoms
+export const selectedSprintIdAtom = Atom.make<number | null>(null);
+export const expandedKeysAtom = Atom.make<Set<string>>(new Set<string>());
+const selectedIssueIndexAtom = Atom.make<number>(0);
+
+export { selectedIssueIndexAtom };
+
 // Projected Atoms
-// =============================================================================
-
-// Sprints List
 export const sprintsStateAtom = makeProjectedAtomFromProjection(EventStorage.eventsStream, sprintsProjection);
 
 export const sprintIssuesProjection = defineProjection({
@@ -48,12 +50,7 @@ export const selectedSprintIssuesAtom = Atom.readable((get) => {
   return issuesBySprintId.get(selectedSprintId) ?? [];
 });
 
-
-// =============================================================================
-// Action Atoms (Appenders)
-// =============================================================================
-
-// Load sprints for a board
+// Action Atoms
 export const loadSprintsAtom = appAtomRuntime.fn((boardId: number) =>
   Effect.gen(function* () {
     const sprints = yield* fetchActiveSprints(boardId);
@@ -69,7 +66,6 @@ export const loadSprintsAtom = appAtomRuntime.fn((boardId: number) =>
   })
 );
 
-// Load issues for a specific sprint
 export const loadSprintIssuesAtom = appAtomRuntime.fn((args: { sprintId: number; boardId: number }) =>
   Effect.gen(function* () {
     const { tree: _, event } = yield* loadSprintTreeAsEvent(

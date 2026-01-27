@@ -3,11 +3,11 @@ import { useKeyboard } from '@opentui/react';
 import { useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
 import { useState, useEffect } from 'react';
 import { Effect } from 'effect';
-import { Colors } from '../colors';
-import { appAtomRuntime } from '../appLayerRuntime';
-import { fetchBoards } from '../jira/jira-sprint-service';
-import type { JiraBoard } from '../jira/jira-sprint-schema';
-import { setJiraBoardIdAtom } from '../settings/settings-atom';
+import { Colors } from '../../colors';
+import { appAtomRuntime } from '../../appLayerRuntime';
+import { fetchBoards } from '../service';
+import type { JiraBoard } from '../schema';
+import { setJiraBoardIdAtom } from '../../settings/settings-atom';
 
 interface JiraBoardSetupProps {
   onClose: () => void;

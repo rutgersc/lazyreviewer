@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import type { JiraIssue } from "../jira/jira-schema";
 
 export const JiraBoardSchema = Schema.Struct({
   id: Schema.Number,
@@ -145,8 +146,6 @@ export const JiraSprintIssuesResponseSchema = Schema.Struct({
   total: Schema.Number,
   issues: Schema.mutable(Schema.Array(JiraSprintIssueSchema)),
 });
-
-import type { JiraIssue } from "./jira-schema";
 
 export type JiraSprint = Schema.Schema.Type<typeof JiraSprintSchema>;
 export type JiraSprintIssue = Schema.Schema.Type<typeof JiraSprintIssueSchema>;

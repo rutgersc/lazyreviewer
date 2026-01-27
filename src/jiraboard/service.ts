@@ -3,15 +3,14 @@ import {
   JiraSprintListResponseSchema,
   JiraSprintIssuesResponseSchema,
   JiraBoardListResponseSchema,
-  type JiraSprint,
   type JiraSprintIssue,
   type JiraSprintTree,
   type JiraBoard,
-} from "./jira-sprint-schema";
-import type { JiraIssue } from "./jira-schema";
+} from "./schema";
+import type { JiraIssue } from "../jira/jira-schema";
 import type { JiraSprintIssuesFetchedEvent } from "../events/jira-events";
 import { generateEventId } from "../events/event-id";
-import { JiraApiError, getAuthToken, getJiraBaseUrl, JIRA_ISSUE_FIELDS } from "./jira-common";
+import { JiraApiError, getAuthToken, getJiraBaseUrl, JIRA_ISSUE_FIELDS } from "../jira/jira-common";
 
 export const fetchActiveSprints = Effect.fn("fetchActiveSprints")(function* (boardId: number) {
   const authToken = getAuthToken();
@@ -157,6 +156,15 @@ export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprin
   return allIssues;
 });
 
+const getStatusOrder = (status: string): number => {
+  const lowerStatus = status.toLowerCase();
+  if (lowerStatus.includes('done') || lowerStatus.includes('merged')) return 4;
+  if (lowerStatus.includes('progress') || lowerStatus.includes('review')) return 1;
+  if (lowerStatus.includes('qa') || lowerStatus.includes('test')) return 2;
+  if (lowerStatus.includes('ready')) return 3;
+  return 0;
+};
+
 export const buildSprintTree = (issues: JiraIssue[]): JiraSprintTree => {
   const parentMap = new Map<string, JiraIssue>();
   const childrenMap = new Map<string, JiraIssue[]>();
@@ -236,17 +244,6 @@ export const buildSprintTree = (issues: JiraIssue[]): JiraSprintTree => {
   return tree;
 };
 
-const getStatusOrder = (status: string): number => {
-  const lowerStatus = status.toLowerCase();
-  if (lowerStatus.includes('done') || lowerStatus.includes('merged')) return 4;
-  if (lowerStatus.includes('progress') || lowerStatus.includes('review')) return 1;
-  if (lowerStatus.includes('qa') || lowerStatus.includes('test')) return 2;
-  if (lowerStatus.includes('ready')) return 3;
-  return 0;
-};
-
-// Convert JiraSprintIssue to JiraIssue for unified storage
-// Note: comment body is already normalized to struct format by JiraCommentBodySchema transform
 export const convertSprintIssueToJiraIssue = (sprintIssue: JiraSprintIssue): JiraIssue => ({
   key: sprintIssue.key,
   id: sprintIssue.id,
@@ -297,7 +294,6 @@ export const loadSprintTreeAsEvent = Effect.fn("loadSprintTreeAsEvent")(function
 ) {
   const sprintIssues = yield* fetchSprintIssues(sprintId);
 
-  // Convert sprint issues to JiraIssue format for unified storage
   const jiraIssues = sprintIssues.map(convertSprintIssueToJiraIssue);
   const tree = buildSprintTree(jiraIssues);
 

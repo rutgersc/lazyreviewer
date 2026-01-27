@@ -1,10 +1,7 @@
-import type { JiraSprint } from "./jira-sprint-schema";
-import type { JiraIssue } from "./jira-schema";
+import type { JiraSprint } from "./schema";
+import type { JiraIssue } from "../jira/jira-schema";
 import { defineProjection } from "../utils/define-projection";
 
-// =============================================================================
-// Sprints List Projection
-// =============================================================================
 export type SprintsState =
   | { _type: 'NoSprintsState' }
   | {
@@ -25,9 +22,6 @@ export const sprintsProjection = defineProjection({
   },
 });
 
-// =============================================================================
-// Sprint Issues Projection (stores issues by sprintId)
-// =============================================================================
 export type SprintIssuesState = {
   issuesBySprintId: Map<number, JiraIssue[]>;
 };
