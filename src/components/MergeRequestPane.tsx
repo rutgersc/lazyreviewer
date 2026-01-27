@@ -214,10 +214,10 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
             wrapMode='none'
           >
             {isSeen
-              ? `❓ ${mr.approvedBy.length}`
+              ? `? ${mr.approvedBy.length}`
               : isApprovedByMe
-              ? `☒  ${mr.approvedBy.length}`
-              : `☐  ${mr.approvedBy.length}`}
+              ? `☒ ${mr.approvedBy.length}`
+              : `☐ ${mr.approvedBy.length}`}
           </text>
         </box>
 
