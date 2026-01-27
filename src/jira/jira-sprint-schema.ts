@@ -1,5 +1,21 @@
 import { Schema } from "effect";
 
+export const JiraBoardSchema = Schema.Struct({
+  id: Schema.Number,
+  self: Schema.String,
+  name: Schema.String,
+  type: Schema.String,
+});
+
+export const JiraBoardListResponseSchema = Schema.Struct({
+  maxResults: Schema.Number,
+  startAt: Schema.Number,
+  isLast: Schema.Boolean,
+  values: Schema.mutable(Schema.Array(JiraBoardSchema)),
+});
+
+export type JiraBoard = Schema.Schema.Type<typeof JiraBoardSchema>;
+
 export const JiraSprintSchema = Schema.Struct({
   id: Schema.Number,
   self: Schema.String,

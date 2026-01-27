@@ -1,7 +1,7 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { useAtomValue, useAtomSet, Result, Atom } from '@effect-atom/atom-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Colors } from '../colors';
 import {
   loadSprintsAtom,
@@ -13,10 +13,11 @@ import type { JiraIssue } from '../jira/jira-schema';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
+import JiraBoardSetup from './JiraBoardSetup';
 
 interface JiraBoardPageProps {
   onClose: () => void;
-  boardId: number;
+  boardId: number | undefined;
 }
 
 const getIssueTypeIcon = (issueType: string): string => {
@@ -79,6 +80,9 @@ type FlatListItem = {
 };
 
 export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) {
+  const [showSetup, setShowSetup] = useState(false);
+  const [currentBoardId, setCurrentBoardId] = useState(boardId);
+
   // Action results for loading UI
   const loadSprintsResult = useAtomValue(loadSprintsAtom);
   const loadSprintIssuesResult = useAtomValue(loadSprintIssuesAtom);
@@ -212,12 +216,16 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         }
         break;
       case 'r':
-        loadSprints(boardId);
+        if (currentBoardId) loadSprints(currentBoardId);
         break;
       case 'f':
-        if (selectedSprintId) {
-          loadSprintIssues({ sprintId: selectedSprintId, boardId });
+        if (selectedSprintId && currentBoardId) {
+          loadSprintIssues({ sprintId: selectedSprintId, boardId: currentBoardId });
         }
+        break;
+      case 's':
+      case 'S':
+        setShowSetup(true);
         break;
       case 'h':
       case 'left':
@@ -360,6 +368,19 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     );
   };
 
+  if (!currentBoardId || showSetup) {
+    return (
+      <JiraBoardSetup
+        onClose={() => currentBoardId ? setShowSetup(false) : onClose()}
+        onBoardSelected={(id) => {
+          setCurrentBoardId(id);
+          setShowSetup(false);
+        }}
+        currentBoardId={currentBoardId}
+      />
+    );
+  }
+
   return (
     <box
       style={{
@@ -389,7 +410,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           ✦ Jira Board {selectedSprint ? `- ${selectedSprint.name}` : ''}
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          q: close | r: load sprints | f: fetch issues | h/l: sprint | j/k: nav | o: open
+          q: close | S: switch board | r: sprints | f: issues | h/l: sprint | j/k: nav | o: open
         </text>
         </box>
         {renderSprintTabs()}

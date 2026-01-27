@@ -147,14 +147,7 @@ export default function App() {
       keys: [parseKeyString('b')],
       displayKey: 'b',
       description: 'Open Jira board',
-      handler: () => {
-        if (jiraBoardId) {
-          setActiveModal('jiraBoard');
-        } else {
-          setCopyNotification('Set jiraBoardId in settings');
-          setTimeout(() => setCopyNotification(null), 2000);
-        }
-      },
+      handler: () => setActiveModal('jiraBoard'),
     },
     {
       id: 'global:scroll-down',
@@ -438,7 +431,7 @@ export default function App() {
       )}
 
       {/* Jira Board Page - fullscreen overlay */}
-      {activeModal === 'jiraBoard' && jiraBoardId && (
+      {activeModal === 'jiraBoard' && (
         <JiraBoardPage
           boardId={jiraBoardId}
           onClose={() => setActiveModal('none')}

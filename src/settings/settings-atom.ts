@@ -187,6 +187,14 @@ export const jiraBoardIdAtom = selectFromSettings(
   undefined as number | undefined
 );
 
+export const setJiraBoardIdAtom = appAtomRuntime.fn((boardId: number | undefined) =>
+  Effect.gen(function* () {
+    const settings = loadSettings();
+    settings.jiraBoardId = boardId;
+    saveSettings(settings);
+  })
+);
+
 const monitoredMergeRequestsRawAtom = selectFromSettings(
   s => Object.keys(s.monitoredMergeRequests) as MrGid[],
   [] as MrGid[],

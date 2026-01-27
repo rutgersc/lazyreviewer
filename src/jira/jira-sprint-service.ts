@@ -2,9 +2,11 @@ import { Effect, Console, Schema } from "effect";
 import {
   JiraSprintListResponseSchema,
   JiraSprintIssuesResponseSchema,
+  JiraBoardListResponseSchema,
   type JiraSprint,
   type JiraSprintIssue,
   type JiraSprintTree,
+  type JiraBoard,
 } from "./jira-sprint-schema";
 import type { JiraIssue } from "./jira-schema";
 import type { JiraSprintIssuesFetchedEvent } from "../events/jira-events";
@@ -48,6 +50,58 @@ export const fetchActiveSprints = Effect.fn("fetchActiveSprints")(function* (boa
   });
 
   return result.values.filter(s => s.state === 'active');
+});
+
+export const fetchBoards = Effect.fn("fetchBoards")(function* () {
+  const authToken = getAuthToken();
+  const baseUrl = getJiraBaseUrl();
+
+  const allBoards: JiraBoard[] = [];
+  let startAt = 0;
+  const maxResults = 100;
+
+  while (true) {
+    const response = yield* Effect.tryPromise({
+      try: () => fetch(
+        `${baseUrl}/rest/agile/1.0/board?startAt=${startAt}&maxResults=${maxResults}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Basic ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+      catch: cause => new JiraApiError({ cause, message: "Failed to fetch boards" })
+    });
+
+    if (!response.ok) {
+      const errorText = yield* Effect.tryPromise({
+        try: () => response.text(),
+        catch: cause => new JiraApiError({ cause, message: "Failed to read error response" })
+      });
+      yield* Console.error("Jira API error response:", errorText);
+      throw new JiraApiError({ cause: errorText, message: `Jira API error: ${response.status}` });
+    }
+
+    const jsonData = yield* Effect.tryPromise({
+      try: () => response.json(),
+      catch: cause => new JiraApiError({ cause, message: "Failed to parse boards response" })
+    });
+
+    const result = yield* Effect.tryPromise({
+      try: () => Schema.decodeUnknownPromise(JiraBoardListResponseSchema)(jsonData),
+      catch: cause => new JiraApiError({ cause, message: "Failed to decode boards response" })
+    });
+
+    allBoards.push(...result.values);
+
+    if (result.isLast) {
+      break;
+    }
+    startAt += maxResults;
+  }
+
+  return allBoards;
 });
 
 export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprintId: number) {
