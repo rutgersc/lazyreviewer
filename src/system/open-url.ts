@@ -7,10 +7,10 @@ import { spawn } from 'child_process';
 export const openUrl = (url: string): void => {
   const isWindows = process.platform === 'win32';
   const isMac = process.platform === 'darwin';
-  
+
   if (isWindows) {
-    // On Windows, use cmd.exe with /c start
-    spawn('cmd', ['/c', 'start', '""', url], { detached: true, stdio: 'ignore' });
+    // On Windows, use start command via shell
+    spawn(`start "" "${url}"`, { detached: true, stdio: 'ignore', shell: true });
   } else if (isMac) {
     spawn('open', [url], { detached: true, stdio: 'ignore' });
   } else {
