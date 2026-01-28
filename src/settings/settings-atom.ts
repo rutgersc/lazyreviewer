@@ -233,35 +233,13 @@ export const clearCompletedMonitoredMrsAtom = appAtomRuntime.fn(() =>
   })
 );
 
-const projectMonitoredJobsRawAtom = selectFromSettings(
-  s => s.projectMonitoredJobs,
-  {} as Record<string, string[]>,
-  shallowObjectEquals
-);
-
-export const projectMonitoredJobsAtom = Atom.make(get => {
-  const raw = get(projectMonitoredJobsRawAtom);
-  return new Map(
-    Object.entries(raw).map(([project, jobs]) => [project, new Set(jobs)])
-  );
-});
-
-export const toggleMonitorJobAtom = appAtomRuntime.fn(
-  ({ projectFullPath, jobName }: { projectFullPath: string; jobName: string }) =>
-    Effect.gen(function* () {
-      const settings = loadSettings();
-      const currentJobs = new Set(settings.projectMonitoredJobs[projectFullPath] ?? []);
-
-      if (currentJobs.has(jobName)) {
-        currentJobs.delete(jobName);
-      } else {
-        currentJobs.add(jobName);
-      }
-
-      settings.projectMonitoredJobs[projectFullPath] = Array.from(currentJobs);
-      saveSettings(settings);
-    })
-);
+const cycleJobImportance = (current: string): 'low' | 'monitored' | 'ignore' => {
+  switch (current) {
+    case 'low': return 'monitored';
+    case 'monitored': return 'ignore';
+    default: return 'low';
+  }
+};
 
 export const toggleJobImportanceAtom = appAtomRuntime.fn(
   ({ projectFullPath, jobName }: { projectFullPath: string; jobName: string }) =>
@@ -269,7 +247,7 @@ export const toggleJobImportanceAtom = appAtomRuntime.fn(
       const settings = loadSettings();
       const projectJobs = (settings.pipelineJobImportance[projectFullPath] ??= {});
       const currentImportance = projectJobs[jobName] ?? 'low';
-      projectJobs[jobName] = currentImportance === 'high' ? 'low' : 'high';
+      projectJobs[jobName] = cycleJobImportance(currentImportance);
       saveSettings(settings);
     })
 );

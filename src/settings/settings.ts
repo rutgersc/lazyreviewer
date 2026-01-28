@@ -17,8 +17,23 @@ const NumberFromStringOrNumber = Schema.transform(
   }
 )
 
-const JobImportanceSchema = Schema.Literal('ignore', 'low', 'high', 'hidden')
+const JobImportanceSchema = Schema.Literal('ignore', 'low', 'monitored')
 export type JobImportance = Schema.Schema.Type<typeof JobImportanceSchema>
+
+const JobImportanceWithMigration = Schema.transform(
+  Schema.Union(Schema.Literal('ignore', 'low', 'monitored', 'high', 'hidden'), Schema.String),
+  JobImportanceSchema,
+  {
+    strict: true,
+    decode: (input) => {
+      if (input === 'high') return 'monitored';
+      if (input === 'hidden') return 'ignore';
+      if (input === 'ignore' || input === 'low' || input === 'monitored') return input;
+      return 'low';
+    },
+    encode: (output) => output
+  }
+)
 
 const MrSortOrderSchema = Schema.Literal('updatedAt', 'createdAt')
 export type MrSortOrder = Schema.Schema.Type<typeof MrSortOrderSchema>
@@ -91,7 +106,7 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
     { default: () => ({}) }
   ),
   pipelineJobImportance: Schema.optionalWith(
-    Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.mutable(Schema.Record({ key: Schema.String, value: JobImportanceSchema })) })),
+    Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.mutable(Schema.Record({ key: Schema.String, value: JobImportanceWithMigration })) })),
     { default: () => ({}) }
   ),
   selectedUserSelectionEntryId: Schema.optional(Schema.String),

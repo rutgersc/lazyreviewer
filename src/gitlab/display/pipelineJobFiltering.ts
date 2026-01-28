@@ -31,7 +31,7 @@ export function filterPipelineJobs(
   stages.forEach(stage => {
     stage.jobs.forEach(job => {
       const importance = repoJobs[job.name] || 'low';
-      if (importance === 'high') {
+      if (importance === 'monitored') {
         hasHighPriorityJobs = true;
         if (job.status === 'FAILED') {
           hasFailedHighPriorityJob = true;

@@ -85,9 +85,12 @@ const backgroundWorker =
         return yield* Effect.succeed({ type: 'mrCompleted' as const, reason: mr.state })
       }
 
-      const jobNamesToMonitor = settings.projectMonitoredJobs[mr.project.fullPath];
-      if (!jobNamesToMonitor) {
-        return yield* Effect.fail({ type: 'noJobNamesToMonitor' as const, message: `no jobs to monitor configured for ${mr.project.fullPath}. Look at pipelineJobImportance in the settings for job the available names. current structure: ${JSON.stringify(settings.projectMonitoredJobs)}` });
+      const projectJobImportance = settings.pipelineJobImportance[mr.project.fullPath] ?? {};
+      const jobNamesToMonitor = Object.entries(projectJobImportance)
+        .filter(([_, importance]) => importance === 'monitored')
+        .map(([jobName]) => jobName);
+      if (jobNamesToMonitor.length === 0) {
+        return yield* Effect.fail({ type: 'noJobNamesToMonitor' as const, message: `no jobs to monitor configured for ${mr.project.fullPath}. Set job importance to 'monitored' in pipelineJobImportance.` });
       }
 
       const existingMrPipelineState = settings.monitoredMergeRequests[mr.id];

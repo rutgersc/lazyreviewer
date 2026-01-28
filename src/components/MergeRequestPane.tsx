@@ -255,11 +255,11 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, createdAt, repoColor, bran
           style={{
             fg: jiraIssues.length > 0
               ? getJiraStatusColor(jiraIssues[0]?.fields.status.name, mr.state)
-              : Colors.PRIMARY,
+              : Colors.ERROR,
             attributes:
               jiraIssues.length > 0
                 ? (getJiraStatusColor(jiraIssues[0]?.fields.status.name, mr.state) === Colors.PRIMARY ? TextAttributes.DIM : undefined)
-                : TextAttributes.DIM,
+                : undefined,
           }}
           wrapMode='none'
         >

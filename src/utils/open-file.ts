@@ -27,7 +27,6 @@ export const openFileInEditor = (filePath: string) => Effect.gen(function* () {
   const executor = yield* CommandExecutor.CommandExecutor
   const runningProcess = yield* Effect.scoped(
     Effect.gen(function* () {
-      console.log(command);
       const process = yield* executor.start(command)
 
       // Capture stdout and stderr as strings

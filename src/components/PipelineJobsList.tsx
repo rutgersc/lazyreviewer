@@ -12,7 +12,7 @@ import { useEffect } from 'react';
 import type { MergeRequest } from './MergeRequestPane';
 import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
 import { loadJobLogAtom } from '../mergerequests/open-pipelinejob-log-atom';
-import { pipelineJobImportanceAtom, projectMonitoredJobsAtom } from '../settings/settings-atom';
+import { pipelineJobImportanceAtom } from '../settings/settings-atom';
 
 interface PipelineJobsListProps {
   selectedPipelineJobIndex: number;
@@ -52,10 +52,6 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
   const [scrollToItemRequest, setScrollToItemRequest] = useAtom(requestScrollPipelineJobsListToJob);
 
   const pipelineJobs = getPipelineJobsFromMr(selectedMergeRequest)
-  const projectMonitoredJobs = useAtomValue(projectMonitoredJobsAtom);
-  const trackedJobNames = selectedMergeRequest
-    ? projectMonitoredJobs.get(selectedMergeRequest.project.fullPath) ?? new Set<string>()
-    : new Set<string>();
   const jobImportanceMap = useAtomValue(pipelineJobImportanceAtom);
   const projectJobImportance = selectedMergeRequest
     ? jobImportanceMap.get(selectedMergeRequest.project.fullPath) ?? new Map<string, string>()
@@ -108,8 +104,9 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
     <box style={{ flexDirection: "column", gap: 1 }}>
       <box style={{ flexDirection: "column", gap: 0 }}>
         {pipelineJobs.map(({ stage, job }, index) => {
-          const isHighImportance = projectJobImportance.get(job.name) === 'high';
-          const isMonitoredJob = trackedJobNames.has(job.name);
+          const jobImportance = projectJobImportance.get(job.name) ?? 'low';
+          const importanceIndicator = jobImportance === 'monitored' ? '■' : jobImportance === 'ignore' ? '-' : null;
+          const importanceColor = jobImportance === 'monitored' ? Colors.WARNING : jobImportance === 'ignore' ? Colors.SUPPORTING : null;
 
           return (
             <box
@@ -142,19 +139,14 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
                 {`${stage.name}: `}
               </text>
               <text
-                style={{ fg: isMonitoredJob ? Colors.WARNING : Colors.PRIMARY }}
+                style={{ fg: jobImportance === 'monitored' ? Colors.WARNING : Colors.PRIMARY }}
                 wrapMode='none'
               >
                 {job.name}
               </text>
-              {isMonitoredJob && (
-                <text style={{ fg: Colors.WARNING }} wrapMode='none'>
-                  {' (job monitored)'}
-                </text>
-              )}
-              {isHighImportance && (
-                <text style={{ fg: Colors.SECONDARY }} wrapMode='none'>
-                  {'■ '}
+              {importanceIndicator && importanceColor && (
+                <text style={{ fg: importanceColor }} wrapMode='none'>
+                  {importanceIndicator}
                 </text>
               )}
             </box>
@@ -166,39 +158,53 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
         ─────────────────────────────────────
       </text>
 
-      {selectedPipelineJob && (
-        <box style={{ flexDirection: "column", gap: 1 }}>
-          <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
-            {selectedPipelineJob.job.name}
-          </text>
-          <box style={{ flexDirection: "row", gap: 2 }}>
-            <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
-              Status:
+      {selectedPipelineJob && (() => {
+        const selectedJobImportance = projectJobImportance.get(selectedPipelineJob.job.name) ?? 'low';
+        const importanceDisplay = selectedJobImportance === 'ignore' ? 'ignored' : selectedJobImportance;
+        const importanceColor = selectedJobImportance === 'monitored' ? Colors.WARNING : selectedJobImportance === 'ignore' ? Colors.ERROR : Colors.PRIMARY;
+
+        return (
+          <box style={{ flexDirection: "column", gap: 1 }}>
+            <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
+              {selectedPipelineJob.job.name}
             </text>
-            <text style={{ fg: getJobStatusDisplay(selectedPipelineJob.job.status).color }} wrapMode='none'>
-              {selectedPipelineJob.job.status}
-            </text>
-          </box>
-          <box style={{ flexDirection: "row", gap: 2 }}>
-            <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
-              Stage:
-            </text>
-            <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
-              {selectedPipelineJob.stage.name}
-            </text>
-          </box>
-          {selectedPipelineJob.job.webPath && (
             <box style={{ flexDirection: "row", gap: 2 }}>
               <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
-                Path:
+                Status:
               </text>
-              <text style={{ fg: Colors.INFO }} wrapMode='none'>
-                {selectedPipelineJob.job.webPath}
+              <text style={{ fg: getJobStatusDisplay(selectedPipelineJob.job.status).color }} wrapMode='none'>
+                {selectedPipelineJob.job.status}
               </text>
             </box>
-          )}
-        </box>
-      )}
+            <box style={{ flexDirection: "row", gap: 2 }}>
+              <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
+                Stage:
+              </text>
+              <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
+                {selectedPipelineJob.stage.name}
+              </text>
+            </box>
+            <box style={{ flexDirection: "row", gap: 2 }}>
+              <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
+                Importance:
+              </text>
+              <text style={{ fg: importanceColor }} wrapMode='none'>
+                {importanceDisplay}
+              </text>
+            </box>
+            {selectedPipelineJob.job.webPath && (
+              <box style={{ flexDirection: "row", gap: 2 }}>
+                <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
+                  Path:
+                </text>
+                <text style={{ fg: Colors.INFO }} wrapMode='none'>
+                  {selectedPipelineJob.job.webPath}
+                </text>
+              </box>
+            )}
+          </box>
+        );
+      })()}
     </box>
     </scrollbox>
   );
