@@ -674,48 +674,48 @@ export default function MergeRequestPane() {
         isActive={isActive}
       />
 
-      {isLoading && (
-        <box style={{ flexDirection: "row", alignItems: "center", gap: 1,  marginTop: 1 }}>
-          <Spinner />
-          <text style={{ fg: Colors.INFO }}>
-            Loading merge requests...
-          </text>
-        </box>
-      )}
-
-      {!isLoading && lastRefreshTimestamp && (
-        <box style={{ flexDirection: "row", alignItems: "center", gap: 1, marginTop: 1 }}>
-          <text style={{ fg: Colors.SUPPORTING }} wrapMode="none">
-            Last refreshed: {formatCompactTime(lastRefreshTimestamp, now)} ago
-          </text>
-          <text
-             onMouseDown={() => refreshMergeRequests()}
-             style={{
-              fg: Colors.INFO
-             }}
-             wrapMode='none'
-           >
-              {" >> refresh <<"}
-          </text>
-          {missingIds.length > 0 && !isReconciling && (
-             <text
-                onMouseDown={() => reconcile()}
-                style={{ fg: Colors.WARNING }}
-                wrapMode='none'
+      <box style={{ marginTop: 1, marginBottom: 1, height: 1 }}>
+        {isLoading ? (
+          <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+            <Spinner />
+            <text style={{ fg: Colors.INFO }}>
+              Loading merge requests...
+            </text>
+          </box>
+        ) : lastRefreshTimestamp ? (
+          <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+            <text style={{ fg: Colors.SUPPORTING }} wrapMode="none">
+              Last refreshed: {formatCompactTime(lastRefreshTimestamp, now)} ago
+            </text>
+            <text
+               onMouseDown={() => refreshMergeRequests()}
+               style={{
+                fg: Colors.INFO
+               }}
+               wrapMode='none'
              >
-                {` >> reconcile (${missingIds.length}) << `}
-             </text>
-          )}
-          {isReconciling && (
-            <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-              <Spinner />
-              <text style={{ fg: Colors.ERROR }} wrapMode='none'>
-                Syncing updated MRs...
-              </text>
-            </box>
-          )}
-        </box>
-      )}
+                {" >> refresh <<"}
+            </text>
+            {missingIds.length > 0 && !isReconciling && (
+               <text
+                  onMouseDown={() => reconcile()}
+                  style={{ fg: Colors.WARNING }}
+                  wrapMode='none'
+               >
+                  {` >> reconcile (${missingIds.length}) << `}
+               </text>
+            )}
+            {isReconciling && (
+              <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+                <Spinner />
+                <text style={{ fg: Colors.ERROR }} wrapMode='none'>
+                  Syncing updated MRs...
+                </text>
+              </box>
+            )}
+          </box>
+        ) : null}
+      </box>
 
       {!isLoading && mergeRequests.length === 0 && (
         <box style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", flexGrow: 1, gap: 1 }}>
