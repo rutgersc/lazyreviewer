@@ -70,15 +70,20 @@ const getMergeBlockedLabel = (status: string | null): string | null => {
 };
 
 
+const extractElabKeys = (title: string): readonly string[] =>
+  [...title.matchAll(/ELAB-\d+/g)].map(match => match[0]);
+
 const TimeColumnAuthorTitle = ({
   mr,
   isMyMr,
   isOutOfDate,
+  isRelated,
   now
 }: {
   mr: MergeRequest;
   isMyMr: boolean;
   isOutOfDate: boolean;
+  isRelated: boolean;
   now: Date;
 }) => (
   <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
@@ -97,7 +102,15 @@ const TimeColumnAuthorTitle = ({
       </text>
     </box>
 
-    <box style={{ flexGrow: 1 }}>
+    <box style={{ flexGrow: 1, flexDirection: "row", gap: 1 }}>
+      {isRelated && (
+        <text
+          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD, bg: Colors.WARNING }}
+          wrapMode='none'
+        >
+          {"related "}
+        </text>
+      )}
       <text
         style={{ fg: isOutOfDate ? Colors.WARNING : Colors.PRIMARY, attributes: TextAttributes.BOLD }}
         wrapMode='none'
@@ -522,6 +535,25 @@ export default function MergeRequestPane() {
     return map;
   }, [repositoryBranches]);
 
+  // Compute related MR indices based on ELAB keys in title
+  const relatedMrIndices = useMemo(() => {
+    const selectedMr = mergeRequests[selectedIndex];
+    if (!selectedMr) return new Set<number>();
+
+    const selectedKeys = new Set(extractElabKeys(selectedMr.title));
+    if (selectedKeys.size === 0) return new Set<number>();
+
+    return new Set(
+      mergeRequests
+        .map((mr, index) => ({ mr, index }))
+        .filter(({ mr, index }) =>
+          index !== selectedIndex &&
+          extractElabKeys(mr.title).some(key => selectedKeys.has(key))
+        )
+        .map(({ index }) => index)
+    );
+  }, [mergeRequests, selectedIndex]);
+
   // Get the selected MR's Jira ticket info
   const selectedMrJiraInfo = useMemo(() => {
     const selectedMr = mergeRequests[selectedIndex];
@@ -749,7 +781,7 @@ export default function MergeRequestPane() {
                   <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} isMyMr={isMyMr} now={now} />
                 ) : (
                   <>
-                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} now={now} />
+                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} isRelated={relatedMrIndices.has(index)} now={now} />
                     <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
                   </>
                 )}

@@ -102,3 +102,72 @@ export const getRemoteBranchCommit = (
     return null;
   }
 };
+
+export interface GitWorkingTreeStatus {
+  currentBranch: string | null;
+  stagedCount: number;
+  unstagedCount: number;
+  unpushedCommits: readonly { hash: string; subject: string }[];
+}
+
+export const getWorkingTreeStatus = (repoPath: string): GitWorkingTreeStatus => {
+  const currentBranch = getCurrentBranch(repoPath);
+
+  const stagedCount = (() => {
+    try {
+      const output = execSync('git diff --cached --numstat', {
+        cwd: repoPath,
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore']
+      });
+      return output.trim().split('\n').filter(line => line.length > 0).length;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const unstagedCount = (() => {
+    try {
+      const output = execSync('git status --porcelain', {
+        cwd: repoPath,
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore']
+      });
+      return output.trim().split('\n')
+        .filter(line => line.length > 0 && !line.startsWith('A ') && !line.startsWith('M ') && !line.startsWith('D '))
+        .length;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const unpushedCommits = (() => {
+    if (!currentBranch) return [];
+    try {
+      const upstream = execSync(`git rev-parse --abbrev-ref ${currentBranch}@{upstream}`, {
+        cwd: repoPath,
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore']
+      }).trim();
+
+      if (!upstream) return [];
+
+      const output = execSync(`git log ${upstream}..HEAD --format=%h|%s`, {
+        cwd: repoPath,
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore']
+      });
+
+      return output.trim().split('\n')
+        .filter(line => line.length > 0)
+        .map(line => {
+          const [hash, ...subjectParts] = line.split('|');
+          return { hash: hash || '', subject: subjectParts.join('|') };
+        });
+    } catch {
+      return [];
+    }
+  })();
+
+  return { currentBranch, stagedCount, unstagedCount, unpushedCommits };
+};

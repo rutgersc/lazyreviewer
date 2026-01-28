@@ -388,6 +388,10 @@ export default function App() {
           setCopyNotification('Branch switched!');
           setTimeout(() => setCopyNotification(null), 2000);
         }}
+        onError={(message) => {
+          setCopyNotification(message);
+          setTimeout(() => setCopyNotification(null), 5000);
+        }}
       />
 
       {/* Help Modal - rendered at app level to cover entire screen */}

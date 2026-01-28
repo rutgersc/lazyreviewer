@@ -172,22 +172,30 @@ const backgroundWorker =
         { success: 0, failed: 0, total: relevantJobs.length }
       )
 
-      const handleFinishedJob = Effect.fn(function* ({ currentJob }: Job) {
+      const handleFailedJob = Effect.fn(function* ({ currentJob }: Job) {
         const countSummary = `(${jobCounts.success},${jobCounts.failed})/${jobCounts.total}`
         yield* sendSystemNotification({
-          title: `${currentJob.name}: ${currentJob.status} ${countSummary}`,
+          title: `${currentJob.name}: FAILED ${countSummary}`,
           body: `${mr.project.path}!${mr.iid}`
         }).pipe(Effect.fork)
 
-        if (currentJob.status === 'FAILED') {
-          yield* loadJobLogInternal(
-            { project: { path: mr.project.path, fullPath: mr.project.fullPath } },
-            { id: currentJob.id, name: currentJob.name, localId: currentJob.localId })
-        }
+        yield* loadJobLogInternal(
+          { project: { path: mr.project.path, fullPath: mr.project.fullPath } },
+          { id: currentJob.id, name: currentJob.name, localId: currentJob.localId })
       });
 
-      for (const finishedJob of newlyFinishedJobs) {
-        yield* handleFinishedJob(finishedJob);
+      const failedJobs = newlyFinishedJobs.filter(({ currentJob }) => currentJob.status === 'FAILED')
+      for (const failedJob of failedJobs) {
+        yield* handleFailedJob(failedJob);
+      }
+
+      const allJobsDone = inProgressJobs.length === 0 && newlyFinishedJobs.length > 0
+      const allJobsSucceeded = jobCounts.failed === 0 && jobCounts.success === jobCounts.total
+      if (allJobsDone && allJobsSucceeded) {
+        yield* sendSystemNotification({
+          title: `Pipeline SUCCESS`,
+          body: `${mr.project.path}!${mr.iid} - all ${jobCounts.total} jobs passed`
+        }).pipe(Effect.fork)
       }
 
       const shouldRefreshMr = isNewPipeline || newlyFinishedJobs.length > 0;

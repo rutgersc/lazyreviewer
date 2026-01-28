@@ -184,18 +184,29 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         setSortSelectedIndex(SORT_OPTIONS.findIndex(o => o.key === sortOrder));
         break;
       case 'o':
-      case 'i':
-        if (selectedItem) {
+      case 'i': {
+        const item = flatItems[selectedIndex];
+        if (item) {
           const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
-          openUrl(`${baseUrl}/browse/${selectedItem.item.key}`);
+          openUrl(`${baseUrl}/browse/${item.item.key}`);
         }
         break;
-      case 'c':
-        if (selectedItem) {
+      }
+      case 'c': {
+        const item = flatItems[selectedIndex];
+        if (item) {
           const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
-          copyToClipboard(`${baseUrl}/browse/${selectedItem.item.key}`);
+          copyToClipboard(`${baseUrl}/browse/${item.item.key}`);
         }
         break;
+      }
+      case 'y': {
+        const item = flatItems[selectedIndex];
+        if (item) {
+          copyToClipboard(item.item.key);
+        }
+        break;
+      }
       case 'r':
         if (currentBoardId) loadSprints(currentBoardId);
         break;
@@ -392,7 +403,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
             ✦ Sprint Board {selectedSprint ? `- ${selectedSprint.name}` : ''} {subtasksCollapsed ? '[collapsed]' : ''}
           </text>
           <text style={{ fg: Colors.SUPPORTING }} wrapMode="none">
-            q: close | S: board | r: sprints | f: fetch | x: collapse | O: sort | o: open
+            q: close | S: board | r: sprints | f: fetch | x: collapse | O: sort | o: open | y: copy key
           </text>
         </box>
         {renderSprintTabs()}
