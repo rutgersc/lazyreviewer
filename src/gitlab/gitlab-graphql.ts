@@ -162,7 +162,7 @@ export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (u
     try: () => sdk.MRs({
       usernames: usernames,
       state: state,
-      first: 30
+      first: 50
     }),
     catch: cause => new FetchGitlabMrsError({ cause })
   });
@@ -189,7 +189,7 @@ export const getGitlabMrsByProjectAsEvent = Effect.fn("getGitlabMrsByProjectAsEv
     try: () => sdk.ProjectMRs({
       projectPath: projectPath,
       state: state,
-      first: 40
+      first: 50
     }),
     catch: cause => new FetchGitlabProjectMrsError({ cause })
   });

@@ -1,15 +1,16 @@
 import { Effect, Data, Console } from "effect"
 import type { PlatformError } from "@effect/platform/Error"
 import type { ParseError } from "effect/ParseResult"
-import type { MergeRequest, MergeRequestState } from "../graphql/generated/gitlab-base-types"
+import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
 import { EventStorage } from "../events/events"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
 import type { JiraApiError } from "../jira/jira-common"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
-import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getSingleMrAsEvent } from "../gitlab/gitlab-graphql"
+import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getSingleMrAsEvent, getMrsAsEvent } from "../gitlab/gitlab-graphql"
 import { loadJiraTicketsAsEvent } from "../jira/jira-service"
 import { projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
-import { OpenMrsTrackingState } from "./mr-diff-tracking"
+import type { MergeRequest } from "./mergerequest-schema"
+import type { MrGid } from "../gitlab/gitlab-schema"
 
 export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
   readonly usernames: readonly string[]
@@ -34,13 +35,12 @@ export type MergeRequestsCacheError =
   | PlatformError
   | ParseError
 
+export type KnownMrInfo = { projectPath: string; iid: string };
+
 export const decideFetchUserMrs = (
   usernames: string[],
   state: MergeRequestState,
-  options?: {
-    trackingState: OpenMrsTrackingState,
-    resolveMrInfo: (id: string) => { projectPath: string, iid: string } | undefined
-  }
+  knownMrs?: ReadonlyMap<MrGid, KnownMrInfo>
 ): Effect.Effect<
   void,
   MergeRequestsCacheError,
@@ -49,32 +49,74 @@ export const decideFetchUserMrs = (
   const mrEvent = yield* getGitlabMrsAsEvent(usernames, state)
   yield* EventStorage.appendEvent(mrEvent)
 
-  // Fetch Jira events
   const gitlabMrs = projectGitlabUserMrsFetchedEvent(mrEvent)
+  const fetchedGids = new Set(gitlabMrs.map(mr => mr.id))
+
+  // For opened state, fetch known MRs that weren't in the response
+  if (state === 'opened' && knownMrs && knownMrs.size > 0) {
+    const missingMrs = [...knownMrs.entries()]
+      .filter(([gid]) => !fetchedGids.has(gid))
+      .map(([, info]) => info)
+
+    if (missingMrs.length > 0) {
+      yield* Console.log(`[Fetch] ${missingMrs.length} known MRs not in response, fetching them`)
+      yield* fetchMissingMrs(missingMrs)
+    }
+  }
+
+  // Fetch Jira events
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
   yield* EventStorage.appendEvent(jiraEvent)
 })
 
+const fetchMissingMrs = (missingMrs: readonly KnownMrInfo[]) => Effect.gen(function* () {
+  const byProject = missingMrs.reduce(
+    (acc, mr) => acc.set(mr.projectPath, [...(acc.get(mr.projectPath) ?? []), mr.iid]),
+    new Map<string, string[]>()
+  )
+
+  yield* Effect.forEach(
+    [...byProject.entries()],
+    ([projectPath, iids]) => Effect.gen(function* () {
+      yield* Console.log(`[Fetch] Fetching ${iids.length} missing MRs for ${projectPath}`)
+      const event = yield* getMrsAsEvent(projectPath, iids)
+      yield* EventStorage.appendEvent(event)
+    }).pipe(
+      Effect.catchAll(err => Console.error(`[Fetch] Failed to fetch MRs for ${projectPath}`, err))
+    ),
+    { concurrency: 3 }
+  )
+})
+
 export const decideFetchProjectMrs = (
   projectPath: string,
   state: MergeRequestState,
-  options?: {
-    trackingState: OpenMrsTrackingState,
-    resolveMrInfo: (id: string) => { projectPath: string, iid: string } | undefined
-  }
+  knownMrs?: ReadonlyMap<MrGid, KnownMrInfo>
 ): Effect.Effect<
   void,
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
-  // Fetch new MR event
   const mrEvent = yield* getGitlabMrsByProjectAsEvent(projectPath, state);
-
   yield* EventStorage.appendEvent(mrEvent)
 
-  // Fetch Jira events
   const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
+  const fetchedGids = new Set(gitlabMrs.map(mr => mr.id))
+
+  // For opened state, fetch known MRs that weren't in the response
+  if (state === 'opened' && knownMrs && knownMrs.size > 0) {
+    const missingMrs = [...knownMrs.entries()]
+      .filter(([gid]) => !fetchedGids.has(gid))
+      .map(([, info]) => info)
+
+    if (missingMrs.length > 0) {
+      yield* Console.log(`[Fetch] ${missingMrs.length} known MRs not in response, fetching them`)
+      yield* fetchMissingMrs(missingMrs)
+    }
+  }
+
+  // Fetch Jira events
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
   yield* EventStorage.appendEvent(jiraEvent)

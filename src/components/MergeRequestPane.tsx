@@ -20,8 +20,6 @@ import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchS
 import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom";
 import { currentUserAtom } from "../settings/settings-atom";
 import type { JiraIssue } from "../jira/jira-schema";
-import { missingMrsDiffAtom, isReconcilingAtom } from "../mergerequests/mr-diff-tracking";
-import { useReconcileMissingMrs } from "../mergerequests/mr-reconciliation";
 import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom, repositoryColorsAtom, pipelineJobImportanceAtom } from "../settings/settings-atom";
 
 export const scrollToItemRequestAtom = Atom.make<number | null>(null);
@@ -76,13 +74,11 @@ const extractElabKeys = (title: string): readonly string[] =>
 const TimeColumnAuthorTitle = ({
   mr,
   isMyMr,
-  isOutOfDate,
   relationType,
   now
 }: {
   mr: MergeRequest;
   isMyMr: boolean;
-  isOutOfDate: boolean;
   relationType: 'ticket' | 'sibling' | null;
   now: Date;
 }) => (
@@ -116,7 +112,7 @@ const TimeColumnAuthorTitle = ({
         </text>
       )}
       <text
-        style={{ fg: isOutOfDate ? Colors.WARNING : Colors.PRIMARY, attributes: TextAttributes.BOLD }}
+        style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }}
         wrapMode='none'
       >
         {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
@@ -494,7 +490,6 @@ export default function MergeRequestPane() {
   const ignoredMergeRequests = useAtomValue(ignoredMergeRequestsAtom);
   const monitoredMergeRequests = useAtomValue(monitoredMergeRequestsAtom);
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
-  const { missingIds, reconcile, isReconciling } = useReconcileMissingMrs();
   const now = useAtomValue(nowAtom);
 
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -734,23 +729,6 @@ export default function MergeRequestPane() {
              >
                 {" >> refresh <<"}
             </text>
-            {missingIds.length > 0 && !isReconciling && (
-               <text
-                  onMouseDown={() => reconcile()}
-                  style={{ fg: Colors.WARNING }}
-                  wrapMode='none'
-               >
-                  {` >> reconcile (${missingIds.length}) << `}
-               </text>
-            )}
-            {isReconciling && (
-              <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-                <Spinner />
-                <text style={{ fg: Colors.ERROR }} wrapMode='none'>
-                  Syncing updated MRs...
-                </text>
-              </box>
-            )}
           </box>
         ) : null}
       </box>
@@ -799,7 +777,6 @@ export default function MergeRequestPane() {
           const highlightInfo = getMrHighlightInfo(mr, index);
           const repoColor = repositoryColors[mr.project.fullPath];
           const isMyMr = mr.author === currentUser;
-          const isOutOfDate = missingIds.includes(mr.id);
 
           return (
             <box
@@ -819,7 +796,7 @@ export default function MergeRequestPane() {
                   <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} isMyMr={isMyMr} now={now} />
                 ) : (
                   <>
-                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} relationType={relatedMrIndices.get(index) ?? null} now={now} />
+                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} />
                     <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
                   </>
                 )}

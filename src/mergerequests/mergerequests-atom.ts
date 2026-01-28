@@ -3,15 +3,11 @@ import type { MergeRequest } from "./mergerequest-schema";
 import { extractSelectionData, findSelectionForAuthor, getUsernamesFromSelection } from "../userselection/userSelection";
 import {
   type CacheKey,
+  type KnownMrInfo,
   decideFetchUserMrs,
   decideFetchProjectMrs,
   decideFetchSingleMr
 } from "./decide-fetch-mrs";
-import {
-  initialOpenMrsTrackingState,
-  projectOpenMrsAndDetectMissing,
-  OpenMrsTrackingState
-} from "./mr-diff-tracking";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { Effect, Option, Console, Stream, Chunk, SubscriptionRef } from "effect";
@@ -76,45 +72,16 @@ export const allJiraIssuesAtom = Atom.map(
     })
 );
 
-export const openMrsTrackingAtom = appAtomRuntime.atom(
-  (get) => {
-    return Stream.unwrap(
-      Effect.gen(function* () {
-        return (yield* EventStorage.eventsStream).pipe(
-          Stream.filter(allMrsProjection.isRelevantEvent),
-          Stream.scan(
-            initialOpenMrsTrackingState,
-            (state: OpenMrsTrackingState, event) =>
-              projectOpenMrsAndDetectMissing(state, event)
-          )
-        );
-      })
-    );
-  },
-  { initialValue: initialOpenMrsTrackingState }
-).pipe(Atom.keepAlive);
+const mrMatchesCacheKey = (mr: MergeRequest, cacheKey: CacheKey): boolean =>
+  mr.state === cacheKey.state &&
+  (cacheKey._tag === "UserMRs"
+    ? cacheKey.usernames.includes(mr.author)
+    : mr.project.fullPath === cacheKey.projectPath);
 
-const filterMrsByCacheKey = (allMrs: ReadonlyMap<MrGid, MergeRequest>, cacheKey: CacheKey, sortOrder: MrSortOrder): readonly MergeRequest[] => {
-  const filtered: MergeRequest[] = [];
-
-  allMrs.forEach(mr => {
-    if (mr.state !== cacheKey.state) {
-      return;
-    }
-
-    if (cacheKey._tag === "UserMRs") {
-      if (cacheKey.usernames.includes(mr.author)) {
-        filtered.push(mr);
-      }
-    } else if (cacheKey._tag === "ProjectMRs") {
-      if (mr.project.fullPath === cacheKey.projectPath) {
-        filtered.push(mr);
-      }
-    }
-  });
-
-  return filtered.sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
-};
+const filterMrsByCacheKey = (allMrs: ReadonlyMap<MrGid, MergeRequest>, cacheKey: CacheKey, sortOrder: MrSortOrder): readonly MergeRequest[] =>
+  [...allMrs.values()]
+    .filter(mr => mrMatchesCacheKey(mr, cacheKey))
+    .sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
 
 // Filtered MRs based on current user selection and state
 export const filteredMrsAtom = Atom.make((get) => {
@@ -212,6 +179,16 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
   return Result.isWaiting(refreshResult);
 });
 
+const getKnownMrsForCacheKey = (
+  allMrs: ReadonlyMap<MrGid, MergeRequest>,
+  cacheKey: CacheKey
+): ReadonlyMap<MrGid, KnownMrInfo> =>
+  new Map(
+    [...allMrs.entries()]
+      .filter(([, mr]) => mrMatchesCacheKey(mr, cacheKey))
+      .map(([gid, mr]) => [gid, { projectPath: mr.project.fullPath, iid: mr.iid }])
+  );
+
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     return Effect.gen(function* () {
       const selectionEntry = get(selectedUserSelectionEntryAtom);
@@ -223,10 +200,19 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
       const filterMrState = get(filterMrStateAtom);
       const cacheKey = extractSelectionData(selectionEntry, groupsList, filterMrState);
 
+      const allMrsResult = get(allMrsAtom);
+      const allMrs = Result.match(allMrsResult, {
+        onInitial: () => new Map<MrGid, MergeRequest>(),
+        onSuccess: (state) => state.value.mrsByGid,
+        onFailure: () => new Map<MrGid, MergeRequest>()
+      });
+
+      const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
+
       if (cacheKey._tag === "UserMRs") {
-        yield* decideFetchUserMrs(cacheKey.usernames as string[], cacheKey.state)
+        yield* decideFetchUserMrs(cacheKey.usernames as string[], cacheKey.state, knownMrs)
       } else {
-        yield* decideFetchProjectMrs(cacheKey.projectPath, cacheKey.state)
+        yield* decideFetchProjectMrs(cacheKey.projectPath, cacheKey.state, knownMrs)
       }
     }).pipe(
       Effect.catchAllCause((cause) =>
