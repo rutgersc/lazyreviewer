@@ -77,13 +77,13 @@ const TimeColumnAuthorTitle = ({
   mr,
   isMyMr,
   isOutOfDate,
-  isRelated,
+  relationType,
   now
 }: {
   mr: MergeRequest;
   isMyMr: boolean;
   isOutOfDate: boolean;
-  isRelated: boolean;
+  relationType: 'ticket' | 'sibling' | null;
   now: Date;
 }) => (
   <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
@@ -103,12 +103,16 @@ const TimeColumnAuthorTitle = ({
     </box>
 
     <box style={{ flexGrow: 1, flexDirection: "row", gap: 1 }}>
-      {isRelated && (
+      {relationType && (
         <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD, bg: Colors.WARNING }}
+          style={{
+            fg: Colors.BACKGROUND,
+            attributes: TextAttributes.BOLD,
+            bg: relationType === 'sibling' ? Colors.INFO : Colors.WARNING
+          }}
           wrapMode='none'
         >
-          {"related "}
+          {relationType === 'sibling' ? ' sibling ' : ' related '}
         </text>
       )}
       <text
@@ -535,24 +539,58 @@ export default function MergeRequestPane() {
     return map;
   }, [repositoryBranches]);
 
-  // Compute related MR indices based on ELAB keys in title
-  const relatedMrIndices = useMemo(() => {
+  // Compute related MR indices based on ELAB keys in title or shared Jira ticket/parent
+  type RelationType = 'ticket' | 'sibling';
+  const relatedMrIndices = useMemo((): Map<number, RelationType> => {
     const selectedMr = mergeRequests[selectedIndex];
-    if (!selectedMr) return new Set<number>();
+    if (!selectedMr) return new Map();
 
     const selectedKeys = new Set(extractElabKeys(selectedMr.title));
-    if (selectedKeys.size === 0) return new Set<number>();
+    const selectedIssues = selectedMr.jiraIssueKeys.flatMap(k => {
+      const issue = jiraIssuesMap.get(k);
+      return issue ? [issue] : [];
+    });
+    const selectedTicketKey = selectedIssues[0]?.key;
+    const selectedIsSubtask = selectedIssues[0]?.fields.issuetype.name.toLowerCase().includes('sub-task');
+    const selectedParentKey = selectedIsSubtask ? selectedIssues[0]?.fields.parent?.key : undefined;
 
-    return new Set(
+    if (selectedKeys.size === 0 && !selectedTicketKey && !selectedParentKey) return new Map();
+
+    return new Map(
       mergeRequests
-        .map((mr, index) => ({ mr, index }))
-        .filter(({ mr, index }) =>
-          index !== selectedIndex &&
-          extractElabKeys(mr.title).some(key => selectedKeys.has(key))
-        )
-        .map(({ index }) => index)
+        .map((mr, index) => {
+          if (index === selectedIndex) return null;
+
+          // Check Jira relationships first (more specific)
+          const mrIssues = mr.jiraIssueKeys.flatMap(k => {
+            const issue = jiraIssuesMap.get(k);
+            return issue ? [issue] : [];
+          });
+          const mrTicketKey = mrIssues[0]?.key;
+
+          // Same direct ticket
+          if (selectedTicketKey && mrTicketKey === selectedTicketKey) {
+            return [index, 'ticket'] as const;
+          }
+
+          // Same parent (only if selected is a subtask)
+          if (selectedParentKey) {
+            const mrParentKey = mrIssues[0]?.fields.parent?.key;
+            if (mrParentKey === selectedParentKey) {
+              return [index, 'sibling'] as const;
+            }
+          }
+
+          // Check ELAB keys in title
+          if (extractElabKeys(mr.title).some(key => selectedKeys.has(key))) {
+            return [index, 'ticket'] as const;
+          }
+
+          return null;
+        })
+        .filter((entry): entry is [number, RelationType] => entry !== null)
     );
-  }, [mergeRequests, selectedIndex]);
+  }, [mergeRequests, selectedIndex, jiraIssuesMap]);
 
   // Get the selected MR's Jira ticket info
   const selectedMrJiraInfo = useMemo(() => {
@@ -781,7 +819,7 @@ export default function MergeRequestPane() {
                   <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} repoColor={repoColor} isMyMr={isMyMr} now={now} />
                 ) : (
                   <>
-                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} isRelated={relatedMrIndices.has(index)} now={now} />
+                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} isOutOfDate={isOutOfDate} relationType={relatedMrIndices.get(index) ?? null} now={now} />
                     <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
                   </>
                 )}
