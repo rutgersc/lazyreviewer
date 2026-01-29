@@ -1,7 +1,7 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { useAtomValue, useAtomSet, Result, Atom } from '@effect-atom/atom-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Colors } from '../../colors';
 import {
   loadSprintsAtom,
@@ -15,6 +15,8 @@ import {
   subtasksCollapsedAtom,
   sortOrderAtom,
   sortPopupVisibleAtom,
+  mrsByJiraKeyAtom,
+  jiraBoardFocusKeyAtom,
 } from '../atoms';
 import { useAutoScroll } from '../../hooks/useAutoScroll';
 import { openUrl } from '../../system/open-url';
@@ -22,6 +24,8 @@ import { copyToClipboard } from '../../system/clipboard';
 import JiraBoardSetup from './JiraBoardSetup';
 import EpicLegend from './EpicLegend';
 import { transformToBoard, flattenBoard, mapStatus, mapPriority, sortStories } from '../board-utils';
+import { selectMrByIdAtom } from '../../mergerequests/mergerequests-atom';
+import type { MergeRequest } from '../../mergerequests/mergerequest-schema';
 
 interface JiraBoardPageProps {
   onClose: () => void;
@@ -62,6 +66,8 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const [sortSelectedIndex, setSortSelectedIndex] = useState(0);
   const [searchActive, setSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mrPickerMrs, setMrPickerMrs] = useState<readonly MergeRequest[]>([]);
+  const [mrPickerIndex, setMrPickerIndex] = useState(0);
 
   const loadSprintsResult = useAtomValue(loadSprintsAtom);
   const loadSprintIssuesResult = useAtomValue(loadSprintIssuesAtom);
@@ -75,6 +81,10 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const setSubtasksCollapsed = useAtomSet(subtasksCollapsedAtom);
   const setSortOrder = useAtomSet(sortOrderAtom);
   const setSortPopupVisible = useAtomSet(sortPopupVisibleAtom);
+  const selectMrById = useAtomSet(selectMrByIdAtom);
+  const setFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
+
+  const mrsByJiraKey = useAtomValue(mrsByJiraKeyAtom);
 
   const sprintsResult = useAtomValue(sprintsStateAtom);
   const sprints = Result.builder(sprintsResult)
@@ -85,6 +95,10 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const selectedSprint = useAtomValue(selectedSprintAtom);
   const issues = useAtomValue(selectedSprintIssuesAtom);
   const hasIssuesForSelectedSprint = issues.length > 0;
+
+  if (selectedSprintId === null && sprints.length > 0) {
+    setSelectedSprintId(sprints[0]!.id);
+  }
 
   const selectedIndex = useAtomValue(boardSelectedIndexAtom);
   const epicLegendVisible = useAtomValue(epicLegendVisibleAtom);
@@ -99,6 +113,18 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     const epicColors = new Map(sortedStories.map(s => [s.issue.key, s.epicColor]));
     return { stories: sortedStories, flatItems, epicColors };
   }, [issues, sortOrder, subtasksCollapsed]);
+
+  const focusKey = useAtomValue(jiraBoardFocusKeyAtom);
+  const focusAppliedRef = useRef(false);
+
+  if (focusKey && flatItems.length > 0 && !focusAppliedRef.current) {
+    focusAppliedRef.current = true;
+    const matchIdx = flatItems.findIndex(fi => fi.item.key === focusKey);
+    if (matchIdx >= 0) {
+      setSelectedIndex(matchIdx);
+    }
+    setFocusKey(null);
+  }
 
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
 
@@ -131,7 +157,36 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     flatItem.item.key.toLowerCase().includes(searchLower) ||
     flatItem.item.fields.summary.toLowerCase().includes(searchLower);
 
+  const mrPickerOpen = mrPickerMrs.length > 0;
+
   useKeyboard((key: ParsedKey) => {
+    if (mrPickerOpen) {
+      switch (key.name) {
+        case 'escape':
+        case 'q':
+          setMrPickerMrs([]);
+          break;
+        case 'j':
+        case 'down':
+          setMrPickerIndex(prev => Math.min(prev + 1, mrPickerMrs.length - 1));
+          break;
+        case 'k':
+        case 'up':
+          setMrPickerIndex(prev => Math.max(prev - 1, 0));
+          break;
+        case 'return': {
+          const mr = mrPickerMrs[mrPickerIndex];
+          if (mr) {
+            setMrPickerMrs([]);
+            onClose();
+            selectMrById({ mrId: mr.id });
+          }
+          break;
+        }
+      }
+      return;
+    }
+
     if (searchActive) {
       switch (key.name) {
         case 'escape':
@@ -283,6 +338,20 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         }
         break;
       }
+      case 'return': {
+        const item = flatItems[selectedIndex];
+        if (item) {
+          const linkedMrs = mrsByJiraKey.get(item.item.key) ?? [];
+          if (linkedMrs.length === 1) {
+            onClose();
+            selectMrById({ mrId: linkedMrs[0]!.id });
+          } else if (linkedMrs.length > 1) {
+            setMrPickerMrs(linkedMrs);
+            setMrPickerIndex(0);
+          }
+        }
+        break;
+      }
       case 'r':
         if (currentBoardId) loadSprints(currentBoardId);
         break;
@@ -370,6 +439,21 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, attributes: dimAttr }} wrapMode="none">{icon}</text>
           <text style={{ fg: isRowDim ? dimColor : status.color, attributes: isRowDim ? TextAttributes.DIM : (isTopLevel ? TextAttributes.BOLD : undefined) }} wrapMode="none">{keyPadded}</text>
           <text style={{ fg: isTopLevel ? keyColor : rowColor, flexShrink: 1, attributes: dimAttr }} wrapMode="none">{item.fields.summary}</text>
+          {(() => {
+            const linkedMrs = mrsByJiraKey.get(item.key);
+            if (!linkedMrs || linkedMrs.length === 0) return null;
+            const approvedCount = linkedMrs.reduce((n, mr) => n + (mr.approvedBy.length > 0 ? 1 : 0), 0);
+            const resolvable = linkedMrs.reduce((n, mr) => n + mr.resolvableDiscussions, 0);
+            const resolved = linkedMrs.reduce((n, mr) => n + mr.resolvedDiscussions, 0);
+            const indicator = [
+              `!${linkedMrs.length}`,
+              approvedCount > 0 ? `☒${approvedCount}` : `☐${linkedMrs.length}`,
+              resolvable > 0 ? `💬 ${resolved}/${resolvable}` : null,
+            ].filter(Boolean).join(' ');
+            return (
+              <text style={{ fg: isRowDim ? dimColor : Colors.INFO, flexShrink: 0, attributes: dimAttr }} wrapMode="none"> {indicator}</text>
+            );
+          })()}
         </box>
       );
     });
@@ -450,6 +534,57 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     );
   };
 
+  const renderMrPickerPopup = () => {
+    if (!mrPickerOpen) return null;
+
+    return (
+      <box
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'transparent',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <box
+          style={{
+            borderStyle: 'single',
+            borderColor: Colors.SUCCESS,
+            backgroundColor: Colors.BACKGROUND,
+            flexDirection: 'column',
+            padding: 1,
+          }}
+        >
+          <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrapMode="none">
+            Select Merge Request
+          </text>
+          {mrPickerMrs.map((mr, index) => (
+            <box
+              key={mr.id}
+              style={{
+                backgroundColor: index === mrPickerIndex ? Colors.TRACK : undefined,
+              }}
+            >
+              <text
+                style={{
+                  fg: index === mrPickerIndex ? Colors.PRIMARY : Colors.NEUTRAL,
+                  attributes: index === mrPickerIndex ? TextAttributes.BOLD : undefined,
+                }}
+                wrapMode="none"
+              >
+                !{mr.iid} {mr.project.name} {mr.title.slice(0, 60)}
+              </text>
+            </box>
+          ))}
+        </box>
+      </box>
+    );
+  };
+
   if (!currentBoardId || showSetup) {
     return (
       <JiraBoardSetup
@@ -476,13 +611,13 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         zIndex: 1000,
       }}
     >
-      <box style={{ flexDirection: 'column' }}>
+      <box style={{ flexDirection: 'column', flexShrink: 0 }}>
         <box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode="none">
+          <text style={{ fg: Colors.PRIMARY, flexShrink: 0, attributes: TextAttributes.BOLD }} wrapMode="none">
             ✦ Sprint Board {selectedSprint ? `- ${selectedSprint.name}` : ''} {subtasksCollapsed ? '[collapsed]' : ''}
           </text>
-          <text style={{ fg: Colors.SUPPORTING }} wrapMode="none">
-            q: close | S: board | r: sprints | f: fetch | x: collapse | O: sort | o: open | y: copy key
+          <text style={{ fg: Colors.SUPPORTING, flexShrink: 1 }} wrapMode="none">
+            q: close | ↵: MR | S: board | r: sprints | f: fetch | x: collapse | O: sort | o: open | y: yank
           </text>
         </box>
         {renderSprintTabs()}
@@ -546,6 +681,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       )}
 
       {renderSortPopup()}
+      {renderMrPickerPopup()}
     </box>
   );
 }

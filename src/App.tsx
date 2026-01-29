@@ -26,6 +26,7 @@ import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom, allJiraIssuesAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
 import { toggleNotificationsAtom, notificationSettingsAtom, jiraBoardIdAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
+import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Console, Effect } from 'effect';
 import { appInitAtom } from './app-init';
 import { clearUnreadCount } from './notifications/title-indicator';
@@ -53,6 +54,7 @@ export default function App() {
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
   const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
   const jiraBoardId = useAtomValue(jiraBoardIdAtom);
+  const setJiraBoardFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
 
   const selectedMrJiraIssues = mergeRequests[selectedIndex]?.jiraIssueKeys.flatMap(key => {
     const issue = jiraIssuesMap.get(key);
@@ -147,7 +149,10 @@ export default function App() {
       keys: [parseKeyString('b')],
       displayKey: 'b',
       description: 'Open Jira board',
-      handler: () => setActiveModal('jiraBoard'),
+      handler: () => {
+        setJiraBoardFocusKey(mergeRequests[selectedIndex]?.jiraIssueKeys[0] ?? null);
+        setActiveModal('jiraBoard');
+      },
     },
     {
       id: 'global:scroll-down',

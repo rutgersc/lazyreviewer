@@ -7,6 +7,8 @@ import { fetchActiveSprints, loadSprintTreeAsEvent } from "./service";
 import { sprintsProjection } from "./projections";
 import { defineProjection } from "../utils/define-projection";
 import type { JiraIssue } from "../jira/jira-schema";
+import type { MergeRequest } from "../mergerequests/mergerequest-schema";
+import { allMrsAtom } from "../mergerequests/mergerequests-atom";
 
 // UI State Atoms
 export const selectedSprintIdAtom = Atom.make<number | null>(null);
@@ -84,4 +86,31 @@ export const loadSprintIssuesAtom = appAtomRuntime.fn((args: { sprintId: number;
       yield* EventStorage.appendEvent(event);
     }
   })
+);
+
+// Bidirectional navigation atoms
+export const jiraBoardFocusKeyAtom = Atom.make<string | null>(null);
+
+export const mrsByJiraKeyAtom = Atom.map(
+  allMrsAtom,
+  (result): ReadonlyMap<string, readonly MergeRequest[]> =>
+    Result.match(result, {
+      onInitial: () => new Map(),
+      onSuccess: (state) =>
+        Array.from(state.value.mrsByGid.values()).reduce<Map<string, MergeRequest[]>>(
+          (acc, mr) => {
+            mr.jiraIssueKeys.forEach(key => {
+              const existing = acc.get(key);
+              if (existing) {
+                existing.push(mr);
+              } else {
+                acc.set(key, [mr]);
+              }
+            });
+            return acc;
+          },
+          new Map()
+        ),
+      onFailure: () => new Map(),
+    })
 );
