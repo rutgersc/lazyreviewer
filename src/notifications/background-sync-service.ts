@@ -4,8 +4,9 @@ import { settingsAtom } from '../settings/settings-atom';
 import { userSelectionsByIdAtom } from '../userselection/userselection-atom';
 import { groupsAtom } from '../data/data-atom';
 import { extractSelectionData, type UserSelectionEntry } from '../userselection/userSelection';
-import { decideFetchUserMrs, decideFetchProjectMrs, type CacheKey } from '../mergerequests/decide-fetch-mrs';
+import { decideFetchUserMrs, decideFetchProjectMrs, type CacheKey, getKnownMrsForCacheKey } from '../mergerequests/decide-fetch-mrs';
 import { modifySettings } from '../settings/settings';
+import { MrStateService } from '../mergerequests/mr-state-service';
 
 export type BackgroundSyncStatus =
   | { _tag: 'syncPending'; nextRefreshDate: Date, userSelection: UserSelectionEntry }
@@ -81,12 +82,16 @@ const computeSyncStatus = (get: Atom.Context): { status: BackgroundSyncStatus } 
 };
 
 const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<BackgroundSyncStatus>) => {
-  const decideFetch = (matchingSelection: CacheKey) =>
-    Effect.catchAllCause(
-      matchingSelection._tag === 'UserMRs'
-        ? decideFetchUserMrs(matchingSelection.usernames as string[], 'opened')
-        : decideFetchProjectMrs(matchingSelection.projectPath, 'opened'),
-      (cause) => Console.error('[BackgroundSync] Fetch failed:', cause)
+  const decideFetch = (cacheKey: CacheKey) =>
+    Effect.gen(function* () {
+      const state = yield* MrStateService.get
+      const knownMrs = getKnownMrsForCacheKey(state.mrsByGid, cacheKey)
+
+      yield* cacheKey._tag === 'UserMRs'
+        ? decideFetchUserMrs(cacheKey.usernames as string[], cacheKey.state, knownMrs)
+        : decideFetchProjectMrs(cacheKey.projectPath, cacheKey.state, knownMrs)
+    }).pipe(
+      Effect.catchAllCause((cause) => Console.error('[BackgroundSync] Fetch failed:', cause))
     );
 
   return Effect.gen(function* () {

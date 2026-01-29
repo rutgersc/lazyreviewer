@@ -3,10 +3,11 @@ import type { MergeRequest } from "./mergerequest-schema";
 import { extractSelectionData, findSelectionForAuthor, getUsernamesFromSelection } from "../userselection/userSelection";
 import {
   type CacheKey,
-  type KnownMrInfo,
   decideFetchUserMrs,
   decideFetchProjectMrs,
-  decideFetchSingleMr
+  decideFetchSingleMr,
+  mrMatchesCacheKey,
+  getKnownMrsForCacheKey
 } from "./decide-fetch-mrs";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
@@ -71,12 +72,6 @@ export const allJiraIssuesAtom = Atom.map(
       onFailure: () => new Map<string, JiraIssue>()
     })
 );
-
-const mrMatchesCacheKey = (mr: MergeRequest, cacheKey: CacheKey): boolean =>
-  mr.state === cacheKey.state &&
-  (cacheKey._tag === "UserMRs"
-    ? cacheKey.usernames.includes(mr.author)
-    : mr.project.fullPath === cacheKey.projectPath);
 
 const filterMrsByCacheKey = (allMrs: ReadonlyMap<MrGid, MergeRequest>, cacheKey: CacheKey, sortOrder: MrSortOrder): readonly MergeRequest[] =>
   [...allMrs.values()]
@@ -178,16 +173,6 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
   const refreshResult = get(refreshMergeRequestsAtom);
   return Result.isWaiting(refreshResult);
 });
-
-const getKnownMrsForCacheKey = (
-  allMrs: ReadonlyMap<MrGid, MergeRequest>,
-  cacheKey: CacheKey
-): ReadonlyMap<MrGid, KnownMrInfo> =>
-  new Map(
-    [...allMrs.entries()]
-      .filter(([, mr]) => mrMatchesCacheKey(mr, cacheKey))
-      .map(([gid, mr]) => [gid, { projectPath: mr.project.fullPath, iid: mr.iid }])
-  );
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     return Effect.gen(function* () {

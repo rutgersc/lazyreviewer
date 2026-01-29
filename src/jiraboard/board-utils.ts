@@ -4,9 +4,10 @@ export type StatusInfo = { text: string; color: string; isMerged: boolean };
 
 export const mapStatus = (statusName: string): StatusInfo => {
   const s = statusName.toLowerCase();
-  if (s.includes('merged')) return { text: 'MRG', color: '#f8f8f2', isMerged: true };
-  if (s.includes('done')) return { text: 'DONE', color: '#f8f8f2', isMerged: true };
+  if (s.includes('merged')) return { text: 'MRG', color: '#50fa7b', isMerged: true };
+  if (s.includes('done')) return { text: 'DONE', color: '#50fa7b', isMerged: true };
   if (s.includes('merge')) return { text: 'MRG', color: '#50fa7b', isMerged: false };
+  if (s.includes('testing')) return { text: 'TEST', color: '#f8f8f2', isMerged: false };
   if (s.includes('test') || s.includes('qa')) return { text: 'TEST', color: '#2d4a2d', isMerged: false };
   if (s.includes('review')) return { text: 'REV', color: '#ffb86c', isMerged: false };
   if (s.includes('progress')) return { text: 'WIP', color: '#8be9fd', isMerged: false };

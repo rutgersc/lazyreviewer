@@ -60,6 +60,8 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const [showSetup, setShowSetup] = useState(false);
   const [currentBoardId, setCurrentBoardId] = useState(boardId);
   const [sortSelectedIndex, setSortSelectedIndex] = useState(0);
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadSprintsResult = useAtomValue(loadSprintsAtom);
   const loadSprintIssuesResult = useAtomValue(loadSprintIssuesAtom);
@@ -123,7 +125,34 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
   };
 
+  const searchLower = searchQuery.toLowerCase();
+  const itemMatchesSearch = (flatItem: (typeof flatItems)[number]) =>
+    !searchQuery ||
+    flatItem.item.key.toLowerCase().includes(searchLower) ||
+    flatItem.item.fields.summary.toLowerCase().includes(searchLower);
+
   useKeyboard((key: ParsedKey) => {
+    if (searchActive) {
+      switch (key.name) {
+        case 'escape':
+          setSearchActive(false);
+          setSearchQuery('');
+          break;
+        case 'return':
+          setSearchActive(false);
+          break;
+        case 'backspace':
+          setSearchQuery(prev => prev.slice(0, -1));
+          break;
+        default:
+          if (key.sequence && key.sequence.length === 1 && !key.ctrl && !key.meta) {
+            setSearchQuery(prev => prev + key.sequence);
+          }
+          break;
+      }
+      return;
+    }
+
     if (sortPopupVisible) {
       switch (key.name) {
         case 'escape':
@@ -152,8 +181,37 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     switch (key.name) {
       case 'escape':
       case 'q':
-        onClose();
+        if (searchQuery) {
+          setSearchQuery('');
+        } else {
+          onClose();
+        }
         break;
+      case '/':
+        setSearchActive(true);
+        break;
+      case 'n': {
+        if (!searchQuery) break;
+        const afterIdx = flatItems.findIndex((item, i) => i > selectedIndex && itemMatchesSearch(item));
+        const nextMatch = afterIdx >= 0 ? afterIdx : flatItems.findIndex(itemMatchesSearch);
+        if (nextMatch >= 0) {
+          setSelectedIndex(nextMatch);
+          const item = flatItems[nextMatch];
+          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+        }
+        break;
+      }
+      case 'N': {
+        if (!searchQuery) break;
+        const beforeIdx = flatItems.findLastIndex((item, i) => i < selectedIndex && itemMatchesSearch(item));
+        const prevMatch = beforeIdx >= 0 ? beforeIdx : flatItems.findLastIndex(itemMatchesSearch);
+        if (prevMatch >= 0) {
+          setSelectedIndex(prevMatch);
+          const item = flatItems[prevMatch];
+          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+        }
+        break;
+      }
       case 'j':
       case 'down':
         if (selectedIndex < flatItems.length - 1) {
@@ -167,6 +225,24 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       case 'up':
         if (selectedIndex > 0) {
           const newIndex = selectedIndex - 1;
+          setSelectedIndex(newIndex);
+          const item = flatItems[newIndex];
+          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+        }
+        break;
+      case 'd':
+        if (key.ctrl && scrollBoxRef.current) {
+          const halfPage = Math.floor(scrollBoxRef.current.viewport.getLayoutNode().getComputedLayout().height / 2);
+          const newIndex = Math.min(selectedIndex + halfPage, flatItems.length - 1);
+          setSelectedIndex(newIndex);
+          const item = flatItems[newIndex];
+          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+        }
+        break;
+      case 'u':
+        if (key.ctrl && scrollBoxRef.current) {
+          const halfPage = Math.floor(scrollBoxRef.current.viewport.getLayoutNode().getComputedLayout().height / 2);
+          const newIndex = Math.max(selectedIndex - halfPage, 0);
           setSelectedIndex(newIndex);
           const item = flatItems[newIndex];
           if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
@@ -252,6 +328,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     return flatItems.map((flatItem, index) => {
       const { story, item } = flatItem;
       const isSelected = index === selectedIndex;
+      const isDimmed = !itemMatchesSearch(flatItem);
       const status = mapStatus(item.fields.status.name);
       const icon = getIssueTypeIcon(item.fields.issuetype.name);
       const parentType = item.fields.parent?.fields.issuetype.name.toLowerCase();
@@ -259,14 +336,16 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       const statusPadded = status.text.padEnd(4);
       const epicName = parentType === 'epic' ? item.fields.parent?.fields.summary : null;
       const epicLabel = isTopLevel
-        ? (epicName ?? 'no epic assigned').slice(0, 20).padEnd(20)
-        : ''.padEnd(20);
+        ? (epicName ?? 'no epic assigned').slice(0, 30).padEnd(30)
+        : ''.padEnd(30);
       const keyPadded = item.key.padEnd(12);
       const priority = isTopLevel ? mapPriority(item.fields.priority.name) : null;
-      const greyedOut = status.isMerged;
+      const isRowDim = isDimmed || status.isMerged;
+      const dimColor = isDimmed ? Colors.SUPPORTING : Colors.SUCCESS;
+      const dimAttr = isRowDim ? TextAttributes.DIM : undefined;
 
-      const rowColor = greyedOut ? Colors.SUPPORTING : Colors.PRIMARY;
-      const keyColor = greyedOut ? Colors.SUPPORTING : (isTopLevel ? Colors.SUCCESS : Colors.INFO);
+      const rowColor = isRowDim ? dimColor : Colors.PRIMARY;
+      const keyColor = isRowDim ? dimColor : (isTopLevel ? Colors.SECONDARY : Colors.INFO);
 
       return (
         <box
@@ -280,17 +359,17 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           }}
         >
           {isTopLevel
-            ? <text style={{ fg: greyedOut ? Colors.SUPPORTING : (epicName ? story.epicColor : Colors.SUPPORTING) }} wrapMode="none">{epicLabel}</text>
-            : <text wrapMode="none">{epicLabel}</text>
+            ? <text style={{ fg: isRowDim ? dimColor : (epicName ? story.epicColor : Colors.SUPPORTING), attributes: dimAttr }} wrapMode="none">{epicLabel}</text>
+            : <text style={{ attributes: dimAttr }} wrapMode="none">{epicLabel}</text>
           }
           {isTopLevel && priority && (
-            <text style={{ fg: greyedOut ? Colors.SUPPORTING : priority.color }} wrapMode="none">●</text>
+            <text style={{ fg: isRowDim ? dimColor : priority.color, attributes: dimAttr }} wrapMode="none">●</text>
           )}
-          {!isTopLevel && <text wrapMode="none"> </text>}
-          <text style={{ fg: greyedOut ? Colors.SUPPORTING : status.color }} wrapMode="none">{statusPadded}</text>
-          <text style={{ fg: greyedOut ? Colors.SUPPORTING : Colors.NEUTRAL }} wrapMode="none">{icon}</text>
-          <text style={{ fg: keyColor, attributes: isTopLevel && !greyedOut ? TextAttributes.BOLD : undefined }} wrapMode="none">{keyPadded}</text>
-          <text style={{ fg: rowColor, flexShrink: 1 }} wrapMode="none">{item.fields.summary}</text>
+          {!isTopLevel && <text style={{ attributes: dimAttr }} wrapMode="none"> </text>}
+          <text style={{ fg: isRowDim ? dimColor : status.color, attributes: dimAttr }} wrapMode="none">{statusPadded}</text>
+          <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, attributes: dimAttr }} wrapMode="none">{icon}</text>
+          <text style={{ fg: isRowDim ? dimColor : status.color, attributes: isRowDim ? TextAttributes.DIM : (isTopLevel ? TextAttributes.BOLD : undefined) }} wrapMode="none">{keyPadded}</text>
+          <text style={{ fg: isTopLevel ? keyColor : rowColor, flexShrink: 1, attributes: dimAttr }} wrapMode="none">{item.fields.summary}</text>
         </box>
       );
     });
@@ -452,6 +531,14 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
             {renderList()}
           </box>
         </scrollbox>
+      )}
+
+      {(searchActive || searchQuery) && (
+        <box style={{ flexDirection: 'row', gap: 1 }}>
+          <text style={{ fg: Colors.SUCCESS }} wrapMode="none">/</text>
+          <text style={{ fg: Colors.PRIMARY }} wrapMode="none">{searchQuery}</text>
+          {searchActive && <text style={{ fg: Colors.SUCCESS }} wrapMode="none">▎</text>}
+        </box>
       )}
 
       {epicLegendVisible && (

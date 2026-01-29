@@ -37,38 +37,21 @@ export type MergeRequestsCacheError =
 
 export type KnownMrInfo = { projectPath: string; iid: string };
 
-export const decideFetchUserMrs = (
-  usernames: string[],
-  state: MergeRequestState,
-  knownMrs?: ReadonlyMap<MrGid, KnownMrInfo>
-): Effect.Effect<
-  void,
-  MergeRequestsCacheError,
-  EventStorage
-> => Effect.gen(function* () {
-  const mrEvent = yield* getGitlabMrsAsEvent(usernames, state)
-  yield* EventStorage.appendEvent(mrEvent)
+export const mrMatchesCacheKey = (mr: MergeRequest, cacheKey: CacheKey): boolean =>
+  mr.state === cacheKey.state &&
+  (cacheKey._tag === "UserMRs"
+    ? cacheKey.usernames.includes(mr.author)
+    : mr.project.fullPath === cacheKey.projectPath);
 
-  const gitlabMrs = projectGitlabUserMrsFetchedEvent(mrEvent)
-  const fetchedGids = new Set(gitlabMrs.map(mr => mr.id))
-
-  // For opened state, fetch known MRs that weren't in the response
-  if (state === 'opened' && knownMrs && knownMrs.size > 0) {
-    const missingMrs = [...knownMrs.entries()]
-      .filter(([gid]) => !fetchedGids.has(gid))
-      .map(([, info]) => info)
-
-    if (missingMrs.length > 0) {
-      yield* Console.log(`[Fetch] ${missingMrs.length} known MRs not in response, fetching them`)
-      yield* fetchMissingMrs(missingMrs)
-    }
-  }
-
-  // Fetch Jira events
-  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-  const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-  yield* EventStorage.appendEvent(jiraEvent)
-})
+export const getKnownMrsForCacheKey = (
+  mrsByGid: ReadonlyMap<MrGid, MergeRequest>,
+  cacheKey: CacheKey
+): ReadonlyMap<MrGid, KnownMrInfo> =>
+  new Map(
+    [...mrsByGid.entries()]
+      .filter(([, mr]) => mrMatchesCacheKey(mr, cacheKey))
+      .map(([gid, mr]) => [gid, { projectPath: mr.project.fullPath, iid: mr.iid }])
+  );
 
 const fetchMissingMrs = (missingMrs: readonly KnownMrInfo[]) => Effect.gen(function* () {
   const byProject = missingMrs.reduce(
@@ -89,10 +72,54 @@ const fetchMissingMrs = (missingMrs: readonly KnownMrInfo[]) => Effect.gen(funct
   )
 })
 
+const forkFetchMissingMrs = (
+  knownMrs: ReadonlyMap<MrGid, KnownMrInfo>,
+  fetchedGids: ReadonlySet<MrGid>
+) => Effect.gen(function* () {
+  if (knownMrs.size === 0) return
+
+  const missingMrs = [...knownMrs.entries()]
+    .filter(([gid]) => !fetchedGids.has(gid))
+    .map(([, info]) => info)
+
+    console.log("missing", missingMrs.length)
+
+  if (missingMrs.length > 0) {
+    yield* Effect.forkDaemon(
+      Console.log(`[Fetch] ${missingMrs.length} known MRs not in response, fetching in background`).pipe(
+        Effect.andThen(fetchMissingMrs(missingMrs))
+      )
+    )
+  }
+})
+
+export const decideFetchUserMrs = (
+  usernames: string[],
+  state: MergeRequestState,
+  knownMrs: ReadonlyMap<MrGid, KnownMrInfo>
+): Effect.Effect<
+  void,
+  MergeRequestsCacheError,
+  EventStorage
+> => Effect.gen(function* () {
+  const mrEvent = yield* getGitlabMrsAsEvent(usernames, state)
+  yield* EventStorage.appendEvent(mrEvent)
+
+  const gitlabMrs = projectGitlabUserMrsFetchedEvent(mrEvent)
+
+  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
+  const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
+  yield* EventStorage.appendEvent(jiraEvent)
+
+  if (state === 'opened') {
+    yield* forkFetchMissingMrs(knownMrs, new Set(gitlabMrs.map(mr => mr.id)))
+  }
+})
+
 export const decideFetchProjectMrs = (
   projectPath: string,
   state: MergeRequestState,
-  knownMrs?: ReadonlyMap<MrGid, KnownMrInfo>
+  knownMrs: ReadonlyMap<MrGid, KnownMrInfo>
 ): Effect.Effect<
   void,
   MergeRequestsCacheError,
@@ -102,24 +129,14 @@ export const decideFetchProjectMrs = (
   yield* EventStorage.appendEvent(mrEvent)
 
   const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
-  const fetchedGids = new Set(gitlabMrs.map(mr => mr.id))
 
-  // For opened state, fetch known MRs that weren't in the response
-  if (state === 'opened' && knownMrs && knownMrs.size > 0) {
-    const missingMrs = [...knownMrs.entries()]
-      .filter(([gid]) => !fetchedGids.has(gid))
-      .map(([, info]) => info)
-
-    if (missingMrs.length > 0) {
-      yield* Console.log(`[Fetch] ${missingMrs.length} known MRs not in response, fetching them`)
-      yield* fetchMissingMrs(missingMrs)
-    }
-  }
-
-  // Fetch Jira events
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
   yield* EventStorage.appendEvent(jiraEvent)
+
+  if (state === 'opened') {
+    yield* forkFetchMissingMrs(knownMrs, new Set(gitlabMrs.map(mr => mr.id)))
+  }
 })
 
 export const decideFetchSingleMr = Effect.fn(function* (projectFullPath: string, mrIid) {
