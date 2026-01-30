@@ -8,7 +8,7 @@ import type { JiraApiError } from "../jira/jira-common"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
 import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getSingleMrAsEvent, getMrsAsEvent } from "../gitlab/gitlab-graphql"
 import { loadJiraTicketsAsEvent } from "../jira/jira-service"
-import { projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
+import { projectGitlabMrsFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
 import type { MergeRequest } from "./mergerequest-schema"
 import type { MrGid } from "../gitlab/gitlab-schema"
 
@@ -59,17 +59,30 @@ const fetchMissingMrs = (missingMrs: readonly KnownMrInfo[]) => Effect.gen(funct
     new Map<string, string[]>()
   )
 
-  yield* Effect.forEach(
+  const jiraKeysByProject = yield* Effect.forEach(
     [...byProject.entries()],
     ([projectPath, iids]) => Effect.gen(function* () {
       yield* Console.log(`[Fetch] Fetching ${iids.length} missing MRs for ${projectPath}`)
       const event = yield* getMrsAsEvent(projectPath, iids)
       yield* EventStorage.appendEvent(event)
+      return projectGitlabMrsFetchedEvent(event).flatMap(mr => mr.jiraIssueKeys)
     }).pipe(
-      Effect.catchAll(err => Console.error(`[Fetch] Failed to fetch MRs for ${projectPath}`, err))
+      Effect.catchAll(err =>
+        Console.error(`[Fetch] Failed to fetch MRs for ${projectPath}`, err).pipe(
+          Effect.as([] as string[])
+        )
+      )
     ),
     { concurrency: 3 }
   )
+
+  return Array.from(new Set(jiraKeysByProject.flat()))
+})
+
+const fetchJiraForKeys = (jiraKeys: readonly string[]) => Effect.gen(function* () {
+  yield* Console.log(`[Fetch] Fetching ${jiraKeys.length} Jira tickets for reconciled MRs`)
+  const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys as string[])
+  yield* EventStorage.appendEvent(jiraEvent)
 })
 
 const forkFetchMissingMrs = (
@@ -87,7 +100,12 @@ const forkFetchMissingMrs = (
   if (missingMrs.length > 0) {
     yield* Effect.forkDaemon(
       Console.log(`[Fetch] ${missingMrs.length} known MRs not in response, fetching in background`).pipe(
-        Effect.andThen(fetchMissingMrs(missingMrs))
+        Effect.andThen(fetchMissingMrs(missingMrs)),
+        Effect.tap(jiraKeys =>
+          jiraKeys.length > 0
+            ? Effect.forkDaemon(fetchJiraForKeys(jiraKeys))
+            : Effect.void
+        )
       )
     )
   }

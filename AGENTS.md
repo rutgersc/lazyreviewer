@@ -152,6 +152,9 @@ const results = items
   .map(transform)
 ```
 
+**Effect-TS Style:**
+- **ALWAYS use `Effect.gen`** for effect composition — never use `Effect.andThen`/`pipe` chains as an alternative
+
 **Other Style Guidelines:**
 - Favor functions with parameters over classes
 - Favor small pure functions with clear input/output
