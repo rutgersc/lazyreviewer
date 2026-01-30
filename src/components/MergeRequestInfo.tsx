@@ -10,9 +10,12 @@ interface MergeRequestInfoProps {
   selectedDiscussionIndex?: number;
   onSelectDiscussion?: (index: number) => void;
   onOpenDiscussion?: (index: number) => void;
+  resolvedExpanded: boolean;
+  onToggleResolvedExpanded: () => void;
 }
 
-export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex = 0, onSelectDiscussion, onOpenDiscussion }: MergeRequestInfoProps) {
+export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex = 0, onSelectDiscussion, onOpenDiscussion, resolvedExpanded, onToggleResolvedExpanded }: MergeRequestInfoProps) {
+
   const handleDiscussionClick = useDoubleClick<number>({
     onSingleClick: (index) => onSelectDiscussion?.(index),
     onDoubleClick: (index) => onOpenDiscussion?.(index)
@@ -126,6 +129,42 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
     );
   };
 
+  const renderResolvedDiscussions = (discussions: Discussion[]) => {
+    const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved);
+
+    if (resolvedDiscussions.length === 0) return null;
+
+    const toggleLabel = resolvedExpanded ? '▼' : '▶';
+
+    return (
+      <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
+        <text
+          onMouseDown={() => onToggleResolvedExpanded()}
+          style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD, marginBottom: 1 }}
+          wrapMode='word'
+        >
+          {`${toggleLabel} Resolved Discussions (${resolvedDiscussions.length})`}
+        </text>
+        {resolvedExpanded && resolvedDiscussions.map((discussion, index) => (
+          <box
+            key={discussion.id}
+            id={`resolved-discussion-${index}`}
+            style={{
+              flexDirection: "column",
+              marginLeft: 2,
+              marginBottom: 0,
+              width: "100%",
+              backgroundColor: '#1a1a1a',
+              padding: 1,
+            }}
+          >
+            {discussion.notes.map(renderDiscussionNote)}
+          </box>
+        ))}
+      </box>
+    );
+  };
+
   return (
     <box style={{ flexDirection: "column", gap: 1, width: "100%" }}>
       {/* Branch Information */}
@@ -151,6 +190,10 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
 
       <box style={{ marginBottom: 1, width: "100%" }}>
         {renderUnresolvedDiscussions(mergeRequest.discussions || [])}
+      </box>
+
+      <box style={{ marginBottom: 1, width: "100%" }}>
+        {renderResolvedDiscussions(mergeRequest.discussions || [])}
       </box>
     </box>
   );

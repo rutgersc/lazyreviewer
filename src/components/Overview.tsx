@@ -1,5 +1,5 @@
 import { TextAttributes } from '@opentui/core';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
@@ -31,6 +31,17 @@ export default function Overview({
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
   const selectedUserSelectionEntry = useAtomValue(selectedUserSelectionEntryAtom);
 
+  const isMerged = selectedMergeRequest?.state === 'merged';
+  const [resolvedExpanded, setResolvedExpanded] = useState(isMerged ?? false);
+  const handleToggleResolvedExpanded = useCallback(() => setResolvedExpanded(prev => !prev), []);
+
+  // Reset resolved expanded state when the selected MR changes
+  const prevMrIdRef = useRef(selectedMergeRequest?.id);
+  if (prevMrIdRef.current !== selectedMergeRequest?.id) {
+    prevMrIdRef.current = selectedMergeRequest?.id;
+    setResolvedExpanded(selectedMergeRequest?.state === 'merged');
+  }
+
   const handleSelectDiscussion = (index: number) => {
       setSelectedDiscussionIndex(index);
       scrollToId(`discussion-${index}`);
@@ -44,15 +55,21 @@ export default function Overview({
     }
   }, [scrollToDiscussionRequest, scrollToId, setScrollToDiscussionRequest]);
 
-  const unresolvedDiscussions = selectedMergeRequest?.discussions.filter(d => d.resolvable && !d.resolved) || [];
+  const discussions = selectedMergeRequest?.discussions ?? [];
+  const unresolvedDiscussions = discussions.filter(d => d.resolvable && !d.resolved);
+  const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved);
 
   // Store current values in refs for the scroll handler to access
   const unresolvedDiscussionsRef = useRef(unresolvedDiscussions);
   unresolvedDiscussionsRef.current = unresolvedDiscussions;
+  const resolvedDiscussionsRef = useRef(resolvedDiscussions);
+  resolvedDiscussionsRef.current = resolvedDiscussions;
   const scrollToIdRef = useRef(scrollToId);
   scrollToIdRef.current = scrollToId;
   const setSelectedDiscussionIndexRef = useRef(setSelectedDiscussionIndex);
   setSelectedDiscussionIndexRef.current = setSelectedDiscussionIndex;
+  const setResolvedExpandedRef = useRef(setResolvedExpanded);
+  setResolvedExpandedRef.current = setResolvedExpanded;
 
   // Register scroll handler once - uses refs to access current values
   // Returns true if discussion was found and scrolled to, false otherwise
@@ -61,16 +78,32 @@ export default function Overview({
   if (!handlerRegistered.current) {
     handlerRegistered.current = true;
     registerHandler(({ noteId }) => {
-      const discussions = unresolvedDiscussionsRef.current;
-      const discussionIndex = discussions.findIndex(discussion =>
+      // First check unresolved discussions
+      const unresolved = unresolvedDiscussionsRef.current;
+      const unresolvedIndex = unresolved.findIndex(discussion =>
         discussion.notes.some(note => note.id === noteId)
       );
-      if (discussionIndex >= 0) {
-        setSelectedDiscussionIndexRef.current(discussionIndex);
-        scrollToIdRef.current(`discussion-${discussionIndex}`);
+      if (unresolvedIndex >= 0) {
+        setSelectedDiscussionIndexRef.current(unresolvedIndex);
+        scrollToIdRef.current(`discussion-${unresolvedIndex}`);
         return true;
       }
-      return false; // Discussion not found yet - MR data may not be ready
+
+      // Then check resolved discussions
+      const resolved = resolvedDiscussionsRef.current;
+      const resolvedIndex = resolved.findIndex(discussion =>
+        discussion.notes.some(note => note.id === noteId)
+      );
+      if (resolvedIndex >= 0) {
+        setResolvedExpandedRef.current(true);
+        // Schedule scroll after expansion renders
+        requestAnimationFrame(() => {
+          scrollToIdRef.current(`resolved-discussion-${resolvedIndex}`);
+        });
+        return true;
+      }
+
+      return false;
     });
   }
 
@@ -90,6 +123,8 @@ export default function Overview({
           selectedDiscussionIndex={selectedDiscussionIndex}
           onSelectDiscussion={handleSelectDiscussion}
           onOpenDiscussion={handleOpenDiscussion}
+          resolvedExpanded={resolvedExpanded}
+          onToggleResolvedExpanded={handleToggleResolvedExpanded}
       />;
     }
 

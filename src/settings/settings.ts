@@ -115,6 +115,7 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
   backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 60 * 15 }) }),
   jiraBoardId: Schema.optional(NumberFromStringOrNumber),
   mrSortOrder: Schema.optionalWith(MrSortOrderSchema, { default: () => 'updatedAt' as const }),
+  appView: Schema.optionalWith(Schema.Literal('review', 'focus'), { default: () => 'review' as const }),
 }))
 export type Settings = Schema.Schema.Type<typeof SettingsSchema>
 

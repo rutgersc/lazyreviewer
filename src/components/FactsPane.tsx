@@ -19,6 +19,8 @@ import { Colors } from '../colors';
 import { getAgeColor } from '../utils/formatting';
 import { backgroundFetchAtom } from '../notifications/notification-sync-atom';
 import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from './JiraIssuesList';
+import { appViewAtom, currentUserAtom } from '../settings/settings-atom';
+import { viewConfigs, type FocusRelevance } from '../ui/view-config';
 
 const formatTimeUntil = (targetDate: Date): string => {
   const now = Date.now();
@@ -120,6 +122,20 @@ function getNoteIdFromChange(change: Change): string | undefined {
       return undefined;
   }
 }
+
+const myJiraIssueKeysAtom = Atom.readable<Set<string>>((get) => {
+  const currentUser = get(currentUserAtom);
+  const allMrsResult = get(allMrsAtom);
+  return Result.match(allMrsResult, {
+    onInitial: () => new Set<string>(),
+    onSuccess: (state) => new Set(
+      Array.from(state.value.mrsByGid.values())
+        .filter(mr => mr.author === currentUser)
+        .flatMap(mr => mr.jiraIssueKeys)
+    ),
+    onFailure: () => new Set<string>(),
+  });
+});
 
 export const sublistFocusedAtom = Atom.make(false);
 export const sublistIndexAtom = Atom.make(0);
@@ -237,7 +253,10 @@ export const selectMrForChangeAtom = Atom.fnSync((change: Change, get) => {
       if (navigateTo === 'activity') {
         get.registry.set(targetNoteIdAtom, noteId);
       }
-      // TODOR: handle 'overview' case with scrollToDiscussion
+      if (navigateTo === 'overview') {
+        const { scroll } = useDiscussionScroll();
+        void scroll(noteId);
+      }
     }
   };
 
@@ -307,6 +326,10 @@ export default function FactsPane() {
   const backgroundSyncStatus = useAtomValue(backgroundFetchAtom);
 
   const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
+  const [appView, setAppView] = useAtom(appViewAtom);
+  const currentUser = useAtomValue(currentUserAtom);
+  const myJiraIssueKeys = useAtomValue(myJiraIssueKeysAtom);
+  const config = viewConfigs[appView];
 
   const lastCompactionIndex = allEvents.findLastIndex(
     event => event.type === 'compacted-event'
@@ -333,53 +356,59 @@ export default function FactsPane() {
     return groupChanges(rawDeltas).reverse();
   };
 
-  const logoBox = () => {
-    const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {
-
-      const res = Result.match(status, {
-        onInitial: (s) => {
-          return "initial";
-        },
-        onFailure: (f) => {
-          return `onFailure: ${f.cause.toString()}`
-        },
-        onSuccess: (backgroundSyncStatus) => {
-          switch (backgroundSyncStatus.value._tag) {
-            case 'syncDisabled':
-              return "sync disabled";
-            case 'syncPending':
-               return `syncing '${backgroundSyncStatus.value.userSelection.name}' in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
-            case 'syncing':
-               return `refreshing '${backgroundSyncStatus.value.userSelection.name}'...`;
-            case 'syncPerformed':
-               return `refreshed ${backgroundSyncStatus.value}: took ${backgroundSyncStatus.value.duration}`;
-            default:
-              const _: never = backgroundSyncStatus.value;
-          }
+  const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {
+    const res = Result.match(status, {
+      onInitial: () => "initial",
+      onFailure: (f) => `onFailure: ${f.cause.toString()}`,
+      onSuccess: (backgroundSyncStatus) => {
+        switch (backgroundSyncStatus.value._tag) {
+          case 'syncDisabled':
+            return "sync disabled";
+          case 'syncPending':
+             return `syncing '${backgroundSyncStatus.value.userSelection.name}' in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
+          case 'syncing':
+             return `refreshing '${backgroundSyncStatus.value.userSelection.name}'...`;
+          case 'syncPerformed':
+             return `refreshed ${backgroundSyncStatus.value}: took ${backgroundSyncStatus.value.duration}`;
+          default:
+            const _: never = backgroundSyncStatus.value;
         }
-      })
-
-      return (
-        <text fg="#6272a4" wrapMode="none">
-          {res}
-        </text>
-      );
-    }
-
-    return (
-      <box key="logo-box" width="100%" height={6} flexDirection="column" style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#282a36' }}>
-        <text fg="#44475a" wrapMode="none">{'╭─────────────────────╮'}</text>
-        <text fg="#44475a" wrapMode="none">{'│    LazyGitLab 🦊    │'}</text>
-        <text fg="#44475a" wrapMode="none">{'╰─────────────────────╯'}</text>
-        {isLoading
-          ? (
-              <text fg="#8be9fd" wrapMode="none">
-                  refreshing...
-              </text>)
-          : autoRefreshDisplay(backgroundSyncStatus)
-        }
-      </box>);
+      }
+    })
+    return (<text fg="#6272a4" wrapMode="none">{res}</text>);
   }
+
+  const reviewIndicator = viewConfigs.review.modeIndicator;
+  const focusIndicator = viewConfigs.focus.modeIndicator;
+  const reviewRadio = appView === 'review' ? '●' : '○';
+  const focusRadio = appView === 'focus' ? '●' : '○';
+  const reviewColor = appView === 'review' ? reviewIndicator.labelColor : '#f8f8f2';
+  const focusColor = appView === 'focus' ? focusIndicator.labelColor : '#f8f8f2';
+  const bdr = '#44475a';
+
+  const modeIndicatorBox = () => (
+    <box key="mode-indicator" width="100%" height={7} flexDirection="column"
+         style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#282a36' }}
+         onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
+      <text fg={bdr} wrapMode="none">{' ╭─────────────────────╮'}</text>
+      <box flexDirection="row" height={1}>
+        <text fg={bdr} wrapMode="none">{'│ '}</text>
+        <text fg={reviewColor} wrapMode="none">{`${reviewRadio} review mode       `}</text>
+        <text fg={bdr} wrapMode="none">{'│'}</text>
+      </box>
+      <box flexDirection="row" height={1}>
+        <text fg={bdr} wrapMode="none">{'│ '}</text>
+        <text fg={focusColor} wrapMode="none">{`${focusRadio} focus mode   `}</text>
+        <text fg="#f8f8f2" wrapMode="none">{'[v]'}</text>
+        <text fg={bdr} wrapMode="none">{'  │'}</text>
+      </box>
+      <text fg={bdr} wrapMode="none">{' ╰─────────────────────╯'}</text>
+      {isLoading
+        ? (<text fg="#8be9fd" wrapMode="none">refreshing...</text>)
+        : autoRefreshDisplay(backgroundSyncStatus)
+      }
+    </box>
+  );
 
   return (
     <box
@@ -388,16 +417,16 @@ export default function FactsPane() {
       width="100%"
       onMouseDown={() => setActivePane(ActivePane.Facts)}
     >
-        {/* Logo box - reserved space to prevent list jumping */}
+        {/* Mode indicator - reserved space to prevent list jumping */}
         <box
             width="100%"
-            height={6}
+            height={7}
             flexDirection="column"
             style={{
                 marginBottom: 1,
             }}
         >
-            {logoBox()}
+            {modeIndicatorBox()}
         </box>
         {compactionMessage && (
             <box height={1} width="100%" flexDirection="row">
@@ -476,7 +505,19 @@ export default function FactsPane() {
             const isCompacted = lastCompactionIndex >= 0 && originalIndex < lastCompactionIndex;
             const isCompactionEvent = event.type === 'compacted-event';
 
-            let color = '#f8f8f2';
+            const displayIndex = ' ' + originalIndex.toString().padEnd(4, ' ');
+            const rawEventDeltas = getDeltas(event);
+            const classifiedDeltas = rawEventDeltas
+              .map(change => ({ change, relevance: config.classify(change, currentUser, myJiraIssueKeys) }))
+              .filter(({ relevance }) => relevance !== 'hidden');
+            const eventRelevance: 'primary' | 'dimmed' =
+              classifiedDeltas.some(d => d.relevance === 'primary') ? 'primary' : 'dimmed';
+            const eventDeltas = classifiedDeltas.map(d => d.change);
+            const hasEventDeltas = eventDeltas.length > 0;
+
+            const headerStyle = config.eventHeader[eventRelevance];
+            let color = headerStyle.fg;
+            let headerAttributes = headerStyle.attributes;
             let backgroundColor: string | undefined = undefined;
 
             if (isCompacted) {
@@ -487,17 +528,16 @@ export default function FactsPane() {
 
             if (isSelected && isHighlighted) {
                 color = '#5af78e';
+                headerAttributes = 0;
                 backgroundColor = '#2d2f3a';
             } else if (isSelected) {
                 color = '#50fa7b';
+                headerAttributes = 0;
             } else if (isHighlighted) {
                 color = '#5fd7ff';
+                headerAttributes = 0;
                 backgroundColor = '#3a3d4e';
             }
-
-            const displayIndex = ' ' + originalIndex.toString().padEnd(4, ' ');
-            const eventDeltas = getDeltas(event);
-            const hasEventDeltas = eventDeltas.length > 0;
 
             const handleEventClick = () => {
                 const now = Date.now();
@@ -555,14 +595,14 @@ export default function FactsPane() {
             return (
                 <box key={group.event.eventId} id={group.event.eventId} flexDirection="column" width="100%">
                     <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
-                        <text fg={color} bg={backgroundColor} wrapMode="word">
+                        <text fg={color} bg={backgroundColor} style={headerAttributes ? { attributes: headerAttributes } : undefined} wrapMode="word">
                             {displayIndex}
                         </text>
-                        <text fg={color} bg={backgroundColor} wrapMode="word">
+                        <text fg={color} bg={backgroundColor} style={headerAttributes ? { attributes: headerAttributes } : undefined} wrapMode="word">
                             {`>> ${event.type}`}
                         </text>
                     </box>
-                    {!hasEventDeltas && (
+                    {!hasEventDeltas && rawEventDeltas.length === 0 && (
                         <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
                             <text fg="#44475a" bg="#1e1f29">
                                 {'      —'}
@@ -570,31 +610,35 @@ export default function FactsPane() {
                             <box flexGrow={1} height={1} style={{ backgroundColor: '#1e1f29' }} />
                         </box>
                     )}
-                    {eventDeltas.map((change, i) => {
+                    {classifiedDeltas.map(({ change, relevance }, i) => {
                         const isSelected = isHighlighted && sublistFocused && i === sublistIndex;
                         const { badge, color: changeColor, text } = getChangeDescription(change);
+                        const style = config.changeStyle[relevance === 'dimmed' ? 'dimmed' : 'primary'];
 
                         const formattedDate = change.changedAt
                           ? formatRelativeTime(change.changedAt).padEnd(3, ' ')
                           : '?  ';
-                        const dateColor = change.changedAt ? getAgeColor(change.changedAt, now) : Colors.SECONDARY;
+                        const baseAgeColor = change.changedAt ? getAgeColor(change.changedAt, now) : Colors.SECONDARY;
+                        const dateFg = style.dateFg === 'USE_AGE_COLOR' ? baseAgeColor : style.dateFg;
+                        const changeFg = style.fg === 'USE_CHANGE_COLOR' ? changeColor : style.fg;
 
                         return (
                             <box key={i} height={1} width="100%" flexDirection='row' onMouseDown={() => handleChangeClick(i, change)}>
                                 <box width={4} flexShrink={0} height={1}>
                                     <text
                                         wrapMode='none'
-                                        fg={dateColor}
-                                        bg={isSelected ? '#44475a' : '#1e1f29'}
-                                        style={{attributes: TextAttributes.DIM}}
+                                        fg={isSelected ? '#50fa7b' : dateFg}
+                                        bg={isSelected ? '#44475a' : style.bg}
+                                        style={{attributes: TextAttributes.DIM | style.attributes}}
                                     >
                                         {' '}{formattedDate}
                                     </text>
                                 </box>
                                 <text
                                     wrapMode='none'
-                                    fg={isSelected ? '#50fa7b' : changeColor}
-                                    bg={isSelected ? '#44475a' : '#1e1f29'}
+                                    fg={isSelected ? '#50fa7b' : changeFg}
+                                    bg={isSelected ? '#44475a' : style.bg}
+                                    style={style.attributes ? { attributes: style.attributes } : undefined}
                                 >
                                     {' '}{badge} {text}
                                 </text>

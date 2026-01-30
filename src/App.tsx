@@ -24,7 +24,7 @@ import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranch
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom, allJiraIssuesAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
-import { toggleNotificationsAtom, notificationSettingsAtom, jiraBoardIdAtom } from './settings/settings-atom';
+import { toggleNotificationsAtom, notificationSettingsAtom, jiraBoardIdAtom, appViewAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Console, Effect } from 'effect';
@@ -52,6 +52,7 @@ export default function App() {
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
+  const [appView, setAppView] = useAtom(appViewAtom);
   const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
   const jiraBoardId = useAtomValue(jiraBoardIdAtom);
   const setJiraBoardFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
@@ -155,6 +156,13 @@ export default function App() {
       },
     },
     {
+      id: 'global:toggle-view',
+      keys: [parseKeyString('v')],
+      displayKey: 'v',
+      description: 'Toggle review/focus mode',
+      handler: () => setAppView(appView === 'review' ? 'focus' : 'review'),
+    },
+    {
       id: 'global:scroll-down',
       keys: [parseKeyString('ctrl+d')],
       displayKey: 'Ctrl+D/U',
@@ -206,7 +214,7 @@ export default function App() {
         }
       },
     },
-  ], [activePane, mergeRequests.length, notificationSettings.enabled, jiraBoardId]);
+  ], [activePane, mergeRequests.length, notificationSettings.enabled, jiraBoardId, appView]);
 
   useEffect(() => {
     // renderer.console.toggle();

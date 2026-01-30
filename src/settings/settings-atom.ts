@@ -290,3 +290,19 @@ export const mrSortOrderAtom = Atom.writable(
     saveSettings(settings);
   }
 );
+
+export type AppView = 'review' | 'focus'
+
+const appViewRawAtom = selectFromSettings(
+  s => s.appView ?? 'review',
+  'review' as AppView
+);
+
+export const appViewAtom = Atom.writable(
+  (get) => get(appViewRawAtom),
+  (ctx, newValue: AppView) => {
+    const settings = loadSettings();
+    settings.appView = newValue;
+    saveSettings(settings);
+  }
+);
