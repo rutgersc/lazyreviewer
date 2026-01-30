@@ -38,8 +38,8 @@ bun install
 
 ### Library Source Code (CRITICAL)
 
-**The following libraries have their source code available as git submodules in the `vendor/` directory:**
 **critical: use the vendor folder to search through the libraries instead of the one in node_modules**
+**The following libraries have their source code available as git submodules in the `vendor/` directory:**
 
 | Library | Submodule Path | Package |
 |---------|---------------|---------|
@@ -58,11 +58,11 @@ bun install
    ```
    Or to clone all: `git submodule update --init --depth 1`
 
-3. **Always consult the source**: When implementing features, debugging, or answering questions about these libraries:
+3. **Always consult the library sourcecode**: When implementing features, debugging, or answering questions about these libraries:
    - Read the actual source code in `vendor/` to understand implementation details
    - Check types, function signatures, and behavior directly from source
-   - Look at examples in `vendor/effect-examples` for usage patterns
-   - Do NOT rely solely on documentation or assumptions—verify against the source
+   - Look at examples for usage patterns
+   - Do NOT rely solely on documentation or assumptions—verify against the actual sourcecode
 
 **Why this matters**: These are the exact versions used by this project. Online documentation may differ from the pinned versions. The source is the authoritative reference.
 
@@ -76,7 +76,6 @@ See **[Type-Driven Development](docs/type-driven-development.md)** for detailed 
 - **NEVER use `any`** - it shuts off typing entirely
 - **NEVER use type assertions** (`as TypeName`) - fix the underlying type issue instead
 - Always examine existing types before modifying code
-- Design new types before implementation
 - Run `bun run typecheck` frequently
 
 ### Code Organization and Separation of Concerns
@@ -93,42 +92,6 @@ See **[Type-Driven Development](docs/type-driven-development.md)** for detailed 
 
 
 ### State Update Crash Prevention
-
-**CRITICAL: Clear-Delay-Set Pattern for State Updates**
-
-When updating large state objects (especially `mergeRequests`), directly overwriting the data can cause crashes. To prevent this:
-
-**Always use the clear-delay-set pattern:**
-1. Clear the state to empty values (`[]`, `new Map()`, etc.)
-2. Add a 100ms delay (`await new Promise(resolve => setTimeout(resolve, 100))`)
-3. Set the new state values
-
-**Example implementation:**
-```typescript
-// ✅ CORRECT: Clear-delay-set pattern
-async switchUserSelection(entry: number) {
-  // 1. Clear state first
-  set({ mergeRequests: [], branchDifferences: new Map() });
-
-  // 2. Delay to prevent crashes
-  await new Promise(resolve => setTimeout(resolve, 100));
-
-  // 3. Set new values
-  set({ selectedUserSelectionEntry: entry, selectedMergeRequest: 0 });
-  // ... load new data
-}
-```
-
-**When to use this pattern:**
-- Switching between user selections
-- Fetching/refreshing merge requests
-- Any operation that replaces large arrays or maps in the store
-- Any state update that previously caused intermittent crashes
-
-**Why this works:**
-- Gives the UI renderer time to process the empty state before new data arrives
-- Prevents race conditions between state updates and rendering
-- Avoids memory/rendering issues from rapid state replacements
 
 ### Code Style
 
@@ -153,11 +116,11 @@ const results = items
 ```
 
 **Effect-TS Style:**
-- **ALWAYS use `Effect.gen`** for effect composition — never use `Effect.andThen`/`pipe` chains as an alternative
+- **ALWAYS use `Effect.gen`** for effect composition — never use `Effect.andThen` chains as an alternative
 
 **Other Style Guidelines:**
 - Favor functions with parameters over classes
-- Favor small pure functions with clear input/output
+- Favor small pure functions with clear input/output. Look to reuse pure functions
 - DONT use INLINE imports via require. Always import top level
 
 ### React Patterns
@@ -200,21 +163,6 @@ Less code is better. When implementing features:
    - ❌ BAD: Separate loading states for initial load vs refresh
    - ✅ GOOD: Single loading atom that covers all loading scenarios
 
-**Real example from this codebase:**
-```typescript
-// ❌ BEFORE: Double cache access
-fetchUserMRsWithCache() → returns data only
-getLastRefreshTimestamp() → reads same cache for timestamp only
-mrsByKeyAtomFamily → for data
-lastRefreshTimestampByKeyAtomFamily → for timestamp
-
-// ✅ AFTER: Single cache access
-fetchUserMRsWithCache() → returns { data, timestamp }
-mrsCacheByKeyAtomFamily → single source
-mergeRequestsAtom → derives .data
-lastRefreshTimestampAtom → derives .timestamp
-```
-
 **Rule of thumb**: If you're reading the same data twice or tracking the same concept in multiple places, consolidate into one source and derive views from it.
 
 **Comment Policy:**
@@ -230,5 +178,3 @@ See **[UI Guidelines](docs/ui-guidelines.md)** for colors, openTUI specifics, an
 
 **Key rules:**
 - Use Dracula theme palette, avoid `#6272a4` (grey) - use `#bd93f9` instead
-- In openTUI, use `'return'` not `'enter'` for key handling
-- Always show discussion counts as resolved/resolvable format (e.g., "💬 3/5")
