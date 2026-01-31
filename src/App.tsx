@@ -14,6 +14,7 @@ import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
 import { JiraBoardPage } from "./jiraboard";
 import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage";
+import ConfigurationPage from "./components/ConfigurationPage";
 import { ActivePane } from "./userselection/userSelection";
 import { useEffect, useMemo, useState } from 'react';
 import type { Action } from './actions/action-types';
@@ -30,6 +31,7 @@ import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Console, Effect } from 'effect';
 import { appInitAtom } from './app-init';
 import { clearUnreadCount } from './notifications/title-indicator';
+import { missingCredentialsAtom, recheckCredentialsAtom } from './config/config-atom';
 
 export default function App() {
   useAtomValue(appInitAtom);
@@ -49,6 +51,21 @@ export default function App() {
 
   const repositoryBranches = useRepositoryBranches([...mergeRequests]);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
+
+  // Configuration page state
+  const missingCredentialsResult = useAtomValue(missingCredentialsAtom);
+  const recheckCredentials = useAtomSet(recheckCredentialsAtom, { mode: 'promiseExit' });
+  const [showConfigPage, setShowConfigPage] = useState(false);
+
+  // Unwrap the Result type to get actual credentials array
+  const missingCredentials = missingCredentialsResult._tag === 'Success' ? missingCredentialsResult.value : [];
+
+  // Show config page on mount if credentials are missing
+  useEffect(() => {
+    if (missingCredentials.length > 0) {
+      setShowConfigPage(true);
+    }
+  }, [missingCredentials.length]);
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
@@ -459,6 +476,24 @@ export default function App() {
       {activeModal === 'monitoredMrs' && (
         <MonitoredMergeRequestsPage
           onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {/* Configuration Page - fullscreen overlay with highest priority */}
+      {showConfigPage && missingCredentials.length > 0 && (
+        <ConfigurationPage
+          missingCredentials={missingCredentials}
+          onClose={() => setShowConfigPage(false)}
+          onSave={async () => {
+            await recheckCredentials();
+            setShowConfigPage(false);
+            setCopyNotification('Configuration saved! Refreshing...');
+            setTimeout(() => {
+              setCopyNotification(null);
+              // Optionally refresh MRs after config is saved
+              refreshMergeRequests();
+            }, 1500);
+          }}
         />
       )}
 

@@ -4,6 +4,7 @@ import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import type { BitbucketPullRequest, BitbucketComment } from "./bitbucketapi";
 import type { CompactedEvent } from "../events/event-compaction-events";
+import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 
 function countCommentsByResolution(comments: readonly BitbucketComment[]): {
   total: number;
@@ -116,7 +117,7 @@ export function mapBitbucketToGitlabMergeRequest(
     avatarUrl: null,
     createdAt: new Date(pr.created_on),
     updatedAt: new Date(pr.updated_on),
-    state: mapBitbucketStateToGitlab(pr.state),
+    state: mapBitbucketStateToGitlab(pr.state) as MergeRequestState,
     approvedBy,
     resolvableDiscussions,
     resolvedDiscussions,
