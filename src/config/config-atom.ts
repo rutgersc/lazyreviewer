@@ -1,13 +1,10 @@
 import { Atom } from '@effect-atom/atom-react';
-import { Effect } from 'effect';
+import { FileSystem } from '@effect/platform';
+import { Effect, Stream, Console } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
-import { checkMissingCredentials, type MissingCredential } from './env-config';
+import { getEnvFilePath, parseEnvContent, deriveMissingCredentials, type MissingCredential, dotEnvFileChanges } from './dotenv-config';
 
 export const missingCredentialsAtom = appAtomRuntime.atom(
-  () => checkMissingCredentials(),
+  Stream.unwrap(dotEnvFileChanges),
   { initialValue: [] as MissingCredential[] }
-).pipe(Atom.keepAlive);
-
-export const recheckCredentialsAtom = appAtomRuntime.fn(() => {
-  return checkMissingCredentials();
-});
+).pipe(Atom.setLazy(false), Atom.keepAlive);

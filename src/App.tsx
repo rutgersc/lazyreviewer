@@ -31,7 +31,7 @@ import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Console, Effect } from 'effect';
 import { appInitAtom } from './app-init';
 import { clearUnreadCount } from './notifications/title-indicator';
-import { missingCredentialsAtom, recheckCredentialsAtom } from './config/config-atom';
+import { missingCredentialsAtom } from './config/config-atom';
 
 export default function App() {
   useAtomValue(appInitAtom);
@@ -54,7 +54,6 @@ export default function App() {
 
   // Configuration page state
   const missingCredentialsResult = useAtomValue(missingCredentialsAtom);
-  const recheckCredentials = useAtomSet(recheckCredentialsAtom, { mode: 'promiseExit' });
   const [showConfigPage, setShowConfigPage] = useState(false);
 
   // Unwrap the Result type to get actual credentials array
@@ -484,16 +483,6 @@ export default function App() {
         <ConfigurationPage
           missingCredentials={missingCredentials}
           onClose={() => setShowConfigPage(false)}
-          onSave={async () => {
-            await recheckCredentials();
-            setShowConfigPage(false);
-            setCopyNotification('Configuration saved! Refreshing...');
-            setTimeout(() => {
-              setCopyNotification(null);
-              // Optionally refresh MRs after config is saved
-              refreshMergeRequests();
-            }, 1500);
-          }}
         />
       )}
 

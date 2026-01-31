@@ -178,3 +178,4 @@ See **[UI Guidelines](docs/ui-guidelines.md)** for colors, openTUI specifics, an
 
 **Key rules:**
 - Use Dracula theme palette, avoid `#6272a4` (grey) - use `#bd93f9` instead
+- **Think about both keyboard and mouse**: keyboard is primary (vim-style j/k, arrows, Enter), but consider mouse where it makes sense (click to select, double-click to activate). Not every action needs mouse support — a `(?)` help modal or action menu can surface less common actions
