@@ -36,3 +36,20 @@ To run:
 ```bash
 bun start
 ```
+
+### Bitbucket Support
+
+Lazygitlab supports both GitLab and Bitbucket repositories. To use a Bitbucket repository:
+
+1. Configure your Bitbucket credentials in `.env` (see above)
+2. Add a Bitbucket repository using the format: `bitbucket:workspace/repo-slug`
+
+Example in `src/data/usersAndGroups.ts`:
+```typescript
+const myRepo = { type: 'repositoryId', id: 'bitbucket:myworkspace/my-repo' } satisfies RepositoryId;
+```
+
+**Current Limitations:**
+- Bitbucket Pipelines CI/CD integration is not yet implemented
+- Pipeline status, build jobs, and job logs are not available for Bitbucket repos
+- All other features (PRs, comments, approvals, Jira integration) work normally

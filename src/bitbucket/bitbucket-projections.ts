@@ -116,7 +116,7 @@ export function mapBitbucketToGitlabMergeRequest(
     avatarUrl: null,
     createdAt: new Date(pr.created_on),
     updatedAt: new Date(pr.updated_on),
-    state: 'closed', // TODOR: (fix state mapping) mapBitbucketStateToGitlab(pr.state),
+    state: mapBitbucketStateToGitlab(pr.state),
     approvedBy,
     resolvableDiscussions,
     resolvedDiscussions,
