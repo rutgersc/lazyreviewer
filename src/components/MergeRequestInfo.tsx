@@ -1,25 +1,71 @@
 import { TextAttributes } from '@opentui/core';
 import type { Discussion, DiscussionNote } from '../gitlab/gitlab-schema';
-import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { formatCompactTime } from '../utils/formatting';
 import { Colors } from '../colors';
 import { useDoubleClick } from '../hooks/useDoubleClick';
+import { useAtom, useAtomValue } from '@effect-atom/atom-react';
+import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
+import { openUrl } from '../system/open-url';
+import {
+  overviewCursorIndexAtom,
+  unresolvedExpandedAtom,
+  resolvedExpandedAtom,
+  scrollToDiscussionRequestAtom,
+  overviewSelectableItemsAtom,
+  currentSelectionAtom,
+  findCursorForItem,
+  getScrollId,
+  itemsEqual,
+} from './overview-selection';
+import type { SelectableItem } from './overview-selection';
 
-interface MergeRequestInfoProps {
-  mergeRequest: MergeRequest;
-  selectedDiscussionIndex?: number;
-  onSelectDiscussion?: (index: number) => void;
-  onOpenDiscussion?: (index: number) => void;
-  resolvedExpanded: boolean;
-  onToggleResolvedExpanded: () => void;
-}
+export default function MergeRequestInfo() {
+  const mergeRequest = useAtomValue(selectedMrAtom);
+  const selection = useAtomValue(currentSelectionAtom);
+  const selectableItems = useAtomValue(overviewSelectableItemsAtom);
+  const [unresolvedExpanded, setUnresolvedExpanded] = useAtom(unresolvedExpandedAtom);
+  const [resolvedExpanded, setResolvedExpanded] = useAtom(resolvedExpandedAtom);
+  const [, setOverviewCursorIndex] = useAtom(overviewCursorIndexAtom);
+  const [, setScrollRequest] = useAtom(scrollToDiscussionRequestAtom);
 
-export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex = 0, onSelectDiscussion, onOpenDiscussion, resolvedExpanded, onToggleResolvedExpanded }: MergeRequestInfoProps) {
+  const handleClickItem = (item: SelectableItem) => {
+    const cursor = findCursorForItem(selectableItems, item);
+    if (cursor >= 0) {
+      setOverviewCursorIndex(cursor);
+      setScrollRequest(getScrollId(item));
+    }
+  };
 
-  const handleDiscussionClick = useDoubleClick<number>({
-    onSingleClick: (index) => onSelectDiscussion?.(index),
-    onDoubleClick: (index) => onOpenDiscussion?.(index)
+  const handleOpenDiscussion = (item: SelectableItem) => {
+    if (!mergeRequest?.webUrl) return;
+    const discussions = mergeRequest.discussions ?? [];
+    let discussion;
+    if (item.type === 'unresolved-discussion') {
+      discussion = discussions.filter(d => d.resolvable && !d.resolved)[item.index];
+    } else if (item.type === 'resolved-discussion') {
+      discussion = discussions.filter(d => d.resolvable && d.resolved)[item.index];
+    }
+    if (discussion) {
+      openUrl(`${mergeRequest.webUrl}#note_${discussion.id}`);
+    }
+  };
+
+  const handleUnresolvedClick = useDoubleClick<number>({
+    onSingleClick: (index) => handleClickItem({ type: 'unresolved-discussion', index }),
+    onDoubleClick: (index) => handleOpenDiscussion({ type: 'unresolved-discussion', index }),
   });
+
+  const handleResolvedClick = useDoubleClick<number>({
+    onSingleClick: (index) => handleClickItem({ type: 'resolved-discussion', index }),
+    onDoubleClick: (index) => handleOpenDiscussion({ type: 'resolved-discussion', index }),
+  });
+
+  const isSelected = (item: SelectableItem): boolean => {
+    if (!selection) return false;
+    return itemsEqual(item, selection);
+  };
+
+  if (!mergeRequest) return null;
 
   const renderDiscussionNote = (note: DiscussionNote, index: number) => {
     const isReply = index > 0; // First note is original, rest are replies
@@ -95,30 +141,48 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
       );
     }
 
+    const headerSelected = isSelected({ type: 'unresolved-header' });
+    const toggleLabel = unresolvedExpanded ? '▼' : '▶';
+
     return (
       <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
-        <text
-          style={{ fg: '#ff5555', attributes: TextAttributes.BOLD, marginBottom: 1 }}
-          wrapMode='word'
+        <box
+          id="unresolved-header"
+          onMouseDown={() => {
+            handleClickItem({ type: 'unresolved-header' });
+            setUnresolvedExpanded(!unresolvedExpanded);
+          }}
+          style={{
+            marginBottom: 1,
+            backgroundColor: headerSelected ? Colors.SELECTED : undefined,
+          }}
         >
-          {`Unresolved Discussions (${unresolvedDiscussions.length})`}
-        </text>
-        {unresolvedDiscussions.map((discussion, index) => {
-          const isSelected = index === selectedDiscussionIndex;
+          <text
+            style={{
+              fg: '#ff5555',
+              attributes: TextAttributes.BOLD,
+            }}
+            wrapMode='word'
+          >
+            {`${toggleLabel} Unresolved Discussions (${unresolvedDiscussions.length})`}
+          </text>
+        </box>
+        {unresolvedExpanded && unresolvedDiscussions.map((discussion, index) => {
+          const selected = isSelected({ type: 'unresolved-discussion', index });
           return (
             <box
               key={discussion.id}
               id={`discussion-${index}`}
-              onMouseDown={() => handleDiscussionClick(index)}
+              onMouseDown={() => handleUnresolvedClick(index)}
               style={{
                 flexDirection: "column",
                 marginLeft: 2,
                 marginBottom: 0,
                 width: "100%",
-                backgroundColor: isSelected ? Colors.SELECTED : '#1a1a1a',
+                backgroundColor: selected ? Colors.SELECTED : '#1a1a1a',
                 padding: 1,
-                border: isSelected,
-                borderColor: isSelected ? Colors.SUCCESS : undefined
+                border: selected,
+                borderColor: selected ? Colors.SUCCESS : undefined
               }}
             >
               {discussion.notes.map(renderDiscussionNote)}
@@ -134,33 +198,54 @@ export default function MergeRequestInfo({ mergeRequest, selectedDiscussionIndex
 
     if (resolvedDiscussions.length === 0) return null;
 
+    const headerSelected = isSelected({ type: 'resolved-header' });
     const toggleLabel = resolvedExpanded ? '▼' : '▶';
 
     return (
       <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
-        <text
-          onMouseDown={() => onToggleResolvedExpanded()}
-          style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD, marginBottom: 1 }}
-          wrapMode='word'
+        <box
+          id="resolved-header"
+          onMouseDown={() => {
+            handleClickItem({ type: 'resolved-header' });
+            setResolvedExpanded(!resolvedExpanded);
+          }}
+          style={{
+            marginBottom: 1,
+            backgroundColor: headerSelected ? Colors.SELECTED : undefined,
+          }}
         >
-          {`${toggleLabel} Resolved Discussions (${resolvedDiscussions.length})`}
-        </text>
-        {resolvedExpanded && resolvedDiscussions.map((discussion, index) => (
-          <box
-            key={discussion.id}
-            id={`resolved-discussion-${index}`}
+          <text
             style={{
-              flexDirection: "column",
-              marginLeft: 2,
-              marginBottom: 0,
-              width: "100%",
-              backgroundColor: '#1a1a1a',
-              padding: 1,
+              fg: '#50fa7b',
+              attributes: TextAttributes.BOLD,
             }}
+            wrapMode='word'
           >
-            {discussion.notes.map(renderDiscussionNote)}
-          </box>
-        ))}
+            {`${toggleLabel} Resolved Discussions (${resolvedDiscussions.length})`}
+          </text>
+        </box>
+        {resolvedExpanded && resolvedDiscussions.map((discussion, index) => {
+          const selected = isSelected({ type: 'resolved-discussion', index });
+          return (
+            <box
+              key={discussion.id}
+              id={`resolved-discussion-${index}`}
+              onMouseDown={() => handleResolvedClick(index)}
+              style={{
+                flexDirection: "column",
+                marginLeft: 2,
+                marginBottom: 0,
+                width: "100%",
+                backgroundColor: selected ? Colors.SELECTED : '#1a1a1a',
+                padding: 1,
+                border: selected,
+                borderColor: selected ? Colors.SUCCESS : undefined
+              }}
+            >
+              {discussion.notes.map(renderDiscussionNote)}
+            </box>
+          );
+        })}
       </box>
     );
   };

@@ -56,8 +56,6 @@ export const filterMrStateAtom = Atom.make<MergeRequestState>('opened');
 export { mrSortOrderAtom } from "../settings/settings-atom";
 export type { MrSortOrder } from "../settings/settings";
 
-export const selectedDiscussionIndexAtom = Atom.make<number>(0);
-
 export const allMrsAtom = appAtomRuntime.atom(
   (get) => MrStateService.changes.pipe(Stream.unwrap),
   { initialValue: allMrsProjection.initialState }

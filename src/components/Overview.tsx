@@ -1,20 +1,18 @@
 import { TextAttributes } from '@opentui/core';
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect } from 'react';
 import MergeRequestInfo from './MergeRequestInfo';
 import UserSelectionInfo from './UserSelectionInfo';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { useAtom, useAtomValue, Atom } from '@effect-atom/atom-react';
-import { selectedDiscussionIndexAtom } from '../mergerequests/mergerequests-atom';
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
-import { openUrl } from '../system/open-url';
 import { selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
+import { overviewCursorIndexAtom, unresolvedExpandedAtom, resolvedExpandedAtom, scrollToDiscussionRequestAtom, buildSelectableItems, findCursorForItem } from './overview-selection';
 
 // Atoms for overview pane state
 export const copyNotificationAtom = Atom.make<string | null>(null);
-export const scrollToDiscussionRequestAtom = Atom.make<number | null>(null);
 
 interface OverviewProps {
   activePane: ActivePane;
@@ -25,32 +23,27 @@ export default function Overview({
   activePane,
   selectedMergeRequest,
 }: OverviewProps) {
-  const [selectedDiscussionIndex, setSelectedDiscussionIndex] = useAtom(selectedDiscussionIndexAtom);
-  const [copyNotification, setCopyNotification] = useAtom(copyNotificationAtom);
+  const [, setOverviewCursorIndex] = useAtom(overviewCursorIndexAtom);
+  const [, setUnresolvedExpanded] = useAtom(unresolvedExpandedAtom);
+  const [, setResolvedExpanded] = useAtom(resolvedExpandedAtom);
+  const [copyNotification] = useAtom(copyNotificationAtom);
   const [scrollToDiscussionRequest, setScrollToDiscussionRequest] = useAtom(scrollToDiscussionRequestAtom);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
   const selectedUserSelectionEntry = useAtomValue(selectedUserSelectionEntryAtom);
 
-  const isMerged = selectedMergeRequest?.state === 'merged';
-  const [resolvedExpanded, setResolvedExpanded] = useState(isMerged ?? false);
-  const handleToggleResolvedExpanded = useCallback(() => setResolvedExpanded(prev => !prev), []);
-
-  // Reset resolved expanded state when the selected MR changes
+  // Reset state when the selected MR changes
   const prevMrIdRef = useRef(selectedMergeRequest?.id);
   if (prevMrIdRef.current !== selectedMergeRequest?.id) {
     prevMrIdRef.current = selectedMergeRequest?.id;
     setResolvedExpanded(selectedMergeRequest?.state === 'merged');
+    setUnresolvedExpanded(true);
+    setOverviewCursorIndex(0);
   }
 
-  const handleSelectDiscussion = (index: number) => {
-      setSelectedDiscussionIndex(index);
-      scrollToId(`discussion-${index}`);
-  };
-
-  // Handle scroll requests from actions
+  // Handle scroll requests from actions and MergeRequestInfo clicks
   useEffect(() => {
     if (scrollToDiscussionRequest !== null) {
-      scrollToId(`discussion-${scrollToDiscussionRequest}`);
+      scrollToId(scrollToDiscussionRequest);
       setScrollToDiscussionRequest(null);
     }
   }, [scrollToDiscussionRequest, scrollToId, setScrollToDiscussionRequest]);
@@ -64,10 +57,16 @@ export default function Overview({
   unresolvedDiscussionsRef.current = unresolvedDiscussions;
   const resolvedDiscussionsRef = useRef(resolvedDiscussions);
   resolvedDiscussionsRef.current = resolvedDiscussions;
+  const unresolvedExpandedRef = useRef(false);
+  const resolvedExpandedRef = useRef(false);
+  // Keep refs in sync via reading atoms is not possible here; use effect-free pattern
+  // These refs are only used by the scroll handler registered once below
   const scrollToIdRef = useRef(scrollToId);
   scrollToIdRef.current = scrollToId;
-  const setSelectedDiscussionIndexRef = useRef(setSelectedDiscussionIndex);
-  setSelectedDiscussionIndexRef.current = setSelectedDiscussionIndex;
+  const setOverviewCursorIndexRef = useRef(setOverviewCursorIndex);
+  setOverviewCursorIndexRef.current = setOverviewCursorIndex;
+  const setUnresolvedExpandedRef = useRef(setUnresolvedExpanded);
+  setUnresolvedExpandedRef.current = setUnresolvedExpanded;
   const setResolvedExpandedRef = useRef(setResolvedExpanded);
   setResolvedExpandedRef.current = setResolvedExpanded;
 
@@ -78,25 +77,33 @@ export default function Overview({
   if (!handlerRegistered.current) {
     handlerRegistered.current = true;
     registerHandler(({ noteId }) => {
-      // First check unresolved discussions
       const unresolved = unresolvedDiscussionsRef.current;
+      const resolved = resolvedDiscussionsRef.current;
+
+      // First check unresolved discussions
       const unresolvedIndex = unresolved.findIndex(discussion =>
         discussion.notes.some(note => note.id === noteId)
       );
       if (unresolvedIndex >= 0) {
-        setSelectedDiscussionIndexRef.current(unresolvedIndex);
-        scrollToIdRef.current(`discussion-${unresolvedIndex}`);
+        setUnresolvedExpandedRef.current(true);
+        const items = buildSelectableItems(unresolved.length, resolved.length, true, resolvedExpandedRef.current);
+        const cursor = findCursorForItem(items, { type: 'unresolved-discussion', index: unresolvedIndex });
+        setOverviewCursorIndexRef.current(cursor >= 0 ? cursor : 0);
+        requestAnimationFrame(() => {
+          scrollToIdRef.current(`discussion-${unresolvedIndex}`);
+        });
         return true;
       }
 
       // Then check resolved discussions
-      const resolved = resolvedDiscussionsRef.current;
       const resolvedIndex = resolved.findIndex(discussion =>
         discussion.notes.some(note => note.id === noteId)
       );
       if (resolvedIndex >= 0) {
         setResolvedExpandedRef.current(true);
-        // Schedule scroll after expansion renders
+        const items = buildSelectableItems(unresolved.length, resolved.length, unresolvedExpandedRef.current, true);
+        const cursor = findCursorForItem(items, { type: 'resolved-discussion', index: resolvedIndex });
+        setOverviewCursorIndexRef.current(cursor >= 0 ? cursor : 0);
         requestAnimationFrame(() => {
           scrollToIdRef.current(`resolved-discussion-${resolvedIndex}`);
         });
@@ -107,25 +114,9 @@ export default function Overview({
     });
   }
 
-  const handleOpenDiscussion = (index: number) => {
-      const discussion = unresolvedDiscussions[index];
-      if (discussion && selectedMergeRequest?.webUrl) {
-          const discussionUrl = `${selectedMergeRequest.webUrl}#note_${discussion.id}`;
-          openUrl(discussionUrl);
-      }
-  };
-
   const content = (() => {
-    // Always show MR info when there's a selected MR
     if (selectedMergeRequest) {
-      return <MergeRequestInfo
-          mergeRequest={selectedMergeRequest}
-          selectedDiscussionIndex={selectedDiscussionIndex}
-          onSelectDiscussion={handleSelectDiscussion}
-          onOpenDiscussion={handleOpenDiscussion}
-          resolvedExpanded={resolvedExpanded}
-          onToggleResolvedExpanded={handleToggleResolvedExpanded}
-      />;
+      return <MergeRequestInfo />;
     }
 
     if (activePane === ActivePane.UserSelection && selectedUserSelectionEntry) {

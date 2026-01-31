@@ -1,14 +1,22 @@
-import { Atom } from "@effect-atom/atom-react";
+import { Atom, type Registry } from "@effect-atom/atom-react";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
-import { selectedMrAtom, selectedDiscussionIndexAtom } from "../mergerequests/mergerequests-atom";
+import { selectedMrAtom } from "../mergerequests/mergerequests-atom";
 import { copyToClipboard } from "../system/clipboard";
 import { formatDiscussionsForClipboard } from "../gitlab/display/gitlabDiscussionFormatter";
-import { copyNotificationAtom, scrollToDiscussionRequestAtom } from "./Overview";
+import { copyNotificationAtom } from "./Overview";
+import { openUrl } from "../system/open-url";
+import { overviewCursorIndexAtom, unresolvedExpandedAtom, resolvedExpandedAtom, scrollToDiscussionRequestAtom, overviewSelectableItemsAtom, getScrollId } from "./overview-selection";
 
-const getUnresolvedDiscussions = (registry: import("@effect-atom/atom-react").Registry.Registry) => {
+const getSelectableContext = (registry: Registry.Registry) => {
   const selectedMr = registry.get(selectedMrAtom);
-  return selectedMr?.discussions.filter(d => d.resolvable && !d.resolved) ?? [];
+  const discussions = selectedMr?.discussions ?? [];
+  const unresolvedDiscussions = discussions.filter(d => d.resolvable && !d.resolved);
+  const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved);
+  const items = registry.get(overviewSelectableItemsAtom);
+  const cursor = registry.get(overviewCursorIndexAtom);
+  const clampedCursor = Math.min(cursor, Math.max(0, items.length - 1));
+  return { selectedMr, unresolvedDiscussions, resolvedDiscussions, items, cursor: clampedCursor };
 };
 
 export const overviewActionsAtom = Atom.make((get) => {
@@ -21,12 +29,13 @@ export const overviewActionsAtom = Atom.make((get) => {
       displayKey: 'j/k, ↑/↓',
       description: 'Navigate discussions',
       handler: () => {
-        const unresolvedDiscussions = getUnresolvedDiscussions(registry);
-        const selectedDiscussionIndex = registry.get(selectedDiscussionIndexAtom);
-        if (unresolvedDiscussions.length > 0) {
-          const nextIndex = Math.min(selectedDiscussionIndex + 1, unresolvedDiscussions.length - 1);
-          registry.set(selectedDiscussionIndexAtom, nextIndex);
-          registry.set(scrollToDiscussionRequestAtom, nextIndex);
+        const { items, cursor } = getSelectableContext(registry);
+        if (items.length === 0) return;
+        const nextCursor = Math.min(cursor + 1, items.length - 1);
+        registry.set(overviewCursorIndexAtom, nextCursor);
+        const item = items[nextCursor];
+        if (item) {
+          registry.set(scrollToDiscussionRequestAtom, getScrollId(item));
         }
       },
     },
@@ -36,12 +45,42 @@ export const overviewActionsAtom = Atom.make((get) => {
       displayKey: '',
       description: '',
       handler: () => {
-        const unresolvedDiscussions = getUnresolvedDiscussions(registry);
-        const selectedDiscussionIndex = registry.get(selectedDiscussionIndexAtom);
-        if (unresolvedDiscussions.length > 0) {
-          const prevIndex = Math.max(selectedDiscussionIndex - 1, 0);
-          registry.set(selectedDiscussionIndexAtom, prevIndex);
-          registry.set(scrollToDiscussionRequestAtom, prevIndex);
+        const { items, cursor } = getSelectableContext(registry);
+        if (items.length === 0) return;
+        const prevCursor = Math.max(cursor - 1, 0);
+        registry.set(overviewCursorIndexAtom, prevCursor);
+        const item = items[prevCursor];
+        if (item) {
+          registry.set(scrollToDiscussionRequestAtom, getScrollId(item));
+        }
+      },
+    },
+    {
+      id: 'overview:toggle',
+      keys: [parseKeyString('enter'), parseKeyString('space')],
+      displayKey: 'enter',
+      description: 'Toggle section / Open discussion',
+      handler: () => {
+        const { items, cursor, selectedMr, unresolvedDiscussions, resolvedDiscussions } = getSelectableContext(registry);
+        const item = items[cursor];
+        if (!item) return;
+
+        if (item.type === 'unresolved-header') {
+          const current = registry.get(unresolvedExpandedAtom);
+          registry.set(unresolvedExpandedAtom, !current);
+        } else if (item.type === 'resolved-header') {
+          const current = registry.get(resolvedExpandedAtom);
+          registry.set(resolvedExpandedAtom, !current);
+        } else if (selectedMr?.webUrl) {
+          let discussion;
+          if (item.type === 'unresolved-discussion') {
+            discussion = unresolvedDiscussions[item.index];
+          } else if (item.type === 'resolved-discussion') {
+            discussion = resolvedDiscussions[item.index];
+          }
+          if (discussion) {
+            openUrl(`${selectedMr.webUrl}#note_${discussion.id}`);
+          }
         }
       },
     },
@@ -51,11 +90,17 @@ export const overviewActionsAtom = Atom.make((get) => {
       displayKey: 'c',
       description: 'Copy discussion URL',
       handler: () => {
-        const unresolvedDiscussions = getUnresolvedDiscussions(registry);
-        const selectedDiscussionIndex = registry.get(selectedDiscussionIndexAtom);
-        const selectedMr = registry.get(selectedMrAtom);
-        const discussion = unresolvedDiscussions[selectedDiscussionIndex];
-        if (discussion && selectedMr?.webUrl) {
+        const { items, cursor, selectedMr, unresolvedDiscussions, resolvedDiscussions } = getSelectableContext(registry);
+        const item = items[cursor];
+        if (!item || !selectedMr?.webUrl) return;
+
+        let discussion;
+        if (item.type === 'unresolved-discussion') {
+          discussion = unresolvedDiscussions[item.index];
+        } else if (item.type === 'resolved-discussion') {
+          discussion = resolvedDiscussions[item.index];
+        }
+        if (discussion) {
           const discussionUrl = `${selectedMr.webUrl}#note_${discussion.id}`;
           copyToClipboard(discussionUrl);
         }
