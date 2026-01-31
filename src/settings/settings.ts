@@ -1,6 +1,7 @@
 import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { openFileInEditor } from '../utils/open-file';
-import { Effect, Schema } from 'effect';
+import { Effect, Schema, Stream, Console } from 'effect';
+import { FileSystem } from '@effect/platform';
 import { appLayer } from '../appLayerRuntime';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { MrGid } from '../domain/identifiers';
@@ -297,3 +298,36 @@ export const openSettingsFile = async (): Promise<void> => {
     Effect.runPromise
   );
 };
+
+export const watchSettingsStream = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem;
+
+  // loadSettings creates the file with defaults if missing
+  const initial = yield* Effect.sync(() => loadSettings());
+
+  const readFileContent = fs.readFileString(SETTINGS_FILE).pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Console.error("Failed to read settings:", error);
+        return JSON.stringify(defaultSettings);
+      })
+    )
+  );
+
+  const parseContent = (content: string): Settings => {
+    try {
+      return JSON.parse(content) as Settings;
+    } catch (error) {
+      throw new Error(`Failed to parse ${SETTINGS_FILE}: ${error instanceof Error ? error.message : error}`);
+    }
+  };
+
+  const watchStream = fs.watch(SETTINGS_FILE).pipe(
+    Stream.debounce("100 millis"),
+    Stream.mapEffect(() => readFileContent),
+    Stream.changes,
+    Stream.map(parseContent)
+  );
+
+  return Stream.concat(Stream.make(initial), watchStream);
+});

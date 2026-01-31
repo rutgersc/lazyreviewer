@@ -1,7 +1,6 @@
-import { FileSystem } from "@effect/platform"
 import { Effect, Stream, Console, Option } from "effect"
 import { appAtomRuntime } from "../appLayerRuntime"
-import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, type MrSortOrder, defaultSettings, loadSettings, saveSettings, Settings } from "./settings"
+import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, type MrSortOrder, defaultSettings, loadSettings, saveSettings, Settings, watchSettingsStream } from "./settings"
 import { Atom, Result } from "@effect-atom/atom-react"
 import type { MrGid } from "../domain/identifiers"
 
@@ -42,41 +41,6 @@ const selectFromSettings = <T>(
     }
     return newValue;
   });
-
-const SETTINGS_FILE = 'lazygitlab-settings.json';
-
-const watchSettingsStream = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem;
-
-  const readFileContent = fs.readFileString(SETTINGS_FILE).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        yield* Console.error("Failed to read settings:", error);
-        return JSON.stringify(defaultSettings);
-      })
-    )
-  );
-
-  const parseContent = (content: string): Settings => {
-    try {
-      return JSON.parse(content) as Settings;
-    } catch (error) {
-      throw new Error(`Failed to parse ${SETTINGS_FILE}: ${error instanceof Error ? error.message : error}`);
-    }
-  };
-
-  const initialContent = yield* readFileContent;
-  const initial = parseContent(initialContent);
-
-  const watchStream = fs.watch(SETTINGS_FILE).pipe(
-    Stream.debounce("100 millis"),
-    Stream.mapEffect(() => readFileContent),
-    Stream.changes,
-    Stream.map(parseContent)
-  );
-
-  return Stream.concat(Stream.make(initial), watchStream);
-});
 
 export const settingsAtom = appAtomRuntime.atom(
   Stream.unwrap(watchSettingsStream),

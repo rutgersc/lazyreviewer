@@ -136,6 +136,12 @@ export const dotEnvFileChanges = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const envPath = getEnvFilePath();
 
+  // const exists = yield* fs.exists(envPath);
+  // if (!exists) {
+  //   yield* fs.writeFileString(envPath, ENV_TEMPLATE);
+  //   yield* Console.log(`[Config] Created .env template at ${envPath}`);
+  // }
+
   const readAndDerive = fs.readFileString(envPath).pipe(
     Effect.map(content => deriveMissingCredentials(parseEnvContent(content))),
     Effect.catchAll(() => Effect.succeed(deriveMissingCredentials({})))
@@ -145,6 +151,7 @@ export const dotEnvFileChanges = Effect.gen(function* () {
   yield* Console.log(`[Config] Initial check: ${initial.length} missing credentials`);
 
   const watchStream = fs.watch(envPath).pipe(
+    Stream.catchAll(() => Stream.empty),
     Stream.debounce("200 millis"),
     Stream.mapEffect(() => readAndDerive),
     Stream.changes
