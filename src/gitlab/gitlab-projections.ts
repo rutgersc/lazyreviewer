@@ -4,7 +4,7 @@ import type { PipelineJob, PipelineStage, Discussion, MergeRequest, JobHistoryEn
 import { MrGid, MrIid } from "../domain/identifiers";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent, GitlabMrsFetchedEvent } from "../events/gitlab-events";
 import type { MergeRequestFieldsFragment, MRsQuery } from "../graphql/mrs.generated";
-import type { CompactedEvent } from "../events/event-compaction-events";
+
 
 export const mapMrFragment = (
   mr: MergeRequestFieldsFragment)
@@ -211,12 +211,6 @@ export const projectGitlabSingleMrFetchedEvent = (event: GitlabSingleMrFetchedEv
 
   return mapMrFragment(mr);
 };
-
-export const projectGitlabMrsCompactedEvent = (event: CompactedEvent): MergeRequest[] => {
-  // Discriminate by checking for gitlab-specific field
-  const mrs: MergeRequestFieldsFragment[] = event.mrs.filter(mr => "discussions" in mr);
-  return mrs.map(mr => mapMrFragment(mr));
-}
 
 export const projectGitlabMrsFetchedEvent = (event: GitlabMrsFetchedEvent): MergeRequest[] => {
   const mrs = event.mrs.project?.mergeRequests?.nodes

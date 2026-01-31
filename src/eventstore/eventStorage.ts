@@ -69,8 +69,8 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       }
     }
 
-    const loadEventsImpl = (fromLastCompaction: boolean) => Effect.gen(function* () {
-      yield* Console.log(`[EventStorage] loading ${fromLastCompaction ? 'from last compaction' : 'all events'}..`)
+    const loadEvents = Effect.gen(function* () {
+      yield* Console.log(`[EventStorage] loading events..`)
 
       // Read directory
       const files = yield* fs.readDirectory(eventsDir).pipe(
@@ -83,24 +83,9 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
         .filter((parsed): parsed is NonNullable<typeof parsed> => parsed !== null)
         .sort((a, b) => a.eventNumber - b.eventNumber)
 
-      // Find the LAST compaction event (highest event number)
-      const lastCompactionIndex = parsedFiles.findLastIndex(
-        parsed => parsed.eventType === 'compacted-event'
-      )
-
-      // Load only from last compaction onwards if requested
-      const eventsToLoad = fromLastCompaction && lastCompactionIndex >= 0
-        ? parsedFiles.slice(lastCompactionIndex)
-        : parsedFiles
-
-      // yield* Console.log(
-      //   `[EventStorage] Found ${parsedFiles.length} total events, ` +
-      //   `loading ${eventsToLoad.length}`
-      // )
-
       // Load and parse each event file with Schema validation
       const events = yield* Effect.all(
-        eventsToLoad.map(parsed =>
+        parsedFiles.map(parsed =>
           Effect.gen(function* () {
             const filePath = path.join(eventsDir, parsed.filename)
             const content = yield* fs.readFileString(filePath)
@@ -126,9 +111,6 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
       return events.filter((event): event is LazyReviewerEvent => event !== null)
     })
-
-    const loadEvents = loadEventsImpl(true)
-    const loadAllEvents = loadEventsImpl(false)
 
     const appendEvent = (event: LazyReviewerEvent) => Effect.gen(function* () {
       const files = yield* fs.readDirectory(eventsDir);
@@ -159,19 +141,6 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     const eventsStream = Stream.unwrapScoped(
       Effect.gen(function* () {
         const historicalEvents = yield* loadEvents
-
-        const newEventsStream = Stream.fromPubSub(eventsPubSub)
-
-        return Stream.concat(
-          Stream.fromIterable(historicalEvents),
-          newEventsStream
-        )
-      })
-    )
-
-    const allEventsStream = Stream.unwrapScoped(
-      Effect.gen(function* () {
-        const historicalEvents = yield* loadAllEvents
 
         const newEventsStream = Stream.fromPubSub(eventsPubSub)
 
@@ -261,11 +230,9 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
     return {
       loadEvents,
-      loadAllEvents,
       appendEvent,
       appendInMemoryEvent,
       eventsStream,
-      allEventsStream,
       inMemoryEventsStream,
       combinedEventsStream,
       clearInMemoryEvents,

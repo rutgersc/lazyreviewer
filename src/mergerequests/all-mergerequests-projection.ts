@@ -1,8 +1,8 @@
 
 import { Data } from "effect";
-import { projectBitbucketMrsCompactedEvent, projectBitbucketPrsFetchedEvent } from "../bitbucket/bitbucket-projections";
+import { projectBitbucketPrsFetchedEvent } from "../bitbucket/bitbucket-projections";
 import type { GitlabprojectMergeRequestsFetchedEvent } from "../events/gitlab-events";
-import { projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabMrsCompactedEvent, projectGitlabMrsFetchedEvent } from "../gitlab/gitlab-projections";
+import { projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabMrsFetchedEvent } from "../gitlab/gitlab-projections";
 import type { MrGid } from "../domain/identifiers";
 import type { JiraIssue } from "../jira/jira-schema";
 import { projectJiraIssuesFetchedEvent } from "../jira/jira-service";
@@ -113,21 +113,6 @@ export const allMrsProjection = defineProjection({
         mrsByGid: state.mrsByGid,
         jiraIssuesByKey: currentJiraIssues,
         timestamp: state.timestamp
-      });
-    },
-
-    "compacted-event": (state, event) => {
-      const gitlabMrs = projectGitlabMrsCompactedEvent(event);
-      const bitbucketMrs = projectBitbucketMrsCompactedEvent(event);
-      const mrsByIid = new Map<MrGid, MergeRequest>(
-        gitlabMrs.concat(bitbucketMrs).map(mr => [mr.id, mr])
-      );
-      const newJiraIssues = new Map<string, JiraIssue>();
-      event.jiraIssues.forEach(issue => newJiraIssues.set(issue.key, issue));
-      return new AllMrsState({
-        mrsByGid: mrsByIid,
-        jiraIssuesByKey: newJiraIssues,
-        timestamp: new Date(),
       });
     },
 

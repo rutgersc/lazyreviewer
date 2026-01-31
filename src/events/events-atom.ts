@@ -1,10 +1,9 @@
-import { Stream, Effect, Chunk } from "effect";
+import { Stream, Chunk } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { EventStorage, type LazyReviewerEvent } from "./events";
-import { projectEventsToCompactedState, compactedStateToEvent } from "./project-to-compacted-state";
 
-export const allEventsIncludingCompactedAtom = appAtomRuntime.atom(
-  Stream.unwrap(EventStorage.allEventsStream).pipe(
+export const allEventsAtom = appAtomRuntime.atom(
+  Stream.unwrap(EventStorage.eventsStream).pipe(
     Stream.groupedWithin(300, "0.3 seconds"),
     Stream.scan([] as LazyReviewerEvent[], (acc, events) =>
       acc.concat(Chunk.toReadonlyArray(events))
@@ -12,24 +11,3 @@ export const allEventsIncludingCompactedAtom = appAtomRuntime.atom(
   ),
   { initialValue: [] }
 )
-
-export const compactAllEventsAtom = appAtomRuntime.fn(() =>
-  Effect.gen(function* () {
-    const allEvents = yield* EventStorage.loadEvents
-
-    const compactedState = projectEventsToCompactedState(allEvents);
-
-    if (compactedState.mergeRequests.size === 0 && compactedState.jiraIssues.size === 0) {
-      return { success: false, message: "No events to compact" };
-    }
-
-    const compactedEvent = compactedStateToEvent(compactedState);
-    yield* EventStorage.appendEvent(compactedEvent);
-
-    const parts: string[] = [];
-    parts.push(`${compactedState.mergeRequests.size} MRs`);
-    parts.push(`${compactedState.jiraIssues.size} Jira issues`);
-
-    return { success: true, message: `Compacted all events into ${parts.join(' and ')}` };
-  })
-);

@@ -1,12 +1,9 @@
-import type { CompactedEvent } from '../events/event-compaction-events'
 import {
   projectGitlabUserMrsFetchedEvent,
   projectGitlabProjectMrsFetchedEvent,
   projectGitlabSingleMrFetchedEvent,
-  mapMrFragment,
   projectGitlabMrsFetchedEvent
 } from '../gitlab/gitlab-projections'
-import { mapBitbucketToMergeRequest } from '../bitbucket/bitbucket-projections'
 import type { DiscussionNote, MergeRequest } from '../domain/merge-request-schema'
 import { defineProjection } from '../utils/define-projection'
 import type { Change } from './change-tracking-projection'
@@ -354,19 +351,6 @@ const detectMergerequestChanges = (
   return { mrStatesForDelta, mrDeltas };
 };
 
-const projectCompactedEventMrs = (event: CompactedEvent): MergeRequest[] => {
-  return event.mrs.flatMap((rawMr) => {
-    if ("source" in rawMr && "destination" in rawMr) {
-      const fullPath = rawMr.destination.repository.full_name;
-      const [workspace = "", repoSlug = ""] = fullPath.split("/");
-      return [mapBitbucketToMergeRequest(rawMr, workspace, repoSlug)];
-    } else if ("iid" in rawMr && "project" in rawMr) {
-      return [mapMrFragment(rawMr)];
-    }
-    return [];
-  });
-};
-
 // =============================================================================
 // MR Change Tracking Projection - Single Source of Truth
 // =============================================================================
@@ -393,9 +377,6 @@ export const mrChangeTrackingProjection = defineProjection({
     "gitlab-mrs-fetched-event": (state, event) => {
       return detectMergerequestChanges(state.mrStatesForDelta, projectGitlabMrsFetchedEvent(event));
     },
-
-    "compacted-event": (state, event) =>
-      detectMergerequestChanges(state.mrStatesForDelta, projectCompactedEventMrs(event)),
   }
 });
 

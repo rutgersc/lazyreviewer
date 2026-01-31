@@ -3,14 +3,14 @@ import { Effect } from "effect";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
 import { appLayer } from "../appLayerRuntime";
-import { allEventsIncludingCompactedAtom } from "../events/events-atom";
+import { allEventsAtom } from "../events/events-atom";
 import { EventStorage } from "../eventstore/eventStorage";
 import { activePaneAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
 import { openFileInEditor } from "../utils/open-file";
 import { resultToArray } from "../utils/result-helpers";
 import {
-  compactionMessageAtom,
+  statusMessageAtom,
   currentEventChangesAtom,
   groupedEventsAtom,
   highlightedIndexAtom,
@@ -88,7 +88,7 @@ export const factsPaneActionsAtom: Atom.Atom<Action[]> = Atom.make(get => {
         displayKey: 'j/k, ↑/↓',
         description: 'Navigate events',
         handler: () => {
-          const allEvents = resultToArray(registry.get(allEventsIncludingCompactedAtom));
+          const allEvents = resultToArray(registry.get(allEventsAtom));
           const highlightedIndex = registry.get(highlightedIndexAtom);
           const groupedEvents = registry.get(groupedEventsAtom);
 
@@ -116,7 +116,7 @@ export const factsPaneActionsAtom: Atom.Atom<Action[]> = Atom.make(get => {
         displayKey: '',
         description: '',
         handler: () => {
-          const allEvents = resultToArray(registry.get(allEventsIncludingCompactedAtom));
+          const allEvents = resultToArray(registry.get(allEventsAtom));
           const highlightedIndex = registry.get(highlightedIndexAtom);
           const groupedEvents = registry.get(groupedEventsAtom);
 
@@ -187,11 +187,11 @@ export const factsPaneActionsAtom: Atom.Atom<Action[]> = Atom.make(get => {
         displayKey: 'e',
         description: 'Open event in editor',
         handler: async () => {
-          const allEvents = resultToArray(registry.get(allEventsIncludingCompactedAtom));
+          const allEvents = resultToArray(registry.get(allEventsAtom));
           const highlightedIndex = registry.get(highlightedIndexAtom);
           const eventIndex = highlightedIndex ?? allEvents.length - 1;
 
-          registry.set(compactionMessageAtom, 'Opening event in editor...');
+          registry.set(statusMessageAtom, 'Opening event in editor...');
           try {
             const filePath = await Effect.runPromise(
               EventStorage.getEventFilePath(eventIndex).pipe(
@@ -203,11 +203,11 @@ export const factsPaneActionsAtom: Atom.Atom<Action[]> = Atom.make(get => {
                 Effect.provide(appLayer)
               )
             );
-            registry.set(compactionMessageAtom, `Opened: ${filePath}`);
-            setTimeout(() => registry.set(compactionMessageAtom, null), 3000);
+            registry.set(statusMessageAtom, `Opened: ${filePath}`);
+            setTimeout(() => registry.set(statusMessageAtom, null), 3000);
           } catch (error) {
-            registry.set(compactionMessageAtom, `Failed to open: ${error}`);
-            setTimeout(() => registry.set(compactionMessageAtom, null), 3000);
+            registry.set(statusMessageAtom, `Failed to open: ${error}`);
+            setTimeout(() => registry.set(statusMessageAtom, null), 3000);
           }
         },
       },

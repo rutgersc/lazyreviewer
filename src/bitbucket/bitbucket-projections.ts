@@ -3,7 +3,6 @@ import { MrGid, MrIid } from "../domain/identifiers";
 import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import type { BitbucketPullRequest, BitbucketComment } from "./bitbucketapi";
-import type { CompactedEvent } from "../events/event-compaction-events";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 
 function countCommentsByResolution(comments: readonly BitbucketComment[]): {
@@ -140,20 +139,6 @@ export const projectBitbucketPrsFetchedEvent = (
 export const projectBitbucketPrCommentsFetchedEvent = (event: BitbucketPrCommentsFetchedEvent): readonly BitbucketComment[] => {
   return event.commentsResponse.values || [];
 };
-
-export const projectBitbucketMrsCompactedEvent = (event: CompactedEvent): MergeRequest[] => {
-  // Discriminate by checking for gitlab-specific field
-  const prs: BitbucketPullRequest[] = event.mrs.filter(mr => "source" in mr);
-
-  const gitlabMrs = prs.map(pr => {
-    const fullPath = pr.destination.repository.full_name;
-    const [workspace = "", repoSlug = ""] = fullPath.split("/");
-    const mr = mapBitbucketToMergeRequest(pr, workspace, repoSlug);
-    return mr;
-  });
-
-  return gitlabMrs;
-}
 
 export const projectBitbucketSinglePrFetchedEvent = (
   event: BitbucketSinglePrFetchedEvent,

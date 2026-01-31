@@ -23,7 +23,7 @@ import { join } from 'path';
 import type { JiraIssue } from "../jira/jira-service";
 import { selectedUserSelectionEntryAtom, userSelectionsAtom } from "../userselection/userselection-atom";
 import { selectedUserSelectionEntryIdAtom, mrSortOrderAtom } from "../settings/settings-atom";
-import { allEventsIncludingCompactedAtom } from "../events/events-atom";
+import { allEventsAtom } from "../events/events-atom";
 import type { LazyReviewerEvent } from "../events/events";
 import { groupsAtom } from "../data/data-atom";
 import { AllMrsState, allMrsProjection } from "./all-mergerequests-projection";
@@ -139,7 +139,7 @@ export const lastRefreshTimestampAtom = Atom.make((get): Date | null => {
 
   const filterMrState = get(filterMrStateAtom);
   const groupsList = get(groupsAtom);
-  const events = Result.match(get(allEventsIncludingCompactedAtom), {
+  const events = Result.match(get(allEventsAtom), {
     onInitial: () => [] as LazyReviewerEvent[],
     onSuccess: (e) => e.value,
     onFailure: () => [] as LazyReviewerEvent[]

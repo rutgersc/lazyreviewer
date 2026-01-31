@@ -4,7 +4,7 @@ import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom, infoPaneTabAtom, nowAtom } from '../ui/navigation-atom';
 import { targetNoteIdAtom } from './ActivityLog';
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
-import { allEventsIncludingCompactedAtom, compactAllEventsAtom } from '../events/events-atom';
+import { allEventsAtom } from '../events/events-atom';
 import { resultToArray } from '../utils/result-helpers';
 import { allMrsAtom, unwrappedMergeRequestsAtom, isMergeRequestsLoadingAtom, selectMrByIdAtom } from '../mergerequests/mergerequests-atom';
 import { useAutoScroll } from '../hooks/useAutoScroll';
@@ -144,7 +144,7 @@ export const highlightedIndexAtom = Atom.make<number | null>(null);
   const emptyChange: Change[] = [];
 
 export const currentEventChangesAtom = Atom.readable<Change[]>(get => {
-  const allEvents = resultToArray(get(allEventsIncludingCompactedAtom));
+  const allEvents = resultToArray(get(allEventsAtom));
   const highlightedIndex = get(highlightedIndexAtom);
 
   const currentEventIndex = highlightedIndex ?? allEvents.length - 1;
@@ -176,7 +176,7 @@ export interface EventGroup {
 
 export const scrollToEventIdRequestAtom = Atom.make<string | null>(null);
 
-export const compactionMessageAtom = Atom.make<string | null>(null);
+export const statusMessageAtom = Atom.make<string | null>(null);
 
 export const displayEventsAtom = Atom.readable((get) => {
 });
@@ -217,7 +217,7 @@ const groupClassifiedEvents = (events: ClassifiedEvent[]): EventGroup[] =>
   }, []);
 
 export const groupedEventsAtom = Atom.readable<EventGroup[]>((get) => {
-  const allEvents = resultToArray(get(allEventsIncludingCompactedAtom));
+  const allEvents = resultToArray(get(allEventsAtom));
   const deltasByEventId = get(deltasByEventIdAtom);
   const displayEvents = [...allEvents].reverse().slice(0, 50);
 
@@ -312,9 +312,9 @@ export const selectMrForChangeAtom = Atom.fnSync((change: Change, get) => {
 
 export default function FactsPane() {
   const [, setActivePane] = useAtom(activePaneAtom);
-  const allEvents = resultToArray(useAtomValue(allEventsIncludingCompactedAtom));
+  const allEvents = resultToArray(useAtomValue(allEventsAtom));
   const [highlightedIndex, setHighlightedIndex] = useAtom(highlightedIndexAtom);
-  const compactionMessage = useAtomValue(compactionMessageAtom);
+  const statusMessage = useAtomValue(statusMessageAtom);
   const [sublistFocused, setSublistFocused] = useAtom(sublistFocusedAtom);
   const [sublistIndex, setSublistIndex] = useAtom(sublistIndexAtom);
   const selectMrForChange = useAtomSet(selectMrForChangeAtom);
@@ -330,10 +330,6 @@ export default function FactsPane() {
   const currentUser = useAtomValue(currentUserAtom);
   const myJiraIssueKeys = useAtomValue(myJiraIssueKeysAtom);
   const config = viewConfigs[appView];
-
-  const lastCompactionIndex = allEvents.findLastIndex(
-    event => event.type === 'compacted-event'
-  );
 
   // Handle scroll requests from actions
   useEffect(() => {
@@ -428,9 +424,9 @@ export default function FactsPane() {
         >
             {modeIndicatorBox()}
         </box>
-        {compactionMessage && (
+        {statusMessage && (
             <box height={1} width="100%" flexDirection="row">
-                <text fg="#ffb86c" wrapMode="word">{compactionMessage}</text>
+                <text fg="#ffb86c" wrapMode="word">{statusMessage}</text>
             </box>
         )}
         <scrollbox
@@ -455,14 +451,12 @@ export default function FactsPane() {
         {groupedEvents.map((group, groupIndex) => {
             if (group.type === 'range') {
                 // Render collapsed range (2 lines to match alignment)
-                const isCompacted = lastCompactionIndex >= 0 && group.startIndex < lastCompactionIndex;
-
                 // Check if this range is highlighted or selected
                 const currentHighlight = highlightedIndex === null ? allEvents.length - 1 : highlightedIndex;
                 const isHighlighted = currentHighlight >= group.startIndex && currentHighlight <= group.endIndex;
                 const isSelected = false; // currentSelection >= group.startIndex && currentSelection <= group.endIndex;
 
-                let color = isCompacted ? '#e1cd39ff' : '#c8c9caff';
+                let color = '#c8c9caff';
                 let backgroundColor: string | undefined = undefined;
 
                 if (isSelected && isHighlighted) {
@@ -502,8 +496,6 @@ export default function FactsPane() {
             const event = group.event;
             const isHighlighted = highlightedIndex === originalIndex || (highlightedIndex === null && originalIndex === allEvents.length - 1);
             const isSelected = false; // selectedIndex === originalIndex || (selectedIndex === null && originalIndex === events.length - 1);
-            const isCompacted = lastCompactionIndex >= 0 && originalIndex < lastCompactionIndex;
-            const isCompactionEvent = event.type === 'compacted-event';
 
             const displayIndex = ' ' + originalIndex.toString().padEnd(4, ' ');
             const rawEventDeltas = getDeltas(event);
@@ -519,12 +511,6 @@ export default function FactsPane() {
             let color = headerStyle.fg;
             let headerAttributes = headerStyle.attributes;
             let backgroundColor: string | undefined = undefined;
-
-            if (isCompacted) {
-                color = '#6272a4';
-            } else if (isCompactionEvent) {
-                color = '#ffb86c';
-            }
 
             if (isSelected && isHighlighted) {
                 color = '#5af78e';

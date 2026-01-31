@@ -134,9 +134,6 @@ export const jiraChangeTrackingProjection = defineProjection({
     "jira-issues-fetched-event": (state, event) =>
       detectJiraIssueChanges(state.jiraStatesForDelta, event.issues.issues),
 
-    "compacted-event": (state, event) =>
-      detectJiraIssueChanges(state.jiraStatesForDelta, event.jiraIssues),
-
     "jira-sprint-issues-fetched-event": (state, event) =>
       detectJiraIssueChanges(state.jiraStatesForDelta, event.issues),
   }
