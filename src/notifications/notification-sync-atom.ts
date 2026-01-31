@@ -5,7 +5,7 @@ import { settingsAtom, currentUserAtom } from '../settings/settings-atom';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
 import { mrChangeTrackingProjection, jiraChangeTrackingProjection } from '../changetracking/change-tracking-projection';
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
-import { loadSettings, saveSettings } from '../settings/settings';
+import { SettingsService } from '../settings/settings';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
 import { BackgroundSyncService, type BackgroundSyncStatus } from './background-sync-service';
@@ -117,7 +117,7 @@ const createNotificationDaemon = (get: Atom.Context) =>
   Effect.gen(function* () {
     yield* Console.log('[NotificationDaemon] Starting');
 
-    const settings = loadSettings();
+    const settings = yield* SettingsService.load;
     const lastProcessedTimestamp = settings.notifications.lastProcessedEventId;
 
     const stream = (yield* changesStream(get)).pipe(
@@ -150,9 +150,11 @@ const createNotificationDaemon = (get: Atom.Context) =>
 
           // Persist the actual last event ID regardless of notification setting
           if (Option.isSome(actualLastState) && actualLastState.value.event) {
-            const currentSettings = loadSettings();
-            currentSettings.notifications.lastProcessedEventId = actualLastState.value.event.eventId;
-            saveSettings(currentSettings);
+            const eventId = actualLastState.value.event.eventId;
+            yield* SettingsService.modify(s => ({
+              ...s,
+              notifications: { ...s.notifications, lastProcessedEventId: eventId }
+            }));
           }
 
           if (!notificationsEnabled) return;

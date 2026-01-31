@@ -28,7 +28,7 @@ import type { LazyReviewerEvent } from "../events/events";
 import { groupsAtom } from "../data/data-atom";
 import { AllMrsState, allMrsProjection } from "./all-mergerequests-projection";
 import { stream } from "@effect/platform/Template";
-import { ensurePipelineJobsInSettings, type MrSortOrder } from "../settings/settings";
+import type { MrSortOrder } from "../settings/settings";
 import { MrStateService } from "./mr-state-service";
 import type { MrGid } from "../domain/identifiers";
 

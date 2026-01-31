@@ -1,6 +1,6 @@
 import { Effect, Stream, Console, Option } from "effect"
 import { appAtomRuntime } from "../appLayerRuntime"
-import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, type MrSortOrder, defaultSettings, loadSettings, saveSettings, Settings, watchSettingsStream } from "./settings"
+import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, type MrSortOrder, defaultSettings, type Settings, SettingsService } from "./settings"
 import { Atom, Result } from "@effect-atom/atom-react"
 import type { MrGid } from "../domain/identifiers"
 
@@ -43,9 +43,14 @@ const selectFromSettings = <T>(
   });
 
 export const settingsAtom = appAtomRuntime.atom(
-  Stream.unwrap(watchSettingsStream),
+  Stream.unwrap(SettingsService.watchStream),
   { initialValue: defaultSettings }
 ).pipe(Atom.setLazy(false), Atom.keepAlive)
+
+// Private fn atom for Atom.writable setters to delegate settings writes
+const modifySettingsFn = appAtomRuntime.fn((f: (s: Settings) => Settings) =>
+  SettingsService.modify(f)
+);
 
 // Intermediate selector - only changes when ignoredMergeRequests array changes
 const ignoredMergeRequestsRawAtom = selectFromSettings(
@@ -59,19 +64,15 @@ export const ignoredMergeRequestsAtom = Atom.make(get =>
   new Set(get(ignoredMergeRequestsRawAtom))
 );
 
-export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
-  Effect.gen(function* () {
-    const settings = loadSettings();
+export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string) =>
+  SettingsService.modify(settings => {
     const newIgnored = new Set(settings.ignoredMergeRequests);
-
     if (newIgnored.has(mrId)) {
       newIgnored.delete(mrId);
     } else {
       newIgnored.add(mrId);
     }
-
-    settings.ignoredMergeRequests = Array.from(newIgnored);
-    saveSettings(settings);
+    return { ...settings, ignoredMergeRequests: Array.from(newIgnored) };
   })
 );
 
@@ -85,20 +86,15 @@ export const seenMergeRequestsAtom = Atom.make(get =>
   new Set(get(seenMergeRequestsRawAtom))
 );
 
-export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string, get) =>
-  Effect.gen(function* () {
-    const settings = loadSettings();
+export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string) =>
+  SettingsService.modify(settings => {
     const newSeen = new Set(settings.seenMergeRequests);
     if (newSeen.has(mrId)) {
       newSeen.delete(mrId);
     } else {
       newSeen.add(mrId);
     }
-
-    console.log("toggleSeenMergeRequestAtom", { seenMergeRequests: settings.seenMergeRequests, newSeen })
-
-    settings.seenMergeRequests = Array.from(newSeen);
-    saveSettings(settings);
+    return { ...settings, seenMergeRequests: Array.from(newSeen) };
   })
 );
 
@@ -110,10 +106,7 @@ const selectedUserSelectionEntryIdRawAtom = selectFromSettings(
 export const selectedUserSelectionEntryIdAtom = Atom.writable(
   (get) => get(selectedUserSelectionEntryIdRawAtom),
   (ctx, newValue: string | undefined) => {
-    const settings = loadSettings();
-    console.log("selectedUserSelectionEntryIdAtom set", newValue);
-    settings.selectedUserSelectionEntryId = newValue;
-    saveSettings(settings);
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, selectedUserSelectionEntryId: newValue }));
   }
 );
 
@@ -134,15 +127,15 @@ export const backgroundSyncSettingsAtom = selectFromSettings(
   shallowObjectEquals
 );
 
-export const toggleNotificationsAtom = appAtomRuntime.fn((_: void, get) =>
+export const toggleNotificationsAtom = appAtomRuntime.fn((_: void) =>
   Effect.gen(function* () {
-    const settings = loadSettings();
-    if (!settings.notifications) {
-      settings.notifications = { enabled: false };
-    }
-    settings.notifications.enabled = !settings.notifications.enabled;
-    saveSettings(settings);
-    yield* Console.log(`[Settings] Notifications ${settings.notifications.enabled ? 'enabled' : 'disabled'}`);
+    const settings = yield* SettingsService.load;
+    const enabled = !(settings.notifications?.enabled ?? false);
+    yield* SettingsService.modify(s => ({
+      ...s,
+      notifications: { ...s.notifications, enabled }
+    }));
+    yield* Console.log(`[Settings] Notifications ${enabled ? 'enabled' : 'disabled'}`);
   })
 );
 
@@ -152,11 +145,7 @@ export const jiraBoardIdAtom = selectFromSettings(
 );
 
 export const setJiraBoardIdAtom = appAtomRuntime.fn((boardId: number | undefined) =>
-  Effect.gen(function* () {
-    const settings = loadSettings();
-    settings.jiraBoardId = boardId;
-    saveSettings(settings);
-  })
+  SettingsService.modify(s => ({ ...s, jiraBoardId: boardId }))
 );
 
 const monitoredMergeRequestsRawAtom = selectFromSettings(
@@ -186,15 +175,25 @@ export const monitoredMrStatesAtom = selectFromSettings(
 );
 
 export const toggleMonitorMergeRequestAtom = appAtomRuntime.fn((mrGid: MrGid) =>
-  Effect.gen(function* () {
-    Settings.toggleMonitorMergeRequest(mrGid);
+  SettingsService.modify(settings => {
+    const current = { ...settings.monitoredMergeRequests };
+    if (mrGid in current) {
+      delete current[mrGid];
+    } else {
+      current[mrGid] = { jobStates: {} };
+    }
+    return { ...settings, monitoredMergeRequests: current };
   })
 );
 
 export const clearCompletedMonitoredMrsAtom = appAtomRuntime.fn(() =>
-  Effect.gen(function* () {
-    Settings.clearCompletedMonitoredMrs();
-  })
+  SettingsService.modify(settings => ({
+    ...settings,
+    monitoredMergeRequests: Object.fromEntries(
+      Object.entries(settings.monitoredMergeRequests)
+        .filter(([, state]) => !state.completedReason)
+    ) as typeof settings.monitoredMergeRequests
+  }))
 );
 
 const cycleJobImportance = (current: string): 'low' | 'monitored' | 'ignore' => {
@@ -207,12 +206,12 @@ const cycleJobImportance = (current: string): 'low' | 'monitored' | 'ignore' => 
 
 export const toggleJobImportanceAtom = appAtomRuntime.fn(
   ({ projectFullPath, jobName }: { projectFullPath: string; jobName: string }) =>
-    Effect.gen(function* () {
-      const settings = loadSettings();
-      const projectJobs = (settings.pipelineJobImportance[projectFullPath] ??= {});
-      const currentImportance = projectJobs[jobName] ?? 'low';
-      projectJobs[jobName] = cycleJobImportance(currentImportance);
-      saveSettings(settings);
+    SettingsService.modify(settings => {
+      const projectJobs = { ...settings.pipelineJobImportance };
+      const jobs = { ...(projectJobs[projectFullPath] ?? {}) };
+      jobs[jobName] = cycleJobImportance(jobs[jobName] ?? 'low');
+      projectJobs[projectFullPath] = jobs;
+      return { ...settings, pipelineJobImportance: projectJobs };
     })
 );
 
@@ -249,9 +248,7 @@ const mrSortOrderRawAtom = selectFromSettings(
 export const mrSortOrderAtom = Atom.writable(
   (get) => get(mrSortOrderRawAtom),
   (ctx, newValue: MrSortOrder) => {
-    const settings = loadSettings();
-    settings.mrSortOrder = newValue;
-    saveSettings(settings);
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, mrSortOrder: newValue }));
   }
 );
 
@@ -265,8 +262,6 @@ const appViewRawAtom = selectFromSettings(
 export const appViewAtom = Atom.writable(
   (get) => get(appViewRawAtom),
   (ctx, newValue: AppView) => {
-    const settings = loadSettings();
-    settings.appView = newValue;
-    saveSettings(settings);
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, appView: newValue }));
   }
 );

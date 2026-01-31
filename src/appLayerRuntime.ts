@@ -9,10 +9,15 @@ import { DiscussionScrollService } from "./discussion/discussion-scroll-service"
 import { BackgroundSyncService } from "./notifications/background-sync-service"
 import { PipelineJobMonitor } from "./gitlab/gitlab-pipeline-job-monitor-backgroundworker"
 import { MrStateService } from "./mergerequests/mr-state-service"
+import { SettingsService } from "./settings/settings"
 import { type Projection, project } from "./utils/define-projection"
 
 const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
 const commandExecutorLayer = CommandExecutor.layer.pipe(
+  Layer.provide(fileSystemLayer)
+)
+
+const settingsServiceLayer = SettingsService.Default.pipe(
   Layer.provide(fileSystemLayer)
 )
 
@@ -27,6 +32,7 @@ const mrStateServiceLayer = MrStateService.Default.pipe(
 const pipelineJobMonitorLayer = PipelineJobMonitor.Default.pipe(
   Layer.provide(mrStateServiceLayer),
   Layer.provide(eventStorageLayer),
+  Layer.provide(settingsServiceLayer),
 )
 
 export const appLayer = Layer.mergeAll(
@@ -34,6 +40,7 @@ export const appLayer = Layer.mergeAll(
   eventStorageLayer,
   fileSystemLayer,
   commandExecutorLayer,
+  settingsServiceLayer,
   JiraScrollService.Default,
   DiscussionScrollService.Default,
   BackgroundSyncService.Default,

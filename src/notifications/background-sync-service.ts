@@ -5,7 +5,7 @@ import { userSelectionsByIdAtom } from '../userselection/userselection-atom';
 import { groupsAtom } from '../data/data-atom';
 import { extractSelectionData, type UserSelectionEntry } from '../userselection/userSelection';
 import { decideFetchUserMrs, decideFetchProjectMrs, type CacheKey, getKnownMrsForCacheKey } from '../mergerequests/decide-fetch-mrs';
-import { modifySettings } from '../settings/settings';
+import { SettingsService } from '../settings/settings';
 import { MrStateService } from '../mergerequests/mr-state-service';
 
 export type BackgroundSyncStatus =
@@ -115,7 +115,7 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
         case 'syncing':
           yield* PubSub.publish(pubsub, status);
           yield* decideFetch(status.flattenedUserSelection);
-          modifySettings(settings => ({
+          yield* SettingsService.modify(settings => ({
             ...settings,
             backgroundSync: { ...settings.backgroundSync, lastRefreshTimestamp: new Date().toISOString() }
           }));

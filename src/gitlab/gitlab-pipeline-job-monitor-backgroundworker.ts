@@ -1,5 +1,5 @@
 import { Console, Effect, Option, Array, Either } from 'effect'
-import { loadSettings, saveSettings } from '../settings/settings'
+import { SettingsService } from '../settings/settings'
 import { getMrPipeline, getSingleMrAsEvent } from './gitlab-graphql'
 import { EventStorage } from '../events/events'
 import type { CiJobStatus } from '../domain/ci-status'
@@ -32,7 +32,7 @@ const FETCH_HEAD_MAX_AGE_MINUTES = 5;
 
 const backgroundWorker =
   Effect.gen(function* () {
-    const settings = loadSettings()
+    const settings = yield* SettingsService.load
     const monitoredMrs = Object.entries(settings.monitoredMergeRequests)
       .filter(entry => {
         const key = entry[0];
@@ -77,12 +77,17 @@ const backgroundWorker =
 
       if (isMrDone(mr.state)) {
         const existing = settings.monitoredMergeRequests[mr.id]
-        settings.monitoredMergeRequests[mr.id] = {
-          ...existing,
-          jobStates: existing?.jobStates ?? {},
-          completedReason: mr.state === 'merged' ? 'merged' : 'closed'
-        }
-        saveSettings(settings)
+        yield* SettingsService.modify(s => ({
+          ...s,
+          monitoredMergeRequests: {
+            ...s.monitoredMergeRequests,
+            [mr.id]: {
+              ...existing,
+              jobStates: existing?.jobStates ?? {},
+              completedReason: mr.state === 'merged' ? 'merged' : 'closed'
+            }
+          }
+        }))
         return yield* Effect.succeed({ type: 'mrCompleted' as const, reason: mr.state })
       }
 
@@ -212,18 +217,22 @@ const backgroundWorker =
         yield* Console.log(`[PipelineJobMonitor] Refreshed MR state for !${mr.title} (${reason})`);
       }
 
-      settings.monitoredMergeRequests[mr.id] = {
-        jobStates: Object.fromEntries(
-          relevantJobs.map(({ currentJob }) => [
-            currentJob.name,
-            currentJob.status
-          ])
-        ),
-        lastCommit: currentCommit,
-        pipelineIid: headPipeline.iid
-      };
-
-      saveSettings(settings)
+      yield* SettingsService.modify(s => ({
+        ...s,
+        monitoredMergeRequests: {
+          ...s.monitoredMergeRequests,
+          [mr.id]: {
+            jobStates: Object.fromEntries(
+              relevantJobs.map(({ currentJob }) => [
+                currentJob.name,
+                currentJob.status
+              ])
+            ),
+            lastCommit: currentCommit,
+            pipelineIid: headPipeline.iid
+          }
+        }
+      }))
 
       return yield* Effect.succeed({ type: 'monitored' as const, message: `${headPipeline}` })
     });

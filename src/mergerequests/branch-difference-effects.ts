@@ -1,32 +1,25 @@
+import { Effect } from 'effect';
 import { getBranchDifference } from '../git/git-effects';
-import { loadSettings } from '../settings/settings';
+import { SettingsService } from '../settings/settings';
 import type { MergeRequest } from './mergerequest-schema';
 import type { BranchDifference } from './hooks/useRepositoryBranches';
 
-export async function fetchBranchDifferences(mergeRequests: MergeRequest[]): Promise<Map<string, BranchDifference>> {
-  const settings = loadSettings();
-  const differenceMap = new Map<string, BranchDifference>();
+export const fetchBranchDifferences = (mergeRequests: MergeRequest[]) =>
+  Effect.gen(function* () {
+    const settings = yield* SettingsService.load;
+    const differenceMap = new Map<string, BranchDifference>();
 
-  const promises = mergeRequests.map(async (mr) => {
-    const repoConfig = settings.repositoryPaths[mr.project.path];
-    const localPath = repoConfig?.localPath;
+    for (const mr of mergeRequests) {
+      const repoConfig = settings.repositoryPaths[mr.project.path];
+      const localPath = repoConfig?.localPath;
 
-    if (localPath) {
-      const difference = getBranchDifference(localPath, mr.targetbranch, mr.sourcebranch);
-      if (difference) {
-        return { id: mr.id, difference };
+      if (localPath) {
+        const difference = getBranchDifference(localPath, mr.targetbranch, mr.sourcebranch);
+        if (difference) {
+          differenceMap.set(mr.id, difference);
+        }
       }
     }
-    return null;
+
+    return differenceMap;
   });
-
-  const results = await Promise.all(promises);
-
-  for (const result of results) {
-    if (result) {
-      differenceMap.set(result.id, result.difference);
-    }
-  }
-
-  return differenceMap;
-}

@@ -1,16 +1,18 @@
 import { useMemo } from 'react';
+import { useAtomValue } from '@effect-atom/atom-react';
 import { getBranchDifference } from '../../git/git-effects';
-import { loadSettings } from '../../settings/settings';
+import { repositoryPathsAtom } from '../../settings/settings-atom';
 import type { MergeRequest } from '../mergerequest-schema';
 import type { BranchDifference } from './useRepositoryBranches';
 
 export const useBranchDifferences = (mergeRequests: MergeRequest[]): Map<string, BranchDifference> => {
+  const repositoryPaths = useAtomValue(repositoryPathsAtom);
+
   return useMemo(() => {
-    const settings = loadSettings();
     const differenceMap = new Map<string, BranchDifference>();
 
     for (const mr of mergeRequests) {
-      const repoConfig = settings.repositoryPaths[mr.project.path];
+      const repoConfig = repositoryPaths[mr.project.path];
       const localPath = repoConfig?.localPath;
 
       if (localPath) {
@@ -22,5 +24,5 @@ export const useBranchDifferences = (mergeRequests: MergeRequest[]): Map<string,
     }
 
     return differenceMap;
-  }, [mergeRequests]);
+  }, [mergeRequests, repositoryPaths]);
 };
