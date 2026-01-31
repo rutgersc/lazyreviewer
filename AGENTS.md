@@ -132,7 +132,7 @@ See **[React Patterns](docs/react-patterns.md)** for detailed guidance.
 ### Code Quality Guidelines
 
 **Post-Coding Review Process:**
-After completing any coding session, ALWAYS apply the **[Functional Simplification Principles](docs/functional-simplification.md)**:
+After completing any coding session, ALWAYS apply the Functional Simplification Principles:
 1. **Pure function extraction**: Can effectful functions be split into pure logic + effectful caller?
 2. **Loop fusion**: Am I traversing the same data multiple times?
 3. **Replace mutation with transformation**: Can push/add/set be replaced with filter→map→filter pipelines?
