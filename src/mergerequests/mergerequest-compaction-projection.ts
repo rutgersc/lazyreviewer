@@ -1,6 +1,6 @@
 import type { MergeRequestFieldsFragment } from "../graphql/mrs.generated"
 import type { BitbucketPullRequest } from "../bitbucket/bitbucketapi"
-import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
+import type { MergeRequestState } from "../domain/merge-request-state"
 import type {
   GitlabprojectMergeRequestsFetchedEvent,
   GitlabSingleMrFetchedEvent

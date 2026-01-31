@@ -10,7 +10,7 @@ import {
   getKnownMrsForCacheKey
 } from "./decide-fetch-mrs";
 import { EventStorage } from "../events/events";
-import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
+import type { MergeRequestState } from "../domain/merge-request-state";
 import { Effect, Option, Console, Stream, Chunk, SubscriptionRef } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import type { BranchDifference } from "./hooks/useRepositoryBranches";
@@ -30,7 +30,7 @@ import { AllMrsState, allMrsProjection } from "./all-mergerequests-projection";
 import { stream } from "@effect/platform/Template";
 import { ensurePipelineJobsInSettings, type MrSortOrder } from "../settings/settings";
 import { MrStateService } from "./mr-state-service";
-import type { MrGid } from "../gitlab/gitlab-schema";
+import type { MrGid } from "../domain/identifiers";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
 

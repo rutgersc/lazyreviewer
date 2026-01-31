@@ -1,9 +1,7 @@
-import type { Discussion, DiscussionNote } from '../gitlab-schema';
-import type { MergeRequest } from '../../mergerequests/mergerequest-schema';
+import type { Discussion, DiscussionNote, MergeRequest } from '../merge-request-schema';
 
-const formatTimestamp = (date: Date): string => {
-  return date.toISOString().replace('T', ' ').substring(0, 19);
-};
+const formatTimestamp = (date: Date): string =>
+  date.toISOString().replace('T', ' ').substring(0, 19);
 
 const formatNote = (note: DiscussionNote, isFirst: boolean): string => {
   const indent = isFirst ? '' : '  ';

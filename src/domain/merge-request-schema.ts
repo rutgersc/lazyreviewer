@@ -1,13 +1,8 @@
-import { Schema, Brand } from "effect";
-import type { CiJobStatus, DetailedMergeStatus } from "../graphql/generated/gitlab-base-types";
-import { MergeRequestStateSchema, DetailedMergeStatusSchema } from "../graphql/generated/gitlab-base-types.schema";
-
-// Branded types for type-safe MR identifiers (zero runtime overhead)
-export type MrGid = string & Brand.Brand<"MrGid">
-export type MrIid = string & Brand.Brand<"MrIid">
-
-export const MrGid = Brand.nominal<MrGid>()
-export const MrIid = Brand.nominal<MrIid>()
+import { Schema } from "effect";
+import type { CiJobStatus } from "./ci-status";
+import { MrGid, MrIid } from "./identifiers";
+import { MergeRequestStateSchema } from "./merge-request-state";
+import { DetailedMergeStatusSchema } from "./merge-status";
 
 export const PipelineJobSchema = Schema.Struct({
   id: Schema.String,
@@ -32,7 +27,7 @@ export const PipelineJobSchema = Schema.Struct({
   webPath: Schema.NullOr(Schema.String),
   startedAt: Schema.String,
   duration: Schema.NullOr(Schema.Number)
-}); //.annotations({ identifier: "PipelineJob" })
+})
 
 export const PipelineStageSchema = Schema.Struct({
   name: Schema.String,
@@ -63,7 +58,7 @@ export const DiscussionSchema = Schema.Struct({
   notes: Schema.mutable(Schema.Array(DiscussionNoteSchema))
 }).annotations({ identifier: "Discussion" })
 
-export const GitlabMergeRequestSchema = Schema.Struct({
+export const MergeRequestSchema = Schema.Struct({
   id: Schema.String.pipe(Schema.fromBrand(MrGid)),
   iid: Schema.String.pipe(Schema.fromBrand(MrIid)),
   title: Schema.String,
@@ -95,29 +90,29 @@ export const GitlabMergeRequestSchema = Schema.Struct({
   pipeline: Schema.Struct({
     stage: Schema.mutable(Schema.Array(PipelineStageSchema))
   })
-}).annotations({ identifier: "GitlabMergeRequest" })
+}).annotations({ identifier: "MergeRequest" })
 
 export interface JobHistoryEntry {
-  jobId: string;
-  jobName: string;
-  jobStatus: CiJobStatus;
-  failureMessage: string | null;
-  startedAt: string;
-  duration: number | null;
-  pipelineId: string;
-  pipelineIid: number;
-  pipelineRef: string;
-  pipelineCreatedAt: string;
-  pipelineSource: string;
-  webPath: string | null;
-  shortShaCommit: string | null;
-  isDevelopBranch: boolean;
-  mergeRequestIid: string | null;
-  mergeRequestTitle: string | null;
-  mergeRequestAuthor: string | null;
-  runner: {
-    description: string,
-    shortSha: string
+  readonly jobId: string;
+  readonly jobName: string;
+  readonly jobStatus: CiJobStatus;
+  readonly failureMessage: string | null;
+  readonly startedAt: string;
+  readonly duration: number | null;
+  readonly pipelineId: string;
+  readonly pipelineIid: number;
+  readonly pipelineRef: string;
+  readonly pipelineCreatedAt: string;
+  readonly pipelineSource: string;
+  readonly webPath: string | null;
+  readonly shortShaCommit: string | null;
+  readonly isDevelopBranch: boolean;
+  readonly mergeRequestIid: string | null;
+  readonly mergeRequestTitle: string | null;
+  readonly mergeRequestAuthor: string | null;
+  readonly runner: {
+    readonly description: string,
+    readonly shortSha: string
   } | null
 }
 
@@ -125,9 +120,8 @@ export type PipelineJob = Schema.Schema.Type<typeof PipelineJobSchema>
 export type PipelineStage = Schema.Schema.Type<typeof PipelineStageSchema>
 export type DiscussionNote = Schema.Schema.Type<typeof DiscussionNoteSchema>
 export type Discussion = Schema.Schema.Type<typeof DiscussionSchema>
-export type GitlabMergeRequest = Schema.Schema.Type<typeof GitlabMergeRequestSchema>
+export type MergeRequest = Schema.Schema.Type<typeof MergeRequestSchema>
 
-// Discriminated union for note types based on their semantic meaning
 export interface SystemNote {
   readonly type: 'system';
   readonly id: string;

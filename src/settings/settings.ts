@@ -3,7 +3,8 @@ import { openFileInEditor } from '../utils/open-file';
 import { Effect, Schema } from 'effect';
 import { appLayer } from '../appLayerRuntime';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
-import { MrGid, PipelineJobSchema } from '../gitlab/gitlab-schema';
+import { MrGid } from '../domain/identifiers';
+import { PipelineJobSchema } from '../domain/merge-request-schema';
 
 const SETTINGS_FILE = 'lazygitlab-settings.json';
 

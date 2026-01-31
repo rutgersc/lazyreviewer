@@ -1,5 +1,5 @@
 import type { MergeRequest } from "./mergerequest-schema";
-import type { PipelineJob } from "../gitlab/gitlab-schema";
+import type { PipelineJob } from "../domain/merge-request-schema";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { loadJobLogInternal } from "./open-pipelinejob-log";
 

@@ -1,5 +1,5 @@
-import type { GitlabMergeRequest, Discussion, DiscussionNote } from "../gitlab/gitlab-graphql";
-import { MrGid, MrIid } from "../gitlab/gitlab-schema";
+import type { MergeRequest, Discussion, DiscussionNote } from "../domain/merge-request-schema";
+import { MrGid, MrIid } from "../domain/identifiers";
 import { extractElabTicketsFromTitle } from "../jira/jira-service";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import type { BitbucketPullRequest, BitbucketComment } from "./bitbucketapi";
@@ -77,12 +77,12 @@ function mapBitbucketStateToGitlab(state: BitbucketPullRequest['state']): string
   }
 }
 
-export function mapBitbucketToGitlabMergeRequest(
+export function mapBitbucketToMergeRequest(
   pr: BitbucketPullRequest,
   workspace: string,
   repoSlug: string,
   commentData?: { total: number; resolved: number; unresolved: number; comments: readonly BitbucketComment[] }
-): GitlabMergeRequest {
+): MergeRequest {
   const approvedBy = pr.participants
     ? pr.participants
         .filter(p => p.approved)
@@ -133,22 +133,22 @@ export function mapBitbucketToGitlabMergeRequest(
 export const projectBitbucketPrsFetchedEvent = (
   event: BitbucketPrsFetchedEvent,
   commentCountsMap: Map<number, { total: number; resolved: number; unresolved: number; comments: readonly BitbucketComment[] }>
-): GitlabMergeRequest[] => {
-  return event.prsResponse.values.map(pr => mapBitbucketToGitlabMergeRequest(pr, event.forWorkspace, event.forRepoSlug, commentCountsMap.get(pr.id)));
+): MergeRequest[] => {
+  return event.prsResponse.values.map(pr => mapBitbucketToMergeRequest(pr, event.forWorkspace, event.forRepoSlug, commentCountsMap.get(pr.id)));
 };
 
 export const projectBitbucketPrCommentsFetchedEvent = (event: BitbucketPrCommentsFetchedEvent): readonly BitbucketComment[] => {
   return event.commentsResponse.values || [];
 };
 
-export const projectBitbucketMrsCompactedEvent = (event: CompactedEvent): GitlabMergeRequest[] => {
+export const projectBitbucketMrsCompactedEvent = (event: CompactedEvent): MergeRequest[] => {
   // Discriminate by checking for gitlab-specific field
   const prs: BitbucketPullRequest[] = event.mrs.filter(mr => "source" in mr);
 
   const gitlabMrs = prs.map(pr => {
     const fullPath = pr.destination.repository.full_name;
     const [workspace = "", repoSlug = ""] = fullPath.split("/");
-    const mr = mapBitbucketToGitlabMergeRequest(pr, workspace, repoSlug);
+    const mr = mapBitbucketToMergeRequest(pr, workspace, repoSlug);
     return mr;
   });
 
@@ -158,7 +158,7 @@ export const projectBitbucketMrsCompactedEvent = (event: CompactedEvent): Gitlab
 export const projectBitbucketSinglePrFetchedEvent = (
   event: BitbucketSinglePrFetchedEvent,
   commentData: { total: number; resolved: number; unresolved: number; comments: readonly BitbucketComment[] }
-): GitlabMergeRequest => {
-  return mapBitbucketToGitlabMergeRequest(event.pr, event.forWorkspace, event.forRepoSlug, commentData);
+): MergeRequest => {
+  return mapBitbucketToMergeRequest(event.pr, event.forWorkspace, event.forRepoSlug, commentData);
 };
 

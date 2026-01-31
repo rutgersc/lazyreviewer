@@ -3,7 +3,7 @@ import { Data } from "effect";
 import { projectBitbucketMrsCompactedEvent, projectBitbucketPrsFetchedEvent } from "../bitbucket/bitbucket-projections";
 import type { GitlabprojectMergeRequestsFetchedEvent } from "../events/gitlab-events";
 import { projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabMrsCompactedEvent, projectGitlabMrsFetchedEvent } from "../gitlab/gitlab-projections";
-import type { MrGid } from "../gitlab/gitlab-schema";
+import type { MrGid } from "../domain/identifiers";
 import type { JiraIssue } from "../jira/jira-schema";
 import { projectJiraIssuesFetchedEvent } from "../jira/jira-service";
 import type { MergeRequest } from "./mergerequest-schema";

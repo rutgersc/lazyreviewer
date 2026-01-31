@@ -4,7 +4,7 @@ import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { Colors } from "../colors";
 import { formatCompactTime } from "../utils/formatting";
 import { extractTextFromJiraComment } from "../jira/jira-service";
-import type { PipelineJob } from "../gitlab/gitlab-graphql";
+import type { PipelineJob } from "../domain/merge-request-schema";
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';

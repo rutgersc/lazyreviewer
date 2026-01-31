@@ -1,7 +1,7 @@
 import React from 'react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import { getJobStatusDisplay } from '../gitlab/display/jobStatus';
+import { getJobStatusDisplay } from '../domain/display/jobStatus';
 import { Colors } from '../colors';
 import { useAtomValue, useAtomSet, Atom } from '@effect-atom/atom-react';
 import { useAutoScroll } from '../hooks/useAutoScroll';
@@ -9,7 +9,7 @@ import { appAtomRuntime } from '../appLayerRuntime';
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 import { Console, Effect } from 'effect';
 import { fetchJobHistory } from '../gitlab/gitlab-graphql';
-import type { JobHistoryEntry } from '../gitlab/gitlab-schema';
+import type { JobHistoryEntry } from '../domain/merge-request-schema';
 
 interface JobHistoryModalProps {
   isVisible: boolean;

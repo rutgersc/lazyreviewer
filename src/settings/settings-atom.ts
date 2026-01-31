@@ -3,7 +3,7 @@ import { Effect, Stream, Console, Option } from "effect"
 import { appAtomRuntime } from "../appLayerRuntime"
 import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, type MrSortOrder, defaultSettings, loadSettings, saveSettings, Settings } from "./settings"
 import { Atom, Result } from "@effect-atom/atom-react"
-import type { MrGid } from "../gitlab/gitlab-schema"
+import type { MrGid } from "../domain/identifiers"
 
 // Equality helpers for selector atoms
 const arrayEquals = (a: readonly string[], b: readonly string[]): boolean => {

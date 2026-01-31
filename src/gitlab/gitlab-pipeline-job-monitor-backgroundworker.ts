@@ -2,11 +2,12 @@ import { Console, Effect, Option, Array, Either } from 'effect'
 import { loadSettings, saveSettings } from '../settings/settings'
 import { getMrPipeline, getSingleMrAsEvent } from './gitlab-graphql'
 import { EventStorage } from '../events/events'
-import type { CiJobStatus, MergeRequestState } from '../graphql/generated/gitlab-base-types'
+import type { CiJobStatus } from '../domain/ci-status'
+import type { MergeRequestState } from '../domain/merge-request-state'
 import { sendSystemNotification } from '../notifications/notification-service'
 import { loadJobLogInternal } from '../mergerequests/open-pipelinejob-log'
 import { MrStateService } from '../mergerequests/mr-state-service'
-import { MrGid } from '../gitlab/gitlab-schema'
+import { MrGid } from '../domain/identifiers'
 import {
   isFetchNeeded,
   fetchRemote,

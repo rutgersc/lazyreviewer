@@ -3,7 +3,7 @@ import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
 import { selectedMrAtom } from "../mergerequests/mergerequests-atom";
 import { copyToClipboard } from "../system/clipboard";
-import { formatDiscussionsForClipboard } from "../gitlab/display/gitlabDiscussionFormatter";
+import { formatDiscussionsForClipboard } from "../domain/display/discussionFormatter";
 import { copyNotificationAtom } from "./Overview";
 import { openUrl } from "../system/open-url";
 import { overviewCursorIndexAtom, unresolvedExpandedAtom, resolvedExpandedAtom, scrollToDiscussionRequestAtom, overviewSelectableItemsAtom, getScrollId } from "./overview-selection";

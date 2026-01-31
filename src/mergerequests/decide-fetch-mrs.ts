@@ -1,7 +1,7 @@
 import { Effect, Data, Console } from "effect"
 import type { PlatformError } from "@effect/platform/Error"
 import type { ParseError } from "effect/ParseResult"
-import type { MergeRequestState } from "../graphql/generated/gitlab-base-types"
+import type { MergeRequestState } from "../domain/merge-request-state"
 import { EventStorage } from "../events/events"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
 import type { JiraApiError } from "../jira/jira-common"
@@ -13,7 +13,7 @@ import { projectGitlabMrsFetchedEvent, projectGitlabProjectMrsFetchedEvent, proj
 import { projectBitbucketPrsFetchedEvent } from "../bitbucket/bitbucket-projections"
 import { type RepositoryId, repositoryFullPath } from "../userselection/userSelection"
 import type { MergeRequest } from "./mergerequest-schema"
-import type { MrGid } from "../gitlab/gitlab-schema"
+import type { MrGid } from "../domain/identifiers"
 
 export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
   readonly usernames: readonly string[]

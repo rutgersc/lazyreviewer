@@ -1,4 +1,4 @@
-import type { CiJobStatus } from '../../graphql/generated/gitlab-base-types';
+import type { CiJobStatus } from '../ci-status';
 import { Colors } from '../../colors';
 import { TextAttributes } from '@opentui/core';
 
@@ -12,20 +12,16 @@ export interface JobStatusDisplay {
 export function getJobStatusDisplay(status: CiJobStatus): JobStatusDisplay {
   switch (status) {
     case 'SUCCESS':
-      // Solid square for completed/heavy states
       return { symbol: '■', color: Colors.SUCCESS, description: 'Success', attributes: TextAttributes.DIM };
     case 'RUNNING':
-      // Left-half filled square to imply progress
       return { symbol: '◧', color: Colors.INFO, description: 'Running', attributes: undefined };
     case 'PENDING':
-      // Large hollow square
       return { symbol: '□', color: Colors.PRIMARY, description: 'Pending', attributes: TextAttributes.DIM };
     case 'FAILED':
       return { symbol: '■', color: Colors.ERROR, description: 'Failed', attributes: undefined };
     case 'CANCELED':
       return { symbol: '□', color: Colors.NEUTRAL, description: 'Canceled', attributes: TextAttributes.DIM };
     case 'CANCELING':
-      // Right-half filled to show transition
       return { symbol: '◨', color: Colors.WARNING, description: 'Canceling', attributes: TextAttributes.DIM };
     case 'SKIPPED':
       return { symbol: '□', color: Colors.PRIMARY, description: 'Skipped', attributes: TextAttributes.DIM };
@@ -34,10 +30,8 @@ export function getJobStatusDisplay(status: CiJobStatus): JobStatusDisplay {
     case 'SCHEDULED':
       return { symbol: '□', color: Colors.INFO, description: 'Scheduled', attributes: TextAttributes.DIM };
     case 'PREPARING':
-      // Square within a square (loading/internal state)
       return { symbol: '▣', color: Colors.SECONDARY, description: 'Preparing', attributes: TextAttributes.DIM };
     case 'WAITING_FOR_CALLBACK':
-      // Vertical split
       return { symbol: '◫', color: Colors.SECONDARY, description: 'Waiting for callback', attributes: TextAttributes.DIM };
     case 'CREATED':
       return { symbol: '□', color: Colors.PRIMARY, description: 'Created', attributes: TextAttributes.DIM };

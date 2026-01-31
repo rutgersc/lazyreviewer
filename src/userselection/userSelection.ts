@@ -1,4 +1,4 @@
-import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
+import type { MergeRequestState } from "../domain/merge-request-state";
 import { MRCacheKey, ProjectMRCacheKey, type CacheKey } from "../mergerequests/decide-fetch-mrs";
 
 export type UserId =

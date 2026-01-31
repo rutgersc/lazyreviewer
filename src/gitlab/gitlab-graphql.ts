@@ -6,20 +6,11 @@ import { getSdk as GitlabMRs } from "../graphql/gitlab-mrs.generated";
 import { getSdk as getMrPipelineSdk } from "../graphql/mr-pipeline.generated";
 import { getSdk as getProjectPipelinesJobHistorySdk } from "../graphql/project-pipelines-job-history.generated";
 import { getSdk as getJobSdk } from "../graphql/job.generated";
-import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
-import type { GitlabMergeRequest } from "./gitlab-schema";
+import type { MergeRequestState } from "../domain/merge-request-state";
 import { Data, Effect, Console } from "effect";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent, GitlabMrsFetchedEvent } from "../events/gitlab-events";
 import { projectGitlabJobHistoryFetchedEvent, projectGitlabJobTraceFetchedEvent, projectGitlabPipelineFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent } from "./gitlab-projections";
 import { generateEventId } from "../events/event-id";
-
-export type {
-  PipelineJob,
-  PipelineStage,
-  DiscussionNote,
-  Discussion,
-  GitlabMergeRequest
-} from "./gitlab-schema"
 
 export class FetchGitlabMrsError extends Data.TaggedError("FetchGitlabMrsError")<{
   cause: unknown;

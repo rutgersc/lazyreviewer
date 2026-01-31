@@ -6,8 +6,8 @@ import {
   mapMrFragment,
   projectGitlabMrsFetchedEvent
 } from '../gitlab/gitlab-projections'
-import { mapBitbucketToGitlabMergeRequest } from '../bitbucket/bitbucket-projections'
-import type { DiscussionNote, GitlabMergeRequest } from '../gitlab/gitlab-schema'
+import { mapBitbucketToMergeRequest } from '../bitbucket/bitbucket-projections'
+import type { DiscussionNote, MergeRequest } from '../domain/merge-request-schema'
 import { defineProjection } from '../utils/define-projection'
 import type { Change } from './change-tracking-projection'
 
@@ -161,7 +161,7 @@ export const isMrChange = (change: Change): change is MrChange => {
 };
 
 
-const getMrCumulativeState = (mr: GitlabMergeRequest): MrStateForDelta => ({
+const getMrCumulativeState = (mr: MergeRequest): MrStateForDelta => ({
   mrStatus: mr.state,
   mrNoteIds: new Set(
     mr.discussions
@@ -192,7 +192,7 @@ const calcDelta = (
 
 const detectMergerequestChanges = (
   mrStatesForDelta: Map<string, MrStateForDelta>,
-  latestGitlabMrs: GitlabMergeRequest[]
+  latestGitlabMrs: MergeRequest[]
 ): MrProjectionResult => {
 
   const determineMrStatusChange = (stateDelta: string | undefined, mrInfo: MrInfo, updatedAt: Date): MrChange | undefined => {
@@ -316,7 +316,7 @@ const detectMergerequestChanges = (
     }
   };
 
-  function findNoteById(mr: GitlabMergeRequest, noteId: string): { note: DiscussionNote; discussionId: string } | undefined {
+  function findNoteById(mr: MergeRequest, noteId: string): { note: DiscussionNote; discussionId: string } | undefined {
     for (const discussion of mr.discussions) {
       for (const note of discussion.notes) {
         if (note.id === noteId) {
@@ -354,12 +354,12 @@ const detectMergerequestChanges = (
   return { mrStatesForDelta, mrDeltas };
 };
 
-const projectCompactedEventMrs = (event: CompactedEvent): GitlabMergeRequest[] => {
+const projectCompactedEventMrs = (event: CompactedEvent): MergeRequest[] => {
   return event.mrs.flatMap((rawMr) => {
     if ("source" in rawMr && "destination" in rawMr) {
       const fullPath = rawMr.destination.repository.full_name;
       const [workspace = "", repoSlug = ""] = fullPath.split("/");
-      return [mapBitbucketToGitlabMergeRequest(rawMr, workspace, repoSlug)];
+      return [mapBitbucketToMergeRequest(rawMr, workspace, repoSlug)];
     } else if ("iid" in rawMr && "project" in rawMr) {
       return [mapMrFragment(rawMr)];
     }

@@ -20,7 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Action } from './actions/action-types';
 import { parseKeyString, matchesAnyKey } from './actions/key-matcher';
 import { activePaneActionsAtom } from './actions/pane-actions-atoms';
-import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
+import { type MergeRequestState } from "./domain/merge-request-state";
 import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';

@@ -1,5 +1,5 @@
 import { Console, Data, Effect } from "effect";
-import type { GitlabMergeRequest } from "../gitlab/gitlab-graphql";
+import type { MergeRequest } from "../domain/merge-request-schema";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import { projectBitbucketPrsFetchedEvent, projectBitbucketPrCommentsFetchedEvent, projectBitbucketSinglePrFetchedEvent } from "./bitbucket-projections";
 import { generateEventId } from "../events/event-id";
