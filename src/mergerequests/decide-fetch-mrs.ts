@@ -7,8 +7,11 @@ import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/
 import type { JiraApiError } from "../jira/jira-common"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
 import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getSingleMrAsEvent, getMrsAsEvent } from "../gitlab/gitlab-graphql"
+import { getBitbucketPrsAsEvent } from "../bitbucket/bitbucketapi"
 import { loadJiraTicketsAsEvent } from "../jira/jira-service"
 import { projectGitlabMrsFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
+import { projectBitbucketPrsFetchedEvent } from "../bitbucket/bitbucket-projections"
+import { type RepositoryId, repositoryFullPath } from "../userselection/userSelection"
 import type { MergeRequest } from "./mergerequest-schema"
 import type { MrGid } from "../gitlab/gitlab-schema"
 
@@ -18,7 +21,7 @@ export class MRCacheKey extends Data.TaggedClass("UserMRs")<{
 }> {}
 
 export class ProjectMRCacheKey extends Data.TaggedClass("ProjectMRs")<{
-  readonly projectPath: string
+  readonly repository: RepositoryId
   readonly state: MergeRequestState
 }> {}
 
@@ -41,7 +44,7 @@ export const mrMatchesCacheKey = (mr: MergeRequest, cacheKey: CacheKey): boolean
   mr.state === cacheKey.state &&
   (cacheKey._tag === "UserMRs"
     ? cacheKey.usernames.includes(mr.author)
-    : mr.project.fullPath === cacheKey.projectPath);
+    : mr.project.fullPath === repositoryFullPath(cacheKey.repository));
 
 export const getKnownMrsForCacheKey = (
   mrsByGid: ReadonlyMap<MrGid, MergeRequest>,
@@ -135,7 +138,7 @@ export const decideFetchUserMrs = (
 })
 
 export const decideFetchProjectMrs = (
-  projectPath: string,
+  repository: RepositoryId,
   state: MergeRequestState,
   knownMrs: ReadonlyMap<MrGid, KnownMrInfo>
 ): Effect.Effect<
@@ -143,17 +146,26 @@ export const decideFetchProjectMrs = (
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
-  const mrEvent = yield* getGitlabMrsByProjectAsEvent(projectPath, state);
-  yield* EventStorage.appendEvent(mrEvent)
+  const mrs = repository.provider === 'bitbucket'
+    ? yield* Effect.gen(function* () {
+        const bbEvent = yield* getBitbucketPrsAsEvent(repository.workspace, repository.repo, state);
+        yield* EventStorage.appendEvent(bbEvent)
+        return projectBitbucketPrsFetchedEvent(bbEvent, new Map())
+      })
+    : yield* Effect.gen(function* () {
+        const mrEvent = yield* getGitlabMrsByProjectAsEvent(repository.id, state);
+        yield* EventStorage.appendEvent(mrEvent)
+        const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
+        if (state === 'opened') {
+          yield* forkFetchMissingMrs(knownMrs, new Set(gitlabMrs.map(mr => mr.id)))
+        }
+        return gitlabMrs
+      })
 
-  const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
-
-  const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
-  const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-  yield* EventStorage.appendEvent(jiraEvent)
-
-  if (state === 'opened') {
-    yield* forkFetchMissingMrs(knownMrs, new Set(gitlabMrs.map(mr => mr.id)))
+  const jiraKeys = Array.from(new Set(mrs.flatMap(mr => mr.jiraIssueKeys)))
+  if (jiraKeys.length > 0) {
+    const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
+    yield* EventStorage.appendEvent(jiraEvent)
   }
 })
 

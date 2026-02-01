@@ -24,7 +24,7 @@ import { type MergeRequestState } from "./graphql/generated/gitlab-base-types";
 import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, dumpAllMrsToFileAtom, allJiraIssuesAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
+import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, allJiraIssuesAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
 import { toggleNotificationsAtom, notificationSettingsAtom, jiraBoardIdAtom, appViewAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
@@ -37,7 +37,6 @@ export default function App() {
   useAtomValue(appInitAtom);
 
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
-  const dumpAllMrs = useAtomSet(dumpAllMrsToFileAtom, { mode: 'promiseExit' });
   const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
   const notificationSettings = useAtomValue(notificationSettingsAtom);
 
@@ -124,17 +123,6 @@ export default function App() {
       displayKey: '?',
       description: 'Show help',
       handler: () => setActiveModal('help'),
-    },
-    {
-      id: 'global:dump-state',
-      keys: [parseKeyString('0')],
-      displayKey: '0',
-      description: 'Dump state to debug/',
-      handler: async () => {
-        await dumpAllMrs();
-        setCopyNotification('State dumped to debug/');
-        setTimeout(() => setCopyNotification(null), 2000);
-      },
     },
     {
       id: 'global:toggle-notifications',

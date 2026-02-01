@@ -8,7 +8,11 @@ export type GroupId =
   | { type: 'groupId', id: string }
 
 export type RepositoryId =
-  | { type: 'repositoryId', id: string }
+  | { type: 'repositoryId', provider: 'gitlab', id: string }
+  | { type: 'repositoryId', provider: 'bitbucket', workspace: string, repo: string }
+
+export const repositoryFullPath = (repo: RepositoryId): string =>
+  repo.provider === 'gitlab' ? repo.id : `${repo.workspace}/${repo.repo}`
 
 export type UserOrGroupId = | UserId | GroupId | RepositoryId
 
@@ -54,7 +58,7 @@ export const extractSelectionData = (
   state: MergeRequestState
 ): CacheKey => {
   const usernames = new Set<string>();
-  const repositories = new Set<string>();
+  const repositories: RepositoryId[] = [];
 
   const processId = (id: UserOrGroupId) => {
     if (id.type === 'userId') {
@@ -65,18 +69,17 @@ export const extractSelectionData = (
         group.children.forEach(processId);
       }
     } else if (id.type === 'repositoryId') {
-      repositories.add(id.id);
+      repositories.push(id);
     }
   };
 
   entry.selection.forEach(processId);
 
-  const repositoriesArray = Array.from(repositories);
   const usernamesArray = Array.from(usernames);
 
-  if (repositoriesArray.length > 0 && repositoriesArray[0]) {
+  if (repositories.length > 0 && repositories[0]) {
     return new ProjectMRCacheKey({
-      projectPath: repositoriesArray[0],
+      repository: repositories[0],
       state
     });
   } else if (usernamesArray.length > 0) {

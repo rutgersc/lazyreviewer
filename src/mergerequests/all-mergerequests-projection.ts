@@ -1,6 +1,6 @@
 
 import { Data } from "effect";
-import { projectBitbucketMrsCompactedEvent } from "../bitbucket/bitbucket-projections";
+import { projectBitbucketMrsCompactedEvent, projectBitbucketPrsFetchedEvent } from "../bitbucket/bitbucket-projections";
 import type { GitlabprojectMergeRequestsFetchedEvent } from "../events/gitlab-events";
 import { projectGitlabUserMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabMrsCompactedEvent, projectGitlabMrsFetchedEvent } from "../gitlab/gitlab-projections";
 import type { MrGid } from "../gitlab/gitlab-schema";
@@ -8,6 +8,7 @@ import type { JiraIssue } from "../jira/jira-schema";
 import { projectJiraIssuesFetchedEvent } from "../jira/jira-service";
 import type { MergeRequest } from "./mergerequest-schema";
 import type { CacheKey } from "./decide-fetch-mrs";
+import { repositoryFullPath } from "../userselection/userSelection";
 import { defineProjection, type ProjectionEventType } from "../utils/define-projection";
 
 export class MrStateNotFetched extends Data.TaggedClass("NotFetched")<{}> {}
@@ -83,6 +84,17 @@ export const allMrsProjection = defineProjection({
       });
     },
 
+    "bitbucket-prs-fetched-event": (state, event) => {
+      const currentMap = new Map(state.mrsByGid);
+      const mrs = projectBitbucketPrsFetchedEvent(event, new Map());
+      mrs.forEach(mr => currentMap.set(mr.id, mr));
+      return new AllMrsState({
+        mrsByGid: currentMap,
+        jiraIssuesByKey: state.jiraIssuesByKey,
+        timestamp: new Date()
+      });
+    },
+
     "jira-issues-fetched-event": (state, event) => {
       const currentJiraIssues = new Map(state.jiraIssuesByKey);
       const newJiraTickets = projectJiraIssuesFetchedEvent(event);
@@ -151,7 +163,7 @@ export const projectMrState = (key: CacheKey) => (state: MrState, event: MrRelev
     const mrEvent = event as GitlabprojectMergeRequestsFetchedEvent
 
     // Check if this event matches our key
-    if (mrEvent.forState === key.state && mrEvent.forProjectPath === key.projectPath) {
+    if (mrEvent.forState === key.state && mrEvent.forProjectPath === repositoryFullPath(key.repository)) {
       // Project GitLab MRs from the event
       const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
 

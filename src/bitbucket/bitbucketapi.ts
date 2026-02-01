@@ -309,10 +309,6 @@ export const getBitbucketPrsAsEvent = Effect.fn("getBitbucketPrsAsEvent")(functi
     catch: (cause) => new BitbucketPrsJsonParseError({ cause })
   });
 
-  const outputPath = path.join(process.cwd(), 'debug/bitbucket-response-debug.json');
-  fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
-  yield* Console.log(`BitBucket response written to: ${outputPath}`);
-
   const timestamp = new Date().toISOString();
   const type = 'bitbucket-prs-fetched-event' as const;
   const event: BitbucketPrsFetchedEvent = {

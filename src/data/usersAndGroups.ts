@@ -12,10 +12,10 @@ const chen = { type: 'userId', id: 'c.zrubavel'  } satisfies UserId;
 const harold = { type: 'userId', id: 'h.harkema'  } satisfies UserId;
 const vic = { type: 'userId', id: 'VicUlrich'  } satisfies UserId;
 
-const elabRepo = { type: 'repositoryId', id: 'elab/elab'  } satisfies RepositoryId;
-const blackLotusRepo = { type: 'repositoryId', id: 'elab/BlackLotus'  } satisfies RepositoryId;
-const dbSplitterRepo = { type: 'repositoryId', id: 'elab/db-splitter'  } satisfies RepositoryId;
-const bitbucketCoreIamRepo = { type: 'repositoryId', id: 'bitbucket:raftdev/core.iam'  } satisfies RepositoryId;
+const elabRepo = { type: 'repositoryId', provider: 'gitlab', id: 'elab/elab'  } satisfies RepositoryId;
+const blackLotusRepo = { type: 'repositoryId', provider: 'gitlab', id: 'elab/BlackLotus'  } satisfies RepositoryId;
+const dbSplitterRepo = { type: 'repositoryId', provider: 'gitlab', id: 'elab/db-splitter'  } satisfies RepositoryId;
+const bitbucketCoreIamRepo = { type: 'repositoryId', provider: 'bitbucket', workspace: 'raftdev', repo: 'core.iam'  } satisfies RepositoryId;
 export const users: UserSelection[] = [
   { type: 'user', id: rutger },
   { type: 'user', id: heiner },

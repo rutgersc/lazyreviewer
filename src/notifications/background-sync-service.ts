@@ -89,7 +89,7 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
 
       yield* cacheKey._tag === 'UserMRs'
         ? decideFetchUserMrs(cacheKey.usernames as string[], cacheKey.state, knownMrs)
-        : decideFetchProjectMrs(cacheKey.projectPath, cacheKey.state, knownMrs)
+        : decideFetchProjectMrs(cacheKey.repository, cacheKey.state, knownMrs)
     }).pipe(
       Effect.catchAllCause((cause) => Console.error('[BackgroundSync] Fetch failed:', cause))
     );

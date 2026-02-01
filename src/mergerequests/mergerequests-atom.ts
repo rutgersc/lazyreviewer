@@ -195,7 +195,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
       if (cacheKey._tag === "UserMRs") {
         yield* decideFetchUserMrs(cacheKey.usernames as string[], cacheKey.state, knownMrs)
       } else {
-        yield* decideFetchProjectMrs(cacheKey.projectPath, cacheKey.state, knownMrs)
+        yield* decideFetchProjectMrs(cacheKey.repository, cacheKey.state, knownMrs)
       }
     }).pipe(
       Effect.catchAllCause((cause) =>
@@ -258,58 +258,6 @@ export const refetchSelectedMrAtom = appAtomRuntime.fn((_, get) =>
 
     yield* Console.log(`[RefetchMR] Refreshed MR !${selectedMr.iid}`);
     return gitlabMr;
-  })
-);
-
-export const dumpAllMrsToFileAtom = appAtomRuntime.fn((_, get) =>
-  Effect.gen(function* () {
-    const allMrsResult = get(allMrsAtom);
-
-    const allMrsState = Result.match(allMrsResult, {
-      onInitial: () => null,
-      onFailure: () => null,
-      onSuccess: (state) => state.value
-    });
-
-    if (!allMrsState) {
-      yield* Console.log('[Debug] No allMrs state available');
-      return;
-    }
-
-    const debugData = {
-      timestamp: allMrsState.timestamp.toISOString(),
-      totalMRs: allMrsState.mrsByGid.size,
-      mrsByIid: Array.from(allMrsState.mrsByGid.entries()).map(([iid, mr]) => ({
-        iid,
-        mr: {
-          id: mr.id,
-          iid: mr.iid,
-          title: mr.title,
-          state: mr.state,
-          author: mr.author,
-          projectFullPath: mr.project.fullPath,
-          sourcebranch: mr.sourcebranch,
-          targetbranch: mr.targetbranch,
-          createdAt: mr.createdAt.toISOString(),
-          updatedAt: mr.updatedAt.toISOString(),
-          webUrl: mr.webUrl,
-          resolvableDiscussions: mr.resolvableDiscussions,
-          resolvedDiscussions: mr.resolvedDiscussions,
-          unresolvedDiscussions: mr.unresolvedDiscussions,
-          totalDiscussions: mr.totalDiscussions,
-          approvedBy: mr.approvedBy.map(a => a.username),
-          jiraIssues: mr.jiraIssueKeys
-        }
-      }))
-    };
-
-    yield* Effect.sync(() => {
-      const filename = join('debug', `allMrs-dump-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
-      writeFileSync(filename, JSON.stringify(debugData, null, 2), 'utf8');
-      return filename;
-    }).pipe(
-      Effect.tap(filename => Console.log(`[Debug] Dumped allMrs state to ${filename}`))
-    );
   })
 );
 

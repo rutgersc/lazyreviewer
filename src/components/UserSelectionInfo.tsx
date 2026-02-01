@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextAttributes } from '@opentui/core';
-import type { UserSelectionEntry } from '../userselection/userSelection';
+import { type UserSelectionEntry, repositoryFullPath } from '../userselection/userSelection';
 
 interface UserSelectionInfoProps {
   userSelection: UserSelectionEntry;
@@ -37,7 +37,7 @@ export default function UserSelectionInfo({ userSelection }: UserSelectionInfoPr
             style={{ fg: '#8be9fd' }}
             wrapMode='none'
           >
-            {`  ${item.type === 'userId' ? 'User' : 'Group'}: ${item.id}`}
+            {`  ${item.type === 'repositoryId' ? `Repo (${item.provider})` : item.type === 'userId' ? 'User' : 'Group'}: ${item.type === 'repositoryId' ? repositoryFullPath(item) : item.id}`}
           </text>
         ))}
       </box>

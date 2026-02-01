@@ -1,58 +1,9 @@
-import type { MergeRequest } from "./mergerequest-schema";
-import type { GitlabMergeRequest } from "../gitlab/gitlab-schema";
-import { getGitlabMrsAsEvent, getGitlabMrsByProject, getMrPipelineAsEvent } from "../gitlab/gitlab-graphql";
-import { getBitbucketPrs } from "../bitbucket/bitbucketapi";
-import { parseRepositoryId } from "./repositoryParser";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
 import { getSdk as getUpdateMrTargetBranchSdk } from "../graphql/update-mr-target-branch.generated";
-import { ensurePipelineJobsInSettings } from "../settings/settings";
 import { GraphQLClient } from "graphql-request";
 import { Effect, Console, Data } from "effect";
-import type { ProjectMRCacheKey } from "./decide-fetch-mrs";
 import { EventStorage } from "../events/events";
-import { projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections";
-
-function processMrs(mrs: GitlabMergeRequest[]): MergeRequest[] {
-  // TODO: move to own subscription
-  ensurePipelineJobsInSettings(mrs);
-
-  return mrs
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-}
-
-export const fetchMergeRequests = Effect.fn("getGitlabMrs")(function* (
-  selectedUsernames: readonly string[],
-  state: MergeRequestState = "opened"
-) {
-  if (selectedUsernames.length === 0) return [];
-
-  const mrs =  projectGitlabUserMrsFetchedEvent(yield* getGitlabMrsAsEvent(selectedUsernames as string[], state));
-
-  return processMrs(mrs);
-});
-
-export class FetchMergeRequestsByProjectError extends Data.TaggedError("FetchMergeRequestsByProjectError")<{
-  cause: unknown;
-}> { }
-
-export const fetchMergeRequestsByProject = Effect.fn("fetchMergeRequestsByProject")(function* (
-  { projectPath, state }: ProjectMRCacheKey
-) {
-  const parsed = parseRepositoryId(projectPath);
-  let mrs: GitlabMergeRequest[];
-
-  if (parsed.provider === 'bitbucket') {
-    yield* Console.log(`Fetching from BitBucket: ${parsed.workspace}/${parsed.repo}`);
-    mrs = yield* getBitbucketPrs(parsed.workspace, parsed.repo, state);
-  } else {
-    yield* Console.log(`Fetching from GitLab: ${projectPath}`);
-    mrs = yield* getGitlabMrsByProject(projectPath, state);
-  }
-
-  yield* Console.log(`Fetched ${mrs.length} merge requests`);
-
-  return processMrs(mrs);
-})
+import { getMrPipelineAsEvent } from "../gitlab/gitlab-graphql";
 
 export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (
   mrId: string,
