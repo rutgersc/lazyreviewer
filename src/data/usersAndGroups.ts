@@ -8,6 +8,7 @@ const martin = { type: 'userId', id: 'm.bures'  } satisfies UserId;
 const heiner = { type: 'userId', id: 'h.behrends'  } satisfies UserId;
 const tomas = { type: 'userId', id: 'TomasAugustinas'  } satisfies UserId;
 const arjen = { type: 'userId', id: 'ArjenPost'  } satisfies UserId;
+const haike = { type: 'userId', id: 'HaikeZegwaard'  } satisfies UserId;
 const chen = { type: 'userId', id: 'c.zrubavel'  } satisfies UserId;
 const harold = { type: 'userId', id: 'h.harkema'  } satisfies UserId;
 const vic = { type: 'userId', id: 'VicUlrich'  } satisfies UserId;
@@ -98,6 +99,10 @@ const userSelectionData = [
   {
     name: 'arjen',
     selection: [ arjen ]
+  },
+  {
+    name: 'haike',
+    selection: [ haike ]
   },
   {
     name: 'repo: elab',
