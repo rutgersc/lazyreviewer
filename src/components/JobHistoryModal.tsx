@@ -97,10 +97,6 @@ const loadMoreJobHistoryAtom = appAtomRuntime.fn((_: void, get) =>
 
     yield* Console.log(`[JobHistory] Fetched ${result.history.length} more entries`);
 
-    for(const bla of result.history) {
-      console.log("historyEntry", bla);
-    }
-
     // Append new entries to existing history
     const newHistory: JobHistoryEntry[] = [...currentHistory, ...result.history];
 

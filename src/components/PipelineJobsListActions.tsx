@@ -60,32 +60,27 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
       displayKey: 'y',
       description: 'View job history',
       handler: () => {
-        console.log("step 0")
         const currentMr = registry.get(selectedMrAtom);
         const jobs = getPipelineJobsFromMr(currentMr);
         const currentIndex = registry.get(selectedPipelineJobIndexAtom);
 
-        console.log("step 1")
-
         if (jobs[currentIndex]) {
-        console.log("step 2")
 
-        registry.set(fetchJobHistoryAtom, 0);
+          registry.set(fetchJobHistoryAtom, 0);
 
-        const promise = Effect.runPromiseExit(
-          Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
-        ).then((exit) => {
-            console.log("result", exit)
-            if (exit._tag === 'Success') {
-              const { job, history, pageInfo } = exit.value;
-              registry.set(jobHistoryDataAtom, history);
-              registry.set(selectedJobForHistoryAtom, job?.name || null);
-              registry.set(jobHistoryEndCursorAtom, pageInfo.endCursor);
-              registry.set(jobHistoryHasNextPageAtom, pageInfo.hasNextPage);
-            }
+          const promise = Effect.runPromiseExit(
+            Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
+          ).then((exit) => {
+              if (exit._tag === 'Success') {
+                const { job, history, pageInfo } = exit.value;
+                registry.set(jobHistoryDataAtom, history);
+                registry.set(selectedJobForHistoryAtom, job?.name || null);
+                registry.set(jobHistoryEndCursorAtom, pageInfo.endCursor);
+                registry.set(jobHistoryHasNextPageAtom, pageInfo.hasNextPage);
+              }
 
-            registry.set(activeModalAtom, 'jobHistory');
-          });
+              registry.set(activeModalAtom, 'jobHistory');
+            });
         }
       },
     },
