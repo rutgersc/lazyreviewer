@@ -6,7 +6,7 @@ import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 import { getPipelineJobsFromMr, requestScrollPipelineJobsListToJob as requestScrollPipelineJobsListToJobAtom } from './PipelineJobsList';
 import { Effect } from 'effect';
 import { fetchJobHistoryAtom, jobHistoryDataAtom, jobHistoryEndCursorAtom, jobHistoryHasNextPageAtom, selectedJobForHistoryAtom, selectedPipelineJobIndexAtom } from './JobHistoryModal';
-import { loadJobLogAtom } from '../mergerequests/open-pipelinejob-log-atom';
+import { loadJobLogAtom, jobLogDownloadSignalAtom } from '../mergerequests/open-pipelinejob-log-atom';
 import { toggleJobImportanceAtom } from '../settings/settings-atom';
 
 export const pipelineJobsListActionsAtom = Atom.make((get) => {
@@ -51,6 +51,11 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
         const selectedJob = jobs[currentIndex];
         if (selectedJob && currentMr) {
           registry.set(loadJobLogAtom, { mergeRequest: currentMr, job: selectedJob.job });
+          Effect.runPromiseExit(
+            Registry.getResult(registry, loadJobLogAtom, { suspendOnWaiting: true })
+          ).then(() => {
+            registry.set(jobLogDownloadSignalAtom, registry.get(jobLogDownloadSignalAtom) + 1);
+          });
         }
       },
     },

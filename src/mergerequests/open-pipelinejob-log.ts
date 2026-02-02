@@ -5,13 +5,15 @@ import { execSync } from "child_process";
 import { Effect, Console } from "effect";
 import { projectGitlabJobTraceFetchedEvent } from "../gitlab/gitlab-projections";
 
+export const getJobLogPath = (projectPath: string, jobName: string, jobLocalId: number): string =>
+  join(process.cwd(), "logs", "jobs", `${projectPath}_${jobName}_${jobLocalId}.ansi`);
+
 export const loadJobLogInternal = Effect.fn(function* (
   mr: { project: { path: string, fullPath: string } },
   job: { id: string; name: string; localId: number }) {
 
   const logsDir = join(process.cwd(), "logs", "jobs");
-  const logFileName = `${mr.project.path}_${job.name}_${job.localId}.ansi`;
-  const logFilePath = join(logsDir, logFileName);
+  const logFilePath = getJobLogPath(mr.project.path, job.name, job.localId);
 
   if (!existsSync(logsDir)) {
     mkdirSync(logsDir, { recursive: true });

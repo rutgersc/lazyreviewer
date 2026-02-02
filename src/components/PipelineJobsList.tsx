@@ -8,11 +8,14 @@ import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { MergeRequest } from './MergeRequestPane';
 import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
-import { loadJobLogAtom } from '../mergerequests/open-pipelinejob-log-atom';
+import { loadJobLogAtom, jobLogDownloadSignalAtom } from '../mergerequests/open-pipelinejob-log-atom';
 import { pipelineJobImportanceAtom } from '../settings/settings-atom';
+import { existsSync, readFileSync } from 'fs';
+import { parseJobLogErrors, hasErrors, type JobLogErrors } from '../domain/parse-job-log-errors';
+import { getJobLogPath } from '../mergerequests/open-pipelinejob-log';
 
 interface PipelineJobsListProps {
   selectedPipelineJobIndex: number;
@@ -47,7 +50,9 @@ function formatDuration(seconds: number | null): string {
 export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJobsListProps) {
   const [, setSelectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
   const selectedMergeRequest = useAtomValue(selectedMrAtom);
-  const runLoadJobLog = useAtomSet(loadJobLogAtom);
+  const runLoadJobLog = useAtomSet(loadJobLogAtom, { mode: 'promiseExit' });
+  const setDownloadSignal = useAtomSet(jobLogDownloadSignalAtom);
+  const downloadSignal = useAtomValue(jobLogDownloadSignalAtom);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
   const [scrollToItemRequest, setScrollToItemRequest] = useAtom(requestScrollPipelineJobsListToJob);
 
@@ -56,6 +61,32 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
   const projectJobImportance = selectedMergeRequest
     ? jobImportanceMap.get(selectedMergeRequest.project.fullPath) ?? new Map<string, string>()
     : new Map<string, string>();
+
+  const selectedPipelineJob = pipelineJobs[selectedPipelineJobIndex];
+  const [logErrors, setLogErrors] = useState<JobLogErrors | null>(null);
+
+  useEffect(() => {
+    if (!selectedPipelineJob || !selectedMergeRequest) {
+      setLogErrors(null);
+      return;
+    }
+    const logPath = getJobLogPath(
+      selectedMergeRequest.project.path,
+      selectedPipelineJob.job.name,
+      selectedPipelineJob.job.localId
+    );
+    try {
+      if (existsSync(logPath)) {
+        const content = readFileSync(logPath, 'utf8');
+        const errors = parseJobLogErrors(selectedPipelineJob.job.name, content);
+        setLogErrors(hasErrors(errors) ? errors : null);
+      } else {
+        setLogErrors(null);
+      }
+    } catch {
+      setLogErrors(null);
+    }
+  }, [selectedMergeRequest?.project.path, selectedPipelineJob?.job.name, selectedPipelineJob?.job.localId, downloadSignal]);
 
   useEffect(() => {
     if (scrollToItemRequest !== null) {
@@ -72,7 +103,9 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
     onDoubleClick: (index) => {
       const selectedJob = pipelineJobs[index];
       if (selectedJob && selectedMergeRequest) {
-        runLoadJobLog({ mergeRequest: selectedMergeRequest, job: selectedJob.job });
+        runLoadJobLog({ mergeRequest: selectedMergeRequest, job: selectedJob.job }).then(() => {
+          setDownloadSignal(Date.now());
+        });
       }
     }
   });
@@ -86,8 +119,6 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
       </box>
     );
   }
-
-  const selectedPipelineJob = pipelineJobs[selectedPipelineJobIndex];
 
   return (
     <scrollbox
@@ -200,6 +231,59 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
                 <text style={{ fg: Colors.INFO }} wrapMode='none'>
                   {selectedPipelineJob.job.webPath}
                 </text>
+              </box>
+            )}
+            {logErrors && (
+              <box style={{ flexDirection: "column", gap: 0 }}>
+                <text style={{ fg: Colors.ERROR, attributes: TextAttributes.BOLD }} wrapMode='none'>
+                  ─── Log Errors ───
+                </text>
+                {logErrors.buildErrors.length > 0 && (
+                  <box style={{ flexDirection: "column", gap: 0 }}>
+                    <text style={{ fg: Colors.ERROR }} wrapMode='none'>
+                      {`Build errors (${logErrors.buildErrors.length}):`}
+                    </text>
+                    {logErrors.buildErrors.slice(0, 5).map((err, i) => (
+                      <text key={`be-${i}`} style={{ fg: Colors.ERROR, attributes: TextAttributes.DIM }} wrapMode='none'>
+                        {`  ${err}`}
+                      </text>
+                    ))}
+                    {logErrors.buildErrors.length > 5 && (
+                      <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
+                        {`  ...and ${logErrors.buildErrors.length - 5} more`}
+                      </text>
+                    )}
+                  </box>
+                )}
+                {logErrors.failedTests.length > 0 && (
+                  <box style={{ flexDirection: "column", gap: 0 }}>
+                    <text style={{ fg: Colors.ERROR }} wrapMode='none'>
+                      {`Failed tests (${logErrors.failedTests.length}):`}
+                    </text>
+                    {logErrors.failedTests.slice(0, 8).map((test, i) => (
+                      <box key={`ft-${i}`} style={{ flexDirection: "column" }}>
+                        <text style={{ fg: Colors.ERROR }} wrapMode='none'>
+                          {`  ${test.name}`}
+                        </text>
+                        {test.errorMessage && (
+                          <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
+                            {`    ${test.errorMessage.substring(0, 120)}`}
+                          </text>
+                        )}
+                      </box>
+                    ))}
+                    {logErrors.failedTests.length > 8 && (
+                      <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
+                        {`  ...and ${logErrors.failedTests.length - 8} more`}
+                      </text>
+                    )}
+                  </box>
+                )}
+                {logErrors.failedSummaries.map((summary, i) => (
+                  <text key={`fs-${i}`} style={{ fg: Colors.ERROR, attributes: TextAttributes.DIM }} wrapMode='none'>
+                    {summary}
+                  </text>
+                ))}
               </box>
             )}
           </box>
