@@ -1,17 +1,18 @@
 import type { JiraIssue } from '../jira/jira-schema';
 
-export type StatusInfo = { text: string; color: string; isMerged: boolean };
+export type StatusInfo = { text: string; color: string; dimColor?: string };
 
 export const mapStatus = (statusName: string): StatusInfo => {
   const s = statusName.toLowerCase();
-  if (s.includes('merged')) return { text: 'MRG', color: '#50fa7b', isMerged: true };
-  if (s.includes('done')) return { text: 'DONE', color: '#50fa7b', isMerged: true };
-  if (s.includes('merge')) return { text: 'MRG', color: '#50fa7b', isMerged: false };
-  if (s.includes('testing')) return { text: 'TEST', color: '#f8f8f2', isMerged: false };
-  if (s.includes('test') || s.includes('qa')) return { text: 'TEST', color: '#2d4a2d', isMerged: false };
-  if (s.includes('review')) return { text: 'REV', color: '#ffb86c', isMerged: false };
-  if (s.includes('progress')) return { text: 'WIP', color: '#8be9fd', isMerged: false };
-  return { text: 'TODO', color: '#8c9ac4', isMerged: false };
+  if (s.includes('merged')) return { text: 'MGD', color: '#50fa7b', dimColor: '#2d4a2d' };
+  if (s.includes('done')) return { text: 'DONE', color: '#50fa7b', dimColor: '#2d4a2d' };
+  if (s.includes('reject')) return { text: 'REJ', color: '#6272a4', dimColor: '#6272a4' };
+  if (s.includes('merge')) return { text: 'MREQ', color: '#50fa7b' };
+  if (s.includes('testing')) return { text: 'TEST', color: '#f8f8f2' };
+  if (s.includes('test') || s.includes('qa')) return { text: 'TEST', color: '#2d4a2d' };
+  if (s.includes('review')) return { text: 'REV', color: '#ffb86c' };
+  if (s.includes('progress')) return { text: 'WIP', color: '#8be9fd' };
+  return { text: 'TODO', color: '#8c9ac4' };
 };
 
 export type PriorityInfo = { color: string };

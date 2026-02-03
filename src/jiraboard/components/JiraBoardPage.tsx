@@ -145,7 +145,21 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     setSelectedSprintId(sprintId);
   };
 
+  const lastClickRef = useRef<{ index: number; time: number }>({ index: -1, time: 0 });
+
   const handleItemClick = (index: number) => {
+    const now = Date.now();
+    const last = lastClickRef.current;
+    if (last.index === index && now - last.time < 400) {
+      const item = flatItems[index];
+      if (item) {
+        const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
+        openUrl(`${baseUrl}/browse/${item.item.key}`);
+      }
+      lastClickRef.current = { index: -1, time: 0 };
+      return;
+    }
+    lastClickRef.current = { index, time: now };
     setSelectedIndex(index);
     const item = flatItems[index];
     if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
@@ -409,8 +423,8 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         : ''.padEnd(30);
       const keyPadded = item.key.padEnd(12);
       const priority = isTopLevel ? mapPriority(item.fields.priority.name) : null;
-      const isRowDim = isDimmed || status.isMerged;
-      const dimColor = isDimmed ? Colors.SUPPORTING : Colors.SUCCESS;
+      const isRowDim = isDimmed || !!status.dimColor;
+      const dimColor = isDimmed ? Colors.SUPPORTING : (status.dimColor ?? Colors.SUPPORTING);
       const dimAttr = isRowDim ? TextAttributes.DIM : undefined;
 
       const rowColor = isRowDim ? dimColor : Colors.PRIMARY;
