@@ -31,6 +31,19 @@ export const getPipelineJobsFromMr = (selectedMergeRequest: MergeRequest | undef
       );
 }
 
+const truncateAndWrap = (text: string, maxWidth: number, maxLines: number): string[] => {
+  const maxChars = maxWidth * maxLines;
+  const truncated = text.length > maxChars ? text.slice(0, maxChars - 3) + '...' : text;
+
+  const lines: string[] = [];
+  let remaining = truncated;
+  while (remaining.length > 0 && lines.length < maxLines) {
+    lines.push(remaining.slice(0, maxWidth));
+    remaining = remaining.slice(maxWidth);
+  }
+  return lines;
+};
+
 function formatDuration(seconds: number | null): string {
   if (seconds === null || seconds === 0) return '-';
 
@@ -244,9 +257,13 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
                       {`Build errors (${logErrors.buildErrors.length}):`}
                     </text>
                     {logErrors.buildErrors.slice(0, 5).map((err, i) => (
-                      <text key={`be-${i}`} style={{ fg: Colors.ERROR, attributes: TextAttributes.DIM }} wrapMode='none'>
-                        {`  ${err}`}
-                      </text>
+                      <box key={`be-${i}`} style={{ flexDirection: "column" }}>
+                        {truncateAndWrap(err, 50, 4).map((line, j) => (
+                          <text key={`be-${i}-${j}`} style={{ fg: Colors.ERROR, attributes: TextAttributes.DIM }} wrapMode='none'>
+                            {`  ${line}`}
+                          </text>
+                        ))}
+                      </box>
                     ))}
                     {logErrors.buildErrors.length > 5 && (
                       <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
@@ -266,9 +283,13 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
                           {`  ${test.name}`}
                         </text>
                         {test.errorMessage && (
-                          <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-                            {`    ${test.errorMessage.substring(0, 120)}`}
-                          </text>
+                          <box style={{ flexDirection: "column" }}>
+                            {truncateAndWrap(test.errorMessage, 46, 3).map((line, j) => (
+                              <text key={`em-${j}`} style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
+                                {`    ${line}`}
+                              </text>
+                            ))}
+                          </box>
                         )}
                       </box>
                     ))}
@@ -280,9 +301,13 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
                   </box>
                 )}
                 {logErrors.failedSummaries.map((summary, i) => (
-                  <text key={`fs-${i}`} style={{ fg: Colors.ERROR, attributes: TextAttributes.DIM }} wrapMode='none'>
-                    {summary}
-                  </text>
+                  <box key={`fs-${i}`} style={{ flexDirection: "column" }}>
+                    {truncateAndWrap(summary, 50, 4).map((line, j) => (
+                      <text key={`fs-${i}-${j}`} style={{ fg: Colors.ERROR, attributes: TextAttributes.DIM }} wrapMode='none'>
+                        {line}
+                      </text>
+                    ))}
+                  </box>
                 ))}
               </box>
             )}
