@@ -1,19 +1,20 @@
 import type { JiraIssue } from '../jira/jira-schema';
+import { Colors } from '../colors';
 
 export type StatusInfo = { text: string; color: string; dimColor?: string };
 
 export const mapStatus = (statusName: string): StatusInfo => {
   const s = statusName.toLowerCase();
-  if (s.includes('merged')) return { text: 'MGD', color: '#50fa7b', dimColor: '#2d4a2d' };
-  if (s.includes('done')) return { text: 'DONE', color: '#50fa7b', dimColor: '#2d4a2d' };
-  if (s.includes('reject')) return { text: 'REJ', color: '#6272a4', dimColor: '#6272a4' };
-  if (s.includes('merge')) return { text: 'MREQ', color: '#50fa7b' };
-  if (s.includes('testing')) return { text: 'TEST', color: '#f8f8f2' };
-  if (s.includes('test') || s.includes('qa')) return { text: 'TEST', color: '#2d4a2d' };
-  if (s.includes('review')) return { text: 'REV', color: '#ffb86c' };
-  if (s.includes('progress')) return { text: 'WIP', color: '#8be9fd' };
-  if (s.includes('unplan')) return { text: 'UNPLAN', color: '#ff5555' };
-  return { text: 'TODO', color: '#8c9ac4' };
+  if (s.includes('merged')) return { text: 'MGD', color: Colors.SUCCESS, dimColor: Colors.SUPPORTING };
+  if (s.includes('done')) return { text: 'DONE', color: Colors.SUCCESS, dimColor: Colors.SUPPORTING };
+  if (s.includes('reject')) return { text: 'REJ', color: Colors.ERROR, dimColor: Colors.SUPPORTING };
+  if (s.includes('merge')) return { text: 'MREQ', color: Colors.SUCCESS };
+  if (s.includes('testing')) return { text: 'TEST', color: Colors.WARNING };
+  if (s.includes('test') || s.includes('qa')) return { text: 'TEST', color: Colors.WARNING };
+  if (s.includes('review')) return { text: 'REV', color: Colors.WARNING };
+  if (s.includes('progress')) return { text: 'WIP', color: Colors.INFO };
+  if (s === 'todo' || s === 'to do') return { text: 'TODO', color: Colors.SUPPORTING };
+  return { text: statusName.slice(0, 6).toUpperCase(), color: Colors.ERROR };
 };
 
 export type PriorityInfo = { color: string };

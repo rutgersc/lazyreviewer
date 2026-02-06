@@ -9,6 +9,7 @@ import { ActivePane } from "../userselection/userSelection";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useDoubleClick } from "../hooks/useDoubleClick";
 import { Colors } from "../colors";
+import { mapStatus } from "../jiraboard/board-utils";
 import { useRepositoryBranches } from "../mergerequests/hooks/useRepositoryBranches";
 import { type JobImportance } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
@@ -27,26 +28,9 @@ export const copyNotificationRequestAtom = Atom.make<string | null>(null);
 
 const getJiraStatusColor = (statusName: string | undefined, mrState: string): string => {
   if (!statusName) return Colors.PRIMARY;
-
-  const status = statusName.toLowerCase();
-
-  if (status.includes('merged') && mrState !== 'merged') {
-    return Colors.ERROR;
-  }
-
-  if (status.includes('merge requested') || status.includes('ready for merge')) {
-    return Colors.SUCCESS;
-  }
-
-  if (status.includes('test in progress') || status.includes('testing')) {
-    return Colors.WARNING;
-  }
-
-  if (status.includes('in code review')) {
-    return Colors.INFO;
-  }
-
-  return Colors.PRIMARY;
+  const s = statusName.toLowerCase();
+  if (s.includes('merged') && mrState !== 'merged') return Colors.ERROR;
+  return mapStatus(statusName).color;
 };
 
 const getMergeBlockedLabel = (status: string | null): string | null => {
