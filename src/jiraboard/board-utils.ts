@@ -12,6 +12,7 @@ export const mapStatus = (statusName: string): StatusInfo => {
   if (s.includes('test') || s.includes('qa')) return { text: 'TEST', color: '#2d4a2d' };
   if (s.includes('review')) return { text: 'REV', color: '#ffb86c' };
   if (s.includes('progress')) return { text: 'WIP', color: '#8be9fd' };
+  if (s.includes('unplan')) return { text: 'UNPLAN', color: '#ff5555' };
   return { text: 'TODO', color: '#8c9ac4' };
 };
 

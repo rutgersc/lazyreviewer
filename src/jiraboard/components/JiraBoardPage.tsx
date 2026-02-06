@@ -416,7 +416,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       const icon = getIssueTypeIcon(item.fields.issuetype.name);
       const parentType = item.fields.parent?.fields.issuetype.name.toLowerCase();
       const isTopLevel = !item.fields.parent || parentType === 'epic';
-      const statusPadded = status.text.padEnd(4);
+      const statusPadded = status.text.padEnd(6);
       const epicName = parentType === 'epic' ? item.fields.parent?.fields.summary : null;
       const epicLabel = isTopLevel
         ? (epicName ?? 'no epic assigned').slice(0, 30).padEnd(30)
