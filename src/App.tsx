@@ -58,12 +58,13 @@ export default function App() {
   // Unwrap the Result type to get actual credentials array
   const missingCredentials = missingCredentialsResult._tag === 'Success' ? missingCredentialsResult.value : [];
 
-  // Show config page on mount if credentials are missing
+  // Show config page on mount only if REQUIRED credentials are missing
+  const requiredMissingCredentials = missingCredentials.filter(c => c.required);
   useEffect(() => {
-    if (missingCredentials.length > 0) {
+    if (requiredMissingCredentials.length > 0) {
       setShowConfigPage(true);
     }
-  }, [missingCredentials.length]);
+  }, [requiredMissingCredentials.length]);
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
