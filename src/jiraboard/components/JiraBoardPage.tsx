@@ -440,7 +440,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           style={{
             flexDirection: 'row',
             gap: 1,
-            backgroundColor: isSelected ? Colors.TRACK : (flatItem.storyIndex % 2 === 1 ? Colors.STRIPE : undefined),
+            backgroundColor: isSelected ? Colors.SELECTED : 'transparent',
           }}
         >
           {isTopLevel
