@@ -8,6 +8,7 @@ import type {
   DiscussionCommentChange
 } from '../changetracking/change-tracking-projection'
 import type { JiraCommentChange, JiraStatusChangedChange } from '../changetracking/jira-change-tracking-projection'
+import { type UserId, type Provider, isAuthorOf, isJiraAuthor } from '../userselection/userSelection'
 
 export type NotifiableChange = Extract<
   Change,
@@ -56,8 +57,8 @@ export const defaultNotificationPreferences: NotificationPreferences = {
  * All the "who am I" and "what do I participate in" data.
  */
 export interface NotificationContext {
-  /** The current user's username (for filtering out own actions) */
-  currentUser: string
+  /** The current user identity (for filtering out own actions) */
+  currentUser: UserId
   /** Set of discussion IDs where the current user has commented */
   participatedDiscussionIds: Set<string>
   /** Set of JIRA issue keys that are related to MRs the user cares about */
@@ -78,9 +79,8 @@ export function determineNotification(
 ): NotificationFilterResult {
   const { currentUser, participatedDiscussionIds, relatedJiraIssueKeys, preferences } = context
 
-  // Helper to check if author is current user
-  const isOwnAction = (author: string) => author === currentUser
-  const isMrAuthoredByMe = (mr: { mrAuthor: string }) => mr.mrAuthor === currentUser
+  const isOwnAction = (provider: Provider, author: string) => isAuthorOf(currentUser, provider, author)
+  const isMrAuthoredByMe = (mr: { mrAuthor: string; provider: Provider }) => isAuthorOf(currentUser, mr.provider, mr.mrAuthor)
 
   switch (change.type) {
     case 'new-mr':
@@ -98,15 +98,12 @@ export function determineNotification(
 
     // Diff comments
     case 'diff-comment': {
-      // Never notify for own comments
-      if (isOwnAction(change.author)) return skipNotification
+      if (isOwnAction(change.mr.provider, change.author)) return skipNotification
 
-      // Check if it's on my MR
       if (preferences.commentsOnMyMrs && isMrAuthoredByMe(change.mr)) {
         return { notify: true, change }
       }
 
-      // Check if it's in a thread I participate in
       if (preferences.threadReplies && participatedDiscussionIds.has(change.discussionId)) {
         return { notify: true, change }
       }
@@ -116,13 +113,12 @@ export function determineNotification(
 
     // Discussion comments
     case 'discussion-comment': {
-      if (isOwnAction(change.author)) return skipNotification
+      if (isOwnAction(change.mr.provider, change.author)) return skipNotification
 
       if (preferences.commentsOnMyMrs && isMrAuthoredByMe(change.mr)) {
         return { notify: true, change }
       }
 
-      // Check if it's in a thread I participate in
       if (preferences.threadReplies && participatedDiscussionIds.has(change.discussionId)) {
         return { notify: true, change }
       }
@@ -140,7 +136,7 @@ export function determineNotification(
 
     case 'jira-comment': {
       if (!preferences.jiraComments) return skipNotification
-      if (isOwnAction(change.author)) return skipNotification
+      if (isJiraAuthor(currentUser, change.author)) return skipNotification
       if (relatedJiraIssueKeys.has(change.issue.issueKey)) {
         return { notify: true, change }
       }

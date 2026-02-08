@@ -5,6 +5,8 @@
   "private": true,
   "scripts": {
     "start": "bun run build.ts && bun run dist/",
+    "watch": "bun --watch run src/index.tsx",
+    "watch2": "watchexec --debounce 2000 -- bun run src/index.tsx",
     "codegen": "graphql-codegen --config codegen.ts",
     "typecheck": "tsc --noEmit",
     "migrate:add-eventid": "bun run scripts/migrate-add-eventid.ts"

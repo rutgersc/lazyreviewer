@@ -1,26 +1,21 @@
 import { TextAttributes } from '@opentui/core';
 import { useRef, useEffect } from 'react';
 import MergeRequestInfo from './MergeRequestInfo';
-import UserSelectionInfo from './UserSelectionInfo';
-import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
-import { useAtom, useAtomValue, Atom } from '@effect-atom/atom-react';
+import { useAtom, Atom } from '@effect-atom/atom-react';
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
-import { selectedUserSelectionEntryAtom } from '../userselection/userselection-atom';
 import { overviewCursorIndexAtom, unresolvedExpandedAtom, resolvedExpandedAtom, scrollToDiscussionRequestAtom, buildSelectableItems, findCursorForItem } from './overview-selection';
 
 // Atoms for overview pane state
 export const copyNotificationAtom = Atom.make<string | null>(null);
 
 interface OverviewProps {
-  activePane: ActivePane;
   selectedMergeRequest: MergeRequest | undefined;
 }
 
 export default function Overview({
-  activePane,
   selectedMergeRequest,
 }: OverviewProps) {
   const [, setOverviewCursorIndex] = useAtom(overviewCursorIndexAtom);
@@ -29,7 +24,6 @@ export default function Overview({
   const [copyNotification] = useAtom(copyNotificationAtom);
   const [scrollToDiscussionRequest, setScrollToDiscussionRequest] = useAtom(scrollToDiscussionRequestAtom);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
-  const selectedUserSelectionEntry = useAtomValue(selectedUserSelectionEntryAtom);
 
   // Reset state when the selected MR changes
   const prevMrIdRef = useRef(selectedMergeRequest?.id);
@@ -117,10 +111,6 @@ export default function Overview({
   const content = (() => {
     if (selectedMergeRequest) {
       return <MergeRequestInfo />;
-    }
-
-    if (activePane === ActivePane.UserSelection && selectedUserSelectionEntry) {
-      return <UserSelectionInfo userSelection={selectedUserSelectionEntry} />;
     }
 
     return (

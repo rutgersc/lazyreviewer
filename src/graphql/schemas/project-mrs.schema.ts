@@ -11,7 +11,8 @@ export const ProjectMRsQuerySchema: Schema.Schema<ProjectMRsQuery> = Schema.Stru
     mergeRequests: Schema.NullOr(Schema.Struct({
       count: Schema.Number,
       pageInfo: Schema.Struct({
-        hasNextPage: Schema.Boolean
+        hasNextPage: Schema.Boolean,
+        endCursor: Schema.NullOr(Schema.String)
       }),
       nodes: Schema.NullOr(Schema.Array(
         Schema.NullOr(MergeRequestFieldsFragmentSchema)

@@ -46,8 +46,13 @@ export type NotificationSettings = Schema.Schema.Type<typeof NotificationSetting
 const BackgroundSyncSettingsSchema = Schema.mutable(Schema.Struct({
   enabled: Schema.Boolean,
   syncIntervalSeconds: Schema.Number,
-  syncUserSelectionEntryId: Schema.optional(Schema.String),
+  scalingFactorHours: Schema.optionalWith(Schema.Number, { default: () => 24 }),
   lastRefreshTimestamp: Schema.optional(Schema.String),
+  lastKnownSeq: Schema.optionalWith(Schema.Number, { default: () => 0 }),
+  pageFetchTimestamps: Schema.optionalWith(
+    Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.mutable(Schema.Array(Schema.String)) })),
+    { default: () => ({}) }
+  ),
 }))
 export type BackgroundSyncSettings = Schema.Schema.Type<typeof BackgroundSyncSettingsSchema>
 
@@ -108,10 +113,12 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
     Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.mutable(Schema.Record({ key: Schema.String, value: JobImportanceWithMigration })) })),
     { default: () => ({}) }
   ),
-  selectedUserSelectionEntryId: Schema.optional(Schema.String),
-  currentUser: Schema.optionalWith(Schema.String, { default: () => 'r.schoorstra' }),
+  repoSelection: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
+  userFilterUsernames: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
+  userFilterGroupIds: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
+  currentUser: Schema.optionalWith(Schema.String, { default: () => 'rutger' }),
   notifications: Schema.optionalWith(NotificationSettingsSchema, { default: () => ({ enabled: false }) }),
-  backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 60 * 15 }) }),
+  backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 300, scalingFactorHours: 24, lastKnownSeq: 0, pageFetchTimestamps: {} }) }),
   jiraBoardId: Schema.optional(NumberFromStringOrNumber),
   mrSortOrder: Schema.optionalWith(MrSortOrderSchema, { default: () => 'updatedAt' as const }),
   appView: Schema.optionalWith(Schema.Literal('review', 'focus'), { default: () => 'review' as const }),

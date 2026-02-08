@@ -1,7 +1,7 @@
 import { execSync, spawnSync } from 'child_process';
 import { Effect } from 'effect';
 import { statSync } from 'fs';
-import { join } from 'path';
+import { basename, join } from 'path';
 
 export const getCurrentBranch = (repoPath: string): string | null => {
   try {
@@ -100,6 +100,46 @@ export const getRemoteBranchCommit = (
     return commit || null;
   } catch {
     return null;
+  }
+};
+
+export interface WorktreeInfo {
+  readonly path: string;
+  readonly branch: string | null;
+  readonly folderName: string;
+  readonly isMain: boolean;
+}
+
+export const getWorktrees = (repoPath: string): readonly WorktreeInfo[] => {
+  try {
+    const output = execSync('git worktree list --porcelain', {
+      cwd: repoPath,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore']
+    });
+
+    return output
+      .split('\n\n')
+      .filter(block => block.trim().length > 0)
+      .map((block, index) => {
+        const lines = block.trim().split('\n');
+        const worktreeLine = lines.find(l => l.startsWith('worktree '));
+        const branchLine = lines.find(l => l.startsWith('branch '));
+        const isBare = lines.some(l => l === 'bare');
+
+        const path = worktreeLine?.slice('worktree '.length) ?? '';
+        const rawBranch = branchLine?.slice('branch '.length) ?? null;
+        const branch = rawBranch?.replace('refs/heads/', '') ?? null;
+
+        return {
+          path,
+          branch,
+          folderName: basename(path),
+          isMain: index === 0 || isBare
+        };
+      });
+  } catch {
+    return [];
   }
 };
 

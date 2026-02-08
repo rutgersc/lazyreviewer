@@ -1,34 +1,32 @@
 import { Atom, Result } from '@effect-atom/atom-react';
 import { Effect, Stream, Console, Fiber, Chunk, Option } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
-import { settingsAtom, currentUserAtom } from '../settings/settings-atom';
+import { settingsAtom, currentUserIdAtom } from '../settings/settings-atom';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
 import { mrChangeTrackingProjection, jiraChangeTrackingProjection } from '../changetracking/change-tracking-projection';
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
 import { SettingsService } from '../settings/settings';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
+import { isAuthorOf } from '../userselection/userSelection';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
-import { BackgroundSyncService, type BackgroundSyncStatus } from './background-sync-service';
+import { BackgroundSyncService, type PageSlotSnapshot } from './background-sync-service';
 
 // Re-export for consumers
-export type { BackgroundSyncStatus } from './background-sync-service';
+export type { PageSlotSnapshot } from './background-sync-service';
 
 // Module-level singleton state for notification daemon
 let notificationDaemonFiber: Fiber.RuntimeFiber<void, unknown> | undefined;
 
-/**
- * Background fetch atom - subscribes to the service's status stream.
- */
-export const backgroundFetchAtom = appAtomRuntime.atom(
+export const pageSlotsAtom = appAtomRuntime.atom(
   (_get) => Effect.map(
     BackgroundSyncService,
-    (service) => Stream.fromPubSub(service.statusPubSub)
+    (service) => Stream.fromPubSub(service.slotsPubSub)
   ).pipe(Stream.unwrap),
-  { initialValue: { _tag: 'syncDisabled' } as BackgroundSyncStatus }
+  { initialValue: [] as readonly PageSlotSnapshot[] }
 ).pipe(Atom.keepAlive);
 
 const buildNotificationContext = (get: Atom.Context): NotificationContext => {
-  const currentUser = get.registry.get(currentUserAtom);
+  const currentUser = get.registry.get(currentUserIdAtom);
   const allMrsResult = get.registry.get(allMrsAtom);
 
   const mrs = Result.match(allMrsResult, {
@@ -40,7 +38,7 @@ const buildNotificationContext = (get: Atom.Context): NotificationContext => {
   const participatedDiscussionIds = new Set(
     mrs.flatMap(mr =>
       mr.discussions
-        .filter(d => d.notes.some(note => note.author === currentUser))
+        .filter(d => d.notes.some(note => isAuthorOf(currentUser, mr.provider, note.author)))
         .map(d => d.id)
     )
   );
@@ -130,8 +128,6 @@ const createNotificationDaemon = (get: Atom.Context) =>
         const hasLastProcessedEvent = acc.pipe(
           Chunk.findFirst(change => change.event?.eventId == lastProcessedTimestamp),
           Option.isSome);
-
-        console.log(`[NotificationDaemon] dropUntil = ${hasLastProcessedEvent}, lastProcessedTimestamp: ${lastProcessedTimestamp}, thing: ${acc.length}`)
 
         return hasLastProcessedEvent; // if has the event, stop dropping
       }),

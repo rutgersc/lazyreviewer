@@ -1,11 +1,14 @@
 import { useKeyboard, useRenderer } from '@opentui/react';
 import { TextAttributes, type ParsedKey, type RenderableOptions } from '@opentui/core';
-import UserSelectionPane from "./components/UserSelectionPane";
+import RepositoriesPane from "./components/RepositoriesPane";
 import MergeRequestPane from "./components/MergeRequestPane";
 import InfoPane from "./components/InfoPane";
 import ConsolePane from "./components/ConsolePane";
 import FactsPane from "./components/FactsPane";
 import MrSortModal from "./components/MrSortModal";
+import FChooserModal from "./components/FChooserModal";
+import UserFilterModal from "./components/UserFilterModal";
+import UserFilterBar from "./components/UserFilterBar";
 import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal from "./components/HelpModal";
 import JiraModal from "./components/JiraModal";
@@ -25,10 +28,12 @@ import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranch
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, allJiraIssuesAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
-import { toggleNotificationsAtom, notificationSettingsAtom, jiraBoardIdAtom, appViewAtom } from './settings/settings-atom';
+import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, setUserFilterAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Console, Effect } from 'effect';
+import { appLayer } from './appLayerRuntime';
+import { openFileInEditor } from './utils/open-file';
 import { appInitAtom } from './app-init';
 import { clearUnreadCount } from './notifications/title-indicator';
 import { missingCredentialsAtom } from './config/config-atom';
@@ -39,6 +44,8 @@ export default function App() {
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
   const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
   const notificationSettings = useAtomValue(notificationSettingsAtom);
+  const toggleBackgroundSync = useAtomSet(toggleBackgroundSyncAtom, { mode: 'promiseExit' });
+  const backgroundSyncSettings = useAtomValue(backgroundSyncSettingsAtom);
 
   const renderer = useRenderer();
   const [activePane, setActivePane] = useAtom(activePaneAtom);
@@ -69,6 +76,7 @@ export default function App() {
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
+  const setUserFilter = useAtomSet(setUserFilterAtom);
   const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
   const jiraBoardId = useAtomValue(jiraBoardIdAtom);
   const setJiraBoardFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
@@ -137,6 +145,17 @@ export default function App() {
       },
     },
     {
+      id: 'global:toggle-background-sync',
+      keys: [parseKeyString('S')],
+      displayKey: 'S',
+      description: 'Toggle background sync',
+      handler: async () => {
+        await toggleBackgroundSync();
+        setCopyNotification(backgroundSyncSettings.enabled ? 'Background sync disabled' : 'Background sync enabled');
+        setTimeout(() => setCopyNotification(null), 2000);
+      },
+    },
+    {
       id: 'global:prev-tab',
       keys: [parseKeyString('[')],
       displayKey: '[ / ]',
@@ -201,6 +220,8 @@ export default function App() {
           setActivePane(ActivePane.MergeRequests);
         } else if (activePane === ActivePane.MergeRequests) {
           setActivePane(ActivePane.Facts);
+        } else if (activePane === ActivePane.Facts) {
+          setActivePane(ActivePane.UserSelection);
         }
       },
     },
@@ -216,10 +237,23 @@ export default function App() {
           setActivePane(ActivePane.MergeRequests);
         } else if (activePane === ActivePane.MergeRequests) {
           setActivePane(ActivePane.UserSelection);
+        } else if (activePane === ActivePane.UserSelection) {
+          setActivePane(ActivePane.Facts);
         }
       },
     },
-  ], [activePane, mergeRequests.length, notificationSettings.enabled, jiraBoardId, appView]);
+    {
+      id: 'global:open-settings',
+      keys: [parseKeyString(',')],
+      displayKey: ',',
+      description: 'Open settings JSON',
+      handler: async () => {
+        await Effect.runPromise(
+          openFileInEditor('lazygitlab-settings.json').pipe(Effect.provide(appLayer))
+        );
+      },
+    },
+  ], [activePane, mergeRequests.length, notificationSettings.enabled, backgroundSyncSettings.enabled, jiraBoardId, appView]);
 
   useEffect(() => {
     // renderer.console.toggle();
@@ -306,50 +340,47 @@ export default function App() {
       {/* Main content area - horizontal layout */}
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
 
-        {/* Facts Pane */}
-        <box
-            style={{
-              flexDirection: "column",
-              border: true,
-              borderColor: activePane === ActivePane.Facts ? "#50fa7b" : "#6272a4",
-              width: widths.left,
-              backgroundColor: '#282a36'
-            }}
-        >
-            <FactsPane />
-        </box>
-
-        {/* Middle panel - two stacked panes */}
-        <box style={{ flexDirection: "column", width: widths.middle }}>
-          {/* Merge Request Pane (top) */}
+        {/* Left panel - Facts and Repositories */}
+        <box style={{ flexDirection: "column", width: widths.left }}>
+          {/* Facts Pane */}
           <box
-            style={{
-              flexDirection: "column",
-              border: true,
-              borderColor: activePane === ActivePane.MergeRequests ? "#50fa7b" : "#6272a4",
-              height: activePane === ActivePane.InfoPane ? "85%" : "80%",
-              minHeight: activePane === ActivePane.InfoPane ? "85%" : "80%",
-              maxHeight: activePane === ActivePane.InfoPane ? "85%" : "80%",
-              backgroundColor: '#282a36'
-            }}
+              style={{
+                flexDirection: "column",
+                border: true,
+                borderColor: activePane === ActivePane.Facts ? "#50fa7b" : "#6272a4",
+                height: "80%",
+                backgroundColor: '#282a36'
+              }}
           >
-            <MergeRequestPane />
+              <FactsPane />
           </box>
 
-          {/* User Selection Pane (bottom) */}
+          {/* Repositories Pane */}
           <box
+            onMouseDown={() => setActivePane(ActivePane.UserSelection)}
             style={{
               flexDirection: "column",
               border: true,
               borderColor: activePane === ActivePane.UserSelection ? "#50fa7b" : "#6272a4",
-              height: activePane === ActivePane.InfoPane ? "15%" : "20%",
-              minHeight: activePane === ActivePane.InfoPane ? "15%" : "20%",
-              maxHeight: activePane === ActivePane.InfoPane ? "15%" : "20%",
+              height: "20%",
               backgroundColor: '#282a36'
             }}
           >
-            <UserSelectionPane />
+            <RepositoriesPane />
           </box>
+        </box>
+
+        {/* Middle panel - Merge Request Pane */}
+        <box
+          style={{
+            flexDirection: "column",
+            border: true,
+            borderColor: activePane === ActivePane.MergeRequests ? "#50fa7b" : "#6272a4",
+            width: widths.middle,
+            backgroundColor: '#282a36'
+          }}
+        >
+          <MergeRequestPane />
         </box>
 
         {/* Right panel - Info pane and footer */}
@@ -387,6 +418,23 @@ export default function App() {
           </box>
         </box>
       </box>
+
+      {/* F Chooser Modal - pick filter or sort */}
+      <FChooserModal
+        isVisible={activeModal === 'fChooser'}
+        onChoose={(modal) => setActiveModal(modal)}
+        onClose={() => setActiveModal('none')}
+      />
+
+      {/* User Filter Modal - toggle user filter */}
+      <UserFilterModal
+        isVisible={activeModal === 'userFilter'}
+        onConfirm={(usernames, groupIds) => {
+          setUserFilter({ usernames, groupIds });
+          setActiveModal('none');
+        }}
+        onClose={() => setActiveModal('none')}
+      />
 
       {/* MR Sort Modal - rendered at app level to cover entire screen */}
       <MrSortModal

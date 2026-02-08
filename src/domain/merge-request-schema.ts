@@ -61,6 +61,7 @@ export const DiscussionSchema = Schema.Struct({
 export const MergeRequestSchema = Schema.Struct({
   id: Schema.String.pipe(Schema.fromBrand(MrGid)),
   iid: Schema.String.pipe(Schema.fromBrand(MrIid)),
+  provider: Schema.Literal('gitlab', 'bitbucket'),
   title: Schema.String,
   jiraIssueKeys: Schema.mutable(Schema.Array(Schema.String)),
   webUrl: Schema.String,

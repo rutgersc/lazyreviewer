@@ -36,7 +36,8 @@ const getElabGitSdk = () => {
 };
 
 export class FetchGitlabProjectMrsError extends Data.TaggedError("FetchGitlabProjectMrsError")<{
-  cause: unknown;
+  projectPath: string;
+  message: string;
 }> { }
 
 export const getGitlabMrsByProject = Effect.fn("getGitlabMrsByProject")(function* (projectPath: string, state: MergeRequestState = 'opened') {
@@ -172,17 +173,21 @@ export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (u
   return event;
 });
 
-export const getGitlabMrsByProjectAsEvent = Effect.fn("getGitlabMrsByProjectAsEvent")(function* (projectPath: string, state: MergeRequestState = 'opened') {
-  yield* Console.log(`[GitLab] Fetching MRs for project: "${projectPath}", state: ${state}`);
+export const getGitlabMrsByProjectAsEvent = Effect.fn("getGitlabMrsByProjectAsEvent")(function* (projectPath: string, state: MergeRequestState = 'opened', after: string | null = null, first: number = 50) {
+  yield* Console.log(`[GitLab] Fetching MRs for project: "${projectPath}", state: ${state}, after: ${after ?? 'null'}, first: ${first}`);
 
   const sdk = getElabGitSdk();
   const data = yield* Effect.tryPromise({
     try: () => sdk.ProjectMRs({
       projectPath: projectPath,
       state: state,
-      first: 50
+      first,
+      after
     }),
-    catch: cause => new FetchGitlabProjectMrsError({ cause })
+    catch: cause => new FetchGitlabProjectMrsError({
+      projectPath,
+      message: `Fetch MRs failed for "${projectPath}": ${cause instanceof Error ? cause.message : String(cause)}`
+    })
   });
 
   const timestamp = new Date().toISOString();
@@ -198,6 +203,44 @@ export const getGitlabMrsByProjectAsEvent = Effect.fn("getGitlabMrsByProjectAsEv
 
   return event;
 });
+
+export const getAllGitlabMrsByProjectAsEvents = Effect.fn("getAllGitlabMrsByProjectAsEvents")(
+  function* (projectPath: string, state: MergeRequestState = 'opened') {
+    yield* Console.log(`[GitLab] Deep fetch: all MRs for "${projectPath}", state: ${state}`)
+
+    const sdk = getElabGitSdk()
+    let after: string | null = null
+    const events: GitlabprojectMergeRequestsFetchedEvent[] = []
+
+    while (true) {
+      const data = yield* Effect.tryPromise({
+        try: () => sdk.ProjectMRs({ projectPath, state, first: 50, after }),
+        catch: cause => new FetchGitlabProjectMrsError({
+          projectPath,
+          message: `Deep fetch failed for "${projectPath}": ${cause instanceof Error ? cause.message : String(cause)}`
+        })
+      })
+
+      const timestamp = new Date().toISOString()
+      const type = 'gitlab-project-mrs-fetched-event' as const
+      events.push({
+        eventId: generateEventId(timestamp, type),
+        type,
+        mrs: data,
+        forProjectPath: projectPath,
+        forState: state,
+        timestamp
+      })
+
+      const pageInfo = data.project?.mergeRequests?.pageInfo
+      if (!pageInfo?.hasNextPage || !pageInfo.endCursor) break
+      after = pageInfo.endCursor
+    }
+
+    yield* Console.log(`[GitLab] Deep fetch complete: ${events.length} page(s) for "${projectPath}"`)
+    return events
+  }
+)
 
 export const getJobTraceAsEvent = Effect.fn("getJobTraceAsEvent")(function* (projectId: string, jobId: string) {
   const traceData = yield* getJobTraceRaw(projectId, jobId);

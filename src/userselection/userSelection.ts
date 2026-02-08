@@ -1,8 +1,19 @@
-import type { MergeRequestState } from "../domain/merge-request-state";
-import { MRCacheKey, ProjectMRCacheKey, type CacheKey } from "../mergerequests/decide-fetch-mrs";
 
-export type UserId =
-  | { type: 'userId', id: string }
+export type Provider = 'gitlab' | 'bitbucket'
+
+export type UserId = {
+  type: 'userId'
+  name: string
+  gitlab?: string
+  bitbucket?: string
+  jira?: { displayName: string }
+}
+
+export const isAuthorOf = (user: UserId, provider: Provider, author: string): boolean =>
+  provider === 'gitlab' ? user.gitlab === author : user.bitbucket === author
+
+export const isJiraAuthor = (user: UserId, author: string): boolean =>
+  user.jira?.displayName === author
 
 export type GroupId =
   | { type: 'groupId', id: string }
@@ -14,7 +25,11 @@ export type RepositoryId =
 export const repositoryFullPath = (repo: RepositoryId): string =>
   repo.provider === 'gitlab' ? repo.id : `${repo.workspace}/${repo.repo}`
 
-export type UserOrGroupId = | UserId | GroupId | RepositoryId
+export const resolveRepoPath = (path: string, knownProjects: readonly RepositoryId[]): RepositoryId =>
+  knownProjects.find(r => repositoryFullPath(r) === path)
+    ?? { type: 'repositoryId', provider: 'gitlab', id: path };
+
+export type UserOrGroupId = | UserId | GroupId
 
 
 export interface User {
@@ -52,75 +67,53 @@ export enum ActivePane {
   Console = 4
 }
 
-export const extractSelectionData = (
-  entry: UserSelectionEntry,
-  groups: readonly UserGroup[],
-  state: MergeRequestState
-): CacheKey => {
-  const usernames = new Set<string>();
-  const repositories: RepositoryId[] = [];
+export type ResolvedSelection = {
+  readonly users: readonly UserId[]
+}
 
-  const processId = (id: UserOrGroupId) => {
-    if (id.type === 'userId') {
-      usernames.add(id.id);
-    } else if (id.type === 'groupId') {
-      const group = groups.find(g => g.id.id === id.id);
-      if (group) {
-        group.children.forEach(processId);
-      }
-    } else if (id.type === 'repositoryId') {
-      repositories.push(id);
-    }
+const resolveIds = (
+  ids: readonly UserOrGroupId[],
+  groups: readonly UserGroup[]
+): readonly UserId[] => {
+  const processId = (id: UserOrGroupId): readonly UserId[] => {
+    if (id.type === 'userId') return [id];
+    const group = groups.find(g => g.id.id === id.id);
+    return group ? group.children.flatMap(processId) : [];
   };
-
-  entry.selection.forEach(processId);
-
-  const usernamesArray = Array.from(usernames);
-
-  if (repositories.length > 0 && repositories[0]) {
-    return new ProjectMRCacheKey({
-      repository: repositories[0],
-      state
-    });
-  } else if (usernamesArray.length > 0) {
-    return new MRCacheKey({
-      usernames: usernamesArray,
-      state
-    });
-  }
-
-  throw new Error("unreachable");
+  return ids.flatMap(processId);
 };
 
-export const getUsernamesFromSelection = (
+export const resolveSelection = (
   entry: UserSelectionEntry,
   groups: readonly UserGroup[]
-): Set<string> => {
-  const usernames = new Set<string>();
+): ResolvedSelection => ({
+  users: resolveIds(entry.selection, groups)
+});
 
-  const processId = (id: UserOrGroupId) => {
-    if (id.type === 'userId') {
-      usernames.add(id.id);
-    } else if (id.type === 'groupId') {
-      const group = groups.find(g => g.id.id === id.id);
-      if (group) {
-        group.children.forEach(processId);
-      }
-    }
-  };
+export const resolveGroupIds = (
+  groupIds: readonly string[],
+  groups: readonly UserGroup[]
+): readonly UserId[] =>
+  resolveIds(
+    groupIds.map((id): GroupId => ({ type: 'groupId', id })),
+    groups
+  );
 
-  entry.selection.forEach(processId);
-  return usernames;
-};
+export const getUsersFromSelection = (
+  entry: UserSelectionEntry,
+  groups: readonly UserGroup[]
+): readonly UserId[] =>
+  resolveSelection(entry, groups).users;
 
 export const findSelectionForAuthor = (
+  provider: Provider,
   author: string,
   userSelections: readonly UserSelectionEntry[],
   groups: readonly UserGroup[]
 ): UserSelectionEntry | null => {
   for (const entry of userSelections) {
-    const usernames = getUsernamesFromSelection(entry, groups);
-    if (usernames.has(author)) {
+    const users = getUsersFromSelection(entry, groups);
+    if (users.some(u => isAuthorOf(u, provider, author))) {
       return entry;
     }
   }

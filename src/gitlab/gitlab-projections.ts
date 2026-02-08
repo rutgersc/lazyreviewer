@@ -69,6 +69,7 @@ export const mapMrFragment = (
   return {
     id: MrGid(mr.id),
     iid: MrIid(mr.iid),
+    provider: 'gitlab',
     title: mr.name!,
     jiraIssueKeys: extractElabTicketsFromTitle(mr.name!),
     webUrl: mr.webUrl!,

@@ -3,14 +3,14 @@ import { activePaneAtom, activeModalAtom, infoPaneTabAtom } from "../ui/navigati
 import { ActivePane } from "../userselection/userSelection";
 import { mrActionsAtom } from "../components/MergeRequestPaneActions";
 import { factsPaneActionsAtom } from "../components/FactsPaneActions";
-import { userSelectionActionsAtom } from "../components/UserSelectionPaneActions";
+import { repositoriesPaneActionsAtom } from "../components/RepositoriesPaneActions";
 import { overviewActionsAtom } from "../components/OverviewActions";
 import { jiraIssuesListActionsAtom } from "../components/JiraIssuesListActions";
 import { pipelineJobsListActionsAtom } from "../components/PipelineJobsListActions";
 
 // Re-export for convenience
 export { mrActionsAtom } from "../components/MergeRequestPaneActions";
-export { userSelectionActionsAtom } from "../components/UserSelectionPaneActions";
+export { repositoriesPaneActionsAtom } from "../components/RepositoriesPaneActions";
 export { overviewActionsAtom } from "../components/OverviewActions";
 
 // Gets pane actions based on active pane (ignores modal state - for display purposes)
@@ -24,7 +24,7 @@ const paneActionsForDisplayAtom = Atom.make((get) => {
     case ActivePane.MergeRequests:
       return get(mrActionsAtom);
     case ActivePane.UserSelection:
-      return get(userSelectionActionsAtom);
+      return get(repositoriesPaneActionsAtom);
     case ActivePane.InfoPane:
       switch (infoPaneTab) {
         case 'overview':

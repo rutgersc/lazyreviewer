@@ -13,7 +13,9 @@ export type ActiveModal =
   | 'jobHistory'
   | 'eventLog'
   | 'jiraBoard'
-  | 'monitoredMrs';
+  | 'monitoredMrs'
+  | 'fChooser'
+  | 'userFilter';
 
 export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);
 export const activeModalAtom = Atom.make<ActiveModal>('none');

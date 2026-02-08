@@ -1,38 +1,37 @@
 import { Atom, Result } from "@effect-atom/atom-react";
 import type { MergeRequest } from "./mergerequest-schema";
-import { extractSelectionData, findSelectionForAuthor, getUsernamesFromSelection } from "../userselection/userSelection";
+import { repositoryFullPath, resolveRepoPath, type RepositoryId, type UserId } from "../userselection/userSelection";
 import {
-  type CacheKey,
+  fetchRepoPage,
+  extractKnownProjects,
   decideFetchUserMrs,
-  decideFetchProjectMrs,
   decideFetchSingleMr,
-  mrMatchesCacheKey,
-  getKnownMrsForCacheKey
+  getKnownMrsForCacheKey,
+  MRCacheKey,
+  ProjectMRCacheKey,
 } from "./decide-fetch-mrs";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../domain/merge-request-state";
-import { Effect, Option, Console, Stream, Chunk, SubscriptionRef } from "effect";
+import { Effect, Console, Stream } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import type { BranchDifference } from "./hooks/useRepositoryBranches";
 import { refetchMrPipeline } from './mergerequests-effects';
-import { getSingleMrAsEvent } from '../gitlab/gitlab-graphql';
-import { projectGitlabSingleMrFetchedEvent } from '../gitlab/gitlab-projections';
 import { loadJiraTicketsAsEvent } from '../jira/jira-service';
-import { writeFileSync } from 'fs';
-import { join } from 'path';
 import type { JiraIssue } from "../jira/jira-service";
-import { selectedUserSelectionEntryAtom, userSelectionsAtom } from "../userselection/userselection-atom";
-import { selectedUserSelectionEntryIdAtom, mrSortOrderAtom } from "../settings/settings-atom";
+import { mrSortOrderAtom, repoSelectionAtom, userFilterUsernamesAtom, userFilterGroupIdsAtom } from "../settings/settings-atom";
+import { groupsAtom } from "../data/data-atom";
+import { resolveGroupIds } from "../userselection/userSelection";
 import { allEventsAtom } from "../events/events-atom";
 import type { LazyReviewerEvent } from "../events/events";
-import { groupsAtom } from "../data/data-atom";
-import { AllMrsState, allMrsProjection } from "./all-mergerequests-projection";
-import { stream } from "@effect/platform/Template";
+import { allMrsProjection } from "./all-mergerequests-projection";
 import type { MrSortOrder } from "../settings/settings";
 import { MrStateService } from "./mr-state-service";
 import type { MrGid } from "../domain/identifiers";
 
 export const selectedMrIndexAtom = Atom.make<number>(0);
+
+// Transient repo filter for MR display (empty = show all synced repos)
+export const repoFilterAtom = Atom.make<readonly string[]>([]);
 
 export const selectedMrAtom = Atom.make(get =>  {
     const selectedMrIndex = get(selectedMrIndexAtom);
@@ -42,7 +41,7 @@ export const selectedMrAtom = Atom.make(get =>  {
         return Result.match(mergeRequestsResult, {
             onInitial: () => undefined,
             onSuccess: (success) => success.value[selectedMrIndex],
-            onFailure: (failure) => undefined
+            onFailure: () => undefined
         });
     }
 
@@ -71,28 +70,70 @@ export const allJiraIssuesAtom = Atom.map(
     })
 );
 
-const filterMrsByCacheKey = (allMrs: ReadonlyMap<MrGid, MergeRequest>, cacheKey: CacheKey, sortOrder: MrSortOrder): readonly MergeRequest[] =>
-  [...allMrs.values()]
-    .filter(mr => mrMatchesCacheKey(mr, cacheKey))
+// Unique authors across all fetched MRs
+export const knownAuthorsAtom = Atom.make((get): readonly UserId[] => {
+  const allMrsResult = get(allMrsAtom);
+  return Result.match(allMrsResult, {
+    onInitial: () => [] as UserId[],
+    onSuccess: (state) => {
+      const seen = new Map<string, UserId>();
+      for (const mr of state.value.mrsByGid.values()) {
+        if (!seen.has(mr.author)) {
+          seen.set(mr.author, { type: 'userId', name: mr.author, [mr.provider]: mr.author });
+        }
+      }
+      return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+    },
+    onFailure: () => [] as UserId[]
+  });
+});
+
+// Unique project paths across all fetched MRs
+export const knownProjectsAtom = Atom.make((get): readonly RepositoryId[] => {
+  const allMrsResult = get(allMrsAtom);
+  return Result.match(allMrsResult, {
+    onInitial: () => [] as RepositoryId[],
+    onSuccess: (state) =>
+      [...extractKnownProjects(state.value.mrsByGid)]
+        .sort((a, b) => repositoryFullPath(a).localeCompare(repositoryFullPath(b))),
+    onFailure: () => [] as RepositoryId[]
+  });
+});
+
+export const effectiveUserFilterAtom = Atom.make((get): readonly string[] => {
+  const usernames = get(userFilterUsernamesAtom);
+  const groupIds = get(userFilterGroupIdsAtom);
+  if (usernames.length === 0 && groupIds.length === 0) return [];
+  const groups = get(groupsAtom);
+  const groupUsernames = resolveGroupIds(groupIds, groups).map(u => u.gitlab ?? u.name);
+  return [...new Set([...usernames, ...groupUsernames])];
+});
+
+const filterMrs = (
+  allMrs: ReadonlyMap<MrGid, MergeRequest>,
+  state: MergeRequestState,
+  repoFilter: readonly string[],
+  userFilter: readonly string[],
+  sortOrder: MrSortOrder,
+): readonly MergeRequest[] => {
+  const repoFilterSet = new Set(repoFilter);
+  return [...allMrs.values()]
+    .filter(mr => mr.state === state)
+    .filter(mr => repoFilterSet.size === 0 || repoFilterSet.has(mr.project.fullPath))
+    .filter(mr => userFilter.length === 0 || userFilter.includes(mr.author))
     .sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
+};
 
-// Filtered MRs based on current user selection and state
 export const filteredMrsAtom = Atom.make((get) => {
-  const selectionEntry = get(selectedUserSelectionEntryAtom);
-  if (!selectionEntry) {
-    return [];
-  }
-
+  const repoFilter = get(repoFilterAtom);
   const filterMrState = get(filterMrStateAtom);
   const sortOrder = get(mrSortOrderAtom);
-  const groupsList = get(groupsAtom);
-  const cacheKey = extractSelectionData(selectionEntry, groupsList, filterMrState);
-
+  const userFilter = get(effectiveUserFilterAtom);
   const allMrsResult = get(allMrsAtom);
 
   return Result.match(allMrsResult, {
     onInitial: () => [] as readonly MergeRequest[],
-    onSuccess: (state) => filterMrsByCacheKey(state.value.mrsByGid, cacheKey, sortOrder),
+    onSuccess: (state) => filterMrs(state.value.mrsByGid, filterMrState, repoFilter, userFilter, sortOrder),
     onFailure: () => [] as readonly MergeRequest[]
   });
 });
@@ -101,64 +142,24 @@ export const filteredMrsAtom = Atom.make((get) => {
 export const mergeRequestsAtom = Atom.make((get) => Result.success(get(filteredMrsAtom)));
 export const unwrappedMergeRequestsAtom = filteredMrsAtom;
 
-// Helper to check if two arrays of usernames match (same set of users)
-const usernamesMatch = (eventUsernames: readonly string[], selectionUsernames: readonly string[]): boolean => {
-  if (eventUsernames.length !== selectionUsernames.length) return false;
-  const sortedEvent = [...eventUsernames].sort();
-  const sortedSelection = [...selectionUsernames].sort();
-  return sortedEvent.every((username, i) => username === sortedSelection[i]);
-};
-
-// Helper to extract usernames from a selection entry
-const extractUsernames = (
-  selectionEntry: { selection: readonly import("../userselection/userSelection").UserOrGroupId[] },
-  groups: readonly import("../userselection/userSelection").UserGroup[]
-): string[] => {
-  const usernames: string[] = [];
-
-  const processId = (id: import("../userselection/userSelection").UserOrGroupId) => {
-    if (id.type === 'userId') {
-      usernames.push(id.id);
-    } else if (id.type === 'groupId') {
-      const group = groups.find(g => g.id.id === id.id);
-      if (group) {
-        group.children.forEach(processId);
-      }
-    }
-    // repositoryId is ignored for username matching
-  };
-
-  selectionEntry.selection.forEach(processId);
-  return usernames;
-};
-
 // Find the last refresh timestamp for the current selection + state
 export const lastRefreshTimestampAtom = Atom.make((get): Date | null => {
-  const selectionEntry = get(selectedUserSelectionEntryAtom);
-  if (!selectionEntry) return null;
-
   const filterMrState = get(filterMrStateAtom);
-  const groupsList = get(groupsAtom);
   const events = Result.match(get(allEventsAtom), {
     onInitial: () => [] as LazyReviewerEvent[],
     onSuccess: (e) => e.value,
     onFailure: () => [] as LazyReviewerEvent[]
   });
 
-  const selectionUsernames = extractUsernames(selectionEntry, groupsList);
-
-  // Find the most recent matching event (events are in chronological order, so search from end)
   for (let i = events.length - 1; i >= 0; i--) {
     const event = events[i];
     if (!event) continue;
 
-    if (event.type === 'gitlab-user-mrs-fetched-event') {
-      // Check if usernames and state match
-      if (event.forState === filterMrState && usernamesMatch(event.forUsernames, selectionUsernames)) {
+    if (event.type === 'gitlab-project-mrs-fetched-event') {
+      if (event.forState === filterMrState) {
         return new Date(event.timestamp);
       }
     }
-    // TODO: Add support for gitlab-project-mrs-fetched-event if needed
   }
 
   return null;
@@ -174,14 +175,11 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
     return Effect.gen(function* () {
-      const selectionEntry = get(selectedUserSelectionEntryAtom);
-      if (!selectionEntry) {
-        return;
-      }
+      const repoFilter = get(repoFilterAtom);
+      const repoPaths = repoFilter.length > 0 ? repoFilter : get(repoSelectionAtom);
+      if (repoPaths.length === 0) return;
 
-      const groupsList = get(groupsAtom);
       const filterMrState = get(filterMrStateAtom);
-      const cacheKey = extractSelectionData(selectionEntry, groupsList, filterMrState);
 
       const allMrsResult = get(allMrsAtom);
       const allMrs = Result.match(allMrsResult, {
@@ -190,18 +188,49 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
         onFailure: () => new Map<MrGid, MergeRequest>()
       });
 
-      const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
+      const knownProjects = get(knownProjectsAtom);
+      const repos = repoPaths
+        .map(path => resolveRepoPath(path, knownProjects));
 
-      if (cacheKey._tag === "UserMRs") {
-        yield* decideFetchUserMrs(cacheKey.usernames as string[], cacheKey.state, knownMrs)
+      const userFilter = get(effectiveUserFilterAtom);
+      const gitlabRepos = repos.filter(r => r.provider === 'gitlab');
+      const bitbucketRepos = repos.filter(r => r.provider === 'bitbucket');
+
+      const hasUserFilter = userFilter.length > 0;
+
+      if (hasUserFilter && gitlabRepos.length > 0) {
+        const userIds: UserId[] = userFilter.map(username => ({ type: 'userId', name: username, gitlab: username }));
+        const cacheKey = new MRCacheKey({ users: userIds, state: filterMrState });
+        const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
+        yield* decideFetchUserMrs(userIds, filterMrState, knownMrs).pipe(
+          Effect.catchAllCause((cause) => Console.error("Error fetching user MRs:", cause))
+        );
       } else {
-        yield* decideFetchProjectMrs(cacheKey.repository, cacheKey.state, knownMrs)
+        yield* Effect.forEach(
+          gitlabRepos,
+          (repo) => {
+            const knownMrs = getKnownMrsForCacheKey(allMrs, new ProjectMRCacheKey({ repository: repo, state: filterMrState }));
+            return fetchRepoPage(repo, filterMrState, knownMrs, null);
+          },
+          { concurrency: 3 }
+        ).pipe(
+          Effect.catchAllCause((cause) => Console.error("Error fetching GitLab project MRs:", cause))
+        );
       }
+
+      yield* Effect.forEach(
+        bitbucketRepos,
+        (repo) => {
+          const knownMrs = getKnownMrsForCacheKey(allMrs, new ProjectMRCacheKey({ repository: repo, state: filterMrState }));
+          return fetchRepoPage(repo, filterMrState, knownMrs, null);
+        },
+        { concurrency: 3 }
+      ).pipe(
+        Effect.catchAllCause((cause) => Console.error("Error fetching Bitbucket project MRs:", cause))
+      );
     }).pipe(
       Effect.catchAllCause((cause) =>
-        Effect.gen(function* () {
-          yield* Console.error("Error refreshing merge requests:", cause)
-        })
+        Console.error("Error refreshing merge requests:", cause)
       )
     );
   }
@@ -215,12 +244,6 @@ export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
     const selectedMr = mergeRequests[selectedMrIndex];
     if (!selectedMr) {
       yield* Console.log('[Pipeline] No MR selected');
-      return;
-    }
-
-    const selectionEntry = get(selectedUserSelectionEntryAtom);
-    if (!selectionEntry) {
-      yield* Console.log('[Pipeline] No selection entry found');
       return;
     }
 
@@ -270,17 +293,14 @@ export const selectMrByIdAtom = Atom.writable(
   (ctx, params: SelectMrByIdParams) => {
     const { mrId } = params;
 
-    // Get current filtered MRs
     const filteredMrs = ctx.get(filteredMrsAtom);
     const mrIndex = filteredMrs.findIndex(mr => mr.id === mrId);
 
     if (mrIndex >= 0) {
-      // MR is in current filtered list - just set the index
       ctx.set(selectedMrIndexAtom, mrIndex);
       return;
     }
 
-    // MR not in filtered list - need to switch user selection
     const allMrsResult = ctx.get(allMrsAtom);
     const allMrsState = Result.match(allMrsResult, {
       onInitial: () => null,
@@ -289,30 +309,21 @@ export const selectMrByIdAtom = Atom.writable(
     });
     if (!allMrsState) return;
 
-    // Find MR by GID (search through values since map is keyed by IID)
     const mr = Array.from(allMrsState.mrsByGid.values()).find(m => m.id === mrId);
     if (!mr) return;
 
-    const userSelections = ctx.get(userSelectionsAtom);
-    const groups = ctx.get(groupsAtom);
-    const suggestedSelection = findSelectionForAuthor(mr.author, userSelections, groups);
+    const newState = mr.state as MergeRequestState;
+    const sortOrder = ctx.get(mrSortOrderAtom);
+    const rFilter = new Set(ctx.get(repoFilterAtom));
+    const userFilter = ctx.get(effectiveUserFilterAtom);
 
-    if (suggestedSelection) {
-      const newState = mr.state as MergeRequestState;
-      const selectionUsernames = getUsernamesFromSelection(suggestedSelection, groups);
-      const sortOrder = ctx.get(mrSortOrderAtom);
-
-      // Compute the new filtered list
-      const newFilteredMrs = Array.from(allMrsState.mrsByGid.values())
-        .filter(m => m.state === newState && selectionUsernames.has(m.author))
-        .sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
-
-      const newMrIndex = newFilteredMrs.findIndex(m => m.id === mrId);
-
-      // Set everything together
-      ctx.set(selectedUserSelectionEntryIdAtom, suggestedSelection.userSelectionEntryId);
-      ctx.set(filterMrStateAtom, newState);
-      ctx.set(selectedMrIndexAtom, newMrIndex >= 0 ? newMrIndex : 0);
-    }
+    ctx.set(filterMrStateAtom, newState);
+    const newFilteredMrs = Array.from(allMrsState.mrsByGid.values())
+      .filter(m => m.state === newState)
+      .filter(m => rFilter.size === 0 || rFilter.has(m.project.fullPath))
+      .filter(m => userFilter.length === 0 || userFilter.includes(m.author))
+      .sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
+    const newMrIndex = newFilteredMrs.findIndex(m => m.id === mrId);
+    ctx.set(selectedMrIndexAtom, newMrIndex >= 0 ? newMrIndex : 0);
   }
 );

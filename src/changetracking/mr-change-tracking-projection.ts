@@ -4,9 +4,11 @@ import {
   projectGitlabSingleMrFetchedEvent,
   projectGitlabMrsFetchedEvent
 } from '../gitlab/gitlab-projections'
+import { mapBitbucketToMergeRequest } from '../bitbucket/bitbucket-projections'
 import type { DiscussionNote, MergeRequest } from '../domain/merge-request-schema'
 import { defineProjection } from '../utils/define-projection'
 import type { Change } from './change-tracking-projection'
+import type { Provider } from '../userselection/userSelection'
 
 // Cumulative state per MR (for calculating future deltas)
 export interface MrStateForDelta {
@@ -26,6 +28,7 @@ export interface MrInfo {
   mrId: string;
   mrName: string;
   mrAuthor: string;
+  provider: Provider;
   jiraIssueKeys: string[];
 }
 
@@ -334,7 +337,7 @@ const detectMergerequestChanges = (
     const delta = calcDelta(mr.id, previousState, latestState);
 
     if (delta.stateDelta !== undefined || delta.commentsDelta.size > 0) {
-      const mrInfo: MrInfo = { mrId: delta.mrId, mrName: mr?.title ?? "unknown", mrAuthor: mr.author, jiraIssueKeys: mr.jiraIssueKeys };
+      const mrInfo: MrInfo = { mrId: delta.mrId, mrName: mr?.title ?? "unknown", mrAuthor: mr.author, provider: mr.provider, jiraIssueKeys: mr.jiraIssueKeys };
       const mrStatusChange = determineMrStatusChange(delta.stateDelta, mrInfo, mr.updatedAt);
       const noteChanges = [...delta.commentsDelta].map((noteId) => {
         const found = mr ? findNoteById(mr, noteId) : undefined;
@@ -377,6 +380,19 @@ export const mrChangeTrackingProjection = defineProjection({
     "gitlab-mrs-fetched-event": (state, event) => {
       return detectMergerequestChanges(state.mrStatesForDelta, projectGitlabMrsFetchedEvent(event));
     },
+
+    "bitbucket-prs-fetched-event": (state, event) =>
+      detectMergerequestChanges(
+        state.mrStatesForDelta,
+        event.prsResponse.values.map(pr =>
+          mapBitbucketToMergeRequest(pr, event.forWorkspace, event.forRepoSlug))
+      ),
+
+    "bitbucket-single-pr-fetched-event": (state, event) =>
+      detectMergerequestChanges(
+        state.mrStatesForDelta,
+        [mapBitbucketToMergeRequest(event.pr, event.forWorkspace, event.forRepoSlug)]
+      ),
   }
 });
 

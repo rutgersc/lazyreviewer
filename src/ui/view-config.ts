@@ -2,6 +2,7 @@ import type { Change } from '../changetracking/change-tracking-projection'
 import { isMrChange } from '../changetracking/mr-change-tracking-projection'
 import { TextAttributes } from '@opentui/core'
 import type { AppView } from '../settings/settings-atom'
+import { type UserId, type Provider, isAuthorOf, isJiraAuthor } from '../userselection/userSelection'
 
 export type FocusRelevance = 'primary' | 'dimmed' | 'hidden'
 
@@ -26,7 +27,7 @@ type ModeIndicatorStyle = {
 
 export type ViewConfig = {
   readonly modeIndicator: ModeIndicatorStyle
-  readonly classify: (change: Change, currentUser: string, myJiraIssueKeys: Set<string>) => FocusRelevance
+  readonly classify: (change: Change, currentUser: UserId, myJiraIssueKeys: Set<string>) => FocusRelevance
   readonly changeStyle: {
     readonly primary: ChangeStyle
     readonly dimmed: ChangeStyle
@@ -39,30 +40,35 @@ export type ViewConfig = {
 
 const reviewClassify = (): FocusRelevance => 'primary'
 
-const focusClassify = (change: Change, currentUser: string, myJiraIssueKeys: Set<string>): FocusRelevance => {
+const focusClassify = (change: Change, currentUser: UserId, myJiraIssueKeys: Set<string>): FocusRelevance => {
+  const isMeAuthor = (provider: Provider, author: string) =>
+    isAuthorOf(currentUser, provider, author)
+  const isMeMrAuthor = (mr: { mrAuthor: string; provider: Provider }) =>
+    isAuthorOf(currentUser, mr.provider, mr.mrAuthor)
+
   if (isMrChange(change)) {
     switch (change.type) {
       case 'new-mr':
       case 'merged-mr':
       case 'closed-mr':
       case 'reopened-mr':
-        return change.mr.mrAuthor === currentUser ? 'primary' : 'dimmed'
+        return isMeMrAuthor(change.mr) ? 'primary' : 'dimmed'
 
       case 'system-note':
-        if (change.mr.mrAuthor !== currentUser) return 'hidden'
-        return change.author !== currentUser ? 'primary' : 'hidden'
+        if (!isMeMrAuthor(change.mr)) return 'hidden'
+        return !isMeAuthor(change.mr.provider, change.author) ? 'primary' : 'hidden'
 
       case 'system-notes-compacted':
-        if (change.mr.mrAuthor !== currentUser) return 'hidden'
-        return change.authors[0] !== currentUser ? 'primary' : 'hidden'
+        if (!isMeMrAuthor(change.mr)) return 'hidden'
+        return !isMeAuthor(change.mr.provider, change.authors[0]!) ? 'primary' : 'hidden'
 
       case 'diff-comment':
-        if (change.mr.mrAuthor !== currentUser) return 'hidden'
-        return change.author !== currentUser ? 'primary' : 'hidden'
+        if (!isMeMrAuthor(change.mr)) return 'hidden'
+        return !isMeAuthor(change.mr.provider, change.author) ? 'primary' : 'hidden'
 
       case 'discussion-comment':
-        if (change.mr.mrAuthor !== currentUser) return 'hidden'
-        return change.author !== currentUser ? 'primary' : 'hidden'
+        if (!isMeMrAuthor(change.mr)) return 'hidden'
+        return !isMeAuthor(change.mr.provider, change.author) ? 'primary' : 'hidden'
     }
   }
 
@@ -76,7 +82,7 @@ const focusClassify = (change: Change, currentUser: string, myJiraIssueKeys: Set
 
     case 'jira-comment':
       if (!myJiraIssueKeys.has(change.issue.issueKey)) return 'hidden'
-      return change.author !== currentUser ? 'primary' : 'hidden'
+      return !isJiraAuthor(currentUser, change.author) ? 'primary' : 'hidden'
   }
 }
 

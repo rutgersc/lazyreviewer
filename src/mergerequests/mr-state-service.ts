@@ -1,6 +1,6 @@
 import { Effect, Stream, SubscriptionRef, Chunk } from "effect"
 import { EventStorage } from "../events/events"
-import { allMrsProjection, type AllMrsState } from "./all-mergerequests-projection"
+import { allMrsProjection } from "./all-mergerequests-projection"
 
 export class MrStateService extends Effect.Service<MrStateService>()("MrStateService", {
   accessors: true,

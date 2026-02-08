@@ -85,7 +85,6 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
     switch (infoPaneTab) {
       case 'overview':
         return <Overview
-          activePane={activePane}
           selectedMergeRequest={selectedMergeRequest}
         />;
 

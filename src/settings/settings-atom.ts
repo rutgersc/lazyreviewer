@@ -3,6 +3,9 @@ import { appAtomRuntime } from "../appLayerRuntime"
 import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, type MrSortOrder, defaultSettings, type Settings, SettingsService } from "./settings"
 import { Atom, Result } from "@effect-atom/atom-react"
 import type { MrGid } from "../domain/identifiers"
+import type { UserId, User } from "../userselection/userSelection"
+import { usersAtom } from "../data/data-atom"
+
 
 // Equality helpers for selector atoms
 const arrayEquals = (a: readonly string[], b: readonly string[]): boolean => {
@@ -98,22 +101,70 @@ export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string) =>
   })
 );
 
-const selectedUserSelectionEntryIdRawAtom = selectFromSettings(
-  s => s.selectedUserSelectionEntryId,
-  undefined as string | undefined
+// Selected repo paths for syncing
+const repoSelectionRawAtom = selectFromSettings(
+  s => s.repoSelection,
+  [] as string[],
+  arrayEquals
 );
 
-export const selectedUserSelectionEntryIdAtom = Atom.writable(
-  (get) => get(selectedUserSelectionEntryIdRawAtom),
-  (ctx, newValue: string | undefined) => {
-    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, selectedUserSelectionEntryId: newValue }));
+export const repoSelectionAtom = Atom.writable(
+  (get) => get(repoSelectionRawAtom),
+  (ctx, newValue: readonly string[]) => {
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, repoSelection: [...newValue] }));
   }
+);
+
+// User filter: client-side username filter for MR display
+const userFilterUsernamesRawAtom = selectFromSettings(
+  s => s.userFilterUsernames,
+  [] as string[],
+  arrayEquals
+);
+
+export const userFilterUsernamesAtom = Atom.writable(
+  (get) => get(userFilterUsernamesRawAtom),
+  (ctx, newValue: readonly string[]) => {
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, userFilterUsernames: [...newValue] }));
+  }
+);
+
+// User filter: client-side group filter for MR display
+const userFilterGroupIdsRawAtom = selectFromSettings(
+  s => s.userFilterGroupIds,
+  [] as string[],
+  arrayEquals
+);
+
+export const userFilterGroupIdsAtom = Atom.writable(
+  (get) => get(userFilterGroupIdsRawAtom),
+  (ctx, newValue: readonly string[]) => {
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, userFilterGroupIds: [...newValue] }));
+  }
+);
+
+export const setUserFilterAtom = appAtomRuntime.fn(
+  ({ usernames, groupIds }: { usernames: readonly string[]; groupIds: readonly string[] }) =>
+    SettingsService.modify(s => ({
+      ...s,
+      userFilterUsernames: [...usernames],
+      userFilterGroupIds: [...groupIds]
+    }))
 );
 
 export const currentUserAtom = selectFromSettings(
   s => s.currentUser,
-  'r.schoorstra'
+  'rutger'
 );
+
+export const currentUserIdAtom = Atom.make((get): UserId => {
+  const currentUserName = get(currentUserAtom);
+  const users = get(usersAtom);
+  const found = users
+    .filter((u): u is User => u.type === 'user')
+    .find(u => u.id.name === currentUserName);
+  return found?.id ?? { type: 'userId', name: currentUserName };
+});
 
 export const notificationSettingsAtom = selectFromSettings(
   s => s.notifications ?? { enabled: false },
@@ -122,8 +173,8 @@ export const notificationSettingsAtom = selectFromSettings(
 );
 
 export const backgroundSyncSettingsAtom = selectFromSettings(
-  s => s.backgroundSync ?? { enabled: false, syncIntervalSeconds: 60 * 15 },
-  { enabled: false, syncIntervalSeconds: 60 * 15 } as BackgroundSyncSettings,
+  s => s.backgroundSync ?? { enabled: false, syncIntervalSeconds: 300, scalingFactorHours: 24 },
+  { enabled: false, syncIntervalSeconds: 300, scalingFactorHours: 24 } as BackgroundSyncSettings,
   shallowObjectEquals
 );
 
@@ -136,6 +187,18 @@ export const toggleNotificationsAtom = appAtomRuntime.fn((_: void) =>
       notifications: { ...s.notifications, enabled }
     }));
     yield* Console.log(`[Settings] Notifications ${enabled ? 'enabled' : 'disabled'}`);
+  })
+);
+
+export const toggleBackgroundSyncAtom = appAtomRuntime.fn((_: void) =>
+  Effect.gen(function* () {
+    const settings = yield* SettingsService.load;
+    const enabled = !(settings.backgroundSync?.enabled ?? false);
+    yield* SettingsService.modify(s => ({
+      ...s,
+      backgroundSync: { ...s.backgroundSync!, enabled }
+    }));
+    yield* Console.log(`[Settings] Background sync ${enabled ? 'enabled' : 'disabled'}`);
   })
 );
 
@@ -265,3 +328,4 @@ export const appViewAtom = Atom.writable(
     ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, appView: newValue }));
   }
 );
+

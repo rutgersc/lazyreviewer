@@ -17,26 +17,10 @@ import { useJiraScroll } from '../hooks/useJiraScroll';
 import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
 import { getAgeColor } from '../utils/formatting';
-import { backgroundFetchAtom } from '../notifications/notification-sync-atom';
 import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from './JiraIssuesList';
-import { appViewAtom, currentUserAtom } from '../settings/settings-atom';
+import { appViewAtom, currentUserIdAtom } from '../settings/settings-atom';
+import { isAuthorOf } from '../userselection/userSelection';
 import { viewConfigs, type FocusRelevance } from '../ui/view-config';
-
-const formatTimeUntil = (targetDate: Date): string => {
-  const now = Date.now();
-  const diffMs = targetDate.getTime() - now;
-
-  if (diffMs <= 0) return 'now';
-
-  const totalSeconds = Math.floor(diffMs / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
-  }
-  return `${seconds}s`;
-};
 
 const isFilteredSystemNote = (change: Change): boolean =>
   change.type === 'system-note' && FILTERED_SYSTEM_NOTE_TYPES.has(change.systemNoteType);
@@ -124,13 +108,13 @@ function getNoteIdFromChange(change: Change): string | undefined {
 }
 
 const myJiraIssueKeysAtom = Atom.readable<Set<string>>((get) => {
-  const currentUser = get(currentUserAtom);
+  const currentUser = get(currentUserIdAtom);
   const allMrsResult = get(allMrsAtom);
   return Result.match(allMrsResult, {
     onInitial: () => new Set<string>(),
     onSuccess: (state) => new Set(
       Array.from(state.value.mrsByGid.values())
-        .filter(mr => mr.author === currentUser)
+        .filter(mr => isAuthorOf(currentUser, mr.provider, mr.author))
         .flatMap(mr => mr.jiraIssueKeys)
     ),
     onFailure: () => new Set<string>(),
@@ -226,15 +210,12 @@ export const groupedEventsAtom = Atom.readable<EventGroup[]>((get) => {
     return groupChanges(rawDeltas.filter(c => !isFilteredSystemNote(c))).length > 0;
   };
 
-  const firstWithChanges = displayEvents.findIndex(ev => ev && hasVisibleDeltas(ev));
-
   // Step 1: Classify each event as 'single' or 'range'
   const classified: ClassifiedEvent[] = displayEvents
     .map((event, displayIndex) => {
       if (!event) return null;
       const originalIndex = allEvents.length - 1 - displayIndex;
-      const canBeRanged = firstWithChanges >= 0 && displayIndex >= firstWithChanges && !hasVisibleDeltas(event);
-      return { event, originalIndex, grouping: canBeRanged ? 'range' as const : 'single' as const };
+      return { event, originalIndex, grouping: hasVisibleDeltas(event) ? 'single' as const : 'range' as const };
     })
     .filter((e): e is ClassifiedEvent => e !== null);
 
@@ -323,11 +304,9 @@ export default function FactsPane() {
   const groupedEvents = useAtomValue(groupedEventsAtom);
   const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
   const now = useAtomValue(nowAtom);
-  const backgroundSyncStatus = useAtomValue(backgroundFetchAtom);
-
   const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
-  const currentUser = useAtomValue(currentUserAtom);
+  const currentUser = useAtomValue(currentUserIdAtom);
   const myJiraIssueKeys = useAtomValue(myJiraIssueKeysAtom);
   const config = viewConfigs[appView];
 
@@ -351,28 +330,6 @@ export default function FactsPane() {
       .filter(c => !isFilteredSystemNote(c));
     return groupChanges(rawDeltas).reverse();
   };
-
-  const autoRefreshDisplay = (status: typeof backgroundSyncStatus) => {
-    const res = Result.match(status, {
-      onInitial: () => "initial",
-      onFailure: (f) => `onFailure: ${f.cause.toString()}`,
-      onSuccess: (backgroundSyncStatus) => {
-        switch (backgroundSyncStatus.value._tag) {
-          case 'syncDisabled':
-            return "sync disabled";
-          case 'syncPending':
-             return `syncing '${backgroundSyncStatus.value.userSelection.name}' in ${formatTimeUntil(backgroundSyncStatus.value.nextRefreshDate)}`;
-          case 'syncing':
-             return `refreshing '${backgroundSyncStatus.value.userSelection.name}'...`;
-          case 'syncPerformed':
-             return `refreshed ${backgroundSyncStatus.value}: took ${backgroundSyncStatus.value.duration}`;
-          default:
-            const _: never = backgroundSyncStatus.value;
-        }
-      }
-    })
-    return (<text fg="#6272a4" wrapMode="none">{res}</text>);
-  }
 
   const reviewIndicator = viewConfigs.review.modeIndicator;
   const focusIndicator = viewConfigs.focus.modeIndicator;
@@ -399,10 +356,6 @@ export default function FactsPane() {
         <text fg={bdr} wrapMode="none">{'  │'}</text>
       </box>
       <text fg={bdr} wrapMode="none">{' ╰─────────────────────╯'}</text>
-      {isLoading
-        ? (<text fg="#8be9fd" wrapMode="none">refreshing...</text>)
-        : autoRefreshDisplay(backgroundSyncStatus)
-      }
     </box>
   );
 

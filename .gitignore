@@ -41,3 +41,5 @@ storage/events
 vendor/
 .claude/settings.local.json
 storage/events_2
+storage/events2
+storage2
