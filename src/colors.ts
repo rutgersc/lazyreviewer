@@ -17,5 +17,6 @@ export const Colors = {
   // Background colors
   BACKGROUND: '#282a36',
   SELECTED: '#191a21',
+  STRIPE: '#343746',
   TRACK: '#44475a',
 } as const;

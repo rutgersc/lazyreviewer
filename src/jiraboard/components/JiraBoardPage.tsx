@@ -408,7 +408,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   });
 
   const renderList = () => {
-    return flatItems.map((flatItem, index) => {
+    return flatItems.flatMap((flatItem, index) => {
       const { story, item } = flatItem;
       const isSelected = index === selectedIndex;
       const isDimmed = !itemMatchesSearch(flatItem);
@@ -430,7 +430,9 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       const rowColor = isRowDim ? dimColor : Colors.PRIMARY;
       const keyColor = isRowDim ? dimColor : (isTopLevel ? Colors.SECONDARY : Colors.INFO);
 
-      return (
+      const showSeparator = flatItem.itemIndex === 0 && flatItem.storyIndex > 0;
+
+      const row = (
         <box
           key={item.key}
           id={`board-item-${flatItem.storyIndex}-${flatItem.itemIndex}`}
@@ -438,7 +440,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           style={{
             flexDirection: 'row',
             gap: 1,
-            backgroundColor: isSelected ? Colors.SELECTED : 'transparent',
+            backgroundColor: isSelected ? Colors.TRACK : (flatItem.storyIndex % 2 === 1 ? Colors.STRIPE : undefined),
           }}
         >
           {isTopLevel
@@ -470,6 +472,10 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           })()}
         </box>
       );
+
+      return showSeparator
+        ? [<text key={`sep-${flatItem.storyIndex}`} style={{ fg: Colors.TRACK }} wrapMode="none">{'─'.repeat(120)}</text>, row]
+        : [row];
     });
   };
 
