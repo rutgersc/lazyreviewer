@@ -5,9 +5,9 @@ export type StatusInfo = { text: string; color: string; dimColor?: string };
 
 export const mapStatus = (statusName: string): StatusInfo => {
   const s = statusName.toLowerCase();
-  if (s.includes('merged')) return { text: 'MGD', color: Colors.SUCCESS, dimColor: '#6fbf85' };
-  if (s.includes('done')) return { text: 'DONE', color: Colors.SUCCESS, dimColor: '#6fbf85' };
-  if (s.includes('reject')) return { text: 'REJ', color: Colors.ERROR, dimColor: Colors.SUPPORTING };
+  if (s.includes('merged')) return { text: 'MGD', color: Colors.SUCCESS, dimColor: '#69a373' };
+  if (s.includes('done')) return { text: 'DONE', color: Colors.SUCCESS, dimColor: '#69a373' };
+  if (s.includes('reject')) return { text: 'REJ', color: Colors.ERROR, dimColor: '#a36969' };
   if (s.includes('merge')) return { text: 'MREQ', color: Colors.SUCCESS };
   if (s.includes('testing')) return { text: 'TEST', color: Colors.WARNING };
   if (s.includes('test') || s.includes('qa')) return { text: 'TEST', color: Colors.WARNING };
