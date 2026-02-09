@@ -9,6 +9,7 @@ import { defineProjection } from "../utils/define-projection";
 import type { JiraIssue } from "../jira/jira-schema";
 import type { MergeRequest } from "../mergerequests/mergerequest-schema";
 import { allMrsAtom } from "../mergerequests/mergerequests-atom";
+import { sprintFilterAtom } from "../settings/settings-atom";
 
 // UI State Atoms
 export const selectedSprintIdAtom = Atom.make<number | null>(null);
@@ -114,3 +115,14 @@ export const mrsByJiraKeyAtom = Atom.map(
       onFailure: () => new Map(),
     })
 );
+
+const emptySet: ReadonlySet<string> = new Set();
+
+export const sprintFilterIssueKeysAtom = Atom.readable((get): ReadonlySet<string> => {
+  const filter = get(sprintFilterAtom);
+  if (!filter) return emptySet;
+  const issuesBySprintId = get(sprintIssuesByIdAtom);
+  const issues = issuesBySprintId.get(filter.id);
+  if (!issues || issues.length === 0) return emptySet;
+  return new Set(issues.map(issue => issue.key));
+});

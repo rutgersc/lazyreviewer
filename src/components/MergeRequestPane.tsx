@@ -15,6 +15,7 @@ import { type JobImportance } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import UserFilterBar from "./UserFilterBar";
 import RepoFilterBar from "./RepoFilterBar";
+import SprintFilterBar from "./SprintFilterBar";
 import type { MergeRequestState } from "../domain/merge-request-state";
 import { filterPipelineJobs } from "../domain/display/pipelineJobFiltering";
 import { Atom, useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
@@ -738,6 +739,7 @@ export default function MergeRequestPane() {
 
       <RepoFilterBar />
       <UserFilterBar />
+      <SprintFilterBar />
 
       <box style={{ marginBottom: 1, height: 1 }}>
         {isLoading ? (

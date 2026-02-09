@@ -1,6 +1,7 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { useAtomValue, useAtomSet, Result, Atom } from '@effect-atom/atom-react';
+import { sprintFilterAtom, setSprintFilterAtom } from '../../settings/settings-atom';
 import { useMemo, useRef, useState } from 'react';
 import { Colors } from '../../colors';
 import {
@@ -83,6 +84,9 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const setSortPopupVisible = useAtomSet(sortPopupVisibleAtom);
   const selectMrById = useAtomSet(selectMrByIdAtom);
   const setFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
+
+  const sprintFilter = useAtomValue(sprintFilterAtom);
+  const setSprintFilter = useAtomSet(setSprintFilterAtom);
 
   const mrsByJiraKey = useAtomValue(mrsByJiraKeyAtom);
 
@@ -374,6 +378,15 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           loadSprintIssues({ sprintId: selectedSprintId, boardId: currentBoardId });
         }
         break;
+      case 'F':
+        if (selectedSprintId && selectedSprint) {
+          setSprintFilter(
+            sprintFilter?.id === selectedSprintId
+              ? null
+              : { id: selectedSprintId, name: selectedSprint.name }
+          );
+        }
+        break;
       case 's':
       case 'S':
         setShowSetup(true);
@@ -637,7 +650,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
             ✦ Sprint Board {selectedSprint ? `- ${selectedSprint.name}` : ''} {subtasksCollapsed ? '[collapsed]' : ''}
           </text>
           <text style={{ fg: Colors.SUPPORTING, flexShrink: 1 }} wrapMode="none">
-            q: close | ↵: MR | S: board | r: sprints | f: fetch | x: collapse | O: sort | o: open | y: yank
+            q: close | ↵: MR | S: board | r: sprints | f: fetch | F: filter MRs | x: collapse | O: sort | o: open | y: yank
           </text>
         </box>
         {renderSprintTabs()}

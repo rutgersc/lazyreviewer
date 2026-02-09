@@ -315,6 +315,28 @@ export const mrSortOrderAtom = Atom.writable(
   }
 );
 
+export type SprintFilter = { id: number; name: string };
+
+const sprintFilterEquals = (a: SprintFilter | null, b: SprintFilter | null): boolean =>
+  a === b || (a !== null && b !== null && a.id === b.id && a.name === b.name);
+
+export const sprintFilterAtom = selectFromSettings(
+  (s): SprintFilter | null =>
+    s.sprintFilterId !== undefined && s.sprintFilterName !== undefined
+      ? { id: s.sprintFilterId, name: s.sprintFilterName }
+      : null,
+  null as SprintFilter | null,
+  sprintFilterEquals
+);
+
+export const setSprintFilterAtom = appAtomRuntime.fn((filter: SprintFilter | null) =>
+  SettingsService.modify(s => ({
+    ...s,
+    sprintFilterId: filter?.id,
+    sprintFilterName: filter?.name,
+  }))
+);
+
 export type AppView = 'review' | 'focus'
 
 const appViewRawAtom = selectFromSettings(

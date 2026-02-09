@@ -19,6 +19,7 @@ import { refetchMrPipeline } from './mergerequests-effects';
 import { loadJiraTicketsAsEvent } from '../jira/jira-service';
 import type { JiraIssue } from "../jira/jira-service";
 import { mrSortOrderAtom, repoSelectionAtom, userFilterUsernamesAtom, userFilterGroupIdsAtom } from "../settings/settings-atom";
+import { sprintFilterIssueKeysAtom } from "../jiraboard/atoms";
 import { groupsAtom } from "../data/data-atom";
 import { resolveGroupIds } from "../userselection/userSelection";
 import { allEventsAtom } from "../events/events-atom";
@@ -115,12 +116,14 @@ const filterMrs = (
   repoFilter: readonly string[],
   userFilter: readonly string[],
   sortOrder: MrSortOrder,
+  sprintIssueKeys: ReadonlySet<string>,
 ): readonly MergeRequest[] => {
   const repoFilterSet = new Set(repoFilter);
   return [...allMrs.values()]
     .filter(mr => mr.state === state)
     .filter(mr => repoFilterSet.size === 0 || repoFilterSet.has(mr.project.fullPath))
     .filter(mr => userFilter.length === 0 || userFilter.includes(mr.author))
+    .filter(mr => sprintIssueKeys.size === 0 || mr.jiraIssueKeys.some(key => sprintIssueKeys.has(key)))
     .sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
 };
 
@@ -129,11 +132,12 @@ export const filteredMrsAtom = Atom.make((get) => {
   const filterMrState = get(filterMrStateAtom);
   const sortOrder = get(mrSortOrderAtom);
   const userFilter = get(effectiveUserFilterAtom);
+  const sprintIssueKeys = get(sprintFilterIssueKeysAtom);
   const allMrsResult = get(allMrsAtom);
 
   return Result.match(allMrsResult, {
     onInitial: () => [] as readonly MergeRequest[],
-    onSuccess: (state) => filterMrs(state.value.mrsByGid, filterMrState, repoFilter, userFilter, sortOrder),
+    onSuccess: (state) => filterMrs(state.value.mrsByGid, filterMrState, repoFilter, userFilter, sortOrder, sprintIssueKeys),
     onFailure: () => [] as readonly MergeRequest[]
   });
 });
