@@ -5,11 +5,10 @@ import { generateEventId } from "../events/event-id";
 import { appAtomRuntime, makeProjectedAtomFromProjection } from "../appLayerRuntime";
 import { fetchActiveSprints, loadSprintTreeAsEvent } from "./service";
 import { sprintsProjection } from "./projections";
-import { defineProjection } from "../utils/define-projection";
-import type { JiraIssue } from "../jira/jira-schema";
 import type { MergeRequest } from "../mergerequests/mergerequest-schema";
 import { allMrsAtom } from "../mergerequests/mergerequests-atom";
-import { sprintFilterAtom } from "../settings/settings-atom";
+import { sprintIssuesByIdAtom } from "./sprint-issues-atom";
+export { sprintIssuesProjection, sprintIssuesByIdAtom, sprintFilterIssueKeysAtom } from "./sprint-issues-atom";
 
 // UI State Atoms
 export const selectedSprintIdAtom = Atom.make<number | null>(null);
@@ -27,27 +26,6 @@ export const sortPopupVisibleAtom = Atom.make<boolean>(false);
 
 // Projected Atoms
 export const sprintsStateAtom = makeProjectedAtomFromProjection(EventStorage.eventsStream, sprintsProjection);
-
-export const sprintIssuesProjection = defineProjection({
-  initialState: new Map<number, JiraIssue[]>(),
-  handlers: {
-    "jira-sprint-issues-fetched-event": (state, event) => {
-      const newMap = new Map(state);
-      newMap.set(event.sprintId, event.issues);
-      return newMap;
-    },
-  },
-});
-
-export const sprintIssuesByIdAtom = makeProjectedAtomFromProjection(
-  EventStorage.eventsStream,
-  sprintIssuesProjection
-).pipe(
-  Atom.map((result) => {
-    return result.pipe(
-      Result.getOrElse(() => sprintIssuesProjection.initialState));
-  })
-);
 
 export const selectedSprintIssuesAtom = Atom.readable((get) => {
   const selectedSprintId = get(selectedSprintIdAtom);
@@ -116,13 +94,3 @@ export const mrsByJiraKeyAtom = Atom.map(
     })
 );
 
-const emptySet: ReadonlySet<string> = new Set();
-
-export const sprintFilterIssueKeysAtom = Atom.readable((get): ReadonlySet<string> => {
-  const filter = get(sprintFilterAtom);
-  if (!filter) return emptySet;
-  const issuesBySprintId = get(sprintIssuesByIdAtom);
-  const issues = issuesBySprintId.get(filter.id);
-  if (!issues || issues.length === 0) return emptySet;
-  return new Set(issues.map(issue => issue.key));
-});

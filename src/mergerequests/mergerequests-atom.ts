@@ -19,7 +19,7 @@ import { refetchMrPipeline } from './mergerequests-effects';
 import { loadJiraTicketsAsEvent } from '../jira/jira-service';
 import type { JiraIssue } from "../jira/jira-service";
 import { mrSortOrderAtom, repoSelectionAtom, userFilterUsernamesAtom, userFilterGroupIdsAtom } from "../settings/settings-atom";
-import { sprintFilterIssueKeysAtom } from "../jiraboard/atoms";
+import { sprintFilterIssueKeysAtom } from "../jiraboard/sprint-issues-atom";
 import { groupsAtom } from "../data/data-atom";
 import { resolveGroupIds } from "../userselection/userSelection";
 import { allEventsAtom } from "../events/events-atom";
