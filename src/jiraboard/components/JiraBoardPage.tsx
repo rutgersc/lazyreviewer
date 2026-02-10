@@ -38,7 +38,7 @@ const getIssueTypeIcon = (issueType: string): string => {
   if (type === 'bug') return '🪲';
   if (type === 'story') return '📖';
   if (type === 'task') return '✓ ';
-  if (type === 'sub-task' || type === 'subtask') return '⇄ ';
+  if (type === 'sub-task' || type === 'subtask') return '  ';
   if (type === 'epic') return '⚡';
   return '• ';
 };
@@ -467,7 +467,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           <text style={{ fg: isRowDim ? dimColor : status.color, attributes: dimAttr }} wrapMode="none">{statusPadded}</text>
           <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, attributes: dimAttr }} wrapMode="none">{icon}</text>
           <text style={{ fg: isRowDim ? dimColor : status.color, attributes: isRowDim ? TextAttributes.DIM : (isTopLevel ? TextAttributes.BOLD : undefined) }} wrapMode="none">{keyPadded}</text>
-          <text style={{ fg: isTopLevel ? keyColor : rowColor, flexShrink: 1, attributes: dimAttr }} wrapMode="none">{item.fields.summary}</text>
+          <text style={{ fg: isRowDim ? dimColor : (isTopLevel ? Colors.SECONDARY : status.color), flexShrink: 1, attributes: isRowDim ? TextAttributes.DIM : (isTopLevel ? TextAttributes.BOLD : undefined) }} wrapMode="none">{item.fields.summary}</text>
           {(() => {
             const linkedMrs = mrsByJiraKey.get(item.key);
             if (!linkedMrs || linkedMrs.length === 0) return null;
