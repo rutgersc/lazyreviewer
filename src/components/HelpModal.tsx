@@ -8,6 +8,7 @@ import { infoPaneTabAtom, activePaneAtom, activeModalAtom, type InfoPaneTab } fr
 import { paneActionsForDisplayAtom } from '../actions/pane-actions-atoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
 import { useDoubleClick } from '../hooks/useDoubleClick';
+import { useAutoScroll } from '../hooks/useAutoScroll';
 
 interface HelpModalProps {
   isVisible: boolean;
@@ -22,15 +23,18 @@ interface KeyBinding {
 }
 
 const KeyRow = ({
+  id,
   binding,
   isSelected,
   onMouseDown,
 }: {
+  id: string;
   binding: KeyBinding;
   isSelected: boolean;
   onMouseDown?: () => void;
 }) => (
   <box
+    id={id}
     onMouseDown={onMouseDown}
     style={{
       flexDirection: "row",
@@ -112,6 +116,8 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
     }
   };
 
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+
   const handleRowClick = useDoubleClick<number>({
     onSingleClick: (index) => setSelectedIndex(index),
     onDoubleClick: (index) => executeAction(index),
@@ -129,13 +135,19 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
 
     switch (key.name) {
       case 'j':
-      case 'down':
-        setSelectedIndex(prev => Math.min(prev + 1, allKeys.length - 1));
+      case 'down': {
+        const next = Math.min(selectedIndex + 1, allKeys.length - 1);
+        setSelectedIndex(next);
+        scrollToId(`help-key-${next}`);
         break;
+      }
       case 'k':
-      case 'up':
-        setSelectedIndex(prev => Math.max(prev - 1, 0));
+      case 'up': {
+        const prev = Math.max(selectedIndex - 1, 0);
+        setSelectedIndex(prev);
+        scrollToId(`help-key-${prev}`);
         break;
+      }
       case 'return':
         executeAction(selectedIndex);
         break;
@@ -164,7 +176,7 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
           backgroundColor: Colors.BACKGROUND,
           padding: 2,
           width: 70,
-          maxHeight: 30,
+          maxHeight: '80%',
           flexDirection: "column"
         }}
       >
@@ -172,39 +184,53 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
           LazyGitLab - Keyboard Shortcuts
         </text>
 
-        {/* Pane-specific keys */}
-        {paneKeys.length > 0 && (
-          <>
-            <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD, marginTop: 1 }} wrapMode='none'>
-              {getPaneTitle(activePane, infoPaneTab)}
+        <scrollbox
+          ref={scrollBoxRef}
+          style={{
+            flexGrow: 1,
+            contentOptions: { backgroundColor: Colors.BACKGROUND },
+            scrollbarOptions: {
+              trackOptions: { foregroundColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK },
+            },
+          }}
+        >
+          <box style={{ flexDirection: "column" }}>
+            {/* Pane-specific keys */}
+            {paneKeys.length > 0 && (
+              <>
+                <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD, marginTop: 1 }} wrapMode='none'>
+                  {getPaneTitle(activePane, infoPaneTab)}
+                </text>
+                <box style={{ flexDirection: "column", marginBottom: 1 }}>
+                  {paneKeys.map((binding, index) => (
+                    <KeyRow key={index} id={`help-key-${index}`} binding={binding} isSelected={index === selectedIndex} onMouseDown={() => handleRowClick(index)} />
+                  ))}
+                </box>
+
+                {/* Separator */}
+                <text style={{ fg: Colors.NEUTRAL, marginBottom: 1 }} wrapMode='none'>
+                  {'─'.repeat(60)}
+                </text>
+              </>
+            )}
+
+            {/* Global keys */}
+            <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
+              Global Keys
             </text>
-            <box style={{ flexDirection: "column", marginBottom: 1 }}>
-              {paneKeys.map((binding, index) => (
-                <KeyRow key={index} binding={binding} isSelected={index === selectedIndex} onMouseDown={() => handleRowClick(index)} />
+            <box style={{ flexDirection: "column" }}>
+              {globalKeys.map((binding, index) => (
+                <KeyRow
+                  key={index}
+                  id={`help-key-${paneKeys.length + index}`}
+                  binding={binding}
+                  isSelected={paneKeys.length + index === selectedIndex}
+                  onMouseDown={() => handleRowClick(paneKeys.length + index)}
+                />
               ))}
             </box>
-
-            {/* Separator */}
-            <text style={{ fg: Colors.NEUTRAL, marginBottom: 1 }} wrapMode='none'>
-              {'─'.repeat(60)}
-            </text>
-          </>
-        )}
-
-        {/* Global keys */}
-        <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
-          Global Keys
-        </text>
-        <box style={{ flexDirection: "column" }}>
-          {globalKeys.map((binding, index) => (
-            <KeyRow
-              key={index}
-              binding={binding}
-              isSelected={paneKeys.length + index === selectedIndex}
-              onMouseDown={() => handleRowClick(paneKeys.length + index)}
-            />
-          ))}
-        </box>
+          </box>
+        </scrollbox>
 
         <text style={{ fg: Colors.NEUTRAL, marginTop: 1, attributes: TextAttributes.DIM }} wrapMode='none'>
           j/k: Navigate • Enter: Execute • Esc: Close

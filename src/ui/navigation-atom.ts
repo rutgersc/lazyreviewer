@@ -14,6 +14,7 @@ export type ActiveModal =
   | 'eventLog'
   | 'jiraBoard'
   | 'monitoredMrs'
+  | 'notifications'
   | 'fChooser'
   | 'userFilter';
 

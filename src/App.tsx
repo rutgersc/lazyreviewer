@@ -17,6 +17,7 @@ import JobHistoryModal from "./components/JobHistoryModal";
 import EventLogPane from "./components/EventLogPane";
 import { JiraBoardPage } from "./jiraboard";
 import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage";
+import NotificationsPage from "./components/NotificationsPage";
 import ConfigurationPage from "./components/ConfigurationPage";
 import { ActivePane } from "./userselection/userSelection";
 import { useEffect, useMemo, useState } from 'react';
@@ -241,6 +242,13 @@ export default function App() {
           setActivePane(ActivePane.Facts);
         }
       },
+    },
+    {
+      id: 'global:notifications-page',
+      keys: [parseKeyString('N')],
+      displayKey: 'N',
+      description: 'Notification settings',
+      handler: () => setActiveModal('notifications'),
     },
     {
       id: 'global:open-settings',
@@ -511,6 +519,13 @@ export default function App() {
       {/* Monitored MRs Page - fullscreen overlay */}
       {activeModal === 'monitoredMrs' && (
         <MonitoredMergeRequestsPage
+          onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {/* Notifications Page - fullscreen overlay */}
+      {activeModal === 'notifications' && (
+        <NotificationsPage
           onClose={() => setActiveModal('none')}
         />
       )}
