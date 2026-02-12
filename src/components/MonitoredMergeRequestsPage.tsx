@@ -91,8 +91,8 @@ export default function MonitoredMergeRequestsPage({ onClose }: MonitoredMergeRe
           }
         }
         break;
-      case 'D':
-        if (completedCount > 0) {
+      case 'd':
+        if (key.shift && completedCount > 0) {
           clearCompleted();
           setSelectedIndex(0);
         }

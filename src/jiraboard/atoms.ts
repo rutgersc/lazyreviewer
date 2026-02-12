@@ -23,6 +23,7 @@ export const epicLegendVisibleAtom = Atom.make<boolean>(false);
 export const subtasksCollapsedAtom = Atom.make<boolean>(false);
 export const sortOrderAtom = Atom.make<'default' | 'epic' | 'priority'>('default');
 export const sortPopupVisibleAtom = Atom.make<boolean>(false);
+export const goalVisibleAtom = Atom.make<boolean>(false);
 
 // Projected Atoms
 export const sprintsStateAtom = makeProjectedAtomFromProjection(EventStorage.eventsStream, sprintsProjection);

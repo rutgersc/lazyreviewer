@@ -8,10 +8,10 @@ import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MergeRequest } from './MergeRequestPane';
 import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
-import { loadJobLogAtom, jobLogDownloadSignalAtom } from '../mergerequests/open-pipelinejob-log-atom';
+import { loadJobLogAtom, jobLogDownloadSignalAtom, downloadJobTraceAtom } from '../mergerequests/open-pipelinejob-log-atom';
 import { pipelineJobImportanceAtom } from '../settings/settings-atom';
 import { existsSync, readFileSync } from 'fs';
 import { parseJobLogErrors, hasErrors, type JobLogErrors } from '../domain/parse-job-log-errors';
@@ -64,6 +64,7 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
   const [, setSelectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
   const selectedMergeRequest = useAtomValue(selectedMrAtom);
   const runLoadJobLog = useAtomSet(loadJobLogAtom, { mode: 'promiseExit' });
+  const runDownloadJobTrace = useAtomSet(downloadJobTraceAtom, { mode: 'promiseExit' });
   const setDownloadSignal = useAtomSet(jobLogDownloadSignalAtom);
   const downloadSignal = useAtomValue(jobLogDownloadSignalAtom);
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
@@ -77,6 +78,7 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
 
   const selectedPipelineJob = pipelineJobs[selectedPipelineJobIndex];
   const [logErrors, setLogErrors] = useState<JobLogErrors | null>(null);
+  const downloadAttemptedForJobRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!selectedPipelineJob || !selectedMergeRequest) {
@@ -95,6 +97,12 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
         setLogErrors(hasErrors(errors) ? errors : null);
       } else {
         setLogErrors(null);
+        if (selectedPipelineJob.job.status === 'FAILED' && downloadAttemptedForJobRef.current !== selectedPipelineJob.job.localId) {
+          downloadAttemptedForJobRef.current = selectedPipelineJob.job.localId;
+          runDownloadJobTrace({ mergeRequest: selectedMergeRequest, job: selectedPipelineJob.job }).then(() => {
+            setDownloadSignal(Date.now());
+          });
+        }
       }
     } catch {
       setLogErrors(null);

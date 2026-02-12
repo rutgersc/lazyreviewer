@@ -11,6 +11,7 @@ export type ActiveModal =
   | 'jira'
   | 'retarget'
   | 'jobHistory'
+  | 'jobHistoryInput'
   | 'eventLog'
   | 'jiraBoard'
   | 'monitoredMrs'

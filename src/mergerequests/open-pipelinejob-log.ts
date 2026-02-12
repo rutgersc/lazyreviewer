@@ -8,7 +8,7 @@ import { projectGitlabJobTraceFetchedEvent } from "../gitlab/gitlab-projections"
 export const getJobLogPath = (projectPath: string, jobName: string, jobLocalId: number): string =>
   join(process.cwd(), "logs", "jobs", `${projectPath}_${jobName}_${jobLocalId}.ansi`);
 
-export const loadJobLogInternal = Effect.fn(function* (
+export const downloadJobTrace = Effect.fn(function* (
   mr: { project: { path: string, fullPath: string } },
   job: { id: string; name: string; localId: number }) {
 
@@ -35,8 +35,18 @@ export const loadJobLogInternal = Effect.fn(function* (
     writeFileSync(logFilePath, log, "utf8");
     yield* Console.log(`Log saved to: ${logFilePath}`);
   }
+});
 
-  openFile(logFilePath);
+export const loadJobLogInternal = Effect.fn(function* (
+  mr: { project: { path: string, fullPath: string } },
+  job: { id: string; name: string; localId: number }) {
+
+  yield* downloadJobTrace(mr, job);
+
+  const logFilePath = getJobLogPath(mr.project.path, job.name, job.localId);
+  if (existsSync(logFilePath)) {
+    openFile(logFilePath);
+  }
 });
 
 const openFile = (filePath: string) => {

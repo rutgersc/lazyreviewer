@@ -6,10 +6,16 @@ import { Colors } from '../colors';
 import { useAtomValue, useAtomSet, Atom } from '@effect-atom/atom-react';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { appAtomRuntime } from '../appLayerRuntime';
-import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 import { Console, Effect } from 'effect';
 import { fetchJobHistory } from '../gitlab/gitlab-graphql';
 import type { JobHistoryEntry } from '../domain/merge-request-schema';
+
+export interface JobHistoryQuery {
+  readonly projectPath: string;
+  readonly jobName: string;
+}
+
+export const jobHistoryQueryAtom = Atom.make<JobHistoryQuery | null>(null);
 
 interface JobHistoryModalProps {
   isVisible: boolean;
@@ -20,49 +26,39 @@ export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
 export const jobHistoryDataAtom = Atom.make<JobHistoryEntry[]>([]);
 export const selectedJobForHistoryAtom = Atom.make<string | null>(null);
-export const jobHistoryLimitAtom = Atom.make<number>(15);
+export const jobHistoryLimitAtom = Atom.make<number>(50);
 
 export const jobHistoryEndCursorAtom = Atom.make<string | null>(null);
 export const jobHistoryHasNextPageAtom = Atom.make<boolean>(false);
 
 export const fetchJobHistoryAtom = appAtomRuntime.fn((_: number, get) =>
   Effect.gen(function* () {
-    const selectedMr = get(selectedMrAtom);
-    const selectedPipelineJobIndex = get(selectedPipelineJobIndexAtom);
+    const query = get(jobHistoryQueryAtom);
     const limit = get(jobHistoryLimitAtom);
 
-    if (!selectedMr) {
-      yield* Console.log('[JobHistory] No MR selected');
-      return { job: null, history: [] as JobHistoryEntry[], pageInfo: { hasNextPage: false, endCursor: null as string | null } };
+    if (!query) {
+      yield* Console.log('[JobHistory] No query set');
+      return { history: [] as JobHistoryEntry[], pageInfo: { hasNextPage: false, endCursor: null as string | null } };
     }
 
-    const jobs = selectedMr.pipeline.stage.flatMap((stage: any) => stage.jobs);
-    const selectedJob = jobs[selectedPipelineJobIndex];
-
-    if (!selectedJob) {
-      yield* Console.log('[JobHistory] No job selected');
-      return { job: null, history: [] as JobHistoryEntry[], pageInfo: { hasNextPage: false, endCursor: null as string | null } };
-    }
-
-    yield* Console.log(`[JobHistory] Fetching history for ${selectedJob.name} (limit: ${limit})`);
+    yield* Console.log(`[JobHistory] Fetching history for ${query.jobName} (limit: ${limit})`);
 
     const result = yield* fetchJobHistory(
-      selectedMr.project.fullPath,
-      selectedJob.name,
+      query.projectPath,
+      query.jobName,
       limit,
-      null // Initial fetch always starts from the beginning
+      null
     );
 
     yield* Console.log(`[JobHistory] Fetched ${result.history.length} entries`);
 
-    return { job: selectedJob, history: result.history, pageInfo: result.pageInfo };
+    return { history: result.history, pageInfo: result.pageInfo };
   })
 );
 
 const loadMoreJobHistoryAtom = appAtomRuntime.fn((_: void, get) =>
   Effect.gen(function* () {
-    const selectedMr = get(selectedMrAtom);
-    const selectedPipelineJobIndex = get(selectedPipelineJobIndexAtom);
+    const query = get(jobHistoryQueryAtom);
     const limit = get(jobHistoryLimitAtom);
     const endCursor = get(jobHistoryEndCursorAtom);
     const hasNextPage = get(jobHistoryHasNextPageAtom);
@@ -73,31 +69,22 @@ const loadMoreJobHistoryAtom = appAtomRuntime.fn((_: void, get) =>
       return { history: currentHistory, pageInfo: { hasNextPage: false, endCursor: null as string | null }, appended: false };
     }
 
-    if (!selectedMr) {
-      yield* Console.log('[JobHistory] No MR selected');
+    if (!query) {
+      yield* Console.log('[JobHistory] No query set');
       return { history: currentHistory, pageInfo: { hasNextPage: false, endCursor: null as string | null }, appended: false };
     }
 
-    const jobs = selectedMr.pipeline.stage.flatMap((stage: any) => stage.jobs);
-    const selectedJob = jobs[selectedPipelineJobIndex];
-
-    if (!selectedJob) {
-      yield* Console.log('[JobHistory] No job selected');
-      return { history: currentHistory, pageInfo: { hasNextPage: false, endCursor: null as string | null }, appended: false };
-    }
-
-    yield* Console.log(`[JobHistory] Loading more for ${selectedJob.name} (cursor: ${endCursor})`);
+    yield* Console.log(`[JobHistory] Loading more for ${query.jobName} (cursor: ${endCursor})`);
 
     const result = yield* fetchJobHistory(
-      selectedMr.project.fullPath,
-      selectedJob.name,
+      query.projectPath,
+      query.jobName,
       limit,
       endCursor
     );
 
     yield* Console.log(`[JobHistory] Fetched ${result.history.length} more entries`);
 
-    // Append new entries to existing history
     const newHistory: JobHistoryEntry[] = [...currentHistory, ...result.history];
 
     return { history: newHistory, pageInfo: result.pageInfo, appended: true };
@@ -141,6 +128,7 @@ export default function JobHistoryModal({
 }: JobHistoryModalProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
+  useAtomValue(jobHistoryQueryAtom);
   const jobName = useAtomValue(selectedJobForHistoryAtom);
   const jobHistory = useAtomValue(jobHistoryDataAtom);
   const hasNextPage = useAtomValue(jobHistoryHasNextPageAtom);

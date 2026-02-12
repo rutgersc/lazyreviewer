@@ -5,7 +5,7 @@ import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { getPipelineJobsFromMr, requestScrollPipelineJobsListToJob as requestScrollPipelineJobsListToJobAtom } from './PipelineJobsList';
 import { Effect } from 'effect';
-import { fetchJobHistoryAtom, jobHistoryDataAtom, jobHistoryEndCursorAtom, jobHistoryHasNextPageAtom, selectedJobForHistoryAtom, selectedPipelineJobIndexAtom } from './JobHistoryModal';
+import { fetchJobHistoryAtom, jobHistoryDataAtom, jobHistoryEndCursorAtom, jobHistoryHasNextPageAtom, jobHistoryQueryAtom, selectedJobForHistoryAtom, selectedPipelineJobIndexAtom } from './JobHistoryModal';
 import { loadJobLogAtom, jobLogDownloadSignalAtom } from '../mergerequests/open-pipelinejob-log-atom';
 import { toggleJobImportanceAtom } from '../settings/settings-atom';
 
@@ -68,18 +68,23 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
         const currentMr = registry.get(selectedMrAtom);
         const jobs = getPipelineJobsFromMr(currentMr);
         const currentIndex = registry.get(selectedPipelineJobIndexAtom);
+        const selectedJob = jobs[currentIndex];
 
-        if (jobs[currentIndex]) {
+        if (selectedJob && currentMr) {
+          registry.set(jobHistoryQueryAtom, {
+            projectPath: currentMr.project.fullPath,
+            jobName: selectedJob.job.name,
+          });
 
           registry.set(fetchJobHistoryAtom, 0);
 
-          const promise = Effect.runPromiseExit(
+          Effect.runPromiseExit(
             Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
           ).then((exit) => {
               if (exit._tag === 'Success') {
-                const { job, history, pageInfo } = exit.value;
+                const { history, pageInfo } = exit.value;
                 registry.set(jobHistoryDataAtom, history);
-                registry.set(selectedJobForHistoryAtom, job?.name || null);
+                registry.set(selectedJobForHistoryAtom, selectedJob.job.name);
                 registry.set(jobHistoryEndCursorAtom, pageInfo.endCursor);
                 registry.set(jobHistoryHasNextPageAtom, pageInfo.hasNextPage);
               }

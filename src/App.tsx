@@ -14,6 +14,7 @@ import HelpModal from "./components/HelpModal";
 import JiraModal from "./components/JiraModal";
 import RetargetModal from "./components/RetargetModal";
 import JobHistoryModal from "./components/JobHistoryModal";
+import JobHistoryInputModal from "./components/JobHistoryInputModal";
 import EventLogPane from "./components/EventLogPane";
 import { JiraBoardPage } from "./jiraboard";
 import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage";
@@ -242,6 +243,13 @@ export default function App() {
           setActivePane(ActivePane.Facts);
         }
       },
+    },
+    {
+      id: 'global:job-history-input',
+      keys: [parseKeyString('Y')],
+      displayKey: 'Y',
+      description: 'Job history lookup',
+      handler: () => setActiveModal('jobHistoryInput'),
     },
     {
       id: 'global:notifications-page',
@@ -491,6 +499,13 @@ export default function App() {
           setTimeout(() => setCopyNotification(null), 2000);
         }}
       />
+
+      {/* Job History Input Modal - standalone lookup */}
+      {activeModal === 'jobHistoryInput' && (
+        <JobHistoryInputModal
+          onClose={() => setActiveModal('none')}
+        />
+      )}
 
       {/* Job History Modal - rendered at app level to cover entire screen */}
       {activeModal === 'jobHistory' && (

@@ -2,13 +2,16 @@ import type { ParsedKey } from '@opentui/core'
 import type { KeyMatcher } from './action-types'
 
 export const parseKeyString = (keyStr: string): KeyMatcher => {
-  const parts = keyStr.toLowerCase().split('+')
-  const name = parts.pop() || ''
+  const parts = keyStr.split('+')
+  const raw = parts.pop() || ''
+  const isShiftedLetter = raw.length === 1 && raw >= 'A' && raw <= 'Z'
+  const name = raw.toLowerCase()
+  const modifiers = parts.map(p => p.toLowerCase())
   return {
     name,
-    ctrl: parts.includes('ctrl') ?? false,
-    meta: (parts.includes('meta') || parts.includes('alt')) ?? false,
-    shift: parts.includes('shift') ?? false,
+    ctrl: modifiers.includes('ctrl'),
+    meta: modifiers.includes('meta') || modifiers.includes('alt'),
+    shift: modifiers.includes('shift') || isShiftedLetter,
   }
 }
 

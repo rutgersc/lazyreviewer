@@ -16,6 +16,7 @@ import {
   subtasksCollapsedAtom,
   sortOrderAtom,
   sortPopupVisibleAtom,
+  goalVisibleAtom,
   mrsByJiraKeyAtom,
   jiraBoardFocusKeyAtom,
 } from '../atoms';
@@ -82,6 +83,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const setSubtasksCollapsed = useAtomSet(subtasksCollapsedAtom);
   const setSortOrder = useAtomSet(sortOrderAtom);
   const setSortPopupVisible = useAtomSet(sortPopupVisibleAtom);
+  const setGoalVisible = useAtomSet(goalVisibleAtom);
   const selectMrById = useAtomSet(selectMrByIdAtom);
   const setFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
 
@@ -109,6 +111,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const subtasksCollapsed = useAtomValue(subtasksCollapsedAtom);
   const sortOrder = useAtomValue(sortOrderAtom);
   const sortPopupVisible = useAtomValue(sortPopupVisibleAtom);
+  const goalVisible = useAtomValue(goalVisibleAtom);
 
   const { stories, flatItems, epicColors } = useMemo(() => {
     const rawStories = transformToBoard(issues);
@@ -265,23 +268,22 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         break;
       case 'n': {
         if (!searchQuery) break;
-        const afterIdx = flatItems.findIndex((item, i) => i > selectedIndex && itemMatchesSearch(item));
-        const nextMatch = afterIdx >= 0 ? afterIdx : flatItems.findIndex(itemMatchesSearch);
-        if (nextMatch >= 0) {
-          setSelectedIndex(nextMatch);
-          const item = flatItems[nextMatch];
-          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
-        }
-        break;
-      }
-      case 'N': {
-        if (!searchQuery) break;
-        const beforeIdx = flatItems.findLastIndex((item, i) => i < selectedIndex && itemMatchesSearch(item));
-        const prevMatch = beforeIdx >= 0 ? beforeIdx : flatItems.findLastIndex(itemMatchesSearch);
-        if (prevMatch >= 0) {
-          setSelectedIndex(prevMatch);
-          const item = flatItems[prevMatch];
-          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+        if (key.shift) {
+          const beforeIdx = flatItems.findLastIndex((item, i) => i < selectedIndex && itemMatchesSearch(item));
+          const prevMatch = beforeIdx >= 0 ? beforeIdx : flatItems.findLastIndex(itemMatchesSearch);
+          if (prevMatch >= 0) {
+            setSelectedIndex(prevMatch);
+            const item = flatItems[prevMatch];
+            if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+          }
+        } else {
+          const afterIdx = flatItems.findIndex((item, i) => i > selectedIndex && itemMatchesSearch(item));
+          const nextMatch = afterIdx >= 0 ? afterIdx : flatItems.findIndex(itemMatchesSearch);
+          if (nextMatch >= 0) {
+            setSelectedIndex(nextMatch);
+            const item = flatItems[nextMatch];
+            if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+          }
         }
         break;
       }
@@ -328,11 +330,23 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         setSubtasksCollapsed(!subtasksCollapsed);
         setSelectedIndex(0);
         break;
-      case 'O':
-        setSortPopupVisible(true);
-        setSortSelectedIndex(SORT_OPTIONS.findIndex(o => o.key === sortOrder));
+      case 'g':
+        if (key.shift) {
+          setGoalVisible(!goalVisible);
+        }
         break;
       case 'o':
+        if (key.shift) {
+          setSortPopupVisible(true);
+          setSortSelectedIndex(SORT_OPTIONS.findIndex(o => o.key === sortOrder));
+        } else {
+          const oItem = flatItems[selectedIndex];
+          if (oItem) {
+            const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
+            openUrl(`${baseUrl}/browse/${oItem.item.key}`);
+          }
+        }
+        break;
       case 'i': {
         const item = flatItems[selectedIndex];
         if (item) {
@@ -374,21 +388,21 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         if (currentBoardId) loadSprints(currentBoardId);
         break;
       case 'f':
-        if (selectedSprintId && currentBoardId) {
-          loadSprintIssues({ sprintId: selectedSprintId, boardId: currentBoardId });
-        }
-        break;
-      case 'F':
-        if (selectedSprintId && selectedSprint) {
-          setSprintFilter(
-            sprintFilter?.id === selectedSprintId
-              ? null
-              : { id: selectedSprintId, name: selectedSprint.name }
-          );
+        if (key.shift) {
+          if (selectedSprintId && selectedSprint) {
+            setSprintFilter(
+              sprintFilter?.id === selectedSprintId
+                ? null
+                : { id: selectedSprintId, name: selectedSprint.name }
+            );
+          }
+        } else {
+          if (selectedSprintId && currentBoardId) {
+            loadSprintIssues({ sprintId: selectedSprintId, boardId: currentBoardId });
+          }
         }
         break;
       case 's':
-      case 'S':
         setShowSetup(true);
         break;
       case 'h':
@@ -468,6 +482,9 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, attributes: dimAttr }} wrapMode="none">{icon}</text>
           <text style={{ fg: isRowDim ? dimColor : status.color, attributes: isRowDim ? TextAttributes.DIM : (isTopLevel ? TextAttributes.BOLD : undefined) }} wrapMode="none">{keyPadded}</text>
           <text style={{ fg: isRowDim ? dimColor : (isTopLevel ? Colors.SECONDARY : status.color), flexShrink: 1, attributes: isRowDim ? TextAttributes.DIM : (isTopLevel ? TextAttributes.BOLD : undefined) }} wrapMode="none">{item.fields.summary}</text>
+          {item.fields.assignee && (
+            <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, attributes: dimAttr }} wrapMode="none"> @{item.fields.assignee.displayName}</text>
+          )}
           {(() => {
             const linkedMrs = mrsByJiraKey.get(item.key);
             if (!linkedMrs || linkedMrs.length === 0) return null;
@@ -650,10 +667,17 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
             ✦ Sprint Board {selectedSprint ? `- ${selectedSprint.name}` : ''} {subtasksCollapsed ? '[collapsed]' : ''}
           </text>
           <text style={{ fg: Colors.SUPPORTING, flexShrink: 1 }} wrapMode="none">
-            q: close | ↵: MR | S: board | r: sprints | f: fetch | F: filter MRs | x: collapse | O: sort | o: open | y: yank
+            q: close | ↵: MR | S: board | r: sprints | f: fetch | F: filter MRs | G: goal | x: collapse | O: sort | o: open | y: yank
           </text>
         </box>
         {renderSprintTabs()}
+        {goalVisible && selectedSprint?.goal && (
+          <box style={{ marginBottom: 1 }}>
+            {selectedSprint.goal.split('\n').filter(line => line.trim()).map((line, i) => (
+              <text key={i} style={{ fg: Colors.SUPPORTING }} wrapMode="none">  {line.trim()}</text>
+            ))}
+          </box>
+        )}
       </box>
 
       {isLoadingSprints && (
