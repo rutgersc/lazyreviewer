@@ -8,7 +8,7 @@ import { mapBitbucketToMergeRequest } from '../bitbucket/bitbucket-projections'
 import type { DiscussionNote, MergeRequest } from '../domain/merge-request-schema'
 import { defineProjection } from '../utils/define-projection'
 import type { Change } from './change-tracking-projection'
-import type { Provider } from '../userselection/userSelection'
+import { type Provider, type AuthorIdentity, mrProviderAuthor } from '../userselection/userSelection'
 
 // Cumulative state per MR (for calculating future deltas)
 export interface MrStateForDelta {
@@ -27,7 +27,7 @@ interface MrDelta {
 export interface MrInfo {
   mrId: string;
   mrName: string;
-  mrAuthor: string;
+  mrAuthor: AuthorIdentity;
   provider: Provider;
   jiraIssueKeys: string[];
 }
@@ -89,7 +89,8 @@ export interface SystemNoteChange {
   mr: MrInfo;
   noteId: string;
   body: string;
-  author: string;
+  author: AuthorIdentity;
+  authorDisplayName: string;
   changedAt: Date;
 }
 
@@ -98,7 +99,8 @@ export interface DiffCommentChange {
   mr: MrInfo;
   discussionId: string;
   noteId: string;
-  author: string;
+  author: AuthorIdentity;
+  authorDisplayName: string;
   filePath: string;
   line: number | null;
   changedAt: Date;
@@ -109,7 +111,8 @@ export interface DiscussionCommentChange {
   mr: MrInfo;
   discussionId: string;
   noteId: string;
-  author: string;
+  author: AuthorIdentity;
+  authorDisplayName: string;
   changedAt: Date;
 }
 
@@ -118,10 +121,11 @@ export interface SystemNotesCompactedChange {
   systemNoteType: SystemNoteType;
   mr: MrInfo;
   count: number;
-  noteIds: string[];       // All note IDs that were compacted
-  authors: string[];       // Will contain single author (all have same due to grouping)
-  changedAt: Date;         // Latest timestamp (for age display)
-  earliestChangedAt: Date; // Earliest timestamp (for list ordering)
+  noteIds: string[];
+  authors: AuthorIdentity[];
+  authorDisplayNames: string[];
+  changedAt: Date;
+  earliestChangedAt: Date;
 }
 
 export type MrChange =
@@ -268,26 +272,30 @@ const detectMergerequestChanges = (
       return 'unknown';
     };
 
-    const determineSystemNoteChange = (note: DiscussionNote): SystemNoteChange => {
-      return {
-        type: "system-note",
-        systemNoteType: parseSystemNoteType(note.body),
-        mr: mrInfo,
-        noteId: note.id,
-        body: note.body,
-        author: note.author,
-        changedAt: note.createdAt,
-      };
-    }
+    const noteAuthorIdentity = (note: DiscussionNote): AuthorIdentity =>
+      mrProviderAuthor(mrInfo.provider, note.authorUsername);
+
+    const determineSystemNoteChange = (note: DiscussionNote): SystemNoteChange => ({
+      type: "system-note",
+      systemNoteType: parseSystemNoteType(note.body),
+      mr: mrInfo,
+      noteId: note.id,
+      body: note.body,
+      author: noteAuthorIdentity(note),
+      authorDisplayName: note.author,
+      changedAt: note.createdAt,
+    });
 
     if (!note) {
+      const unknownAuthor = mrProviderAuthor(mrInfo.provider, 'unknown');
       return {
         type: "system-note",
         systemNoteType: 'unknown',
         mr: mrInfo,
         noteId: noteId,
         body: "unknown (is this a bug?)",
-        author: "unknown",
+        author: unknownAuthor,
+        authorDisplayName: 'unknown',
         changedAt: new Date()
       };
     }
@@ -299,7 +307,8 @@ const detectMergerequestChanges = (
         mr: mrInfo,
         discussionId,
         noteId: note.id,
-        author: note.author,
+        author: noteAuthorIdentity(note),
+        authorDisplayName: note.author,
         filePath: note.position.filePath ?? "",
         line: note.position.newLine ?? note.position.oldLine,
         changedAt: note.createdAt
@@ -310,7 +319,8 @@ const detectMergerequestChanges = (
         mr: mrInfo,
         discussionId,
         noteId: note.id,
-        author: note.author,
+        author: noteAuthorIdentity(note),
+        authorDisplayName: note.author,
         changedAt: note.createdAt
       };
     }
@@ -337,7 +347,8 @@ const detectMergerequestChanges = (
     const delta = calcDelta(mr.id, previousState, latestState);
 
     if (delta.stateDelta !== undefined || delta.commentsDelta.size > 0) {
-      const mrInfo: MrInfo = { mrId: delta.mrId, mrName: mr?.title ?? "unknown", mrAuthor: mr.author, provider: mr.provider, jiraIssueKeys: mr.jiraIssueKeys };
+      const mrAuthorIdentity = mrProviderAuthor(mr.provider, mr.author);
+      const mrInfo: MrInfo = { mrId: delta.mrId, mrName: mr?.title ?? "unknown", mrAuthor: mrAuthorIdentity, provider: mr.provider, jiraIssueKeys: mr.jiraIssueKeys };
       const mrStatusChange = determineMrStatusChange(delta.stateDelta, mrInfo, mr.updatedAt);
       const noteChanges = [...delta.commentsDelta].map((noteId) => {
         const found = mr ? findNoteById(mr, noteId) : undefined;

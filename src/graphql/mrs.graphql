@@ -40,6 +40,7 @@ fragment MergeRequestFields on MergeRequest {
           body
           author {
             name
+            username
           }
           url
           createdAt

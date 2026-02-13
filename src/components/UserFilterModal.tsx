@@ -38,7 +38,7 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
 
   const groupMemberUsernames = React.useMemo(() => {
     const resolved = resolveGroupIds([...checkedGroupIds], groups);
-    return new Set(resolved.map(u => u.gitlab ?? u.name));
+    return new Set(resolved.map(u => u.gitlab ?? u.userId));
   }, [checkedGroupIds, groups]);
 
   React.useEffect(() => {
@@ -67,7 +67,7 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
   }, []);
 
   const toggleRightItem = React.useCallback((author: UserId) => {
-    const name = author.name;
+    const name = author.userId;
     setCheckedUsernames(prev => {
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
@@ -144,8 +144,8 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
   const hasUsers = knownAuthors.length > 0;
 
   const getUserColor = (author: UserId): string => {
-    const isIndividual = checkedUsernames.has(author.name);
-    const isGroupMember = groupMemberUsernames.has(author.gitlab ?? author.name);
+    const isIndividual = checkedUsernames.has(author.userId);
+    const isGroupMember = groupMemberUsernames.has(author.gitlab ?? author.userId);
     if (isIndividual && isGroupMember) return Colors.WARNING;
     if (isIndividual) return Colors.INFO;
     if (isGroupMember) return Colors.SECONDARY;
@@ -245,13 +245,13 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
               )}
               {rightItems.map((author, idx) => {
                 const isHighlighted = activeColumn === 'right' && idx === rightIndex;
-                const isChecked = checkedUsernames.has(author.name);
+                const isChecked = checkedUsernames.has(author.userId);
                 const checkbox = isChecked ? '[x]' : '[ ]';
                 const color = getUserColor(author);
 
                 return (
                   <box
-                    key={`user-${author.name}`}
+                    key={`user-${author.userId}`}
                     onMouseDown={() => {
                       setActiveColumn('right');
                       setRightIndex(idx);
@@ -266,7 +266,7 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
                       }}
                       wrapMode='none'
                     >
-                      {`${checkbox} ${author.name}`}
+                      {`${checkbox} ${author.userId}`}
                     </text>
                   </box>
                 );

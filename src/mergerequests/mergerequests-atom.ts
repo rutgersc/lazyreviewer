@@ -80,10 +80,10 @@ export const knownAuthorsAtom = Atom.make((get): readonly UserId[] => {
       const seen = new Map<string, UserId>();
       for (const mr of state.value.mrsByGid.values()) {
         if (!seen.has(mr.author)) {
-          seen.set(mr.author, { type: 'userId', name: mr.author, [mr.provider]: mr.author });
+          seen.set(mr.author, { type: 'userId', userId: mr.author, [mr.provider]: mr.author });
         }
       }
-      return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+      return [...seen.values()].sort((a, b) => a.userId.localeCompare(b.userId));
     },
     onFailure: () => [] as UserId[]
   });
@@ -106,7 +106,7 @@ export const effectiveUserFilterAtom = Atom.make((get): readonly string[] => {
   const groupIds = get(userFilterGroupIdsAtom);
   if (usernames.length === 0 && groupIds.length === 0) return [];
   const groups = get(groupsAtom);
-  const groupUsernames = resolveGroupIds(groupIds, groups).map(u => u.gitlab ?? u.name);
+  const groupUsernames = resolveGroupIds(groupIds, groups).map(u => u.gitlab ?? u.userId);
   return [...new Set([...usernames, ...groupUsernames])];
 });
 
@@ -203,7 +203,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
       const hasUserFilter = userFilter.length > 0;
 
       if (hasUserFilter && gitlabRepos.length > 0) {
-        const userIds: UserId[] = userFilter.map(username => ({ type: 'userId', name: username, gitlab: username }));
+        const userIds: UserId[] = userFilter.map(username => ({ type: 'userId', userId: username, gitlab: username }));
         const cacheKey = new MRCacheKey({ users: userIds, state: filterMrState });
         const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
         yield* decideFetchUserMrs(userIds, filterMrState, knownMrs).pipe(

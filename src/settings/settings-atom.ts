@@ -162,8 +162,8 @@ export const currentUserIdAtom = Atom.make((get): UserId => {
   const users = get(usersAtom);
   const found = users
     .filter((u): u is User => u.type === 'user')
-    .find(u => u.id.name === currentUserName);
-  return found?.id ?? { type: 'userId', name: currentUserName };
+    .find(u => u.id.userId === currentUserName || u.id.gitlab === currentUserName || u.id.bitbucket === currentUserName);
+  return found?.id ?? { type: 'userId', userId: currentUserName };
 });
 
 export const notificationSettingsAtom = selectFromSettings(

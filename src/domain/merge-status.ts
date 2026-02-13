@@ -20,6 +20,7 @@ export const DetailedMergeStatusSchema = Schema.Literal(
   'NOT_APPROVED',
   'NOT_OPEN',
   'PREPARING',
+  'REQUESTED_CHANGES',
   'SECURITY_POLICIES_VIOLATIONS',
   'TITLE_NOT_MATCHING',
   'UNCHECKED'

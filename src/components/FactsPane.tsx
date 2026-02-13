@@ -10,7 +10,7 @@ import { allMrsAtom, unwrappedMergeRequestsAtom, isMergeRequestsLoadingAtom, sel
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { eventChangesReadmodelAtom } from '../changetracking/change-tracking-atom';
 import type { Change } from '../changetracking/change-tracking-projection';
-import { isMrChange } from '../changetracking/mr-change-tracking-projection';
+import { isMrChange, type MrInfo } from '../changetracking/mr-change-tracking-projection';
 import type { LazyReviewerEvent } from '../events/events';
 import { useJiraScroll } from '../hooks/useJiraScroll';
 import { TextAttributes } from '@opentui/core';
@@ -18,7 +18,7 @@ import { Colors } from '../colors';
 import { getAgeColor } from '../utils/formatting';
 import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from './JiraIssuesList';
 import { appViewAtom, currentUserIdAtom } from '../settings/settings-atom';
-import { isAuthorOf } from '../userselection/userSelection';
+import { isCurrentUser, mrProviderAuthor } from '../userselection/userSelection';
 import { viewConfigs } from '../ui/view-config';
 
 function getJiraPrefix(change: Change): string {
@@ -35,9 +35,12 @@ function getJiraPrefix(change: Change): string {
 
 function getChangeDescription(change: Change): { badge: string; color: string; text: string } {
   const jira = getJiraPrefix(change);
+  const mrAuthorName = (mr: MrInfo): string =>
+    mr.mrAuthor.provider === 'jira' ? mr.mrAuthor.accountId : mr.mrAuthor.username;
+
   switch (change.type) {
     case 'new-mr':
-      return { badge: '📋', color: '#50fa7b', text: `${jira}New MR: ${change.mr.mrName} (${change.mr.mrAuthor})` };
+      return { badge: '📋', color: '#50fa7b', text: `${jira}New MR: ${change.mr.mrName} (${mrAuthorName(change.mr)})` };
     case 'merged-mr':
       return { badge: '✓ ', color: '#bd93f9', text: `${jira}Merged: ${change.mr.mrName}` };
     case 'closed-mr':
@@ -45,9 +48,9 @@ function getChangeDescription(change: Change): { badge: string; color: string; t
     case 'reopened-mr':
       return { badge: '↻', color: '#ffb86c', text: `${jira}Reopened: ${change.mr.mrName}` };
     case 'system-note':
-      return { badge: '⚙ ', color: '#6272a4', text: `${jira}${change.author}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
-    case 'system-notes-compacted':
-      const author = change.authors[0];
+      return { badge: '⚙ ', color: '#6272a4', text: `${jira}${change.authorDisplayName}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
+    case 'system-notes-compacted': {
+      const author = change.authorDisplayNames[0];
       switch (change.systemNoteType) {
         case 'commits-added':
           return {
@@ -74,18 +77,20 @@ function getChangeDescription(change: Change): { badge: string; color: string; t
             text: `${jira}${author}: ${change.count} system notes`
           };
       }
-    case 'diff-comment':
+    }
+    case 'diff-comment': {
       const lineInfo = change.line ? `:${change.line}` : '';
       const fileName = change.filePath.split('/').pop() ?? change.filePath;
-      return { badge: '📝', color: '#8be9fd', text: `${jira}${change.author} on ${fileName}${lineInfo}` };
+      return { badge: '📝', color: '#8be9fd', text: `${jira}${change.authorDisplayName} on ${fileName}${lineInfo}` };
+    }
     case 'discussion-comment':
-      return { badge: '💬', color: '#ffb86c', text: `${jira}${change.author} commented on ${change.mr.mrName}` };
+      return { badge: '💬', color: '#ffb86c', text: `${jira}${change.authorDisplayName} commented on ${change.mr.mrName}` };
     case 'new-jira-issue':
       return { badge: '🧩', color: '#50fa7b', text: `${jira}New Jira: ${change.issue.summary}` };
     case 'jira-status-changed':
       return { badge: '🔄', color: '#bd93f9', text: `${jira}${change.fromStatus ? `${change.fromStatus} → ` : ''}${change.toStatus}` };
     case 'jira-comment':
-      return { badge: '💬', color: '#8be9fd', text: `${jira}${change.author} commented` };
+      return { badge: '💬', color: '#8be9fd', text: `${jira}${change.authorDisplayName} commented` };
     default:
       const _: never = change;
       throw new Error("unreachable")
@@ -110,7 +115,7 @@ const myJiraIssueKeysAtom = Atom.readable<Set<string>>((get) => {
     onInitial: () => new Set<string>(),
     onSuccess: (state) => new Set(
       Array.from(state.value.mrsByGid.values())
-        .filter(mr => isAuthorOf(currentUser, mr.provider, mr.author))
+        .filter(mr => isCurrentUser(currentUser, mrProviderAuthor(mr.provider, mr.author)))
         .flatMap(mr => mr.jiraIssueKeys)
     ),
     onFailure: () => new Set<string>(),

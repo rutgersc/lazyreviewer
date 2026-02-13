@@ -40,6 +40,7 @@ function mapBitbucketCommentsToDiscussions(comments: readonly BitbucketComment[]
       id: String(comment.id),
       body: comment.content.raw,
       author: comment.user.display_name,
+      authorUsername: comment.user.nickname ?? comment.user.display_name,
       createdAt: new Date(comment.created_on),
       resolvable: true,
       system: false,

@@ -74,6 +74,7 @@ const JiraCommentBodySchema = Schema.transform(
 const JiraSprintCommentSchema = Schema.Struct({
   id: Schema.String,
   author: Schema.Struct({
+    accountId: Schema.String,
     displayName: Schema.String,
     emailAddress: Schema.optional(Schema.String)
   }),

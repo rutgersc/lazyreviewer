@@ -3,17 +3,34 @@ export type Provider = 'gitlab' | 'bitbucket'
 
 export type UserId = {
   type: 'userId'
-  name: string
+  userId: string
   gitlab?: string
   bitbucket?: string
-  jira?: { displayName: string }
+  jira?: string // Jira accountId
 }
 
-export const isAuthorOf = (user: UserId, provider: Provider, author: string): boolean =>
-  provider === 'gitlab' ? user.gitlab === author : user.bitbucket === author
+export type AuthorIdentity =
+  | { provider: 'gitlab'; username: string }
+  | { provider: 'bitbucket'; username: string }
+  | { provider: 'jira'; accountId: string }
 
-export const isJiraAuthor = (user: UserId, author: string): boolean =>
-  user.jira?.displayName === author
+export const isCurrentUser = (currentUser: UserId, author: AuthorIdentity): boolean => {
+  switch (author.provider) {
+    case 'gitlab': return currentUser.gitlab === author.username
+    case 'bitbucket': return currentUser.bitbucket === author.username
+    case 'jira': return currentUser.jira === author.accountId
+  }
+}
+
+export const authorIdentityKey = (author: AuthorIdentity): string =>
+  author.provider === 'jira'
+    ? `jira:${author.accountId}`
+    : `${author.provider}:${author.username}`
+
+export const mrProviderAuthor = (provider: Provider, username: string): AuthorIdentity =>
+  provider === 'gitlab'
+    ? { provider: 'gitlab', username }
+    : { provider: 'bitbucket', username }
 
 export type GroupId =
   | { type: 'groupId', id: string }
@@ -106,14 +123,13 @@ export const getUsersFromSelection = (
   resolveSelection(entry, groups).users;
 
 export const findSelectionForAuthor = (
-  provider: Provider,
-  author: string,
+  author: AuthorIdentity,
   userSelections: readonly UserSelectionEntry[],
   groups: readonly UserGroup[]
 ): UserSelectionEntry | null => {
   for (const entry of userSelections) {
     const users = getUsersFromSelection(entry, groups);
-    if (users.some(u => isAuthorOf(u, provider, author))) {
+    if (users.some(u => isCurrentUser(u, author))) {
       return entry;
     }
   }

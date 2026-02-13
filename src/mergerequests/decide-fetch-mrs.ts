@@ -11,7 +11,7 @@ import { getBitbucketPrsAsEvent } from "../bitbucket/bitbucketapi"
 import { loadJiraTicketsAsEvent } from "../jira/jira-service"
 import { projectGitlabMrsFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
 import { projectBitbucketPrsFetchedEvent } from "../bitbucket/bitbucket-projections"
-import { type RepositoryId, type UserId, isAuthorOf, repositoryFullPath } from "../userselection/userSelection"
+import { type RepositoryId, type UserId, isCurrentUser, mrProviderAuthor, repositoryFullPath } from "../userselection/userSelection"
 import type { MergeRequest } from "./mergerequest-schema"
 import type { MrGid } from "../domain/identifiers"
 
@@ -43,7 +43,7 @@ export type KnownMrInfo = { projectPath: string; iid: string; updatedAt: Date };
 export const mrMatchesCacheKey = (mr: MergeRequest, cacheKey: CacheKey): boolean =>
   mr.state === cacheKey.state &&
   (cacheKey._tag === "UserMRs"
-    ? cacheKey.users.some(u => isAuthorOf(u, mr.provider, mr.author))
+    ? cacheKey.users.some(u => isCurrentUser(u, mrProviderAuthor(mr.provider, mr.author)))
     : mr.project.fullPath === repositoryFullPath(cacheKey.repository));
 
 export const mrMatchesFilter = (
@@ -54,7 +54,7 @@ export const mrMatchesFilter = (
 ): boolean =>
   mr.state === state
   && (repos.length === 0 || repos.some(r => mr.project.fullPath === repositoryFullPath(r)))
-  && (authors.length === 0 || authors.some(u => isAuthorOf(u, mr.provider, mr.author)));
+  && (authors.length === 0 || authors.some(u => isCurrentUser(u, mrProviderAuthor(mr.provider, mr.author))));
 
 export const getKnownMrsForCacheKey = (
   mrsByGid: ReadonlyMap<MrGid, MergeRequest>,

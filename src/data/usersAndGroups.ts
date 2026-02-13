@@ -1,17 +1,18 @@
 import type { GroupId, UserGroup, UserId, UserSelection, UserSelectionEntry } from '../userselection/userSelection';
 
-const rutger = { type: 'userId', name: 'rutger', gitlab: 'r.schoorstra', jira: { displayName: 'Rutger Schoorstra' } } satisfies UserId;
-const menno = { type: 'userId', name: 'menno', gitlab: 'MennoGerbens', jira: { displayName: 'Menno Gerbens' } } satisfies UserId;
-const kimberley = { type: 'userId', name: 'kimberley', gitlab: 'kimberley', jira: { displayName: 'Kimberley de Graaf' } } satisfies UserId;
-const rp = { type: 'userId', name: 'rp', gitlab: 'Rinze-PieterJonker', jira: { displayName: 'Rinze-Pieter Jonker' } } satisfies UserId;
-const martin = { type: 'userId', name: 'martin', gitlab: 'm.bures', jira: { displayName: 'Martin Bures' } } satisfies UserId;
-const heiner = { type: 'userId', name: 'heiner', gitlab: 'h.behrends', jira: { displayName: 'Heiner Behrends' } } satisfies UserId;
-const tomas = { type: 'userId', name: 'tomas', gitlab: 'TomasAugustinas', jira: { displayName: 'Tomas Augustinas' } } satisfies UserId;
-const arjen = { type: 'userId', name: 'arjen', gitlab: 'ArjenPost', jira: { displayName: 'Arjen Post' } } satisfies UserId;
-const haike = { type: 'userId', name: 'haike', gitlab: 'HaikeZegwaard', jira: { displayName: 'Haike Zegwaard' } } satisfies UserId;
-const chen = { type: 'userId', name: 'chen', gitlab: 'c.zrubavel', jira: { displayName: 'Chen Zrubavel' } } satisfies UserId;
-const harold = { type: 'userId', name: 'harold', gitlab: 'h.harkema', jira: { displayName: 'Harold Harkema' } } satisfies UserId;
-const vic = { type: 'userId', name: 'vic', gitlab: 'VicUlrich', jira: { displayName: 'Vic Ulrich' } } satisfies UserId;
+// TODO: Replace jira values with actual Jira accountIds (one-time lookup)
+const rutger = { type: 'userId', userId: 'rutger', gitlab: 'r.schoorstra', jira: 'Rutger Schoorstra' } satisfies UserId;
+const menno = { type: 'userId', userId: 'menno', gitlab: 'MennoGerbens', jira: 'Menno Gerbens' } satisfies UserId;
+const kimberley = { type: 'userId', userId: 'kimberley', gitlab: 'kimberley', jira: 'Kimberley de Graaf' } satisfies UserId;
+const rp = { type: 'userId', userId: 'rp', gitlab: 'Rinze-PieterJonker', jira: 'Rinze-Pieter Jonker' } satisfies UserId;
+const martin = { type: 'userId', userId: 'martin', gitlab: 'm.bures', jira: 'Martin Bures' } satisfies UserId;
+const heiner = { type: 'userId', userId: 'heiner', gitlab: 'h.behrends', jira: 'Heiner Behrends' } satisfies UserId;
+const tomas = { type: 'userId', userId: 'tomas', gitlab: 'TomasAugustinas', jira: 'Tomas Augustinas' } satisfies UserId;
+const arjen = { type: 'userId', userId: 'arjen', gitlab: 'ArjenPost', jira: 'Arjen Post' } satisfies UserId;
+const haike = { type: 'userId', userId: 'haike', gitlab: 'HaikeZegwaard', jira: 'Haike Zegwaard' } satisfies UserId;
+const chen = { type: 'userId', userId: 'chen', gitlab: 'c.zrubavel', jira: 'Chen Zrubavel' } satisfies UserId;
+const harold = { type: 'userId', userId: 'harold', gitlab: 'h.harkema', jira: 'Harold Harkema' } satisfies UserId;
+const vic = { type: 'userId', userId: 'vic', gitlab: 'VicUlrich', jira: 'Vic Ulrich' } satisfies UserId;
 
 export const users: UserSelection[] = [
   { type: 'user', id: rutger },

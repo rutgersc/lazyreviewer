@@ -96,7 +96,7 @@ export default function RepositoriesPane() {
   return (
     <>
       <box style={{ flexDirection: "row", paddingBottom: 1 }}>
-        <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD, flexGrow: 1 }} wrapMode='none'>
+        <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
           Background Sync
         </text>
         <text

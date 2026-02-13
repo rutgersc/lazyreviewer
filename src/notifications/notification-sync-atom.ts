@@ -7,7 +7,7 @@ import { mrChangeTrackingProjection, jiraChangeTrackingProjection } from '../cha
 import { sendSystemNotification, type NotificationPayload } from './notification-service';
 import { SettingsService } from '../settings/settings';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
-import { isAuthorOf } from '../userselection/userSelection';
+import { type AuthorIdentity, isCurrentUser, mrProviderAuthor } from '../userselection/userSelection';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
 import { BackgroundSyncService, type PageSlotSnapshot } from './background-sync-service';
 
@@ -38,7 +38,7 @@ const buildNotificationContext = (get: Atom.Context): NotificationContext => {
   const participatedDiscussionIds = new Set(
     mrs.flatMap(mr =>
       mr.discussions
-        .filter(d => d.notes.some(note => isAuthorOf(currentUser, mr.provider, note.author)))
+        .filter(d => d.notes.some(note => isCurrentUser(currentUser, mrProviderAuthor(mr.provider, note.authorUsername))))
         .map(d => d.id)
     )
   );
@@ -55,15 +55,18 @@ const buildNotificationContext = (get: Atom.Context): NotificationContext => {
   };
 };
 
+const mrAuthorName = (author: AuthorIdentity): string =>
+  author.provider === 'jira' ? author.accountId : author.username;
+
 const formatChange = (change: NotifiableChange) => {
   switch (change.type) {
-    case 'new-mr': return { title: `🔔 ${change.mr.mrAuthor} created MR ${change.mr.mrName}`, body: `[NEW MR] ${change.mr.mrName}` };
+    case 'new-mr': return { title: `🔔 ${mrAuthorName(change.mr.mrAuthor)} created MR ${change.mr.mrName}`, body: `[NEW MR] ${change.mr.mrName}` };
     case 'merged-mr': return { title: `🔔 ${change.mr.mrName} merged`, body: `[MERGED MR] ${change.mr.mrName}` };
     case 'closed-mr': return { title: `🔔 ${change.mr.mrName} closed`, body: `[CLOSED MR] ${change.mr.mrName}` };
     case 'reopened-mr': return { title: `🔔 ${change.mr.mrName} got reopened`, body: `[REOPENED MR] ${change.mr.mrName}` };
-    case 'diff-comment': return { title: `🔔 ${change.author} commented on ${change.mr.mrName}`, body: `[DIFF COMMENT] ${change.mr.mrName}` };
-    case 'discussion-comment': return { title: `🔔 ${change.author} commented on ${change.mr.mrName}`, body: `[DISCUSSION COMMENT] ${change.mr.mrName}` };
-    case 'jira-comment': return { title: `🔔 ${change.author} commented on ${change.issue.issueKey}`, body: `[JIRA COMMENT] ${change.issue.issueKey}` };
+    case 'diff-comment': return { title: `🔔 ${change.authorDisplayName} commented on ${change.mr.mrName}`, body: `[DIFF COMMENT] ${change.mr.mrName}` };
+    case 'discussion-comment': return { title: `🔔 ${change.authorDisplayName} commented on ${change.mr.mrName}`, body: `[DISCUSSION COMMENT] ${change.mr.mrName}` };
+    case 'jira-comment': return { title: `🔔 ${change.authorDisplayName} commented on ${change.issue.issueKey}`, body: `[JIRA COMMENT] ${change.issue.issueKey}` };
     case 'jira-status-changed': return { title: `🔔 status of ${change.issue.issueKey} changed to ${change.toStatus}`, body: `[JIRA STATUS CHANGED] ${change.issue.issueKey}` };
   }
 };

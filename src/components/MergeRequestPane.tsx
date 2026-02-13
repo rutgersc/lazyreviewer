@@ -5,7 +5,7 @@ import { type PipelineStage, type PipelineJob } from "../domain/merge-request-sc
 import { formatCompactTime, getAgeColor } from "../utils/formatting";
 import { openUrl } from "../system/open-url";
 import { getJobStatusDisplay } from "../domain/display/jobStatus";
-import { ActivePane, type UserId, isAuthorOf } from "../userselection/userSelection";
+import { ActivePane, type UserId, isCurrentUser, mrProviderAuthor } from "../userselection/userSelection";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useDoubleClick } from "../hooks/useDoubleClick";
 import { Colors } from "../colors";
@@ -167,8 +167,8 @@ const PipelineStagesWithJobStatuses = ({ mr, pipelineJobImportance }: { mr: Merg
 
 const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, repoColor, branchDifferenceMap, jiraIssuesMap, now, currentUser, seenMergeRequests, pipelineJobImportance }: { mr: MergeRequest; isActiveInLocalRepo: boolean; worktreeMatch: WorktreeMatch | null; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue>; now: Date; currentUser: UserId; seenMergeRequests: Set<string>; pipelineJobImportance: Record<string, Record<string, JobImportance>> }) => {
   const isSeen = seenMergeRequests.has(mr.id);
-  const isApprovedByMe = mr.approvedBy.some(approver => isAuthorOf(currentUser, mr.provider, approver.username));
-  const isMyMr = isAuthorOf(currentUser, mr.provider, mr.author);
+  const isApprovedByMe = mr.approvedBy.some(approver => isCurrentUser(currentUser, mrProviderAuthor(mr.provider, approver.username)));
+  const isMyMr = isCurrentUser(currentUser, mrProviderAuthor(mr.provider, mr.author));
   const projectColor = repoColor || Colors.SUCCESS;
   const branchDifference = branchDifferenceMap.get(mr.id);
 
@@ -808,7 +808,7 @@ export default function MergeRequestPane() {
           const isMonitored = monitoredMergeRequests.has(mr.id);
           const highlightInfo = getMrHighlightInfo(mr, index);
           const repoColor = repositoryColors[mr.project.fullPath];
-          const isMyMr = isAuthorOf(currentUser, mr.provider, mr.author);
+          const isMyMr = isCurrentUser(currentUser, mrProviderAuthor(mr.provider, mr.author));
 
           return (
             <box

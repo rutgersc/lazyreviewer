@@ -8,7 +8,7 @@ import type {
   DiscussionCommentChange
 } from '../changetracking/change-tracking-projection'
 import type { JiraCommentChange, JiraStatusChangedChange } from '../changetracking/jira-change-tracking-projection'
-import { type UserId, type Provider, isAuthorOf, isJiraAuthor } from '../userselection/userSelection'
+import { type UserId, type AuthorIdentity, isCurrentUser } from '../userselection/userSelection'
 
 export type NotifiableChange = Extract<
   Change,
@@ -79,8 +79,8 @@ export function determineNotification(
 ): NotificationFilterResult {
   const { currentUser, participatedDiscussionIds, relatedJiraIssueKeys, preferences } = context
 
-  const isOwnAction = (provider: Provider, author: string) => isAuthorOf(currentUser, provider, author)
-  const isMrAuthoredByMe = (mr: { mrAuthor: string; provider: Provider }) => isAuthorOf(currentUser, mr.provider, mr.mrAuthor)
+  const isOwnAction = (author: AuthorIdentity) => isCurrentUser(currentUser, author)
+  const isMrAuthoredByMe = (mr: { mrAuthor: AuthorIdentity }) => isCurrentUser(currentUser, mr.mrAuthor)
 
   switch (change.type) {
     case 'new-mr':
@@ -96,9 +96,8 @@ export function determineNotification(
       return skipNotification
     }
 
-    // Diff comments
     case 'diff-comment': {
-      if (isOwnAction(change.mr.provider, change.author)) return skipNotification
+      if (isOwnAction(change.author)) return skipNotification
 
       if (preferences.commentsOnMyMrs && isMrAuthoredByMe(change.mr)) {
         return { notify: true, change }
@@ -111,9 +110,8 @@ export function determineNotification(
       return skipNotification
     }
 
-    // Discussion comments
     case 'discussion-comment': {
-      if (isOwnAction(change.mr.provider, change.author)) return skipNotification
+      if (isOwnAction(change.author)) return skipNotification
 
       if (preferences.commentsOnMyMrs && isMrAuthoredByMe(change.mr)) {
         return { notify: true, change }
@@ -136,7 +134,7 @@ export function determineNotification(
 
     case 'jira-comment': {
       if (!preferences.jiraComments) return skipNotification
-      if (isJiraAuthor(currentUser, change.author)) return skipNotification
+      if (isCurrentUser(currentUser, change.author)) return skipNotification
       if (relatedJiraIssueKeys.has(change.issue.issueKey)) {
         return { notify: true, change }
       }

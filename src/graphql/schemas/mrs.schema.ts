@@ -47,7 +47,8 @@ export const MergeRequestFieldsFragmentSchema: Schema.Schema<MergeRequestFieldsF
           system: Schema.Boolean,
           body: Schema.String,
           author: Schema.NullOr(Schema.Struct({
-            name: Schema.String
+            name: Schema.String,
+            username: Schema.String
           })),
           url: Schema.NullOr(Schema.String),
           createdAt: Schema.String,

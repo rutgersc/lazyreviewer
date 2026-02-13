@@ -276,6 +276,7 @@ export const convertSprintIssueToJiraIssue = (sprintIssue: JiraSprintIssue): Jir
       comments: (sprintIssue.fields.comment?.comments ?? []).map(c => ({
         id: c.id,
         author: {
+          accountId: c.author.accountId,
           displayName: c.author.displayName,
           emailAddress: c.author.emailAddress,
         },

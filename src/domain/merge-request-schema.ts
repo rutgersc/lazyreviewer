@@ -38,6 +38,7 @@ export const DiscussionNoteSchema = Schema.Struct({
   id: Schema.String,
   body: Schema.String,
   author: Schema.String,
+  authorUsername: Schema.String,
   createdAt: Schema.Date,
   resolvable: Schema.Boolean,
   resolved: Schema.Boolean,

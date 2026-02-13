@@ -47,6 +47,7 @@ export const mapMrFragment = (
       id: note?.id || '',
       body: note?.body || '',
       author: note?.author?.name || '',
+      authorUsername: note?.author?.username || '',
       createdAt: new Date(note?.createdAt || ''),
       resolvable: note?.resolvable || false,
       resolved: note?.resolved || false,

@@ -6,7 +6,7 @@ type GraphQLClientRequestHeaders = RequestOptions['requestHeaders'];
 export type JobStatusQueryVariables = Types.Exact<{ [key: string]: never; }>;
 
 
-export type JobStatusQuery = { readonly jobs: { readonly nodes: ReadonlyArray<{ readonly name: string | null } | null> | null } | null };
+export type JobStatusQuery = { readonly jobs: { readonly nodes: ReadonlyArray<{ readonly name: string | null } | { readonly name: string | null } | null> | null } | null };
 
 
 export const JobStatusDocument = gql`

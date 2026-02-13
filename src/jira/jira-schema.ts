@@ -29,6 +29,7 @@ const JiraCommentBodySchema = Schema.Struct({
 export const JiraCommentSchema = Schema.Struct({
   id: Schema.String,
   author: Schema.Struct({
+    accountId: Schema.String,
     displayName: Schema.String,
     emailAddress: Schema.optional(Schema.String)
   }),

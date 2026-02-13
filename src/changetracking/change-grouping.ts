@@ -1,5 +1,6 @@
 import type { Change, SystemNoteChange } from './change-tracking-projection';
 import type { SystemNoteType } from './mr-change-tracking-projection';
+import { authorIdentityKey } from '../userselection/userSelection';
 
 const groupableTypes: ReadonlySet<SystemNoteType> = new Set([
   'commits-added',
@@ -12,7 +13,7 @@ const isGroupableChange = (change: Change): change is SystemNoteChange =>
 
 const createGroupByKey = (changes: SystemNoteChange[]): Map<string, SystemNoteChange[]> => {
   const getGroupKey = (change: SystemNoteChange): string =>
-  `${change.mr.mrId}|${change.systemNoteType}|${change.author}`;
+  `${change.mr.mrId}|${change.systemNoteType}|${authorIdentityKey(change.author)}`;
 
   return changes.reduce((acc, change) => {
     const key = getGroupKey(change);
@@ -47,6 +48,7 @@ const combineChangesIntoGroup = (group: SystemNoteChange[]): Change | undefined 
     count: group.length,
     noteIds: group.map(c => c.noteId),
     authors: [firstChange.author],
+    authorDisplayNames: [firstChange.authorDisplayName],
     changedAt: earliestChange.changedAt,
     earliestChangedAt: latestChange.changedAt
   };

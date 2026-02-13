@@ -1,4 +1,5 @@
 import type { JiraComment, JiraIssue } from '../jira/jira-schema'
+import type { AuthorIdentity } from '../userselection/userSelection'
 import { defineProjection } from '../utils/define-projection'
 
 export interface JiraStateForDelta {
@@ -35,7 +36,8 @@ export interface JiraCommentChange {
   type: 'jira-comment'
   issue: JiraInfo
   commentId: string
-  author: string
+  author: AuthorIdentity
+  authorDisplayName: string
   changedAt: Date
 }
 
@@ -107,11 +109,13 @@ const detectJiraIssueChanges = (
     if (delta.commentsDelta.size > 0) {
       delta.commentsDelta.forEach((commentId) => {
         const comment = findJiraCommentById(issue, commentId)
+        const jiraAuthor: AuthorIdentity = { provider: 'jira', accountId: comment?.author.accountId ?? 'unknown' }
         jiraDeltas.push({
           type: 'jira-comment',
           issue: issueInfo,
           commentId,
-          author: comment?.author.displayName ?? 'unknown',
+          author: jiraAuthor,
+          authorDisplayName: comment?.author.displayName ?? 'unknown',
           changedAt: comment ? new Date(comment.created) : new Date()
         })
       })
