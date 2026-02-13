@@ -18,7 +18,7 @@ import {
   selectMrForChangeAtom,
   sublistFocusedAtom,
   sublistIndexAtom,
-} from "./FactsPane";
+} from "./facts/facts-shared";
 
 export const factsPaneActionsAtom: Atom.Atom<Action[]> = Atom.make(get => {
     const sublistFocused = get(sublistFocusedAtom);
