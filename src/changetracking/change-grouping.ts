@@ -16,8 +16,13 @@ const createGroupByKey = (changes: SystemNoteChange[]): Map<string, SystemNoteCh
 
   return changes.reduce((acc, change) => {
     const key = getGroupKey(change);
-    const existing = acc.get(key) ?? [];
-    return new Map(acc).set(key, [...existing, change]);
+    const existing = acc.get(key);
+    if (existing) {
+      existing.push(change);
+    } else {
+      acc.set(key, [change]);
+    }
+    return acc;
   }, new Map<string, SystemNoteChange[]>());
 };
 

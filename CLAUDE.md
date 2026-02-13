@@ -5,7 +5,7 @@ Terminal-based TUI for viewing GitLab merge requests with Jira integration.
 ## Development Commands
 
 - **NEVER run `bun run start`** — it interferes with the Claude Code interface.
-- **ALWAYS use `bun run typecheck`** for type checking. NEVER run `tsc` directly.
+- **NEVER dismiss typecheck errors** — if there are errors, investigate and fix them or ask the user. Do not assume errors are "pre-existing".
 - **ALWAYS use `bun run codegen`** for GraphQL code generation. NEVER run codegen commands manually.
 - **ALWAYS use `bun install`** for dependencies. NEVER use `npm install` or `yarn`.
 

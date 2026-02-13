@@ -231,11 +231,8 @@ const repoShortName = (repoPath: string): string => {
 
 const snapshotPageFetchTimestamps = (
   slots: ReadonlyMap<string, PageSlot>,
-  existing: Readonly<Record<string, readonly string[]>>,
 ): Record<string, string[]> => {
-  const result: Record<string, string[]> = Object.fromEntries(
-    Object.entries(existing).map(([k, v]) => [k, [...v]])
-  )
+  const result: Record<string, string[]> = {}
   for (const slot of slots.values()) {
     if (slot.lastFetchedAt === null) continue
     const arr = result[slot.repo] ??= []
@@ -382,7 +379,7 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
           + `${result.mrCount} MRs, oldest ${ageStr} ago → next refresh in ${intervalStr}`
         )
 
-        const updatedTimestamps = snapshotPageFetchTimestamps(slots, seedTimestamps)
+        const updatedTimestamps = snapshotPageFetchTimestamps(slots)
         seedTimestamps = updatedTimestamps
         const currentSeq = (yield* BgSyncReadModelService.get).seq
         yield* SettingsService.modify(s => ({

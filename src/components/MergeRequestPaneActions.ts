@@ -2,7 +2,7 @@ import { Atom, Registry } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
-import { activePaneAtom, activeModalAtom, type ActiveModal } from "../ui/navigation-atom";
+import { activePaneAtom, activeModalAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
 import { unwrappedMergeRequestsAtom, selectedMrIndexAtom, filterMrStateAtom, refetchSelectedMrAtom } from "../mergerequests/mergerequests-atom";
 import { toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, toggleMonitorMergeRequestAtom } from "../settings/settings-atom";
@@ -113,13 +113,6 @@ export const mrActionsAtom = Atom.make((get) => {
       handler: () => registry.set(activeModalAtom, 'gitSwitch'),
     },
     {
-      id: 'mr:jira',
-      keys: [parseKeyString('t')],
-      displayKey: 't',
-      description: 'Show Jira tickets',
-      handler: () => registry.set(activeModalAtom, 'jira'),
-    },
-    {
       id: 'mr:toggle-monitor',
       keys: [parseKeyString('m')],
       displayKey: 'm',
@@ -137,13 +130,6 @@ export const mrActionsAtom = Atom.make((get) => {
       displayKey: 'w',
       description: 'View monitored MRs',
       handler: () => registry.set(activeModalAtom, 'monitoredMrs'),
-    },
-    {
-      id: 'mr:retarget',
-      keys: [parseKeyString('r')],
-      displayKey: 'r',
-      description: 'Retarget MR to branch',
-      handler: () => registry.set(activeModalAtom, 'retarget'),
     },
     {
       id: 'mr:toggle-ignore',

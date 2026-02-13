@@ -10,18 +10,25 @@ import {
 } from './change-tracking-projection'
 import type { LazyReviewerEvent } from '../events/events'
 import { appAtomRuntime } from '../appLayerRuntime'
+import { groupChanges } from './change-grouping'
+import { FILTERED_SYSTEM_NOTE_TYPES } from './mr-change-tracking-projection'
+
+const isFilteredSystemNote = (change: Change): boolean =>
+  change.type === 'system-note' && FILTERED_SYSTEM_NOTE_TYPES.has(change.systemNoteType);
 
 export interface ChangeTrackingState {
   mrStateForDeltaByMrId: Map<string, MrStateForDelta>,
   jiraStateForDeltaByIssueKey: Map<string, JiraStateForDelta>,
   deltasByEventId: Map<string, Change[]>,
+  groupedDeltasByEventId: Map<string, Change[]>,
   event?: LazyReviewerEvent
 }
 
 const initialAccumulator: ChangeTrackingState = {
   mrStateForDeltaByMrId: new Map(),
   jiraStateForDeltaByIssueKey: new Map(),
-  deltasByEventId: new Map()
+  deltasByEventId: new Map(),
+  groupedDeltasByEventId: new Map()
 }
 
 export const changesStream = Effect.fn(function* (_get: Atom.Context) {
@@ -41,18 +48,23 @@ export const changesStream = Effect.fn(function* (_get: Atom.Context) {
             ? jiraChangeTrackingProjection.project({ jiraStatesForDelta: state.jiraStateForDeltaByIssueKey, jiraDeltas: [] }, event)
             : { jiraDeltas: [], jiraStatesForDelta: state.jiraStateForDeltaByIssueKey };
 
-          const deltas = [...mrDeltas, ...jiraDeltas];
+          const sortedDeltas = [...mrDeltas, ...jiraDeltas]
+            .sort((a, b) => a.changedAt.getTime() - b.changedAt.getTime());
 
           const newDeltasByEventId = new Map(state.deltasByEventId);
-          newDeltasByEventId.set(
+          newDeltasByEventId.set(event.eventId, sortedDeltas);
+
+          const newGroupedDeltasByEventId = new Map(state.groupedDeltasByEventId);
+          newGroupedDeltasByEventId.set(
             event.eventId,
-            deltas.sort((a, b) => a.changedAt.getTime() - b.changedAt.getTime())
+            groupChanges(sortedDeltas.filter(c => !isFilteredSystemNote(c)))
           );
 
           return {
             mrStateForDeltaByMrId: mrStatesForDelta,
             jiraStateForDeltaByIssueKey: jiraStatesForDelta,
             deltasByEventId: newDeltasByEventId,
+            groupedDeltasByEventId: newGroupedDeltasByEventId,
             event: event,
           } satisfies ChangeTrackingState;
         })

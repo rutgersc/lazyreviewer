@@ -10,8 +10,7 @@ import { allMrsAtom, unwrappedMergeRequestsAtom, isMergeRequestsLoadingAtom, sel
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { eventChangesReadmodelAtom } from '../changetracking/change-tracking-atom';
 import type { Change } from '../changetracking/change-tracking-projection';
-import { FILTERED_SYSTEM_NOTE_TYPES, isMrChange } from '../changetracking/mr-change-tracking-projection';
-import { groupChanges } from '../changetracking/change-grouping';
+import { isMrChange } from '../changetracking/mr-change-tracking-projection';
 import type { LazyReviewerEvent } from '../events/events';
 import { useJiraScroll } from '../hooks/useJiraScroll';
 import { TextAttributes } from '@opentui/core';
@@ -20,10 +19,7 @@ import { getAgeColor } from '../utils/formatting';
 import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from './JiraIssuesList';
 import { appViewAtom, currentUserIdAtom } from '../settings/settings-atom';
 import { isAuthorOf } from '../userselection/userSelection';
-import { viewConfigs, type FocusRelevance } from '../ui/view-config';
-
-const isFilteredSystemNote = (change: Change): boolean =>
-  change.type === 'system-note' && FILTERED_SYSTEM_NOTE_TYPES.has(change.systemNoteType);
+import { viewConfigs } from '../ui/view-config';
 
 function getJiraPrefix(change: Change): string {
   if (isMrChange(change)) {
@@ -134,20 +130,8 @@ export const currentEventChangesAtom = Atom.readable<Change[]>(get => {
   const currentEventIndex = highlightedIndex ?? allEvents.length - 1;
   const currentEvent = allEvents[currentEventIndex];
 
-  const eventChangesReadmodel = get(eventChangesReadmodelAtom);
-  const emptyDeltasByEventId = new Map<string, Change[]>();
-  const deltasByEventId = eventChangesReadmodel.pipe(
-    Result.map(v => v.deltasByEventId),
-    Result.getOrElse(() => emptyDeltasByEventId)
-  );
-
-  const getDeltas = (ev: LazyReviewerEvent | undefined) => {
-    const rawDeltas = (deltasByEventId.get(ev?.eventId ?? "") ?? emptyChange)
-      .filter(c => !isFilteredSystemNote(c));
-    return groupChanges(rawDeltas).reverse();
-  };
-
-  return getDeltas(currentEvent);
+  const groupedDeltas = get(groupedDeltasByEventIdAtom);
+  return [...(groupedDeltas.get(currentEvent?.eventId ?? "") ?? emptyChange)].reverse();
 });
 
 // Event group for navigation
@@ -165,12 +149,13 @@ export const statusMessageAtom = Atom.make<string | null>(null);
 export const displayEventsAtom = Atom.readable((get) => {
 });
 
-const deltasByEventIdAtom = Atom.readable((get) => {
+const emptyDeltasByEventId = new Map<string, Change[]>();
+
+const groupedDeltasByEventIdAtom = Atom.readable((get) => {
   const eventChangesReadmodel = get(eventChangesReadmodelAtom);
-  const emptyDeltasByEventId = new Map<string, Change[]>();
 
   return eventChangesReadmodel.pipe(
-    Result.map(v => v.deltasByEventId),
+    Result.map(v => v.groupedDeltasByEventId),
     Result.getOrElse(() => emptyDeltasByEventId)
   );
 });
@@ -202,13 +187,11 @@ const groupClassifiedEvents = (events: ClassifiedEvent[]): EventGroup[] =>
 
 export const groupedEventsAtom = Atom.readable<EventGroup[]>((get) => {
   const allEvents = resultToArray(get(allEventsAtom));
-  const deltasByEventId = get(deltasByEventIdAtom);
+  const groupedDeltas = get(groupedDeltasByEventIdAtom);
   const displayEvents = [...allEvents].reverse().slice(0, 50);
 
-  const hasVisibleDeltas = (ev: LazyReviewerEvent): boolean => {
-    const rawDeltas = deltasByEventId.get(ev.eventId) ?? emptyChange;
-    return groupChanges(rawDeltas.filter(c => !isFilteredSystemNote(c))).length > 0;
-  };
+  const hasVisibleDeltas = (ev: LazyReviewerEvent): boolean =>
+    (groupedDeltas.get(ev.eventId) ?? emptyChange).length > 0;
 
   // Step 1: Classify each event as 'single' or 'range'
   const classified: ClassifiedEvent[] = displayEvents
@@ -319,43 +302,25 @@ export default function FactsPane() {
   }, [scrollToEventIdRequest, scrollToId, setScrollToEventIdRequest]);
 
   // Get current event's changes for sublist navigation
-  const eventChangesReadmodel = useAtomValue(eventChangesReadmodelAtom);
-  const deltasByEventId = eventChangesReadmodel.pipe(
-    Result.map(v => v.deltasByEventId),
-    Result.getOrElse(() => new Map<string, Change[]>())
-  );
+  const groupedDeltas = useAtomValue(groupedDeltasByEventIdAtom);
 
-  const getDeltas = (ev: LazyReviewerEvent | undefined) => {
-    const rawDeltas = (deltasByEventId.get(ev?.eventId ?? "") ?? emptyChange)
-      .filter(c => !isFilteredSystemNote(c));
-    return groupChanges(rawDeltas).reverse();
-  };
+  const getDeltas = (ev: LazyReviewerEvent | undefined): Change[] =>
+    [...(groupedDeltas.get(ev?.eventId ?? "") ?? emptyChange)].reverse();
 
-  const reviewIndicator = viewConfigs.review.modeIndicator;
-  const focusIndicator = viewConfigs.focus.modeIndicator;
-  const reviewRadio = appView === 'review' ? '●' : '○';
-  const focusRadio = appView === 'focus' ? '●' : '○';
-  const reviewColor = appView === 'review' ? reviewIndicator.labelColor : '#f8f8f2';
-  const focusColor = appView === 'focus' ? focusIndicator.labelColor : '#f8f8f2';
-  const bdr = '#44475a';
+  const reviewColor = appView === 'review' ? viewConfigs.review.modeIndicator.labelColor : '#6272a4';
+  const focusColor = appView === 'focus' ? viewConfigs.focus.modeIndicator.labelColor : '#6272a4';
 
   const modeIndicatorBox = () => (
-    <box key="mode-indicator" width="100%" height={7} flexDirection="column"
-         style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#282a36' }}
+    <box key="mode-indicator" width="100%" height={3} flexDirection="column"
          onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
-      <text fg={bdr} wrapMode="none">{' ╭─────────────────────╮'}</text>
-      <box flexDirection="row" height={1}>
-        <text fg={bdr} wrapMode="none">{'│ '}</text>
-        <text fg={reviewColor} wrapMode="none">{`${reviewRadio} review mode       `}</text>
-        <text fg={bdr} wrapMode="none">{'│'}</text>
+      <box height={1} />
+      <box height={1} flexDirection="row">
+        <text fg="#44475a" wrapMode="none">{' [v] '}</text>
+        <text fg={reviewColor} wrapMode="none">{'review'}</text>
+        <text fg="#44475a" wrapMode="none">{' / '}</text>
+        <text fg={focusColor} wrapMode="none">{'focus'}</text>
       </box>
-      <box flexDirection="row" height={1}>
-        <text fg={bdr} wrapMode="none">{'│ '}</text>
-        <text fg={focusColor} wrapMode="none">{`${focusRadio} focus mode   `}</text>
-        <text fg="#f8f8f2" wrapMode="none">{'[v]'}</text>
-        <text fg={bdr} wrapMode="none">{'  │'}</text>
-      </box>
-      <text fg={bdr} wrapMode="none">{' ╰─────────────────────╯'}</text>
+      <box height={1} />
     </box>
   );
 
@@ -366,17 +331,7 @@ export default function FactsPane() {
       width="100%"
       onMouseDown={() => setActivePane(ActivePane.Facts)}
     >
-        {/* Mode indicator - reserved space to prevent list jumping */}
-        <box
-            width="100%"
-            height={7}
-            flexDirection="column"
-            style={{
-                marginBottom: 1,
-            }}
-        >
-            {modeIndicatorBox()}
-        </box>
+        {modeIndicatorBox()}
         {statusMessage && (
             <box height={1} width="100%" flexDirection="row">
                 <text fg="#ffb86c" wrapMode="word">{statusMessage}</text>

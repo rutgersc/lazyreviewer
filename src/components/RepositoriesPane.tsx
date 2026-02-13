@@ -5,7 +5,7 @@ import { repositoryFullPath } from '../userselection/userSelection';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { Colors } from '../colors';
 import { useAtom, useAtomValue, useAtomSet, Atom, Result } from '@effect-atom/atom-react';
-import { repoSelectionAtom } from '../settings/settings-atom';
+import { repoSelectionAtom, backgroundSyncSettingsAtom, toggleBackgroundSyncAtom } from '../settings/settings-atom';
 import { knownProjectsAtom } from '../mergerequests/mergerequests-atom';
 import { pageSlotsAtom } from '../notifications/notification-sync-atom';
 import type { PageSlotSnapshot } from '../notifications/notification-sync-atom';
@@ -53,6 +53,8 @@ export default function RepositoriesPane() {
 
   const pageSlotsResult = useAtomValue(pageSlotsAtom);
   const refreshSingleRepo = useAtomSet(refreshSingleRepoAtom);
+  const backgroundSyncSettings = useAtomValue(backgroundSyncSettingsAtom);
+  const toggleBackgroundSync = useAtomSet(toggleBackgroundSyncAtom, { mode: 'promiseExit' });
   const items = buildItems(knownProjects, repos);
 
   const slotsByRepo = Result.match(pageSlotsResult, {
@@ -93,9 +95,18 @@ export default function RepositoriesPane() {
 
   return (
     <>
-      <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
-        Background Sync
-      </text>
+      <box style={{ flexDirection: "row", paddingBottom: 1 }}>
+        <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD, flexGrow: 1 }} wrapMode='none'>
+          Background Sync
+        </text>
+        <text
+          style={{ fg: backgroundSyncSettings.enabled ? Colors.SUCCESS : Colors.NEUTRAL }}
+          wrapMode='none'
+          onMouseDown={() => toggleBackgroundSync()}
+        >
+          {backgroundSyncSettings.enabled ? ' ON ' : ' OFF'}
+        </text>
+      </box>
 
       <scrollbox
         ref={scrollBoxRef}
@@ -159,6 +170,7 @@ export default function RepositoriesPane() {
                     viewportOptions: { backgroundColor: isHighlighted ? '#191a21' : Colors.BACKGROUND },
                   }}
                   focused={false}
+                  onMouseDown={() => handleRepoClick(label)}
                 >
                   <box style={{ flexDirection: "row", gap: 1 }}>
                     <text wrapMode='none' style={{ fg: Colors.SUPPORTING }}>{'       '}</text>

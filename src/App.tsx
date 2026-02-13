@@ -11,8 +11,6 @@ import UserFilterModal from "./components/UserFilterModal";
 import UserFilterBar from "./components/UserFilterBar";
 import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal from "./components/HelpModal";
-import JiraModal from "./components/JiraModal";
-import RetargetModal from "./components/RetargetModal";
 import JobHistoryModal from "./components/JobHistoryModal";
 import JobHistoryInputModal from "./components/JobHistoryInputModal";
 import EventLogPane from "./components/EventLogPane";
@@ -29,7 +27,7 @@ import { type MergeRequestState } from "./domain/merge-request-state";
 import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, allJiraIssuesAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
+import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
 import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, setUserFilterAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
@@ -79,14 +77,8 @@ export default function App() {
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
   const setUserFilter = useAtomSet(setUserFilterAtom);
-  const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
   const jiraBoardId = useAtomValue(jiraBoardIdAtom);
   const setJiraBoardFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
-
-  const selectedMrJiraIssues = mergeRequests[selectedIndex]?.jiraIssueKeys.flatMap(key => {
-    const issue = jiraIssuesMap.get(key);
-    return issue ? [issue] : [];
-  }) || [];
 
   // Read active pane's actions from derived atom
   const paneActions = useAtomValue(activePaneActionsAtom);
@@ -481,23 +473,6 @@ export default function App() {
         isVisible={activeModal === 'help'}
         globalActions={globalActions}
         setCopyNotification={setCopyNotification}
-      />
-
-      {/* Jira Modal - rendered at app level to cover entire screen */}
-      <JiraModal
-        isVisible={activeModal === 'jira'}
-        jiraIssues={selectedMrJiraIssues}
-        onClose={() => setActiveModal('none')}
-      />
-
-      {/* Retarget Modal - rendered at app level to cover entire screen */}
-      <RetargetModal
-        isVisible={activeModal === 'retarget'}
-        onClose={() => setActiveModal('none')}
-        onSuccess={() => {
-          setCopyNotification('MR retargeted successfully!');
-          setTimeout(() => setCopyNotification(null), 2000);
-        }}
       />
 
       {/* Job History Input Modal - standalone lookup */}

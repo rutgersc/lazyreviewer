@@ -8,8 +8,6 @@ export type ActiveModal =
   | 'mrSort'
   | 'gitSwitch'
   | 'help'
-  | 'jira'
-  | 'retarget'
   | 'jobHistory'
   | 'jobHistoryInput'
   | 'eventLog'
