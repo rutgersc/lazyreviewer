@@ -152,9 +152,32 @@ export const setUserFilterAtom = appAtomRuntime.fn(
     }))
 );
 
+const selectedUserSelectionEntryIdRawAtom = selectFromSettings(
+  s => s.selectedUserSelectionEntryId,
+  undefined as string | undefined
+);
+
+export const selectedUserSelectionEntryIdAtom = Atom.writable(
+  (get) => get(selectedUserSelectionEntryIdRawAtom),
+  (ctx, newValue: string) => {
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, selectedUserSelectionEntryId: newValue }));
+  }
+);
+
+export const isOnboardingCompleteAtom = Atom.make(get =>
+  get(repoSelectionRawAtom).length > 0
+);
+
 export const currentUserAtom = selectFromSettings(
   s => s.currentUser,
   'rutger'
+);
+
+export const setCurrentUserAtom = Atom.writable(
+  (get) => get(currentUserAtom),
+  (ctx, newValue: string) => {
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, currentUser: newValue }));
+  }
 );
 
 export const currentUserIdAtom = Atom.make((get): UserId => {

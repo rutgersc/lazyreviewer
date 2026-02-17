@@ -116,6 +116,7 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
   repoSelection: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
   userFilterUsernames: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
   userFilterGroupIds: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
+  selectedUserSelectionEntryId: Schema.optional(Schema.String),
   currentUser: Schema.optionalWith(Schema.String, { default: () => 'rutger' }),
   notifications: Schema.optionalWith(NotificationSettingsSchema, { default: () => ({ enabled: false }) }),
   backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 300, scalingFactorHours: 24, lastKnownSeq: 0, pageFetchTimestamps: {} }) }),

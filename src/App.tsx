@@ -18,6 +18,7 @@ import { JiraBoardPage } from "./jiraboard";
 import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage";
 import NotificationsPage from "./components/NotificationsPage";
 import ConfigurationPage from "./components/ConfigurationPage";
+import OnboardingPage from "./onboarding/OnboardingPage";
 import { ActivePane } from "./userselection/userSelection";
 import { useEffect, useMemo, useState } from 'react';
 import type { Action } from './actions/action-types';
@@ -28,7 +29,7 @@ import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranch
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
-import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, setUserFilterAtom } from './settings/settings-atom';
+import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Console, Effect } from 'effect';
@@ -62,6 +63,11 @@ export default function App() {
   const missingCredentialsResult = useAtomValue(missingCredentialsAtom);
   const [showConfigPage, setShowConfigPage] = useState(false);
 
+  // Onboarding state
+  const isOnboardingComplete = useAtomValue(isOnboardingCompleteAtom);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const setRepoSelection = useAtomSet(repoSelectionAtom);
+
   // Unwrap the Result type to get actual credentials array
   const missingCredentials = missingCredentialsResult._tag === 'Success' ? missingCredentialsResult.value : [];
 
@@ -72,6 +78,13 @@ export default function App() {
       setShowConfigPage(true);
     }
   }, [requiredMissingCredentials.length]);
+
+  // Show onboarding after config page closes if not yet completed
+  useEffect(() => {
+    if (!showConfigPage && missingCredentials.length === 0 && !isOnboardingComplete) {
+      setShowOnboarding(true);
+    }
+  }, [showConfigPage, missingCredentials.length, isOnboardingComplete]);
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
@@ -179,6 +192,16 @@ export default function App() {
       displayKey: 'v',
       description: 'Toggle review/focus mode',
       handler: () => setAppView(appView === 'review' ? 'focus' : 'review'),
+    },
+    {
+      id: 'global:onboarding',
+      keys: [parseKeyString('shift+o')],
+      displayKey: 'Shift+O',
+      description: 'Re-run onboarding',
+      handler: () => {
+        setRepoSelection([]);
+        setShowOnboarding(true);
+      },
     },
     {
       id: 'global:scroll-down',
@@ -517,6 +540,13 @@ export default function App() {
       {activeModal === 'notifications' && (
         <NotificationsPage
           onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {/* Onboarding Page - shown after config, before normal use */}
+      {showOnboarding && (
+        <OnboardingPage
+          onClose={() => setShowOnboarding(false)}
         />
       )}
 

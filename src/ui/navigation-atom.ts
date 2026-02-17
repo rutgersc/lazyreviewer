@@ -15,7 +15,8 @@ export type ActiveModal =
   | 'monitoredMrs'
   | 'notifications'
   | 'fChooser'
-  | 'userFilter';
+  | 'userFilter'
+  | 'onboarding';
 
 export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);
 export const activeModalAtom = Atom.make<ActiveModal>('none');
