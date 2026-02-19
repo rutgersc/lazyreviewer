@@ -1,4 +1,4 @@
-import { Context, Data, Effect, Layer, PubSub, Ref, Console, Stream } from 'effect';
+import { Context, Data, Effect, Layer, PubSub, Ref, Console } from 'effect';
 import { Atom, Result } from '@effect-atom/atom-react';
 import { settingsAtom, repoSelectionAtom } from '../settings/settings-atom';
 import { resolveRepoPath } from '../userselection/userSelection';
@@ -269,15 +269,6 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
 
     const initialSettings = yield* SettingsService.load;
     let seedTimestamps: Readonly<Record<string, readonly string[]>> = initialSettings.backgroundSync?.pageFetchTimestamps ?? {};
-    const lastKnownSeq = initialSettings.backgroundSync?.lastKnownSeq ?? 0;
-
-    const { changes } = yield* BgSyncReadModelService;
-    yield* changes.pipe(
-      Stream.filter(state => state.seq >= lastKnownSeq),
-      Stream.take(1),
-      Stream.runDrain,
-    );
-    yield* Console.log(`[BackgroundSync] MR data ready (seq ${lastKnownSeq})`);
 
     const slots = new Map<string, PageSlot>()
 
@@ -381,13 +372,11 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
 
         const updatedTimestamps = snapshotPageFetchTimestamps(slots)
         seedTimestamps = updatedTimestamps
-        const currentSeq = (yield* BgSyncReadModelService.get).seq
         yield* SettingsService.modify(s => ({
           ...s,
           backgroundSync: {
             ...s.backgroundSync!,
             lastRefreshTimestamp: new Date().toISOString(),
-            lastKnownSeq: currentSeq,
             pageFetchTimestamps: updatedTimestamps,
           }
         }));

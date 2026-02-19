@@ -9,11 +9,7 @@ import RepoSelectionStep from './RepoSelectionStep'
 import UserDiscoveryStep from './UserDiscoveryStep'
 import IdentityStep from './IdentityStep'
 
-interface OnboardingPageProps {
-  onClose: () => void
-}
-
-export default function OnboardingPage({ onClose }: OnboardingPageProps) {
+export default function OnboardingPage() {
   const [step, setStep] = useState<OnboardingStep>('repos')
   const [selectedRepos, setSelectedReposLocal] = useState<DiscoveredRepo[]>([])
   const [discoveredUsers, setDiscoveredUsers] = useState<UserId[]>([])
@@ -43,7 +39,6 @@ export default function OnboardingPage({ onClose }: OnboardingPageProps) {
     setCurrentUser(userId.userId)
     setUserSelections(selections)
     setSelectedUserSelectionEntryId(selectedSelectionId)
-    onClose()
   }
 
   return (
@@ -62,7 +57,7 @@ export default function OnboardingPage({ onClose }: OnboardingPageProps) {
       {step === 'repos' && (
         <RepoSelectionStep
           onNext={handleReposDone}
-          onBack={onClose}
+          onBack={() => {}}
         />
       )}
 

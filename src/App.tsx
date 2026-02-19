@@ -65,7 +65,6 @@ export default function App() {
 
   // Onboarding state
   const isOnboardingComplete = useAtomValue(isOnboardingCompleteAtom);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const setRepoSelection = useAtomSet(repoSelectionAtom);
 
   // Unwrap the Result type to get actual credentials array
@@ -79,12 +78,7 @@ export default function App() {
     }
   }, [requiredMissingCredentials.length]);
 
-  // Show onboarding after config page closes if not yet completed
-  useEffect(() => {
-    if (!showConfigPage && missingCredentials.length === 0 && !isOnboardingComplete) {
-      setShowOnboarding(true);
-    }
-  }, [showConfigPage, missingCredentials.length, isOnboardingComplete]);
+  const showOnboarding = !showConfigPage && missingCredentials.length === 0 && !isOnboardingComplete;
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
@@ -198,10 +192,7 @@ export default function App() {
       keys: [parseKeyString('shift+o')],
       displayKey: 'Shift+O',
       description: 'Re-run onboarding',
-      handler: () => {
-        setRepoSelection([]);
-        setShowOnboarding(true);
-      },
+      handler: () => setRepoSelection([]),
     },
     {
       id: 'global:scroll-down',
@@ -545,9 +536,7 @@ export default function App() {
 
       {/* Onboarding Page - shown after config, before normal use */}
       {showOnboarding && (
-        <OnboardingPage
-          onClose={() => setShowOnboarding(false)}
-        />
+        <OnboardingPage />
       )}
 
       {/* Configuration Page - fullscreen overlay with highest priority */}
@@ -557,26 +546,6 @@ export default function App() {
           onClose={() => setShowConfigPage(false)}
         />
       )}
-
-      {/* Notification Status Indicator */}
-      <box
-        style={{
-          position: "absolute",
-          bottom: 1,
-          right: 2,
-          backgroundColor: '#282a36',
-          zIndex: 100,
-        }}
-      >
-        <text
-          style={{
-            fg: notificationSettings.enabled ? '#50fa7b' : '#6272a4',
-          }}
-          wrapMode='none'
-        >
-          {notificationSettings.enabled ? '🔔' : '🔕'}
-        </text>
-      </box>
 
       {/* Copy Notification - from help modal actions */}
       {copyNotification && (

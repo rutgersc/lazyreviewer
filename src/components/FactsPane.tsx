@@ -17,7 +17,7 @@ import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
 import { getAgeColor } from '../utils/formatting';
 import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from './JiraIssuesList';
-import { appViewAtom, currentUserIdAtom } from '../settings/settings-atom';
+import { appViewAtom, currentUserIdAtom, notificationSettingsAtom, toggleNotificationsAtom } from '../settings/settings-atom';
 import { isCurrentUser, mrProviderAuthor } from '../userselection/userSelection';
 import { viewConfigs } from '../ui/view-config';
 
@@ -294,6 +294,8 @@ export default function FactsPane() {
   const now = useAtomValue(nowAtom);
   const isLoading = useAtomValue(isMergeRequestsLoadingAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
+  const notificationSettings = useAtomValue(notificationSettingsAtom);
+  const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
   const currentUser = useAtomValue(currentUserIdAtom);
   const myJiraIssueKeys = useAtomValue(myJiraIssueKeysAtom);
   const config = viewConfigs[appView];
@@ -315,15 +317,21 @@ export default function FactsPane() {
   const reviewColor = appView === 'review' ? viewConfigs.review.modeIndicator.labelColor : '#6272a4';
   const focusColor = appView === 'focus' ? viewConfigs.focus.modeIndicator.labelColor : '#6272a4';
 
+  const notifColor = notificationSettings.enabled ? '#f1fa8c' : '#6272a4';
+
   const modeIndicatorBox = () => (
-    <box key="mode-indicator" width="100%" height={3} flexDirection="column"
-         onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
-      <box height={1} />
-      <box height={1} flexDirection="row">
+    <box key="mode-indicator" width="100%" height={3} flexDirection="column">
+      <box height={1} flexDirection="row"
+           onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
         <text fg="#44475a" wrapMode="none">{' [v] '}</text>
         <text fg={reviewColor} wrapMode="none">{'review'}</text>
         <text fg="#44475a" wrapMode="none">{' / '}</text>
         <text fg={focusColor} wrapMode="none">{'focus'}</text>
+      </box>
+      <box height={1} flexDirection="row"
+           onMouseDown={() => toggleNotifications()}>
+        <text fg="#44475a" wrapMode="none">{' [n] '}</text>
+        <text fg={notifColor} wrapMode="none">{notificationSettings.enabled ? 'notifications' : 'notifications off'}</text>
       </box>
       <box height={1} />
     </box>

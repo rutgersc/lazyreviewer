@@ -165,7 +165,11 @@ export const selectedUserSelectionEntryIdAtom = Atom.writable(
 );
 
 export const isOnboardingCompleteAtom = Atom.make(get =>
-  get(repoSelectionRawAtom).length > 0
+  Result.match(get(settingsAtom), {
+    onInitial: () => true,
+    onSuccess: ({ value }) => value.repoSelection.length > 0,
+    onFailure: () => true,
+  })
 );
 
 export const currentUserAtom = selectFromSettings(

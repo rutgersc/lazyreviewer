@@ -48,7 +48,6 @@ const BackgroundSyncSettingsSchema = Schema.mutable(Schema.Struct({
   syncIntervalSeconds: Schema.Number,
   scalingFactorHours: Schema.optionalWith(Schema.Number, { default: () => 24 }),
   lastRefreshTimestamp: Schema.optional(Schema.String),
-  lastKnownSeq: Schema.optionalWith(Schema.Number, { default: () => 0 }),
   pageFetchTimestamps: Schema.optionalWith(
     Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.mutable(Schema.Array(Schema.String)) })),
     { default: () => ({}) }
@@ -119,7 +118,7 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
   selectedUserSelectionEntryId: Schema.optional(Schema.String),
   currentUser: Schema.optionalWith(Schema.String, { default: () => 'rutger' }),
   notifications: Schema.optionalWith(NotificationSettingsSchema, { default: () => ({ enabled: false }) }),
-  backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 300, scalingFactorHours: 24, lastKnownSeq: 0, pageFetchTimestamps: {} }) }),
+  backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 300, scalingFactorHours: 24, pageFetchTimestamps: {} }) }),
   jiraBoardId: Schema.optional(NumberFromStringOrNumber),
   mrSortOrder: Schema.optionalWith(MrSortOrderSchema, { default: () => 'updatedAt' as const }),
   appView: Schema.optionalWith(Schema.Literal('review', 'focus'), { default: () => 'review' as const }),

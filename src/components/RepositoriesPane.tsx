@@ -162,30 +162,31 @@ export default function RepositoriesPane() {
                   {' [R]'}
                 </text>
               </box>
-              {repoSlots && repoSlots.length > 0 && (
-                <scrollbox
-                  style={{
-                    height: 1,
-                    contentOptions: { backgroundColor: isHighlighted ? '#191a21' : Colors.BACKGROUND },
-                    viewportOptions: { backgroundColor: isHighlighted ? '#191a21' : Colors.BACKGROUND },
-                  }}
-                  focused={false}
-                  onMouseDown={() => handleRepoClick(label)}
-                >
-                  <box style={{ flexDirection: "row", gap: 1 }}>
-                    <text wrapMode='none' style={{ fg: Colors.SUPPORTING }}>{'       '}</text>
-                    {[...repoSlots].sort((a, b) => a.page - b.page).map(slot => (
-                      <text
-                        key={slot.page}
-                        style={{ fg: slotColor(slot.minutesUntilRefresh) }}
-                        wrapMode='none'
-                      >
-                        {`${slot.minutesUntilRefresh}m`}
-                      </text>
-                    ))}
-                  </box>
-                </scrollbox>
-              )}
+              <scrollbox
+                style={{
+                  height: 1,
+                  contentOptions: { backgroundColor: isHighlighted ? '#191a21' : Colors.BACKGROUND },
+                  viewportOptions: { backgroundColor: isHighlighted ? '#191a21' : Colors.BACKGROUND },
+                }}
+                focused={false}
+                onMouseDown={() => handleRepoClick(label)}
+              >
+                <box style={{ flexDirection: "row", gap: 1 }}>
+                  <text wrapMode='none' style={{ fg: Colors.SUPPORTING }}>{'       '}</text>
+                  {repoSlots
+                    ? [...repoSlots].sort((a, b) => a.page - b.page).map(slot => (
+                        <text
+                          key={slot.page}
+                          style={{ fg: slotColor(slot.minutesUntilRefresh) }}
+                          wrapMode='none'
+                        >
+                          {`${slot.minutesUntilRefresh}m`}
+                        </text>
+                      ))
+                    : <text wrapMode='none' style={{ fg: Colors.SUPPORTING }}>{'—'}</text>
+                  }
+                </box>
+              </scrollbox>
             </box>
           );
         })}

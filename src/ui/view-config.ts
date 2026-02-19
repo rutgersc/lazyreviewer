@@ -87,7 +87,7 @@ export const viewConfigs: Record<AppView, ViewConfig> = {
   review: {
     modeIndicator: {
       label: 'review mode',
-      labelColor: '#6272a4',
+      labelColor: '#f1fa8c',
       borderColor: '#44475a',
       hintColor: '#44475a',
     },
