@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { basename } from "path";
 import { TextAttributes } from "@opentui/core";
 import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { type PipelineStage, type PipelineJob } from "../domain/merge-request-schema";
@@ -546,20 +547,30 @@ export default function MergeRequestPane() {
 
   const projectBranchMap = useMemo(() =>
     new Map(
-      repositoryBranches.map(repo => [
-        repo.projectPath,
-        {
-          currentBranch: repo.currentBranch,
-          worktreeBranches: new Map(
-            repo.worktrees
-              .filter(wt => wt.branch !== null)
-              .map((wt, index) => [
-                wt.branch!,
-                { index: index + 1, folderName: wt.folderName }
-              ])
-          )
-        }
-      ])
+      repositoryBranches.map(repo => {
+        const additionalWorktrees = repo.worktrees.map((wt, index) => ({
+          index: index + 1,
+          folderName: wt.folderName,
+          branch: wt.branch
+        }));
+
+        const mainWorktree = repo.localPath
+          ? [{ index: 0, folderName: basename(repo.localPath), branch: repo.currentBranch }]
+          : [];
+
+        return [
+          repo.projectPath,
+          {
+            currentBranch: repo.currentBranch,
+            worktreeBranches: new Map(
+              additionalWorktrees
+                .filter(wt => wt.branch !== null)
+                .map(wt => [wt.branch!, { index: wt.index, folderName: wt.folderName }])
+            ),
+            allWorktrees: [...mainWorktree, ...additionalWorktrees]
+          }
+        ] as const;
+      })
     ),
     [repositoryBranches]
   );
@@ -844,36 +855,44 @@ export default function MergeRequestPane() {
             flexDirection: "column",
             marginTop: 1,
             height: repositoryBranches.reduce((sum, repo) => {
-              const wtCount = projectBranchMap.get(repo.projectPath)?.worktreeBranches.size ?? 0;
+              const wtCount = projectBranchMap.get(repo.projectPath)?.allWorktrees.length ?? 0;
               return sum + 1 + wtCount;
             }, 0),
           }}
         >
-          {repositoryBranches.map((repo) => {
-            const worktreeBranches = projectBranchMap.get(repo.projectPath)?.worktreeBranches;
+          {repositoryBranches.map((repo, index) => {
+            const allWorktrees = projectBranchMap.get(repo.projectPath)?.allWorktrees;
+            const checkedOutBranches = new Set(
+              mergeRequests
+                .filter(mr => mr.project.fullPath === repo.projectPath)
+                .map(mr => mr.sourcebranch)
+            );
             return (
               <box key={repo.projectPath} style={{ flexDirection: "column" }}>
+                {index > 0 && <text>{""}</text>}
                 <text
                   style={{
-                    fg: repo.localPath ? (repo.currentBranch ? Colors.INFO : Colors.NEUTRAL) : Colors.WARNING,
-                    attributes: TextAttributes.DIM,
+                    fg: repo.localPath ? Colors.PRIMARY : Colors.WARNING,
                   }}
                   wrapMode='none'
                 >
-                  {repo.projectName}:{repo.localPath ? (repo.currentBranch || "?") : "<no path set> (press ctrl+s to configure)"}
+                  {repo.projectName}:{repo.localPath ? "" : "<no path set> (press ctrl+s to configure)"}
                 </text>
-                {worktreeBranches && [...worktreeBranches].map(([branch, wt]) => (
-                  <text
-                    key={branch}
-                    style={{
-                      fg: Colors.INFO,
-                      attributes: TextAttributes.DIM,
-                    }}
-                    wrapMode='none'
-                  >
-                    {`  [${wt.index}] ${wt.folderName} : ${branch}`}
-                  </text>
-                ))}
+                {allWorktrees?.map((wt) => {
+                  const isCheckedOut = wt.branch && checkedOutBranches.has(wt.branch);
+                  return (
+                    <text
+                      key={wt.folderName}
+                      style={{
+                        fg: isCheckedOut ? Colors.INFO : Colors.PRIMARY,
+                        attributes: isCheckedOut ? TextAttributes.BOLD : 0,
+                      }}
+                      wrapMode='none'
+                    >
+                      {`[${wt.index}] ${wt.folderName} : ${wt.branch ?? '(detached)'}`}
+                    </text>
+                  );
+                })}
               </box>
             );
           })}

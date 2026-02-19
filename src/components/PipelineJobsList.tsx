@@ -86,9 +86,8 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
       return;
     }
     const logPath = getJobLogPath(
-      selectedMergeRequest.project.path,
-      selectedPipelineJob.job.name,
-      selectedPipelineJob.job.localId
+      { project: selectedMergeRequest.project, sourcebranch: selectedMergeRequest.sourcebranch },
+      selectedPipelineJob.job
     );
     try {
       if (existsSync(logPath)) {

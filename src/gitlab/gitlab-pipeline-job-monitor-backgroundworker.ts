@@ -182,14 +182,13 @@ const backgroundWorker =
       )
 
       const handleFailedJob = Effect.fn(function* ({ currentJob }: Job) {
-        const countSummary = `(${jobCounts.success},${jobCounts.failed})/${jobCounts.total}`
         yield* sendSystemNotification({
-          title: `${currentJob.name}: FAILED ${countSummary}`,
-          body: `${mr.project.path}!${mr.iid}`
+          title: `${currentJob.name}: FAILED`,
+          body: `${mr.title}`
         }).pipe(Effect.fork)
 
         yield* loadJobLogInternal(
-          { project: { path: mr.project.path, fullPath: mr.project.fullPath } },
+          { project: { path: mr.project.path, fullPath: mr.project.fullPath }, sourcebranch: mr.sourcebranch },
           { id: currentJob.id, name: currentJob.name, localId: currentJob.localId })
       });
 

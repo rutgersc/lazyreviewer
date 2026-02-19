@@ -5,15 +5,20 @@ import { execSync } from "child_process";
 import { Effect, Console } from "effect";
 import { projectGitlabJobTraceFetchedEvent } from "../gitlab/gitlab-projections";
 
-export const getJobLogPath = (projectPath: string, jobName: string, jobLocalId: number): string =>
-  join(process.cwd(), "logs", "jobs", `${projectPath}_${jobName}_${jobLocalId}.ansi`);
+type JobLogMr = { project: { path: string, fullPath: string }, sourcebranch: string };
+type JobLogJob = { id: string; name: string; localId: number };
 
-export const downloadJobTrace = Effect.fn(function* (
-  mr: { project: { path: string, fullPath: string } },
-  job: { id: string; name: string; localId: number }) {
+const sanitizeForFilename = (s: string) => s.replace(/[<>:"/\\|?*]/g, '_');
 
+export const getJobLogPath = (mr: JobLogMr, job: JobLogJob): string =>
+  join(
+    process.cwd(), "logs", "jobs",
+    `${sanitizeForFilename(mr.sourcebranch)}_${sanitizeForFilename(job.name)}_${job.localId}.ansi`
+  );
+
+export const downloadJobTrace = Effect.fn(function* (mr: JobLogMr, job: JobLogJob) {
   const logsDir = join(process.cwd(), "logs", "jobs");
-  const logFilePath = getJobLogPath(mr.project.path, job.name, job.localId);
+  const logFilePath = getJobLogPath(mr, job);
 
   if (!existsSync(logsDir)) {
     mkdirSync(logsDir, { recursive: true });
@@ -37,21 +42,19 @@ export const downloadJobTrace = Effect.fn(function* (
   }
 });
 
-export const loadJobLogInternal = Effect.fn(function* (
-  mr: { project: { path: string, fullPath: string } },
-  job: { id: string; name: string; localId: number }) {
-
+export const loadJobLogInternal = Effect.fn(function* (mr: JobLogMr, job: JobLogJob) {
   yield* downloadJobTrace(mr, job);
 
-  const logFilePath = getJobLogPath(mr.project.path, job.name, job.localId);
+  const logFilePath = getJobLogPath(mr, job);
   if (existsSync(logFilePath)) {
-    openFile(logFilePath);
+    const tabTitle = `${mr.sourcebranch} #${job.localId} ${job.name}`;
+    openFile(logFilePath, tabTitle);
   }
 });
 
-const openFile = (filePath: string) => {
+const openFile = (filePath: string, tabTitle: string) => {
   if (process.platform === "win32") {
-    execSync(`wt -w 0 nt pwsh -NoExit -Command "nvim '${filePath}'"`);
+    execSync(`wt -w 0 nt --title "${tabTitle}" pwsh -NoExit -Command "nvim '${filePath}'"`);
   } else if (process.platform === "darwin") {
     execSync(`open "${filePath}"`);
   } else {
