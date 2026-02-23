@@ -8,36 +8,43 @@ interface MrStateTabsProps {
   isActive: boolean;
 }
 
-const MR_STATES: Array<{ key: MergeRequestState; label: string; shortcut: string }> = [
-  { key: 'opened', label: 'Open', shortcut: '1' },
-  { key: 'merged', label: 'Merged', shortcut: '2' },
-  { key: 'closed', label: 'Closed', shortcut: '3' },
-  { key: 'locked', label: 'Draft', shortcut: '4' },
-  { key: 'all', label: 'All', shortcut: '5' },
+const MR_STATES: Array<{ key: MergeRequestState; label: string }> = [
+  { key: 'opened', label: 'Open' },
+  { key: 'merged', label: 'Merged' },
+  { key: 'closed', label: 'Closed' },
+  { key: 'locked', label: 'Draft' },
+  { key: 'all', label: 'All' },
 ];
 
 export default function MrStateTabs({ currentState, onStateChange, isActive }: MrStateTabsProps) {
   return (
-    <box style={{ flexDirection: "column", gap: 0, marginBottom: 1 }}>
-      <box style={{ flexDirection: "row", gap: 1 }}>
-        {MR_STATES.map((state, index) => {
+    <box style={{ minHeight: 1, maxHeight: 1, overflow: "hidden" }}>
+      <box style={{ flexDirection: "row", columnGap: 1, rowGap: 0 }}>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
+          State:
+        </text>
+        {MR_STATES.map(state => {
           const isSelected = currentState === state.key;
-          const tabColor = isSelected
-            ? Colors.PRIMARY
-            : Colors.NEUTRAL;
-
           return (
-            <text
+            <box
               key={state.key}
               onMouseDown={() => onStateChange(state.key)}
               style={{
-                fg: tabColor,
-                attributes: isSelected ? TextAttributes.BOLD : undefined,
+                backgroundColor: isSelected ? Colors.TRACK : undefined,
+                paddingLeft: 1,
+                paddingRight: 1,
               }}
-              wrapMode='none'
             >
-              {index > 0 ? '| ' : ''}{`${state.shortcut}:${state.label}`}
-            </text>
+              <text
+                style={{
+                  fg: isSelected ? Colors.INFO : Colors.NEUTRAL,
+                  attributes: isSelected ? TextAttributes.BOLD : TextAttributes.DIM,
+                }}
+                wrapMode='none'
+              >
+                {state.label}
+              </text>
+            </box>
           );
         })}
       </box>

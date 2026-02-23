@@ -6,6 +6,8 @@ import InfoPane from "./components/InfoPane";
 import ConsolePane from "./components/ConsolePane";
 import FactsPane from "./components/FactsPane";
 import MrSortModal from "./components/MrSortModal";
+import MrStateModal from "./components/MrStateModal";
+import RepoFilterModal from "./components/RepoFilterModal";
 import FChooserModal from "./components/FChooserModal";
 import UserFilterModal from "./components/UserFilterModal";
 import UserFilterBar from "./components/UserFilterBar";
@@ -28,7 +30,7 @@ import { type MergeRequestState } from "./domain/merge-request-state";
 import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
+import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
 import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
@@ -81,6 +83,7 @@ export default function App() {
   const showOnboarding = !showConfigPage && missingCredentials.length === 0 && !isOnboardingComplete;
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
+  const [repoFilter, setRepoFilter] = useAtom(repoFilterAtom);
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
   const setUserFilter = useAtomSet(setUserFilterAtom);
@@ -458,11 +461,24 @@ export default function App() {
         onClose={() => setActiveModal('none')}
       />
 
-      {/* MR Sort Modal - rendered at app level to cover entire screen */}
       <MrSortModal
         isVisible={activeModal === 'mrSort'}
         currentSortOrder={sortOrder}
         onSortOrderSelect={handleSortOrderSelect}
+        onClose={() => setActiveModal('none')}
+      />
+
+      <MrStateModal
+        isVisible={activeModal === 'mrState'}
+        currentState={filterMrState}
+        onStateSelect={(state) => setFilterMrState(state)}
+        onClose={() => setActiveModal('none')}
+      />
+
+      <RepoFilterModal
+        isVisible={activeModal === 'repoFilter'}
+        currentFilter={repoFilter}
+        onConfirm={(filter) => { setRepoFilter(filter); setActiveModal('none'); }}
         onClose={() => setActiveModal('none')}
       />
 

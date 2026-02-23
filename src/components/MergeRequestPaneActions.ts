@@ -4,7 +4,7 @@ import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
 import { activePaneAtom, activeModalAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
-import { unwrappedMergeRequestsAtom, selectedMrIndexAtom, filterMrStateAtom, refetchSelectedMrAtom } from "../mergerequests/mergerequests-atom";
+import { unwrappedMergeRequestsAtom, selectedMrIndexAtom, refetchSelectedMrAtom } from "../mergerequests/mergerequests-atom";
 import { toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, toggleMonitorMergeRequestAtom } from "../settings/settings-atom";
 import { copyToClipboard } from "../system/clipboard";
 import { openUrl } from "../system/open-url";
@@ -181,41 +181,6 @@ export const mrActionsAtom = Atom.make((get) => {
           registry.set(toggleSeenMergeRequestAtom, mr.id);
         }
       },
-    },
-    {
-      id: 'mr:filter-opened',
-      keys: [parseKeyString('1')],
-      displayKey: '1-5',
-      description: 'Filter by state',
-      handler: () => registry.set(filterMrStateAtom, 'opened'),
-    },
-    {
-      id: 'mr:filter-merged',
-      keys: [parseKeyString('2')],
-      displayKey: '',
-      description: '',
-      handler: () => registry.set(filterMrStateAtom, 'merged'),
-    },
-    {
-      id: 'mr:filter-closed',
-      keys: [parseKeyString('3')],
-      displayKey: '',
-      description: '',
-      handler: () => registry.set(filterMrStateAtom, 'closed'),
-    },
-    {
-      id: 'mr:filter-locked',
-      keys: [parseKeyString('4')],
-      displayKey: '',
-      description: '',
-      handler: () => registry.set(filterMrStateAtom, 'locked'),
-    },
-    {
-      id: 'mr:filter-all',
-      keys: [parseKeyString('5')],
-      displayKey: '',
-      description: '',
-      handler: () => registry.set(filterMrStateAtom, 'all'),
     },
   ];
 

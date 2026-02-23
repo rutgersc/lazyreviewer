@@ -854,9 +854,11 @@ export default function MergeRequestPane() {
           style={{
             flexDirection: "column",
             marginTop: 1,
-            height: repositoryBranches.reduce((sum, repo) => {
+            height: repositoryBranches.reduce((sum, repo, index) => {
               const wtCount = projectBranchMap.get(repo.projectPath)?.allWorktrees.length ?? 0;
-              return sum + 1 + wtCount;
+              const separator = index > 0 ? 1 : 0;
+              const noPathWarning = repo.localPath ? 0 : 1;
+              return sum + separator + noPathWarning + wtCount;
             }, 0),
           }}
         >
@@ -870,14 +872,11 @@ export default function MergeRequestPane() {
             return (
               <box key={repo.projectPath} style={{ flexDirection: "column" }}>
                 {index > 0 && <text>{""}</text>}
-                <text
-                  style={{
-                    fg: repo.localPath ? Colors.PRIMARY : Colors.WARNING,
-                  }}
-                  wrapMode='none'
-                >
-                  {repo.projectName}:{repo.localPath ? "" : "<no path set> (press ctrl+s to configure)"}
-                </text>
+                {!repo.localPath && (
+                  <text style={{ fg: Colors.WARNING }} wrapMode='none'>
+                    {repo.projectName}: {"<no path set> (press ctrl+s to configure)"}
+                  </text>
+                )}
                 {allWorktrees?.map((wt) => {
                   const isCheckedOut = wt.branch && checkedOutBranches.has(wt.branch);
                   return (

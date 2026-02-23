@@ -12,7 +12,7 @@ export default function SprintFilterBar() {
   return (
     <box style={{ minHeight: 1, maxHeight: 1, overflow: "hidden" }}>
       <box style={{ flexDirection: "row", columnGap: 1, rowGap: 0 }}>
-        <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
           Sprint:
         </text>
         <box

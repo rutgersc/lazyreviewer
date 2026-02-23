@@ -20,6 +20,12 @@ export default function FChooserModal({ isVisible, onChoose, onClose }: FChooser
       case 's':
         onChoose('mrSort');
         break;
+      case 't':
+        onChoose('mrState');
+        break;
+      case 'r':
+        onChoose('repoFilter');
+        break;
       case 'escape':
         onClose();
         break;
@@ -59,6 +65,12 @@ export default function FChooserModal({ isVisible, onChoose, onClose }: FChooser
         </text>
         <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
           s  Sort MRs
+        </text>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
+          t  MR state
+        </text>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
+          r  Repositories
         </text>
         <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
           Esc  Cancel

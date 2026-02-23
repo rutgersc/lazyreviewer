@@ -18,7 +18,7 @@ export default function UserFilterBar() {
   return (
     <box style={{ minHeight: 1, maxHeight: 2, overflow: "hidden" }}>
       <box style={{ flexDirection: "row", columnGap: 1, rowGap: 0, flexWrap: "wrap" }}>
-        <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
           Filter:
         </text>
         {groupNames.map(name => (
