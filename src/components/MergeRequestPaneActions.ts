@@ -4,8 +4,8 @@ import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
 import { activePaneAtom, activeModalAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
-import { unwrappedMergeRequestsAtom, selectedMrIndexAtom, refetchSelectedMrAtom } from "../mergerequests/mergerequests-atom";
-import { toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, toggleMonitorMergeRequestAtom } from "../settings/settings-atom";
+import { unwrappedMergeRequestsAtom, selectedMrIndexAtom, refetchSelectedMrAtom, mrFilterHistoryAtom, filterMrStateAtom, repoFilterAtom } from "../mergerequests/mergerequests-atom";
+import { toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, toggleMonitorMergeRequestAtom, userFilterUsernamesAtom, userFilterGroupIdsAtom } from "../settings/settings-atom";
 import { copyToClipboard } from "../system/clipboard";
 import { openUrl } from "../system/open-url";
 import { copyNotificationRequestAtom, scrollToItemRequestAtom } from "./MergeRequestPane";
@@ -18,6 +18,8 @@ const getSelectedMr = (registry: Registry.Registry) => {
 
 export const mrActionsAtom = Atom.make((get) => {
   const mergeRequestsLength = get(unwrappedMergeRequestsAtom).length;
+  const filterHistory = get(mrFilterHistoryAtom);
+  const previousFilter = filterHistory.before;
   const registry = get.registry;
 
   const actions: Action[] = [
@@ -182,6 +184,19 @@ export const mrActionsAtom = Atom.make((get) => {
         }
       },
     },
+    ...(previousFilter ? [{
+      id: 'mr:restore-filter',
+      keys: [parseKeyString('b')],
+      displayKey: 'b',
+      description: 'Restore previous filter',
+      handler: () => {
+        registry.set(filterMrStateAtom, previousFilter.filterMrState);
+        registry.set(repoFilterAtom, previousFilter.repoFilter);
+        registry.set(userFilterUsernamesAtom, previousFilter.userFilterUsernames);
+        registry.set(userFilterGroupIdsAtom, previousFilter.userFilterGroupIds);
+        registry.set(selectedMrIndexAtom, 0);
+      },
+    }] : []),
   ];
 
   return actions;

@@ -288,23 +288,29 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         break;
       }
       case 'j':
-      case 'down':
-        if (selectedIndex < flatItems.length - 1) {
-          const newIndex = selectedIndex + 1;
-          setSelectedIndex(newIndex);
-          const item = flatItems[newIndex];
+      case 'down': {
+        const nextIdx = searchQuery
+          ? flatItems.findIndex((item, i) => i > selectedIndex && itemMatchesSearch(item))
+          : selectedIndex < flatItems.length - 1 ? selectedIndex + 1 : -1;
+        if (nextIdx >= 0) {
+          setSelectedIndex(nextIdx);
+          const item = flatItems[nextIdx];
           if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
         }
         break;
+      }
       case 'k':
-      case 'up':
-        if (selectedIndex > 0) {
-          const newIndex = selectedIndex - 1;
-          setSelectedIndex(newIndex);
-          const item = flatItems[newIndex];
+      case 'up': {
+        const prevIdx = searchQuery
+          ? flatItems.findLastIndex((item, i) => i < selectedIndex && itemMatchesSearch(item))
+          : selectedIndex > 0 ? selectedIndex - 1 : -1;
+        if (prevIdx >= 0) {
+          setSelectedIndex(prevIdx);
+          const item = flatItems[prevIdx];
           if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
         }
         break;
+      }
       case 'd':
         if (key.ctrl && scrollBoxRef.current) {
           const halfPage = Math.floor(scrollBoxRef.current.viewport.getLayoutNode().getComputedLayout().height / 2);

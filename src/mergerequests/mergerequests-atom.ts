@@ -12,7 +12,7 @@ import {
 } from "./decide-fetch-mrs";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../domain/merge-request-state";
-import { Effect, Console, Stream } from "effect";
+import { Effect, Console, Stream, Option } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import type { BranchDifference } from "./hooks/useRepositoryBranches";
 import { refetchMrPipeline } from './mergerequests-effects';
@@ -287,6 +287,45 @@ export const refetchSelectedMrAtom = appAtomRuntime.fn((_, get) =>
     return gitlabMr;
   })
 );
+
+type MrFilterState = {
+  filterMrState: MergeRequestState;
+  repoFilter: readonly string[];
+  userFilterUsernames: readonly string[];
+  userFilterGroupIds: readonly string[];
+};
+
+type MrFilterHistory = {
+  before: MrFilterState | null;
+  after: MrFilterState;
+};
+
+const strArraysEqual = (a: readonly string[], b: readonly string[]) =>
+  a.length === b.length && a.every((x, i) => x === b[i]);
+
+const filterStatesEqual = (a: MrFilterState, b: MrFilterState) =>
+  a.filterMrState === b.filterMrState &&
+  strArraysEqual(a.repoFilter, b.repoFilter) &&
+  strArraysEqual(a.userFilterUsernames, b.userFilterUsernames) &&
+  strArraysEqual(a.userFilterGroupIds, b.userFilterGroupIds);
+
+export const mrFilterHistoryAtom = Atom.make((get): MrFilterHistory => {
+  const after: MrFilterState = {
+    filterMrState: get(filterMrStateAtom),
+    repoFilter: get(repoFilterAtom),
+    userFilterUsernames: get(userFilterUsernamesAtom),
+    userFilterGroupIds: get(userFilterGroupIdsAtom),
+  };
+
+  const previous = get.self<MrFilterHistory>();
+  return Option.match(previous, {
+    onNone: () => ({ before: null, after }),
+    onSome: (prev) =>
+      filterStatesEqual(prev.after, after)
+        ? prev
+        : { before: prev.after, after },
+  });
+});
 
 export type SelectMrByIdParams = {
   mrId: string;
