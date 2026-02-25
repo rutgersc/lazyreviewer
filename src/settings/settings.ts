@@ -75,9 +75,6 @@ const RepositoryPathConfigWithMigration = Schema.transform(
   }
 )
 
-const MonitoredMrCompletedReasonSchema = Schema.Literal('merged', 'closed')
-export type MonitoredMrCompletedReason = Schema.Schema.Type<typeof MonitoredMrCompletedReasonSchema>
-
 const MonitoredMrStateSchema = Schema.mutable(Schema.Struct({
   pipelineIid: Schema.optional(Schema.String),
   jobStates: Schema.optionalWith(
@@ -88,7 +85,6 @@ const MonitoredMrStateSchema = Schema.mutable(Schema.Struct({
     { default: () => ({}) }
   ),
   lastCommit: Schema.optional(Schema.String),
-  completedReason: Schema.optional(MonitoredMrCompletedReasonSchema)
 }))
 export type MonitoredMrState = Schema.Schema.Type<typeof MonitoredMrStateSchema>
 

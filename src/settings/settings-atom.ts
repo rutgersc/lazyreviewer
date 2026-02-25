@@ -1,6 +1,6 @@
 import { Effect, Stream, Console, Option } from "effect"
 import { appAtomRuntime } from "../appLayerRuntime"
-import { type NotificationSettings, type BackgroundSyncSettings, type MonitoredMrCompletedReason, type MrSortOrder, defaultSettings, type Settings, SettingsService } from "./settings"
+import { type NotificationSettings, type BackgroundSyncSettings, type MrSortOrder, defaultSettings, type Settings, SettingsService } from "./settings"
 import { Atom, Result } from "@effect-atom/atom-react"
 import type { MrGid } from "../domain/identifiers"
 import type { UserId, User } from "../userselection/userSelection"
@@ -248,22 +248,6 @@ export const monitoredMergeRequestsAtom = Atom.make(get =>
   new Set(get(monitoredMergeRequestsRawAtom))
 );
 
-export const monitoredMrStatesAtom = selectFromSettings(
-  s => new Map(
-    Object.entries(s.monitoredMergeRequests).map(
-      ([gid, state]) => [gid as MrGid, state.completedReason] as const
-    )
-  ),
-  new Map<MrGid, MonitoredMrCompletedReason | undefined>(),
-  (a, b) => {
-    if (a.size !== b.size) return false;
-    for (const [key, val] of a) {
-      if (b.get(key) !== val) return false;
-    }
-    return true;
-  }
-);
-
 export const toggleMonitorMergeRequestAtom = appAtomRuntime.fn((mrGid: MrGid) =>
   SettingsService.modify(settings => {
     const current = { ...settings.monitoredMergeRequests };
@@ -274,16 +258,6 @@ export const toggleMonitorMergeRequestAtom = appAtomRuntime.fn((mrGid: MrGid) =>
     }
     return { ...settings, monitoredMergeRequests: current };
   })
-);
-
-export const clearCompletedMonitoredMrsAtom = appAtomRuntime.fn(() =>
-  SettingsService.modify(settings => ({
-    ...settings,
-    monitoredMergeRequests: Object.fromEntries(
-      Object.entries(settings.monitoredMergeRequests)
-        .filter(([, state]) => !state.completedReason)
-    ) as typeof settings.monitoredMergeRequests
-  }))
 );
 
 const cycleJobImportance = (current: string): 'low' | 'monitored' | 'ignore' => {

@@ -2,7 +2,7 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { useAtomValue, useAtomSet, Atom } from '@effect-atom/atom-react';
 import { Colors } from '../colors';
-import { monitoredMergeRequestsAtom, monitoredMrStatesAtom, toggleMonitorMergeRequestAtom, clearCompletedMonitoredMrsAtom } from '../settings/settings-atom';
+import { monitoredMergeRequestsAtom, toggleMonitorMergeRequestAtom } from '../settings/settings-atom';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
 import { Result } from '@effect-atom/atom-react';
 import { useAutoScroll } from '../hooks/useAutoScroll';
@@ -34,14 +34,10 @@ const monitoredMrsListAtom = Atom.make((get) => {
 
 export default function MonitoredMergeRequestsPage({ onClose }: MonitoredMergeRequestsPageProps) {
   const monitoredMrs = useAtomValue(monitoredMrsListAtom);
-  const monitoredStates = useAtomValue(monitoredMrStatesAtom);
   const selectedIndex = useAtomValue(selectedMonitoredIndexAtom);
   const setSelectedIndex = useAtomSet(selectedMonitoredIndexAtom);
   const toggleMonitor = useAtomSet(toggleMonitorMergeRequestAtom);
-  const clearCompleted = useAtomSet(clearCompletedMonitoredMrsAtom);
   const now = useAtomValue(nowAtom);
-
-  const completedCount = Array.from(monitoredStates.values()).filter(Boolean).length;
 
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
 
@@ -91,19 +87,11 @@ export default function MonitoredMergeRequestsPage({ onClose }: MonitoredMergeRe
           }
         }
         break;
-      case 'd':
-        if (key.shift && completedCount > 0) {
-          clearCompleted();
-          setSelectedIndex(0);
-        }
-        break;
     }
   });
 
   const renderMr = (mr: MergeRequest, index: number) => {
     const isSelected = index === selectedIndex;
-    const completedReason = monitoredStates.get(mr.id);
-    const isCompleted = !!completedReason;
 
     return (
       <box
@@ -117,41 +105,30 @@ export default function MonitoredMergeRequestsPage({ onClose }: MonitoredMergeRe
         }}
       >
         <box style={{ flexDirection: 'row', gap: 1 }}>
-          <text style={{ fg: isCompleted ? Colors.SUCCESS : '#ff79c6' }} wrapMode='none'>
-            {isCompleted ? (completedReason === 'merged' ? '✓' : '✗') : '|'}
-          </text>
-          <text style={{ fg: isCompleted ? Colors.NEUTRAL : Colors.SECONDARY }} wrapMode='none'>
+          <text style={{ fg: '#ff79c6' }} wrapMode='none'>|</text>
+          <text style={{ fg: Colors.SECONDARY }} wrapMode='none'>
             {formatCompactTime(mr.updatedAt, now)}
           </text>
           <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
             {mr.author}
           </text>
-          <text style={{ fg: isCompleted ? Colors.NEUTRAL : Colors.PRIMARY, attributes: isCompleted ? undefined : TextAttributes.BOLD, flexShrink: 1 }} wrapMode='none'>
+          <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD, flexShrink: 1 }} wrapMode='none'>
             {mr.title.length > 80 ? mr.title.slice(0, 80) + '...' : mr.title}
           </text>
-          {isCompleted && (
-            <text style={{ fg: completedReason === 'merged' ? Colors.SUCCESS : Colors.SUPPORTING }} wrapMode='none'>
-              [{completedReason}]
-            </text>
-          )}
         </box>
         <box style={{ flexDirection: 'row', gap: 1, paddingLeft: 2 }}>
-          <text style={{ fg: isCompleted ? Colors.NEUTRAL : Colors.INFO }} wrapMode='none'>
+          <text style={{ fg: Colors.INFO }} wrapMode='none'>
             {mr.project.name}
           </text>
           <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
             {mr.sourcebranch}
           </text>
-          {!isCompleted && (
-            <>
-              <text style={{ fg: mr.approvedBy.length > 0 ? Colors.SUCCESS : Colors.PRIMARY }} wrapMode='none'>
-                {mr.approvedBy.length > 0 ? `+${mr.approvedBy.length}` : ''}
-              </text>
-              <text style={{ fg: mr.unresolvedDiscussions > 0 ? Colors.ERROR : Colors.SUCCESS }} wrapMode='none'>
-                {mr.unresolvedDiscussions > 0 ? `${mr.unresolvedDiscussions} unresolved` : ''}
-              </text>
-            </>
-          )}
+          <text style={{ fg: mr.approvedBy.length > 0 ? Colors.SUCCESS : Colors.PRIMARY }} wrapMode='none'>
+            {mr.approvedBy.length > 0 ? `+${mr.approvedBy.length}` : ''}
+          </text>
+          <text style={{ fg: mr.unresolvedDiscussions > 0 ? Colors.ERROR : Colors.SUCCESS }} wrapMode='none'>
+            {mr.unresolvedDiscussions > 0 ? `${mr.unresolvedDiscussions} unresolved` : ''}
+          </text>
         </box>
       </box>
     );
@@ -183,10 +160,10 @@ export default function MonitoredMergeRequestsPage({ onClose }: MonitoredMergeRe
           }}
         >
           <text style={{ fg: '#ff79c6', attributes: TextAttributes.BOLD }} wrapMode='none'>
-            Monitored Merge Requests ({monitoredMrs.length}{completedCount > 0 ? `, ${completedCount} completed` : ''})
+            Monitored Merge Requests ({monitoredMrs.length})
           </text>
           <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-            q: close | j/k: nav | o: open | c: copy branch | m: unmonitor{completedCount > 0 ? ' | D: clear completed' : ''}
+            q: close | j/k: nav | o: open | c: copy branch | m: unmonitor
           </text>
         </box>
         <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>

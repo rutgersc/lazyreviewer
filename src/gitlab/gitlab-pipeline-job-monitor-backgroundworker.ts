@@ -33,14 +33,9 @@ const FETCH_HEAD_MAX_AGE_MINUTES = 5;
 const backgroundWorker =
   Effect.gen(function* () {
     const settings = yield* SettingsService.load
-    const monitoredMrs = Object.entries(settings.monitoredMergeRequests)
-      .filter(entry => {
-        const key = entry[0];
-        const value = entry[1];
-
-        return key !== null && !value.completedReason
-      })
-      .map(entry => MrGid(entry[0]))
+    const monitoredMrs = Object.keys(settings.monitoredMergeRequests)
+      .filter(key => key !== null)
+      .map(key => MrGid(key))
 
     if (monitoredMrs.length === 0) {
       return
@@ -76,18 +71,10 @@ const backgroundWorker =
       }
 
       if (isMrDone(mr.state)) {
-        const existing = settings.monitoredMergeRequests[mr.id]
-        yield* SettingsService.modify(s => ({
-          ...s,
-          monitoredMergeRequests: {
-            ...s.monitoredMergeRequests,
-            [mr.id]: {
-              ...existing,
-              jobStates: existing?.jobStates ?? {},
-              completedReason: mr.state === 'merged' ? 'merged' : 'closed'
-            }
-          }
-        }))
+        yield* SettingsService.modify(s => {
+          const { [mr.id]: _, ...rest } = s.monitoredMergeRequests
+          return { ...s, monitoredMergeRequests: rest as typeof s.monitoredMergeRequests }
+        })
         return yield* Effect.succeed({ type: 'mrCompleted' as const, reason: mr.state })
       }
 
