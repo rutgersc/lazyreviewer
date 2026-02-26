@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { MergeRequest } from './MergeRequestPane';
 import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
 import { loadJobLogAtom, jobLogDownloadSignalAtom, downloadJobTraceAtom } from '../mergerequests/open-pipelinejob-log-atom';
-import { pipelineJobImportanceAtom } from '../settings/settings-atom';
+import { pipelineJobImportanceAtom, toggleJobImportanceAtom } from '../settings/settings-atom';
 import { existsSync, readFileSync } from 'fs';
 import { parseJobLogErrors, hasErrors, type JobLogErrors } from '../domain/parse-job-log-errors';
 import { getJobLogPath } from '../mergerequests/open-pipelinejob-log';
@@ -72,9 +72,15 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
 
   const pipelineJobs = getPipelineJobsFromMr(selectedMergeRequest)
   const jobImportanceMap = useAtomValue(pipelineJobImportanceAtom);
+  const toggleImportance = useAtomSet(toggleJobImportanceAtom);
   const projectJobImportance = selectedMergeRequest
     ? jobImportanceMap.get(selectedMergeRequest.project.fullPath) ?? new Map<string, string>()
     : new Map<string, string>();
+
+  const handleImportanceClick = (jobName: string) => {
+    if (!selectedMergeRequest) return;
+    toggleImportance({ projectFullPath: selectedMergeRequest.project.fullPath, jobName });
+  };
 
   const selectedPipelineJob = pipelineJobs[selectedPipelineJobIndex];
   const [logErrors, setLogErrors] = useState<JobLogErrors | null>(null);
@@ -156,8 +162,8 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
       <box style={{ flexDirection: "column", gap: 0 }}>
         {pipelineJobs.map(({ stage, job }, index) => {
           const jobImportance = projectJobImportance.get(job.name) ?? 'low';
-          const importanceIndicator = jobImportance === 'monitored' ? '■' : jobImportance === 'ignore' ? '-' : null;
-          const importanceColor = jobImportance === 'monitored' ? Colors.WARNING : jobImportance === 'ignore' ? Colors.SUPPORTING : null;
+          const importanceIndicator = jobImportance === 'monitored' ? '■' : jobImportance === 'ignore' ? '−' : '·';
+          const importanceColor = jobImportance === 'monitored' ? Colors.WARNING : jobImportance === 'ignore' ? Colors.SUPPORTING : Colors.NEUTRAL;
 
           return (
             <box
@@ -195,11 +201,13 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
               >
                 {job.name}
               </text>
-              {importanceIndicator && importanceColor && (
-                <text style={{ fg: importanceColor }} wrapMode='none'>
-                  {importanceIndicator}
-                </text>
-              )}
+              <text
+                style={{ fg: importanceColor }}
+                wrapMode='none'
+                onMouseDown={() => handleImportanceClick(job.name)}
+              >
+                {` ${importanceIndicator}`}
+              </text>
             </box>
           );
         })}
@@ -239,7 +247,11 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
               <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
                 Importance:
               </text>
-              <text style={{ fg: importanceColor }} wrapMode='none'>
+              <text
+                style={{ fg: importanceColor, attributes: TextAttributes.UNDERLINE }}
+                wrapMode='none'
+                onMouseDown={() => handleImportanceClick(selectedPipelineJob.job.name)}
+              >
                 {importanceDisplay}
               </text>
             </box>
