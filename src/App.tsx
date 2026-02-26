@@ -19,6 +19,7 @@ import EventLogPane from "./components/EventLogPane";
 import { JiraBoardPage } from "./jiraboard";
 import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage";
 import NotificationsPage from "./components/NotificationsPage";
+import FailedJobPickerModal from "./components/FailedJobPickerModal";
 import ConfigurationPage from "./components/ConfigurationPage";
 import OnboardingPage from "./onboarding/OnboardingPage";
 import { ActivePane } from "./userselection/userSelection";
@@ -539,6 +540,13 @@ export default function App() {
       {/* Monitored MRs Page - fullscreen overlay */}
       {activeModal === 'monitoredMrs' && (
         <MonitoredMergeRequestsPage
+          onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {/* Failed Job Picker Modal */}
+      {activeModal === 'failedJobPicker' && (
+        <FailedJobPickerModal
           onClose={() => setActiveModal('none')}
         />
       )}

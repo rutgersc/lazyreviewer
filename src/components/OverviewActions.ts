@@ -1,4 +1,5 @@
-import { Atom, type Registry } from "@effect-atom/atom-react";
+import { Atom, Registry, type Registry as RegistryNs } from "@effect-atom/atom-react";
+import { Effect } from "effect";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
 import { selectedMrAtom } from "../mergerequests/mergerequests-atom";
@@ -7,8 +8,12 @@ import { formatDiscussionsForClipboard } from "../domain/display/discussionForma
 import { copyNotificationAtom } from "./Overview";
 import { openUrl } from "../system/open-url";
 import { overviewCursorIndexAtom, unresolvedExpandedAtom, resolvedExpandedAtom, scrollToDiscussionRequestAtom, overviewSelectableItemsAtom, getScrollId } from "./overview-selection";
+import { getPipelineJobsFromMr } from "./PipelineJobsList";
+import { loadJobLogAtom, jobLogDownloadSignalAtom } from "../mergerequests/open-pipelinejob-log-atom";
+import { failedJobPickerItemsAtom, failedJobPickerMrAtom } from "./FailedJobPickerModal";
+import { activeModalAtom } from "../ui/navigation-atom";
 
-const getSelectableContext = (registry: Registry.Registry) => {
+const getSelectableContext = (registry: RegistryNs.Registry) => {
   const selectedMr = registry.get(selectedMrAtom);
   const discussions = selectedMr?.discussions ?? [];
   const unresolvedDiscussions = discussions.filter(d => d.resolvable && !d.resolved);
@@ -108,8 +113,8 @@ export const overviewActionsAtom = Atom.make((get) => {
     },
     {
       id: 'overview:copy-all',
-      keys: [parseKeyString('i')],
-      displayKey: 'i',
+      keys: [parseKeyString('y')],
+      displayKey: 'y',
       description: 'Copy discussions to clipboard',
       handler: () => {
         const selectedMr = registry.get(selectedMrAtom);
@@ -125,6 +130,32 @@ export const overviewActionsAtom = Atom.make((get) => {
             }
           });
         }
+      },
+    },
+    {
+      id: 'overview:inspect-failed-job',
+      keys: [parseKeyString('i')],
+      displayKey: 'i',
+      description: 'Inspect failed job log',
+      handler: () => {
+        const mr = registry.get(selectedMrAtom);
+        if (!mr) return;
+        const failedJobs = getPipelineJobsFromMr(mr).filter(({ job }) => job.status === 'FAILED');
+        if (failedJobs.length === 0) return;
+
+        if (failedJobs.length === 1) {
+          registry.set(loadJobLogAtom, { mergeRequest: mr, job: failedJobs[0]!.job });
+          Effect.runPromiseExit(
+            Registry.getResult(registry, loadJobLogAtom, { suspendOnWaiting: true })
+          ).then(() => {
+            registry.set(jobLogDownloadSignalAtom, registry.get(jobLogDownloadSignalAtom) + 1);
+          });
+          return;
+        }
+
+        registry.set(failedJobPickerItemsAtom, failedJobs);
+        registry.set(failedJobPickerMrAtom, mr);
+        registry.set(activeModalAtom, 'failedJobPicker');
       },
     },
   ];

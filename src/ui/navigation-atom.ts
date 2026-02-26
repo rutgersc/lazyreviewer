@@ -18,7 +18,8 @@ export type ActiveModal =
   | 'userFilter'
   | 'mrState'
   | 'repoFilter'
-  | 'onboarding';
+  | 'onboarding'
+  | 'failedJobPicker';
 
 export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);
 export const activeModalAtom = Atom.make<ActiveModal>('none');
