@@ -9,6 +9,7 @@ export const mapStatus = (statusName: string): StatusInfo => {
   if (s.includes('done')) return { text: 'DONE', color: Colors.SUCCESS, dimColor: '#69a373' };
   if (s.includes('reject')) return { text: 'REJ', color: Colors.ERROR, dimColor: '#a36969' };
   if (s.includes('merge')) return { text: 'MREQ', color: Colors.SUCCESS };
+  if (s.includes('test in progress')) return { text: 'TIP', color: Colors.SECONDARY };
   if (s.includes('testing')) return { text: 'TEST', color: Colors.WARNING };
   if (s.includes('test') || s.includes('qa')) return { text: 'TEST', color: Colors.WARNING };
   if (s.includes('review')) return { text: 'REV', color: Colors.WARNING };
