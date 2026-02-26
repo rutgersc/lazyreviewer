@@ -220,7 +220,9 @@ const backgroundWorker =
         }
       }))
 
-      return yield* Effect.succeed({ type: 'monitored' as const, message: `${headPipeline}` })
+      return yield* Effect.succeed(shouldRefreshMr
+        ? { type: 'changed' as const, message: `${headPipeline}` }
+        : { type: 'noChange' as const })
     });
 
     const pollResults = yield* Effect.validateAll(
@@ -237,7 +239,7 @@ const backgroundWorker =
       onRight: (polls) => Effect.gen(function* () {
 
         const nonSkipped = polls
-          .filter(p => p.type !== 'skipped')
+          .filter(p => p.type !== 'skipped' && p.type !== 'noChange')
           .values()
           .toArray();
 
