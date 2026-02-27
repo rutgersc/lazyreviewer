@@ -28,11 +28,10 @@ import type { Action } from './actions/action-types';
 import { parseKeyString, matchesAnyKey } from './actions/key-matcher';
 import { activePaneActionsAtom } from './actions/pane-actions-atoms';
 import { type MergeRequestState } from "./domain/merge-request-state";
-import { useRepositoryBranches } from "./mergerequests/hooks/useRepositoryBranches";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
-import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom } from './settings/settings-atom';
+import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Console, Effect } from 'effect';
@@ -59,7 +58,7 @@ export default function App() {
   const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
   const [selectedIndex] = useAtom(selectedMrIndexAtom);
 
-  const repositoryBranches = useRepositoryBranches([...mergeRequests]);
+  const repositoryPaths = useAtomValue(repositoryPathsAtom);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
   // Configuration page state
@@ -487,7 +486,7 @@ export default function App() {
       <GitSwitchModal
         isVisible={activeModal === 'gitSwitch'}
         branchName={mergeRequests[selectedIndex]?.sourcebranch || ""}
-        repoPath={repositoryBranches.find(r => r.projectPath === mergeRequests[selectedIndex]?.project.fullPath)?.localPath || null}
+        repoPath={mergeRequests[selectedIndex] ? repositoryPaths[mergeRequests[selectedIndex].project.fullPath]?.localPath || null : null}
         onClose={() => setActiveModal('none')}
         onSuccess={() => {
           setCopyNotification('Branch switched!');

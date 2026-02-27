@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { basename } from "path";
 import { TextAttributes } from "@opentui/core";
 import { type MergeRequest } from "../mergerequests/mergerequest-schema";
 import { type PipelineStage, type PipelineJob } from "../domain/merge-request-schema";
@@ -11,7 +10,7 @@ import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useDoubleClick } from "../hooks/useDoubleClick";
 import { Colors } from "../colors";
 import { mapStatus } from "../jiraboard/board-utils";
-import { useRepositoryBranches } from "../mergerequests/hooks/useRepositoryBranches";
+import { repositoryBranchesAtom, projectBranchMapAtom, type WorktreeMatch } from "../mergerequests/hooks/useRepositoryBranches";
 import { type JobImportance } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import UserFilterBar from "./UserFilterBar";
@@ -26,8 +25,6 @@ import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom"
 import { currentUserIdAtom } from "../settings/settings-atom";
 import type { JiraIssue } from "../jira/jira-schema";
 import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom, repositoryColorsAtom, pipelineJobImportanceAtom } from "../settings/settings-atom";
-
-type WorktreeMatch = { index: number; folderName: string };
 
 export const scrollToItemRequestAtom = Atom.make<number | null>(null);
 export const copyNotificationRequestAtom = Atom.make<string | null>(null);
@@ -531,7 +528,7 @@ export default function MergeRequestPane() {
       }
   });
 
-  const repositoryBranches = useRepositoryBranches(mergeRequests);
+  const repositoryBranches = useAtomValue(repositoryBranchesAtom);
   const branchDifferences = useAtomValue(branchDifferencesAtom);
   const repositoryColors = useAtomValue(repositoryColorsAtom);
   const seenMergeRequests = useAtomValue(seenMergeRequestsAtom);
@@ -545,35 +542,7 @@ export default function MergeRequestPane() {
     [pipelineJobImportanceMap]
   );
 
-  const projectBranchMap = useMemo(() =>
-    new Map(
-      repositoryBranches.map(repo => {
-        const additionalWorktrees = repo.worktrees.map((wt, index) => ({
-          index: index + 1,
-          folderName: wt.folderName,
-          branch: wt.branch
-        }));
-
-        const mainWorktree = repo.localPath
-          ? [{ index: 0, folderName: basename(repo.localPath), branch: repo.currentBranch }]
-          : [];
-
-        return [
-          repo.projectPath,
-          {
-            currentBranch: repo.currentBranch,
-            worktreeBranches: new Map(
-              additionalWorktrees
-                .filter(wt => wt.branch !== null)
-                .map(wt => [wt.branch!, { index: wt.index, folderName: wt.folderName }])
-            ),
-            allWorktrees: [...mainWorktree, ...additionalWorktrees]
-          }
-        ] as const;
-      })
-    ),
-    [repositoryBranches]
-  );
+  const projectBranchMap = useAtomValue(projectBranchMapAtom);
 
   // Compute related MR indices based on ELAB keys in title or shared Jira ticket/parent
   type RelationType = 'ticket' | 'sibling';
