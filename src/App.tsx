@@ -80,7 +80,7 @@ export default function App() {
     }
   }, [requiredMissingCredentials.length]);
 
-  const showOnboarding = !showConfigPage && missingCredentials.length === 0 && !isOnboardingComplete;
+  const showOnboarding = !showConfigPage && !isOnboardingComplete;
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [repoFilter, setRepoFilter] = useAtom(repoFilterAtom);
@@ -306,8 +306,8 @@ export default function App() {
       }
     }
 
-    // When modal is open, only process escape (handled above)
-    if (activeModal !== 'none') {
+    // When modal is open or onboarding is showing, only process escape (handled above)
+    if (activeModal !== 'none' || showOnboarding) {
       return;
     }
 
