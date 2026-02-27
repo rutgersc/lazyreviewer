@@ -86,7 +86,7 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
     <box style={{ flexDirection: 'column', flexGrow: 1 }}>
       <box style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 1, paddingRight: 1 }}>
         <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
-          Step 2/3: User Discovery & Selection
+          Step 2/3: Choose your team — their merge requests will be shown by default
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
           j/k: nav | Enter/space: select | Esc: back

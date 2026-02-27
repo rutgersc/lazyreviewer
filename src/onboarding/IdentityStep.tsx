@@ -23,33 +23,32 @@ const resolveUserId = (username: string): UserId => {
 }
 
 export default function IdentityStep({ discoveredUsers, onNext, onBack }: IdentityStepProps) {
-  const [inputValue, setInputValue] = useState('')
   const [highlightIndex, setHighlightIndex] = useState(0)
-  const [inputFocused, setInputFocused] = useState(true)
-
-  const handleSelectFromList = (idx: number) => {
-    const user = discoveredUsers[idx]
-    if (user) onNext(user)
-  }
+  const [selectedUser, setSelectedUser] = useState<UserId | null>(null)
+  const [inputFocused, setInputFocused] = useState(false)
 
   const handleSubmitInput = (value: string) => {
     const trimmed = value.trim()
     if (!trimmed) return
-
     const existing = discoveredUsers.find(u =>
       u.userId === trimmed || u.gitlab === trimmed || u.bitbucket === trimmed
     )
-    onNext(existing ?? resolveUserId(trimmed))
+    setSelectedUser(existing ?? resolveUserId(trimmed))
   }
 
   useKeyboard((key: ParsedKey) => {
     if (key.name === 'escape') {
-      onBack()
+      if (selectedUser) {
+        setSelectedUser(null)
+      } else {
+        onBack()
+      }
       return
     }
 
     if (key.name === 'tab') {
       setInputFocused(prev => !prev)
+      setSelectedUser(null)
       return
     }
 
@@ -58,13 +57,21 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
         case 'j':
         case 'down':
           setHighlightIndex(i => Math.min(discoveredUsers.length - 1, i + 1))
+          setSelectedUser(null)
           break
         case 'k':
         case 'up':
           setHighlightIndex(i => Math.max(0, i - 1))
+          setSelectedUser(null)
           break
         case 'return':
-          handleSelectFromList(highlightIndex)
+        case 'space':
+          if (selectedUser) {
+            onNext(selectedUser)
+          } else {
+            const user = discoveredUsers[highlightIndex]
+            if (user) setSelectedUser(user)
+          }
           break
       }
     }
@@ -77,32 +84,34 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
           Step 3/3: Who Are You?
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          Tab: switch focus | j/k: nav list | Enter: confirm | Esc: back
+          j/k: nav | Enter: select | Tab: type manually | Esc: back
         </text>
       </box>
       <text style={{ fg: Colors.NEUTRAL, paddingLeft: 1 }} wrapMode='none'>
         {'─'.repeat(100)}
       </text>
 
-      <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1, flexDirection: 'column', gap: 0 }}>
-        <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          Type your username or select from the list below:
-        </text>
-        <box style={{ flexDirection: 'row', gap: 1 }}>
-          <text style={{ fg: Colors.INFO }} wrapMode='none'>{'>'}</text>
-          <input
-            focused={inputFocused}
-            style={{
-              width: 40,
-              textColor: Colors.PRIMARY,
-              backgroundColor: inputFocused ? Colors.SELECTED : Colors.BACKGROUND,
-            }}
-            placeholder="username"
-            onSubmit={handleSubmitInput as any}
-            onInput={setInputValue}
-          />
+      <text style={{ fg: Colors.PRIMARY, paddingLeft: 1, paddingTop: 1 }} wrapMode='none'>
+        Select your identity — this determines which MRs are "yours":
+      </text>
+
+      {inputFocused && (
+        <box style={{ paddingLeft: 1, paddingRight: 1, flexDirection: 'column' }}>
+          <box style={{ flexDirection: 'row', gap: 1 }}>
+            <text style={{ fg: Colors.INFO }} wrapMode='none'>{'>'}</text>
+            <input
+              focused={true}
+              style={{
+                width: 40,
+                textColor: Colors.PRIMARY,
+                backgroundColor: Colors.SELECTED,
+              }}
+              placeholder="username"
+              onSubmit={handleSubmitInput as any}
+            />
+          </box>
         </box>
-      </box>
+      )}
 
       <box style={{ paddingLeft: 1, paddingTop: 1 }}>
         <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD }} wrapMode='none'>
@@ -128,7 +137,7 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
                 onMouseDown={() => {
                   setInputFocused(false)
                   setHighlightIndex(idx)
-                  handleSelectFromList(idx)
+                  setSelectedUser(user)
                 }}
                 style={{
                   flexDirection: 'row',
@@ -155,6 +164,17 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
           })}
         </box>
       </scrollbox>
+
+      {selectedUser && (
+        <box style={{ paddingLeft: 1, paddingRight: 1, border: true, borderColor: Colors.SUCCESS, flexDirection: 'row', gap: 1 }}>
+          <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrapMode='none'>
+            Continue as {selectedUser.userId}?
+          </text>
+          <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
+            Enter to confirm | Esc to cancel
+          </text>
+        </box>
+      )}
     </box>
   )
 }

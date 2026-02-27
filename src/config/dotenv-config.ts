@@ -95,20 +95,14 @@ const ENV_TEMPLATE = `# Lazygitlab Configuration
 GITLAB_TOKEN=
 
 # ── Bitbucket ─────────────────────────────────────────────
-# Email address associated with your Bitbucket account.
-BITBUCKET_EMAIL=
-
-# Bitbucket App Password.
-# Create one at: https://bitbucket.org/account/settings/app-passwords/
+# App Password: https://id.atlassian.com/manage-profile/security/api-tokens
 # Required permissions: Repositories (Read), Pull requests (Read)
+BITBUCKET_EMAIL=
 BITBUCKET_API_TOKEN=
 
 # ── Jira ──────────────────────────────────────────────────
-# Email address associated with your Jira / Atlassian account.
+# API token: https://id.atlassian.com/manage-profile/security/api-tokens
 JIRA_EMAIL=
-
-# Jira API token.
-# Create one at: https://id.atlassian.com/manage-profile/security/api-tokens
 JIRA_API_TOKEN=
 `;
 
