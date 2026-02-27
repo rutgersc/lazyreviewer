@@ -1,9 +1,7 @@
 import { Effect, Stream, Console } from "effect";
 import * as fs from 'fs';
 import * as path from 'path';
-import { Atom } from '@effect-atom/atom-react';
 import { FileSystem } from '@effect/platform';
-import { appAtomRuntime } from '../appLayerRuntime';
 // import { getEnvFilePath, parseEnvContent, deriveMissingCredentials, type MissingCredential } from './dotenv-config';
 
 export interface EnvCredential {
@@ -82,6 +80,7 @@ export const deriveMissingCredentials = (envVars: Record<string, string>): Missi
     .map(credential => ({ ...credential, currentValue: envVars[credential.key] || '' }))
     .filter(c => isMissingValue(c.currentValue));
 
+
 export const getEnvFilePath = (): string =>
   path.join(process.cwd(), '.env');
 
@@ -132,25 +131,34 @@ export const ensureEnvFile = Effect.fn("ensureEnvFile")(function* () {
   return envPath;
 });
 
+/** Synchronously ensure .env exists before any watchers or readers start. */
+export const ensureEnvFileSync = () => {
+  const envPath = getEnvFilePath();
+  if (!fs.existsSync(envPath)) {
+    fs.writeFileSync(envPath, ENV_TEMPLATE, 'utf-8');
+  }
+};
+
 export const dotEnvFileChanges = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem;
+  const effectFs = yield* FileSystem.FileSystem;
   const envPath = getEnvFilePath();
 
-  // const exists = yield* fs.exists(envPath);
-  // if (!exists) {
-  //   yield* fs.writeFileString(envPath, ENV_TEMPLATE);
-  //   yield* Console.log(`[Config] Created .env template at ${envPath}`);
-  // }
-
-  const readAndDerive = fs.readFileString(envPath).pipe(
-    Effect.map(content => deriveMissingCredentials(parseEnvContent(content))),
+  const readAndDerive = effectFs.readFileString(envPath).pipe(
+    Effect.map(content => {
+      const parsed = parseEnvContent(content);
+      // Keep process.env in sync — Bun only loads .env at startup
+      for (const [key, value] of Object.entries(parsed)) {
+        if (value) process.env[key] = value;
+      }
+      return deriveMissingCredentials(parsed);
+    }),
     Effect.catchAll(() => Effect.succeed(deriveMissingCredentials({})))
   );
 
   const initial = yield* readAndDerive;
   yield* Console.log(`[Config] Initial check: ${initial.length} missing credentials`);
 
-  const watchStream = fs.watch(envPath).pipe(
+  const watchStream = effectFs.watch(envPath).pipe(
     Stream.catchAll(() => Stream.empty),
     Stream.debounce("200 millis"),
     Stream.mapEffect(() => readAndDerive),
