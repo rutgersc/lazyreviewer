@@ -5,7 +5,7 @@ import { Effect } from 'effect'
 import { Colors } from '../colors'
 import type { DiscoveredRepo } from './onboarding-types'
 import { DEFAULT_GITLAB_REPOS, DEFAULT_BITBUCKET_REPOS, BITBUCKET_WORKSPACE } from './onboarding-defaults'
-import { fetchGitlabProjects, fetchBitbucketRepos } from './onboarding-effects'
+import { fetchGitlabProjects, fetchBitbucketRepos, type RepoFetchResult } from './onboarding-effects'
 
 interface RepoSelectionStepProps {
   onNext: (repos: DiscoveredRepo[]) => void
@@ -22,34 +22,29 @@ export default function RepoSelectionStep({ onNext, onBack }: RepoSelectionStepP
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [highlightIndex, setHighlightIndex] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [warnings, setWarnings] = useState<string[]>([])
 
   useEffect(() => {
     let cancelled = false
 
     const load = async () => {
-      try {
-        const [gitlabRepos, bitbucketRepos] = await Promise.all([
-          Effect.runPromise(fetchGitlabProjects),
-          Effect.runPromise(fetchBitbucketRepos(BITBUCKET_WORKSPACE)),
-        ])
+      const [gitlab, bitbucket] = await Promise.all([
+        Effect.runPromise(fetchGitlabProjects),
+        Effect.runPromise(fetchBitbucketRepos(BITBUCKET_WORKSPACE)),
+      ])
 
-        if (cancelled) return
+      if (cancelled) return
 
-        const allRepos = [...gitlabRepos, ...bitbucketRepos]
-        setRepos(allRepos)
+      const allRepos = [...gitlab.repos, ...bitbucket.repos]
+      const allWarnings = [...gitlab.warnings, ...bitbucket.warnings]
+      setRepos(allRepos)
+      setWarnings(allWarnings)
 
-        const defaults = new Set(
-          allRepos.filter(isDefaultRepo).map(r => r.fullPath)
-        )
-        setSelected(defaults)
-        setLoading(false)
-      } catch (e) {
-        if (!cancelled) {
-          setError(String(e))
-          setLoading(false)
-        }
-      }
+      const defaults = new Set(
+        allRepos.filter(isDefaultRepo).map(r => r.fullPath)
+      )
+      setSelected(defaults)
+      setLoading(false)
     }
 
     load()
@@ -122,15 +117,17 @@ export default function RepoSelectionStep({ onNext, onBack }: RepoSelectionStepP
         </box>
       )}
 
-      {error && (
-        <box style={{ padding: 2 }}>
-          <text style={{ fg: Colors.ERROR }} wrapMode='none'>
-            Error: {error}
-          </text>
+      {!loading && warnings.length > 0 && (
+        <box style={{ flexDirection: 'column', paddingLeft: 2, paddingRight: 1 }}>
+          {warnings.map((w, i) => (
+            <text key={i} style={{ fg: Colors.WARNING }} wrapMode='none'>
+              {w}
+            </text>
+          ))}
         </box>
       )}
 
-      {!loading && !error && (
+      {!loading && (
         <scrollbox
           style={{
             flexGrow: 1,

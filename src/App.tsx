@@ -61,26 +61,23 @@ export default function App() {
   const repositoryPaths = useAtomValue(repositoryPathsAtom);
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
 
-  // Configuration page state
+  // Data sources
   const missingCredentialsResult = useAtomValue(missingCredentialsAtom);
-  const [showConfigPage, setShowConfigPage] = useState(false);
-
-  // Onboarding state
   const isOnboardingComplete = useAtomValue(isOnboardingCompleteAtom);
   const setRepoSelection = useAtomSet(repoSelectionAtom);
 
-  // Unwrap the Result type to get actual credentials array
-  const missingCredentials = missingCredentialsResult._tag === 'Success' ? missingCredentialsResult.value : [];
+  // Only local UI state: user dismissed the config page this session
+  const [configDismissed, setConfigDismissed] = useState(false);
 
-  // Show config page on mount only if REQUIRED credentials are missing
-  const requiredMissingCredentials = missingCredentials.filter(c => c.required);
-  useEffect(() => {
-    if (requiredMissingCredentials.length > 0) {
-      setShowConfigPage(true);
-    }
-  }, [requiredMissingCredentials.length]);
+  // Pure derivations — no useEffect
+  const credentialsLoaded = missingCredentialsResult._tag === 'Success';
+  const missingCredentials = credentialsLoaded ? missingCredentialsResult.value : [];
 
-  const showOnboarding = !showConfigPage && !isOnboardingComplete;
+  const showConfigPage = credentialsLoaded && !configDismissed && (
+    missingCredentials.some(c => c.required) ||
+    (!isOnboardingComplete && missingCredentials.length > 0)
+  );
+  const showOnboarding = !showConfigPage && !isOnboardingComplete && credentialsLoaded;
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [repoFilter, setRepoFilter] = useAtom(repoFilterAtom);
@@ -563,10 +560,10 @@ export default function App() {
       )}
 
       {/* Configuration Page - fullscreen overlay with highest priority */}
-      {showConfigPage && missingCredentials.length > 0 && (
+      {showConfigPage && (
         <ConfigurationPage
           missingCredentials={missingCredentials}
-          onClose={() => setShowConfigPage(false)}
+          onClose={() => setConfigDismissed(true)}
         />
       )}
 

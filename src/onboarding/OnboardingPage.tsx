@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import type { ParsedKey } from '@opentui/core'
+import { useKeyboard, useRenderer } from '@opentui/react'
 import { useAtomSet } from '@effect-atom/atom-react'
 import { Colors } from '../colors'
 import type { OnboardingStep, DiscoveredRepo } from './onboarding-types'
@@ -20,6 +22,11 @@ export default function OnboardingPage() {
   const setCurrentUser = useAtomSet(setCurrentUserAtom)
   const setSelectedUserSelectionEntryId = useAtomSet(selectedUserSelectionEntryIdAtom)
   const setUserSelections = useAtomSet(userSelectionsAtom)
+  const renderer = useRenderer()
+
+  useKeyboard((key: ParsedKey) => {
+    if (key.name === 'z') renderer.console.toggle()
+  })
 
   const handleReposDone = (repos: DiscoveredRepo[]) => {
     setSelectedReposLocal(repos)
@@ -47,8 +54,8 @@ export default function OnboardingPage() {
         position: 'absolute',
         top: 0,
         left: 0,
-        right: 0,
-        bottom: 0,
+        width: '100%',
+        height: '100%',
         backgroundColor: Colors.BACKGROUND,
         flexDirection: 'column',
         zIndex: 1500,

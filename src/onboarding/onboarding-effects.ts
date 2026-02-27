@@ -24,52 +24,49 @@ type BitbucketResponse = {
   values: BitbucketRepo[]
 }
 
-export const fetchGitlabProjects = Effect.gen(function* () {
+export type RepoFetchResult = {
+  readonly repos: DiscoveredRepo[]
+  readonly warnings: string[]
+}
+
+export const fetchGitlabProjects: Effect.Effect<RepoFetchResult> = Effect.gen(function* () {
   const token = process.env.GITLAB_TOKEN
   if (!token) {
-    yield* Console.log('[Onboarding] GitLab token not configured, skipping')
-    return [] as DiscoveredRepo[]
+    return { repos: [], warnings: ['GitLab: GITLAB_TOKEN not configured in .env'] }
   }
-
-  yield* Console.log('[Onboarding] Fetching GitLab projects...')
 
   const response = yield* Effect.tryPromise({
     try: () => fetch('https://git.elabnext.com/api/v4/projects?membership=true&per_page=100&simple=true', {
       headers: { 'PRIVATE-TOKEN': token }
     }),
-    catch: (cause) => new Error(`GitLab projects fetch failed: ${cause}`)
+    catch: (cause) => `GitLab: network error - ${cause}`
   })
 
   if (!response.ok) {
-    yield* Console.error(`[Onboarding] GitLab API error: ${response.status}`)
-    return [] as DiscoveredRepo[]
+    return { repos: [], warnings: [`GitLab: API returned ${response.status} ${response.statusText}`] }
   }
 
   const data = yield* Effect.tryPromise({
     try: () => response.json() as Promise<GitlabProject[]>,
-    catch: (cause) => new Error(`GitLab JSON parse error: ${cause}`)
+    catch: (cause) => `GitLab: JSON parse error - ${cause}`
   })
 
-  return data.map((p): DiscoveredRepo => ({
+  const repos = data.map((p): DiscoveredRepo => ({
     provider: 'gitlab',
     fullPath: p.path_with_namespace,
     name: p.name,
   }))
-}).pipe(Effect.catchAll((err) =>
-  Console.error(`[Onboarding] GitLab fetch error: ${err}`).pipe(
-    Effect.as([] as DiscoveredRepo[])
-  )
+  return { repos, warnings: [] }
+}).pipe(Effect.catchAll((warning) =>
+  Effect.succeed({ repos: [] as DiscoveredRepo[], warnings: [String(warning)] })
 ))
 
-export const fetchBitbucketRepos = (workspace: string) => Effect.gen(function* () {
+export const fetchBitbucketRepos = (workspace: string): Effect.Effect<RepoFetchResult> => Effect.gen(function* () {
   const email = process.env.BITBUCKET_EMAIL
   const token = process.env.BITBUCKET_API_TOKEN
   if (!(email && token)) {
-    yield* Console.log('[Onboarding] Bitbucket credentials not configured, skipping')
-    return [] as DiscoveredRepo[]
+    return { repos: [], warnings: ['Bitbucket: BITBUCKET_EMAIL and/or BITBUCKET_API_TOKEN not configured in .env'] }
   }
-
-  yield* Console.log(`[Onboarding] Fetching Bitbucket repos for ${workspace}...`)
 
   const authToken = Buffer.from(`${email}:${token}`).toString('base64')
 
@@ -80,30 +77,28 @@ export const fetchBitbucketRepos = (workspace: string) => Effect.gen(function* (
         'Accept': 'application/json',
       }
     }),
-    catch: (cause) => new Error(`Bitbucket repos fetch failed: ${cause}`)
+    catch: (cause) => `Bitbucket: network error - ${cause}`
   })
 
   if (!response.ok) {
-    yield* Console.error(`[Onboarding] Bitbucket API error: ${response.status}`)
-    return [] as DiscoveredRepo[]
+    return { repos: [], warnings: [`Bitbucket: API returned ${response.status} ${response.statusText}`] }
   }
 
   const data = yield* Effect.tryPromise({
     try: () => response.json() as Promise<BitbucketResponse>,
-    catch: (cause) => new Error(`Bitbucket JSON parse error: ${cause}`)
+    catch: (cause) => `Bitbucket: JSON parse error - ${cause}`
   })
 
-  return data.values.map((r): DiscoveredRepo => ({
+  const repos = data.values.map((r): DiscoveredRepo => ({
     provider: 'bitbucket',
     fullPath: r.full_name,
     name: r.name,
     workspace: r.workspace.slug,
     repoSlug: r.slug,
   }))
-}).pipe(Effect.catchAll((err) =>
-  Console.error(`[Onboarding] Bitbucket fetch error: ${err}`).pipe(
-    Effect.as([] as DiscoveredRepo[])
-  )
+  return { repos, warnings: [] }
+}).pipe(Effect.catchAll((warning) =>
+  Effect.succeed({ repos: [] as DiscoveredRepo[], warnings: [String(warning)] })
 ))
 
 export const fetchMrsForRepos = (repos: readonly DiscoveredRepo[]) => Effect.gen(function* () {
