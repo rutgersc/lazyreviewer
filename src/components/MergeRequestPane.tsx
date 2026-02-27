@@ -226,7 +226,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
           >
             {isSeen
               ? `? ${mr.approvedBy.length}`
-              : isApprovedByMe
+              : (isApprovedByMe || isMyMr)
               ? `☒ ${mr.approvedBy.length}`
               : `☐ ${mr.approvedBy.length}`}
           </text>
