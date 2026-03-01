@@ -17,6 +17,7 @@ export default function OnboardingPage() {
   const [discoveredUsers, setDiscoveredUsers] = useState<UserId[]>([])
   const [selections, setSelections] = useState<UserSelectionEntry[]>([])
   const [selectedSelectionId, setSelectedSelectionId] = useState<string>('')
+  const [completed, setCompleted] = useState(false)
 
   const setRepoSelection = useAtomSet(repoSelectionAtom)
   const setCurrentUser = useAtomSet(setCurrentUserAtom)
@@ -41,12 +42,19 @@ export default function OnboardingPage() {
   }
 
   const handleIdentityDone = (userId: UserId) => {
-    const repoPaths = selectedRepos.map(r => r.fullPath)
-    setRepoSelection(repoPaths)
-    setCurrentUser(userId.userId)
-    setUserSelections(selections)
-    setSelectedUserSelectionEntryId(selectedSelectionId)
+    try {
+      const repoPaths = selectedRepos.map(r => r.fullPath)
+      setRepoSelection(repoPaths)
+      setCurrentUser(userId.userId)
+      setUserSelections(selections)
+      setSelectedUserSelectionEntryId(selectedSelectionId)
+      setCompleted(true)
+    } catch (e) {
+      console.error(`[onboarding] error completing:`, e)
+    }
   }
+
+  if (completed) return null
 
   return (
     <box
