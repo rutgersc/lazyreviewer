@@ -31,7 +31,7 @@ import { type MergeRequestState } from "./domain/merge-request-state";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
-import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
+import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Console, Effect } from 'effect';
@@ -83,6 +83,7 @@ export default function App() {
   const [repoFilter, setRepoFilter] = useAtom(repoFilterAtom);
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
+  const [factsViewStyle, setFactsViewStyle] = useAtom(factsViewStyleAtom);
   const setUserFilter = useAtomSet(setUserFilterAtom);
   const jiraBoardId = useAtomValue(jiraBoardIdAtom);
   const setJiraBoardFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
@@ -188,6 +189,13 @@ export default function App() {
       handler: () => setAppView(appView === 'review' ? 'focus' : 'review'),
     },
     {
+      id: 'global:toggle-facts-view',
+      keys: [parseKeyString('c')],
+      displayKey: 'c',
+      description: 'Toggle facts view style',
+      handler: () => setFactsViewStyle(factsViewStyle === 'grouped' ? 'chronological' : 'grouped'),
+    },
+    {
       id: 'global:onboarding',
       keys: [parseKeyString('shift+o')],
       displayKey: 'Shift+O',
@@ -275,7 +283,7 @@ export default function App() {
         );
       },
     },
-  ], [activePane, mergeRequests.length, notificationSettings.enabled, backgroundSyncSettings.enabled, jiraBoardId, appView]);
+  ], [activePane, mergeRequests.length, notificationSettings.enabled, backgroundSyncSettings.enabled, jiraBoardId, appView, factsViewStyle]);
 
   useEffect(() => {
     // renderer.console.toggle();

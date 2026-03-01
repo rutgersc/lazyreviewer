@@ -352,3 +352,17 @@ export const appViewAtom = Atom.writable(
   }
 );
 
+export type FactsViewStyle = 'grouped' | 'chronological'
+
+const factsViewStyleRawAtom = selectFromSettings(
+  s => s.factsViewStyle ?? 'grouped',
+  'grouped' as FactsViewStyle
+);
+
+export const factsViewStyleAtom = Atom.writable(
+  (get) => get(factsViewStyleRawAtom),
+  (ctx, newValue: FactsViewStyle) => {
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, factsViewStyle: newValue }));
+  }
+);
+

@@ -206,6 +206,14 @@ export const groupedEventsAtom = Atom.readable<EventGroup[]>((get) => {
   return groupClassifiedEvents(classified);
 });
 
+export const chronologicalChangesAtom = Atom.readable<Change[]>((get) => {
+  const groupedDeltas = get(groupedDeltasByEventIdAtom);
+  return Array.from(groupedDeltas.values())
+    .flat()
+    .sort((a, b) => b.changedAt.getTime() - a.changedAt.getTime())
+    .slice(0, 200);
+});
+
 export const viewConfigAtom = Atom.readable((get) => viewConfigs[get(appViewAtom)]);
 
 export const selectMrForChangeAtom = Atom.fnSync((change: Change, get) => {

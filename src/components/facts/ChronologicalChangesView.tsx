@@ -1,0 +1,85 @@
+import { useRef } from 'react';
+import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { TextAttributes } from '@opentui/core';
+import { Colors } from '../../colors';
+import { getAgeColor } from '../../utils/formatting';
+import { nowAtom } from '../../ui/navigation-atom';
+import { currentUserIdAtom } from '../../settings/settings-atom';
+import type { Change } from '../../changetracking/change-tracking-projection';
+import {
+  getChangeDescription,
+  formatRelativeTime,
+  chronologicalChangesAtom,
+  sublistIndexAtom,
+  myJiraIssueKeysAtom,
+  viewConfigAtom,
+  selectMrForChangeAtom,
+} from './facts-shared';
+
+export default function ChronologicalChangesView() {
+  const allChanges = useAtomValue(chronologicalChangesAtom);
+  const [selectedIndex, setSelectedIndex] = useAtom(sublistIndexAtom);
+  const selectMrForChange = useAtomSet(selectMrForChangeAtom);
+  const now = useAtomValue(nowAtom);
+  const currentUser = useAtomValue(currentUserIdAtom);
+  const myJiraIssueKeys = useAtomValue(myJiraIssueKeysAtom);
+  const config = useAtomValue(viewConfigAtom);
+  const lastClickRef = useRef<{ index: number; time: number } | null>(null);
+
+  const classifiedChanges = allChanges
+    .map(change => ({ change, relevance: config.classify(change, currentUser, myJiraIssueKeys) }))
+    .filter(({ relevance }) => relevance !== 'hidden');
+
+  const handleClick = (i: number, change: Change) => {
+    const clickNow = Date.now();
+    const lastClick = lastClickRef.current;
+    const isDoubleClick = lastClick && lastClick.index === i && (clickNow - lastClick.time) < 300;
+
+    lastClickRef.current = { index: i, time: clickNow };
+    setSelectedIndex(i);
+
+    if (isDoubleClick) {
+      selectMrForChange(change);
+    }
+  };
+
+  return (
+    <>
+      {classifiedChanges.map(({ change, relevance }, i) => {
+        const isSelected = i === selectedIndex;
+        const { badge, color: changeColor, text } = getChangeDescription(change);
+        const style = config.changeStyle[relevance === 'dimmed' ? 'dimmed' : 'primary'];
+
+        const formattedDate = change.changedAt
+          ? formatRelativeTime(change.changedAt, now).padEnd(3, ' ')
+          : '?  ';
+        const baseAgeColor = change.changedAt ? getAgeColor(change.changedAt, now) : Colors.SECONDARY;
+        const dateFg = style.dateFg === 'USE_AGE_COLOR' ? baseAgeColor : style.dateFg;
+        const changeFg = style.fg === 'USE_CHANGE_COLOR' ? changeColor : style.fg;
+
+        return (
+          <box key={i} height={1} width="100%" flexDirection='row' onMouseDown={() => handleClick(i, change)}>
+            <box width={4} flexShrink={0} height={1}>
+              <text
+                wrapMode='none'
+                fg={isSelected ? '#50fa7b' : dateFg}
+                bg={isSelected ? '#44475a' : style.bg}
+                style={{attributes: TextAttributes.DIM | style.attributes}}
+              >
+                {' '}{formattedDate}
+              </text>
+            </box>
+            <text
+              wrapMode='none'
+              fg={isSelected ? '#50fa7b' : changeFg}
+              bg={isSelected ? '#44475a' : style.bg}
+              style={style.attributes ? { attributes: style.attributes } : undefined}
+            >
+              {' '}{badge} {text}
+            </text>
+          </box>
+        );
+      })}
+    </>
+  );
+}

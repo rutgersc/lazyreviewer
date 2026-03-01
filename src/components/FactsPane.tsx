@@ -3,9 +3,10 @@ import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom } from '../ui/navigation-atom';
 import { useAutoScroll } from '../hooks/useAutoScroll';
-import { appViewAtom, notificationSettingsAtom, toggleNotificationsAtom } from '../settings/settings-atom';
+import { appViewAtom, factsViewStyleAtom, notificationSettingsAtom, toggleNotificationsAtom } from '../settings/settings-atom';
 import { viewConfigs } from '../ui/view-config';
 import EventGroupedChangesView from './facts/EventGroupedChangesView';
+import ChronologicalChangesView from './facts/ChronologicalChangesView';
 import {
   scrollToEventIdRequestAtom,
   statusMessageAtom,
@@ -17,6 +18,7 @@ export {
   sublistIndexAtom,
   highlightedIndexAtom,
   currentEventChangesAtom,
+  chronologicalChangesAtom,
   scrollToEventIdRequestAtom,
   statusMessageAtom,
   groupedEventsAtom,
@@ -31,6 +33,7 @@ export default function FactsPane() {
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
   const [scrollToEventIdRequest, setScrollToEventIdRequest] = useAtom(scrollToEventIdRequestAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
+  const [factsViewStyle, setFactsViewStyle] = useAtom(factsViewStyleAtom);
   const notificationSettings = useAtomValue(notificationSettingsAtom);
   const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
 
@@ -45,15 +48,24 @@ export default function FactsPane() {
   const focusColor = appView === 'focus' ? viewConfigs.focus.modeIndicator.labelColor : '#6272a4';
 
   const notifColor = notificationSettings.enabled ? '#f1fa8c' : '#6272a4';
+  const groupedColor = factsViewStyle === 'grouped' ? '#f1fa8c' : '#6272a4';
+  const chronoColor = factsViewStyle === 'chronological' ? '#f1fa8c' : '#6272a4';
 
   const modeIndicatorBox = () => (
-    <box key="mode-indicator" width="100%" height={3} flexDirection="column">
+    <box key="mode-indicator" width="100%" height={4} flexDirection="column">
       <box height={1} flexDirection="row"
            onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
         <text fg="#44475a" wrapMode="none">{' [v] '}</text>
         <text fg={reviewColor} wrapMode="none">{'review'}</text>
         <text fg="#44475a" wrapMode="none">{' / '}</text>
         <text fg={focusColor} wrapMode="none">{'focus'}</text>
+      </box>
+      <box height={1} flexDirection="row"
+           onMouseDown={() => setFactsViewStyle(factsViewStyle === 'grouped' ? 'chronological' : 'grouped')}>
+        <text fg="#44475a" wrapMode="none">{' [c] '}</text>
+        <text fg={groupedColor} wrapMode="none">{'grouped'}</text>
+        <text fg="#44475a" wrapMode="none">{' / '}</text>
+        <text fg={chronoColor} wrapMode="none">{'chrono'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => toggleNotifications()}>
@@ -96,7 +108,7 @@ export default function FactsPane() {
           },
         }}
       >
-        <EventGroupedChangesView />
+        {factsViewStyle === 'chronological' ? <ChronologicalChangesView /> : <EventGroupedChangesView />}
       </scrollbox>
     </box>
   );
