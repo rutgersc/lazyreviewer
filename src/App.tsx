@@ -303,8 +303,8 @@ export default function App() {
       }
     }
 
-    // When modal is open or onboarding is showing, only process escape (handled above)
-    if (activeModal !== 'none' || showOnboarding) {
+    // When modal is open, onboarding, or config page is showing, only process escape (handled above)
+    if (activeModal !== 'none' || showOnboarding || showConfigPage) {
       return;
     }
 

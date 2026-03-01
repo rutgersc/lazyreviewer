@@ -1,6 +1,6 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core'
 import { useKeyboard } from '@opentui/react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Colors } from '../colors'
 import type { UserId } from '../userselection/userSelection'
 import { users as predefinedUserSelections } from '../data/usersAndGroups'
@@ -26,6 +26,8 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
   const [highlightIndex, setHighlightIndex] = useState(0)
   const [selectedUser, setSelectedUser] = useState<UserId | null>(null)
   const [inputFocused, setInputFocused] = useState(false)
+  const selectedUserRef = useRef<UserId | null>(null)
+  selectedUserRef.current = selectedUser
 
   const handleSubmitInput = (value: string) => {
     const trimmed = value.trim()
@@ -37,8 +39,10 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
   }
 
   useKeyboard((key: ParsedKey) => {
+    const pending = selectedUserRef.current
+
     if (key.name === 'escape') {
-      if (selectedUser) {
+      if (pending) {
         setSelectedUser(null)
       } else {
         onBack()
@@ -66,8 +70,8 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
           break
         case 'return':
         case 'space':
-          if (selectedUser) {
-            onNext(selectedUser)
+          if (pending) {
+            onNext(pending)
           } else {
             const user = discoveredUsers[highlightIndex]
             if (user) setSelectedUser(user)
