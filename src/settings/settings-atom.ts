@@ -355,8 +355,8 @@ export const appViewAtom = Atom.writable(
 export type FactsViewStyle = 'grouped' | 'chronological'
 
 const factsViewStyleRawAtom = selectFromSettings(
-  s => s.factsViewStyle ?? 'grouped',
-  'grouped' as FactsViewStyle
+  s => s.factsViewStyle ?? 'chronological',
+  'chronological' as FactsViewStyle
 );
 
 export const factsViewStyleAtom = Atom.writable(

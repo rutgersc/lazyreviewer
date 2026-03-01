@@ -135,7 +135,7 @@ export default function EventGroupedChangesView() {
             )}
             {classifiedDeltas.map(({ change, relevance }, i) => {
               const isSublistSelected = isHighlighted && sublistFocused && i === sublistIndex;
-              const { badge, color: changeColor, text } = getChangeDescription(change);
+              const { color: changeColor, text } = getChangeDescription(change);
               const style = config.changeStyle[relevance === 'dimmed' ? 'dimmed' : 'primary'];
 
               const formattedDate = change.changedAt
@@ -163,7 +163,7 @@ export default function EventGroupedChangesView() {
                     bg={isSublistSelected ? '#44475a' : style.bg}
                     style={style.attributes ? { attributes: style.attributes } : undefined}
                   >
-                    {' '}{badge} {text}
+                    {' '}{text}
                   </text>
                 </box>
               );

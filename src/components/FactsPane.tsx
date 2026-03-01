@@ -48,8 +48,8 @@ export default function FactsPane() {
   const focusColor = appView === 'focus' ? viewConfigs.focus.modeIndicator.labelColor : '#6272a4';
 
   const notifColor = notificationSettings.enabled ? '#f1fa8c' : '#6272a4';
-  const groupedColor = factsViewStyle === 'grouped' ? '#f1fa8c' : '#6272a4';
   const chronoColor = factsViewStyle === 'chronological' ? '#f1fa8c' : '#6272a4';
+  const eventsColor = factsViewStyle === 'grouped' ? '#f1fa8c' : '#6272a4';
 
   const modeIndicatorBox = () => (
     <box key="mode-indicator" width="100%" height={4} flexDirection="column">
@@ -63,9 +63,9 @@ export default function FactsPane() {
       <box height={1} flexDirection="row"
            onMouseDown={() => setFactsViewStyle(factsViewStyle === 'grouped' ? 'chronological' : 'grouped')}>
         <text fg="#44475a" wrapMode="none">{' [c] '}</text>
-        <text fg={groupedColor} wrapMode="none">{'grouped'}</text>
+        <text fg={chronoColor} wrapMode="none">{'chronological'}</text>
         <text fg="#44475a" wrapMode="none">{' / '}</text>
-        <text fg={chronoColor} wrapMode="none">{'chrono'}</text>
+        <text fg={eventsColor} wrapMode="none">{'events'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => toggleNotifications()}>
