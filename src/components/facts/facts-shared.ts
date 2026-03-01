@@ -5,7 +5,7 @@ import { eventChangesReadmodelAtom } from '../../changetracking/change-tracking-
 import type { Change } from '../../changetracking/change-tracking-projection';
 import { isMrChange, type MrInfo } from '../../changetracking/mr-change-tracking-projection';
 import type { LazyReviewerEvent } from '../../events/events';
-import { allMrsAtom, unwrappedMergeRequestsAtom, selectMrByIdAtom } from '../../mergerequests/mergerequests-atom';
+import { allMrsAtom, unwrappedMergeRequestsAtom, selectMrByIdAtom, selectedMrAtom } from '../../mergerequests/mergerequests-atom';
 import { appViewAtom, currentUserIdAtom } from '../../settings/settings-atom';
 import { isCurrentUser, mrProviderAuthor } from '../../userselection/userSelection';
 import { viewConfigs } from '../../ui/view-config';
@@ -215,6 +215,19 @@ export const chronologicalChangesAtom = Atom.readable<Change[]>((get) => {
 });
 
 export const viewConfigAtom = Atom.readable((get) => viewConfigs[get(appViewAtom)]);
+
+export const selectedMrIdentityAtom = Atom.readable((get) => {
+  const mr = get(selectedMrAtom);
+  return mr ? { mrId: mr.id, jiraIssueKeys: mr.jiraIssueKeys } : null;
+});
+
+export const isChangeForMr = (
+  change: Change,
+  mrIdentity: { mrId: string; jiraIssueKeys: readonly string[] }
+): boolean =>
+  isMrChange(change)
+    ? change.mr.mrId === mrIdentity.mrId
+    : mrIdentity.jiraIssueKeys.includes(change.issue.issueKey);
 
 export const selectMrForChangeAtom = Atom.fnSync((change: Change, get) => {
   const selectMrAndNavigate = (mrId: string, noteId?: string, navigateTo?: 'overview' | 'activity') => {

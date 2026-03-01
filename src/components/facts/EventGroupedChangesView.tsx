@@ -22,6 +22,8 @@ import {
   myJiraIssueKeysAtom,
   viewConfigAtom,
   selectMrForChangeAtom,
+  selectedMrIdentityAtom,
+  isChangeForMr,
 } from './facts-shared';
 
 export default function EventGroupedChangesView() {
@@ -36,6 +38,7 @@ export default function EventGroupedChangesView() {
   const currentUser = useAtomValue(currentUserIdAtom);
   const myJiraIssueKeys = useAtomValue(myJiraIssueKeysAtom);
   const config = useAtomValue(viewConfigAtom);
+  const mrIdentity = useAtomValue(selectedMrIdentityAtom);
   const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
 
   const getDeltas = (ev: LazyReviewerEvent | undefined): Change[] =>
@@ -135,6 +138,7 @@ export default function EventGroupedChangesView() {
             )}
             {classifiedDeltas.map(({ change, relevance }, i) => {
               const isSublistSelected = isHighlighted && sublistFocused && i === sublistIndex;
+              const isMrMatch = !isSublistSelected && mrIdentity !== null && isChangeForMr(change, mrIdentity);
               const { color: changeColor, text } = getChangeDescription(change);
               const style = config.changeStyle[relevance === 'dimmed' ? 'dimmed' : 'primary'];
 
@@ -147,14 +151,15 @@ export default function EventGroupedChangesView() {
 
               return (
                 <box key={i} height={1} width="100%" flexDirection='row' onMouseDown={() => handleChangeClick(i, change)}>
-                  <box width={4} flexShrink={0} height={1}>
+                  <text fg={isMrMatch ? '#bd93f9' : style.bg} bg={isSublistSelected ? '#44475a' : style.bg}>{'▎'}</text>
+                  <box width={3} flexShrink={0} height={1}>
                     <text
                       wrapMode='none'
                       fg={isSublistSelected ? '#50fa7b' : dateFg}
                       bg={isSublistSelected ? '#44475a' : style.bg}
                       style={{attributes: TextAttributes.DIM | style.attributes}}
                     >
-                      {' '}{formattedDate}
+                      {formattedDate}
                     </text>
                   </box>
                   <text

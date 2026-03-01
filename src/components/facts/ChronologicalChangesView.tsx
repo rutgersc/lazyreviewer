@@ -14,6 +14,8 @@ import {
   myJiraIssueKeysAtom,
   viewConfigAtom,
   selectMrForChangeAtom,
+  selectedMrIdentityAtom,
+  isChangeForMr,
 } from './facts-shared';
 
 export default function ChronologicalChangesView() {
@@ -24,6 +26,7 @@ export default function ChronologicalChangesView() {
   const currentUser = useAtomValue(currentUserIdAtom);
   const myJiraIssueKeys = useAtomValue(myJiraIssueKeysAtom);
   const config = useAtomValue(viewConfigAtom);
+  const mrIdentity = useAtomValue(selectedMrIdentityAtom);
   const lastClickRef = useRef<{ index: number; time: number } | null>(null);
 
   const classifiedChanges = allChanges
@@ -47,6 +50,7 @@ export default function ChronologicalChangesView() {
     <>
       {classifiedChanges.map(({ change, relevance }, i) => {
         const isSelected = i === selectedIndex;
+        const isMrMatch = !isSelected && mrIdentity !== null && isChangeForMr(change, mrIdentity);
         const { color: changeColor, text } = getChangeDescription(change);
         const style = config.changeStyle[relevance === 'dimmed' ? 'dimmed' : 'primary'];
 
@@ -59,14 +63,15 @@ export default function ChronologicalChangesView() {
 
         return (
           <box key={i} height={1} width="100%" flexDirection='row' onMouseDown={() => handleClick(i, change)}>
-            <box width={4} flexShrink={0} height={1}>
+            <text fg={isMrMatch ? '#bd93f9' : style.bg} bg={isSelected ? '#44475a' : style.bg}>{'▎'}</text>
+            <box width={3} flexShrink={0} height={1}>
               <text
                 wrapMode='none'
                 fg={isSelected ? '#50fa7b' : dateFg}
                 bg={isSelected ? '#44475a' : style.bg}
                 style={{attributes: TextAttributes.DIM | style.attributes}}
               >
-                {' '}{formattedDate}
+                {formattedDate}
               </text>
             </box>
             <text
