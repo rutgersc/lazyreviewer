@@ -99,7 +99,11 @@ const TimeColumnAuthorTitle = ({
         </text>
       )}
       <text
-        style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }}
+        style={{
+          fg: Colors.PRIMARY,
+          attributes: TextAttributes.BOLD,
+          ...(relationType && { bg: relationType === 'sibling' ? '#1a3a3a' : '#3a2a1a' })
+        }}
         wrapMode='none'
       >
         {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
