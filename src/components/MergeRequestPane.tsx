@@ -85,8 +85,9 @@ const buildSelectedMrContext = (selectedMr: MergeRequest, jiraIssuesMap: Readonl
 };
 
 const getRelationType = (ctx: SelectedMrContext, mr: MergeRequest, jiraIssuesMap: ReadonlyMap<string, JiraIssue>): RelationType | null => {
-  if (ctx.selectedMr.targetbranch === mr.sourcebranch) return { _tag: 'stacked-into' };
-  if (mr.targetbranch === ctx.selectedMr.sourcebranch) return { _tag: 'stacked-from' };
+  const sameProject = ctx.selectedMr.project.fullPath === mr.project.fullPath;
+  if (sameProject && ctx.selectedMr.targetbranch === mr.sourcebranch) return { _tag: 'stacked-into' };
+  if (sameProject && mr.targetbranch === ctx.selectedMr.sourcebranch) return { _tag: 'stacked-from' };
 
   const mrIssues = mr.jiraIssueKeys.flatMap(k => {
     const issue = jiraIssuesMap.get(k);
