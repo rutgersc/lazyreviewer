@@ -1,5 +1,5 @@
 import type { ProjectMRsQuery } from "../graphql/project-mrs.generated";
-import { extractElabTicketsFromTitle } from "../jira/jira-service";
+import { extractElabTickets } from "../jira/jira-service";
 import type { PipelineJob, PipelineStage, Discussion, MergeRequest, JobHistoryEntry, DiscussionNote } from "../domain/merge-request-schema";
 import { MrGid, MrIid } from "../domain/identifiers";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent, GitlabMrsFetchedEvent } from "../events/gitlab-events";
@@ -72,7 +72,7 @@ export const mapMrFragment = (
     iid: MrIid(mr.iid),
     provider: 'gitlab',
     title: mr.name!,
-    jiraIssueKeys: extractElabTicketsFromTitle(mr.name!),
+    jiraIssueKeys: extractElabTickets(mr.name!, mr.sourceBranch),
     webUrl: mr.webUrl!,
     sourcebranch: mr.sourceBranch,
     targetbranch: mr.targetBranch,

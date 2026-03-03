@@ -3,7 +3,7 @@ import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom } from '../ui/navigation-atom';
 import { useAutoScroll } from '../hooks/useAutoScroll';
-import { appViewAtom, factsViewStyleAtom, notificationSettingsAtom, toggleNotificationsAtom } from '../settings/settings-atom';
+import { appViewAtom, factsViewStyleAtom, notificationSettingsAtom, toggleNotificationsAtom, showBranchNamesAtom } from '../settings/settings-atom';
 import { viewConfigs } from '../ui/view-config';
 import EventGroupedChangesView from './facts/EventGroupedChangesView';
 import ChronologicalChangesView from './facts/ChronologicalChangesView';
@@ -36,6 +36,7 @@ export default function FactsPane() {
   const [factsViewStyle, setFactsViewStyle] = useAtom(factsViewStyleAtom);
   const notificationSettings = useAtomValue(notificationSettingsAtom);
   const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
+  const [showBranchNames, setShowBranchNames] = useAtom(showBranchNamesAtom);
 
   useEffect(() => {
     if (scrollToEventIdRequest) {
@@ -50,9 +51,11 @@ export default function FactsPane() {
   const notifColor = notificationSettings.enabled ? '#f1fa8c' : '#6272a4';
   const chronoColor = factsViewStyle === 'chronological' ? '#f1fa8c' : '#6272a4';
   const eventsColor = factsViewStyle === 'grouped' ? '#f1fa8c' : '#6272a4';
+  const branchColor = showBranchNames ? '#f1fa8c' : '#6272a4';
+  const titleColor = showBranchNames ? '#6272a4' : '#f1fa8c';
 
   const modeIndicatorBox = () => (
-    <box key="mode-indicator" width="100%" height={4} flexDirection="column">
+    <box key="mode-indicator" width="100%" height={5} flexDirection="column">
       <box height={1} flexDirection="row"
            onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
         <text fg="#44475a" wrapMode="none">{' [v] '}</text>
@@ -72,7 +75,13 @@ export default function FactsPane() {
         <text fg="#44475a" wrapMode="none">{' [n] '}</text>
         <text fg={notifColor} wrapMode="none">{notificationSettings.enabled ? 'notifications' : 'notifications off'}</text>
       </box>
-      <box height={1} />
+      <box height={1} flexDirection="row"
+           onMouseDown={() => setShowBranchNames(!showBranchNames)}>
+        <text fg="#44475a" wrapMode="none">{' [B] '}</text>
+        <text fg={titleColor} wrapMode="none">{'title'}</text>
+        <text fg="#44475a" wrapMode="none">{' / '}</text>
+        <text fg={branchColor} wrapMode="none">{'branch'}</text>
+      </box>
     </box>
   );
 

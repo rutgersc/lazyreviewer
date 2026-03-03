@@ -352,6 +352,18 @@ export const appViewAtom = Atom.writable(
   }
 );
 
+export const showBranchNamesAtom = Atom.writable(
+  (get) => get(showBranchNamesRawAtom),
+  (ctx, newValue: boolean) => {
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, showBranchNames: newValue }));
+  }
+);
+
+const showBranchNamesRawAtom = selectFromSettings(
+  s => s.showBranchNames,
+  false
+);
+
 export type FactsViewStyle = 'grouped' | 'chronological'
 
 const factsViewStyleRawAtom = selectFromSettings(

@@ -3,6 +3,7 @@ import type { MergeRequest } from "../domain/merge-request-schema";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import { projectBitbucketPrsFetchedEvent, projectBitbucketPrCommentsFetchedEvent, projectBitbucketSinglePrFetchedEvent } from "./bitbucket-projections";
 import { generateEventId } from "../events/event-id";
+import { UnauthorizedError } from "../domain/unauthorized-error";
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -291,6 +292,9 @@ export const getBitbucketPrsAsEvent = Effect.fn("getBitbucketPrsAsEvent")(functi
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      return yield* Effect.fail(new UnauthorizedError({ service: 'Bitbucket', reason: `returned ${response.status} — credentials are invalid or expired` }));
+    }
     const errorText = yield* Effect.tryPromise({
       try: () => response.text(),
       catch: () => 'Unable to read error response'
@@ -343,6 +347,9 @@ export const fetchBitbucketCommentsAsEvent = Effect.fn("fetchBitbucketCommentsAs
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      return yield* Effect.fail(new UnauthorizedError({ service: 'Bitbucket', reason: `returned ${response.status} — credentials are invalid or expired` }));
+    }
     yield* Console.error(`[BitBucket] Failed to fetch comments for PR ${prId}: ${response.status} ${response.statusText}`);
     const emptyResponse: BitbucketCommentsResponse = {
       values: []
@@ -410,6 +417,9 @@ export const getSingleBitbucketPrAsEvent = Effect.fn("getSingleBitbucketPrAsEven
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      return yield* Effect.fail(new UnauthorizedError({ service: 'Bitbucket', reason: `returned ${response.status} — credentials are invalid or expired` }));
+    }
     const errorText = yield* Effect.tryPromise({
       try: () => response.text(),
       catch: () => 'Unable to read error response'

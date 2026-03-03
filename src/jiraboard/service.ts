@@ -11,6 +11,7 @@ import type { JiraIssue } from "../jira/jira-schema";
 import type { JiraSprintIssuesFetchedEvent } from "../events/jira-events";
 import { generateEventId } from "../events/event-id";
 import { JiraApiError, getAuthToken, getJiraBaseUrl, JIRA_ISSUE_FIELDS } from "../jira/jira-common";
+import { UnauthorizedError } from "../domain/unauthorized-error";
 
 export const fetchActiveSprints = Effect.fn("fetchActiveSprints")(function* (boardId: number) {
   const authToken = getAuthToken();
@@ -30,6 +31,9 @@ export const fetchActiveSprints = Effect.fn("fetchActiveSprints")(function* (boa
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      return yield* new UnauthorizedError({ service: 'Jira', reason: `returned ${response.status} — credentials are invalid or expired` });
+    }
     const errorText = yield* Effect.tryPromise({
       try: () => response.text(),
       catch: cause => new JiraApiError({ cause, message: "Failed to read error response" })
@@ -74,6 +78,9 @@ export const fetchBoards = Effect.fn("fetchBoards")(function* () {
     });
 
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        return yield* new UnauthorizedError({ service: 'Jira', reason: `returned ${response.status} — credentials are invalid or expired` });
+      }
       const errorText = yield* Effect.tryPromise({
         try: () => response.text(),
         catch: cause => new JiraApiError({ cause, message: "Failed to read error response" })
@@ -127,6 +134,9 @@ export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprin
     });
 
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        return yield* new UnauthorizedError({ service: 'Jira', reason: `returned ${response.status} — credentials are invalid or expired` });
+      }
       const errorText = yield* Effect.tryPromise({
         try: () => response.text(),
         catch: cause => new JiraApiError({ cause, message: "Failed to read error response" })

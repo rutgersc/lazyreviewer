@@ -31,7 +31,7 @@ import { type MergeRequestState } from "./domain/merge-request-state";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
-import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
+import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, showBranchNamesAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Console, Effect } from 'effect';
@@ -84,6 +84,7 @@ export default function App() {
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
   const [factsViewStyle, setFactsViewStyle] = useAtom(factsViewStyleAtom);
+  const [showBranchNames, setShowBranchNames] = useAtom(showBranchNamesAtom);
   const setUserFilter = useAtomSet(setUserFilterAtom);
   const jiraBoardId = useAtomValue(jiraBoardIdAtom);
   const setJiraBoardFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
@@ -196,6 +197,13 @@ export default function App() {
       handler: () => setFactsViewStyle(factsViewStyle === 'grouped' ? 'chronological' : 'grouped'),
     },
     {
+      id: 'global:toggle-branch-names',
+      keys: [parseKeyString('B')],
+      displayKey: 'B',
+      description: 'Toggle branch/title display',
+      handler: () => setShowBranchNames(!showBranchNames),
+    },
+    {
       id: 'global:onboarding',
       keys: [parseKeyString('shift+o')],
       displayKey: 'Shift+O',
@@ -283,7 +291,7 @@ export default function App() {
         );
       },
     },
-  ], [activePane, mergeRequests.length, notificationSettings.enabled, backgroundSyncSettings.enabled, jiraBoardId, appView, factsViewStyle]);
+  ], [activePane, mergeRequests.length, notificationSettings.enabled, backgroundSyncSettings.enabled, jiraBoardId, appView, factsViewStyle, showBranchNames]);
 
   useEffect(() => {
     // renderer.console.toggle();

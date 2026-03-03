@@ -1,6 +1,6 @@
 import type { MergeRequest, Discussion, DiscussionNote } from "../domain/merge-request-schema";
 import { MrGid, MrIid } from "../domain/identifiers";
-import { extractElabTicketsFromTitle } from "../jira/jira-service";
+import { extractElabTickets } from "../jira/jira-service";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import type { BitbucketPullRequest, BitbucketComment } from "./bitbucketapi";
 import type { MergeRequestState } from "../graphql/generated/gitlab-base-types";
@@ -104,7 +104,7 @@ export function mapBitbucketToMergeRequest(
     iid: MrIid(String(pr.id)),
     provider: 'bitbucket',
     title: pr.title,
-    jiraIssueKeys: extractElabTicketsFromTitle(pr.title),
+    jiraIssueKeys: extractElabTickets(pr.title, pr.source.branch.name),
     webUrl: pr.links.html.href,
     sourcebranch: pr.source.branch.name,
     targetbranch: pr.destination.branch.name,

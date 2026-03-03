@@ -10,28 +10,14 @@ import {
 import type { JiraIssuesFetchedEvent } from "../events/jira-events";
 import { generateEventId } from "../events/event-id";
 import { JiraApiError, getAuthToken, getJiraBaseUrl, JIRA_ISSUE_FIELDS } from "./jira-common";
+import { UnauthorizedError } from "../domain/unauthorized-error";
 
 export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
 
 const elabPattern = /ELAB-\d+/g;
-export const extractElabTicketsFromTitle = (title: string): string[] => {
-  const matches = title.match(elabPattern) ?? [];
-  return Array.from(new Set(matches));
-};
+export const extractElabTickets = (...sources: readonly string[]): string[] =>
+  Array.from(new Set(sources.flatMap(s => s.match(elabPattern) ?? [])));
 
-export const extractElabTicketsFromTitles = (titles: string[]): string[] => {
-  const elabPattern = /ELAB-\d+/g;
-  const tickets = new Set<string>();
-
-  titles.forEach((title) => {
-    const matches = title?.match(elabPattern);
-    if (matches) {
-      matches.forEach((match) => tickets.add(match));
-    }
-  });
-
-  return Array.from(tickets);
-};
 
 export const extractTextFromJiraComment = (comment: JiraComment): string => {
   try {
@@ -106,12 +92,14 @@ const searchIssues = Effect.fn("searchIssues")(function* (jql: string, maxResult
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      return yield* new UnauthorizedError({ service: 'Jira', reason: `returned ${response.status} — credentials are invalid or expired` });
+    }
     const errorText = yield* Effect.tryPromise({
       try: () => response.text(),
       catch: cause => new JiraApiError({ cause, message: "Failed to read error response" })
     });
-    yield* Console.error("Jira API error response:", errorText);
-    throw new JiraApiError({ cause: errorText, message: `Jira API error: ${response.status}` });
+    return yield* new JiraApiError({ cause: errorText, message: `Jira API error: ${response.status}` });
   }
 
   const jsonData = yield* Effect.tryPromise({
@@ -152,25 +140,12 @@ export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[])
 
   const result = yield* searchIssues(`issuekey in (${ticketKeys.join(',')})`);
 
-  const processedIssues = result.issues.map(issue => {
-    // if (issue.fields.comment?.comments) {
-    //   const sortedComments = issue.fields.comment.comments
-    //     .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
-    //     .slice(0, 10);
-
-    //   return {
-    //     ...issue,
-    //     fields: {
-    //       ...issue.fields,
-    //       comment: {
-    //         ...issue.fields.comment,
-    //         comments: sortedComments
-    //       }
-    //     }
-    //   };
-    // }
-    return issue;
-  });
+  if (result.issues.length === 0) {
+    return yield* new UnauthorizedError({
+      service: 'Jira',
+      reason: `searched ${ticketKeys.length} ticket keys but got 0 results — token is likely expired or invalid`
+    });
+  }
 
 
   const timestamp = new Date().toISOString();

@@ -13,6 +13,7 @@ import {
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../domain/merge-request-state";
 import { Effect, Console, Stream, Option } from "effect";
+import { UnauthorizedError } from "../domain/unauthorized-error";
 import { appAtomRuntime } from "../appLayerRuntime";
 import type { BranchDifference } from "./hooks/useRepositoryBranches";
 import { refetchMrPipeline } from './mergerequests-effects';
@@ -60,6 +61,24 @@ export const allMrsAtom = appAtomRuntime.atom(
   (get) => MrStateService.changes.pipe(Stream.unwrap),
   { initialValue: allMrsProjection.initialState }
 ).pipe(Atom.keepAlive);
+
+export const allMrSourceBranchesByProjectAtom = Atom.map(
+  allMrsAtom,
+  (result) =>
+    Result.match(result, {
+      onInitial: () => new Map<string, ReadonlySet<string>>(),
+      onSuccess: (success) => {
+        const map = new Map<string, Set<string>>();
+        for (const mr of success.value.mrsByGid.values()) {
+          const existing = map.get(mr.project.fullPath);
+          if (existing) existing.add(mr.sourcebranch);
+          else map.set(mr.project.fullPath, new Set([mr.sourcebranch]));
+        }
+        return map as ReadonlyMap<string, ReadonlySet<string>>;
+      },
+      onFailure: () => new Map<string, ReadonlySet<string>>()
+    })
+);
 
 export const allJiraIssuesAtom = Atom.map(
   allMrsAtom,
@@ -207,6 +226,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
         const cacheKey = new MRCacheKey({ users: userIds, state: filterMrState });
         const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
         yield* decideFetchUserMrs(userIds, filterMrState, knownMrs).pipe(
+          Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
           Effect.catchAllCause((cause) => Console.error("Error fetching user MRs:", cause))
         );
       } else {
@@ -218,6 +238,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
           },
           { concurrency: 3 }
         ).pipe(
+          Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
           Effect.catchAllCause((cause) => Console.error("Error fetching GitLab project MRs:", cause))
         );
       }
@@ -230,13 +251,10 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
         },
         { concurrency: 3 }
       ).pipe(
+        Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
         Effect.catchAllCause((cause) => Console.error("Error fetching Bitbucket project MRs:", cause))
       );
-    }).pipe(
-      Effect.catchAllCause((cause) =>
-        Console.error("Error refreshing merge requests:", cause)
-      )
-    );
+    });
   }
 )
 

@@ -20,11 +20,11 @@ import type { MergeRequestState } from "../domain/merge-request-state";
 import { filterPipelineJobs } from "../domain/display/pipelineJobFiltering";
 import { Atom, useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom } from "../mergerequests/mergerequests-atom";
+import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom, allMrSourceBranchesByProjectAtom } from "../mergerequests/mergerequests-atom";
 import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom";
 import { currentUserIdAtom } from "../settings/settings-atom";
 import type { JiraIssue } from "../jira/jira-schema";
-import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom, repositoryColorsAtom, pipelineJobImportanceAtom } from "../settings/settings-atom";
+import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom, repositoryColorsAtom, pipelineJobImportanceAtom, showBranchNamesAtom } from "../settings/settings-atom";
 
 export const scrollToItemRequestAtom = Atom.make<number | null>(null);
 export const copyNotificationRequestAtom = Atom.make<string | null>(null);
@@ -55,62 +55,79 @@ const getMergeBlockedLabel = (status: string | null): string | null => {
 };
 
 
-const extractElabKeys = (title: string): readonly string[] =>
-  [...title.matchAll(/ELAB-\d+/g)].map(match => match[0]);
+
+const truncate = (text: string, max: number) =>
+  text.length > max ? text.substring(0, max) + "..." : text;
+
+type RelationType =
+  | { readonly _tag: 'stacked' }
+  | { readonly _tag: 'direct' }
+  | { readonly _tag: 'subtask' };
+
+const relationBadge: Record<RelationType['_tag'], { readonly label: string; readonly badgeBg: string; readonly titleBg: string }> = {
+  stacked: { label: ' stacked ', badgeBg: Colors.SUCCESS, titleBg: '#1a4a1a' },
+  direct:  { label: ' direct ',  badgeBg: Colors.WARNING, titleBg: '#4a2a00' },
+  subtask: { label: ' subtask ', badgeBg: Colors.INFO,    titleBg: '#003a4a' },
+};
 
 const TimeColumnAuthorTitle = ({
   mr,
   isMyMr,
   relationType,
-  now
+  now,
+  showBranchNames
 }: {
   mr: MergeRequest;
   isMyMr: boolean;
-  relationType: 'ticket' | 'sibling' | null;
+  relationType: RelationType | null;
   now: Date;
-}) => (
-  <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-    <box style={{ width: 3 }}>
-      <text
-        style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
-        wrapMode='none'
-      >
-        {formatCompactTime(mr.updatedAt, now)}
-      </text>
-    </box>
+  showBranchNames: boolean;
+}) => {
+  const badge = relationType ? relationBadge[relationType._tag] : null;
+  return (
+    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+      <box style={{ width: 3 }}>
+        <text
+          style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }}
+          wrapMode='none'
+        >
+          {formatCompactTime(mr.updatedAt, now)}
+        </text>
+      </box>
 
-    <box style={{ width: 15 }}>
-      <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL }} wrapMode='none'>
-        {mr.author}
-      </text>
-    </box>
+      <box style={{ width: 15 }}>
+        <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL }} wrapMode='none'>
+          {mr.author}
+        </text>
+      </box>
 
-    <box style={{ flexGrow: 1, flexDirection: "row", gap: 1 }}>
-      {relationType && (
+      <box style={{ flexGrow: 1, flexDirection: "row", gap: 1 }}>
+        {badge && (
+          <text
+            style={{
+              fg: Colors.BACKGROUND,
+              attributes: TextAttributes.BOLD,
+              bg: badge.badgeBg
+            }}
+            wrapMode='none'
+          >
+            {badge.label}
+          </text>
+        )}
         <text
           style={{
-            fg: Colors.BACKGROUND,
+            fg: showBranchNames ? Colors.INFO : Colors.PRIMARY,
             attributes: TextAttributes.BOLD,
-            bg: relationType === 'sibling' ? Colors.INFO : Colors.WARNING
+            ...(badge && { bg: badge.titleBg })
           }}
           wrapMode='none'
         >
-          {relationType === 'sibling' ? ' sibling ' : ' related '}
+          {truncate(showBranchNames ? mr.sourcebranch : mr.title, 100)}
         </text>
-      )}
-      <text
-        style={{
-          fg: Colors.PRIMARY,
-          attributes: TextAttributes.BOLD,
-          ...(relationType && { bg: relationType === 'sibling' ? '#1a3a3a' : '#3a2a1a' })
-        }}
-        wrapMode='none'
-      >
-        {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
-      </text>
+      </box>
     </box>
-  </box>
-);
+  );
+};
 
 const PipelineStagesWithJobStatuses = ({ mr, pipelineJobImportance }: { mr: MergeRequest; pipelineJobImportance: Record<string, Record<string, JobImportance>> }) => {
   const filteredData = filterPipelineJobs(
@@ -509,6 +526,7 @@ export default function MergeRequestPane() {
   const currentUser = useAtomValue(currentUserIdAtom);
 
   const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
+  const showBranchNames = useAtomValue(showBranchNamesAtom);
 
   const ignoredMergeRequests = useAtomValue(ignoredMergeRequestsAtom);
   const monitoredMergeRequests = useAtomValue(monitoredMergeRequestsAtom);
@@ -547,14 +565,13 @@ export default function MergeRequestPane() {
   );
 
   const projectBranchMap = useAtomValue(projectBranchMapAtom);
+  const allMrBranchesByProject = useAtomValue(allMrSourceBranchesByProjectAtom);
 
-  // Compute related MR indices based on ELAB keys in title or shared Jira ticket/parent
-  type RelationType = 'ticket' | 'sibling';
   const relatedMrIndices = useMemo((): Map<number, RelationType> => {
     const selectedMr = mergeRequests[selectedIndex];
     if (!selectedMr) return new Map();
 
-    const selectedKeys = new Set(extractElabKeys(selectedMr.title));
+    const selectedKeys = new Set(selectedMr.jiraIssueKeys);
     const selectedIssues = selectedMr.jiraIssueKeys.flatMap(k => {
       const issue = jiraIssuesMap.get(k);
       return issue ? [issue] : [];
@@ -563,14 +580,16 @@ export default function MergeRequestPane() {
     const selectedIsSubtask = selectedIssues[0]?.fields.issuetype.name.toLowerCase().includes('sub-task');
     const selectedParentKey = selectedIsSubtask ? selectedIssues[0]?.fields.parent?.key : undefined;
 
-    if (selectedKeys.size === 0 && !selectedTicketKey && !selectedParentKey) return new Map();
-
     return new Map(
       mergeRequests
-        .map((mr, index) => {
+        .map((mr, index): readonly [number, RelationType] | null => {
           if (index === selectedIndex) return null;
 
-          // Check Jira relationships first (more specific)
+          // Stacked: selected targets this MR's source, or this MR targets selected's source
+          if (selectedMr.targetbranch === mr.sourcebranch || mr.targetbranch === selectedMr.sourcebranch) {
+            return [index, { _tag: 'stacked' }];
+          }
+
           const mrIssues = mr.jiraIssueKeys.flatMap(k => {
             const issue = jiraIssuesMap.get(k);
             return issue ? [issue] : [];
@@ -579,20 +598,20 @@ export default function MergeRequestPane() {
 
           // Same direct ticket
           if (selectedTicketKey && mrTicketKey === selectedTicketKey) {
-            return [index, 'ticket'] as const;
+            return [index, { _tag: 'direct' }];
           }
 
           // Same parent (only if selected is a subtask)
           if (selectedParentKey) {
             const mrParentKey = mrIssues[0]?.fields.parent?.key;
             if (mrParentKey === selectedParentKey) {
-              return [index, 'sibling'] as const;
+              return [index, { _tag: 'subtask' }];
             }
           }
 
-          // Check ELAB keys in title
-          if (extractElabKeys(mr.title).some(key => selectedKeys.has(key))) {
-            return [index, 'ticket'] as const;
+          // Check shared ELAB keys
+          if (mr.jiraIssueKeys.some(key => selectedKeys.has(key))) {
+            return [index, { _tag: 'direct' }];
           }
 
           return null;
@@ -812,7 +831,7 @@ export default function MergeRequestPane() {
                   <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} repoColor={repoColor} isMyMr={isMyMr} now={now} />
                 ) : (
                   <>
-                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} />
+                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} showBranchNames={showBranchNames} />
                     <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
                   </>
                 )}
@@ -837,11 +856,7 @@ export default function MergeRequestPane() {
         >
           {repositoryBranches.map((repo, index) => {
             const allWorktrees = projectBranchMap.get(repo.projectPath)?.allWorktrees;
-            const checkedOutBranches = new Set(
-              mergeRequests
-                .filter(mr => mr.project.fullPath === repo.projectPath)
-                .map(mr => mr.sourcebranch)
-            );
+            const checkedOutBranches = allMrBranchesByProject.get(repo.projectPath);
             return (
               <box key={repo.projectPath} style={{ flexDirection: "column" }}>
                 {index > 0 && <text>{""}</text>}
@@ -851,7 +866,7 @@ export default function MergeRequestPane() {
                   </text>
                 )}
                 {allWorktrees?.map((wt) => {
-                  const isCheckedOut = wt.branch && checkedOutBranches.has(wt.branch);
+                  const isCheckedOut = wt.branch != null && checkedOutBranches?.has(wt.branch) === true;
                   return (
                     <text
                       key={wt.folderName}

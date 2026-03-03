@@ -5,6 +5,7 @@ import type { MergeRequestState } from "../domain/merge-request-state"
 import { EventStorage } from "../events/events"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
 import type { JiraApiError } from "../jira/jira-common"
+import type { UnauthorizedError } from "../domain/unauthorized-error"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
 import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getAllGitlabMrsByProjectAsEvents, getSingleMrAsEvent, getMrsAsEvent } from "../gitlab/gitlab-graphql"
 import { getBitbucketPrsAsEvent } from "../bitbucket/bitbucketapi"
@@ -32,6 +33,7 @@ export type MergeRequestsCacheError =
   | FetchGitlabMrsError
   | FetchGitlabProjectMrsError
   | JiraApiError
+  | UnauthorizedError
   | BitbucketCredentialsNotConfiguredError
   | FetchBitbucketPrsError
   | BitbucketPrsJsonParseError
