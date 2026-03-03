@@ -62,16 +62,23 @@ export default function ChronologicalChangesView() {
         const changeFg = style.fg === 'USE_CHANGE_COLOR' ? changeColor : style.fg;
 
         return (
-          <box key={i} height={1} width="100%" flexDirection='row' onMouseDown={() => handleClick(i, change)}>
-            <text fg={isMrMatch ? '#bd93f9' : style.bg} bg={isSelected ? '#44475a' : style.bg}>{'▎'}</text>
-            <box width={3} flexShrink={0} height={1}>
+          <box
+            key={i}
+            height={1}
+            width="100%"
+            flexDirection='row'
+            onMouseDown={() => handleClick(i, change)}
+            style={isMrMatch ? { border: ['left'] } : undefined}
+            borderColor={isMrMatch ? '#bd93f9' : undefined}
+          >
+            <box width={isMrMatch ? 3 : 4} flexShrink={0} height={1}>
               <text
                 wrapMode='none'
                 fg={isSelected ? '#50fa7b' : dateFg}
                 bg={isSelected ? '#44475a' : style.bg}
                 style={{attributes: TextAttributes.DIM | style.attributes}}
               >
-                {formattedDate}
+                {isMrMatch ? '' : ' '}{formattedDate}
               </text>
             </box>
             <text
