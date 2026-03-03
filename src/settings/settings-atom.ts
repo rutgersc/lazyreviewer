@@ -364,6 +364,18 @@ const showBranchNamesRawAtom = selectFromSettings(
   false
 );
 
+const factsSelectionActiveRawAtom = selectFromSettings(
+  s => s.factsSelectionActive ?? false,
+  false
+);
+
+export const factsSelectionActiveAtom = Atom.writable(
+  (get) => get(factsSelectionActiveRawAtom),
+  (ctx, newValue: boolean) => {
+    ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, factsSelectionActive: newValue }));
+  }
+);
+
 export type FactsViewStyle = 'grouped' | 'chronological'
 
 const factsViewStyleRawAtom = selectFromSettings(

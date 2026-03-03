@@ -60,14 +60,16 @@ const truncate = (text: string, max: number) =>
   text.length > max ? text.substring(0, max) + "..." : text;
 
 type RelationType =
-  | { readonly _tag: 'stacked' }
+  | { readonly _tag: 'stacked-into' }
+  | { readonly _tag: 'stacked-from' }
   | { readonly _tag: 'direct' }
   | { readonly _tag: 'subtask' };
 
 const relationBadge: Record<RelationType['_tag'], { readonly label: string; readonly badgeBg: string; readonly titleBg: string }> = {
-  stacked: { label: ' stacked ', badgeBg: Colors.SUCCESS, titleBg: '#1a4a1a' },
-  direct:  { label: ' direct ',  badgeBg: Colors.WARNING, titleBg: '#4a2a00' },
-  subtask: { label: ' subtask ', badgeBg: Colors.INFO,    titleBg: '#003a4a' },
+  'stacked-into': { label: ' target ', badgeBg: Colors.SUCCESS, titleBg: '#1a4a1a' },
+  'stacked-from': { label: ' source ', badgeBg: '#ff79c6',     titleBg: '#3a1a2a' },
+  direct:         { label: ' direct ',   badgeBg: Colors.WARNING, titleBg: '#4a2a00' },
+  subtask:        { label: ' subtask ',  badgeBg: Colors.INFO,    titleBg: '#003a4a' },
 };
 
 const TimeColumnAuthorTitle = ({
@@ -586,9 +588,13 @@ export default function MergeRequestPane() {
         .map((mr, index): readonly [number, RelationType] | null => {
           if (index === selectedIndex) return null;
 
-          // Stacked: selected targets this MR's source, or this MR targets selected's source
-          if (selectedMr.targetbranch === mr.sourcebranch || mr.targetbranch === selectedMr.sourcebranch) {
-            return [index, { _tag: 'stacked' }];
+          // Selected merges into this MR's branch (selected is stacked on top)
+          if (selectedMr.targetbranch === mr.sourcebranch) {
+            return [index, { _tag: 'stacked-into' }];
+          }
+          // This MR merges into selected's branch (this MR is stacked on top)
+          if (mr.targetbranch === selectedMr.sourcebranch) {
+            return [index, { _tag: 'stacked-from' }];
           }
 
           const mrIssues = mr.jiraIssueKeys.flatMap(k => {

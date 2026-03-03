@@ -3,7 +3,7 @@ import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom } from '../ui/navigation-atom';
 import { useAutoScroll } from '../hooks/useAutoScroll';
-import { appViewAtom, factsViewStyleAtom, notificationSettingsAtom, toggleNotificationsAtom, showBranchNamesAtom } from '../settings/settings-atom';
+import { appViewAtom, factsViewStyleAtom, notificationSettingsAtom, toggleNotificationsAtom, showBranchNamesAtom, factsSelectionActiveAtom } from '../settings/settings-atom';
 import { viewConfigs } from '../ui/view-config';
 import EventGroupedChangesView from './facts/EventGroupedChangesView';
 import ChronologicalChangesView from './facts/ChronologicalChangesView';
@@ -37,6 +37,7 @@ export default function FactsPane() {
   const notificationSettings = useAtomValue(notificationSettingsAtom);
   const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
   const [showBranchNames, setShowBranchNames] = useAtom(showBranchNamesAtom);
+  const [factsSelectionActive, setFactsSelectionActive] = useAtom(factsSelectionActiveAtom);
 
   useEffect(() => {
     if (scrollToEventIdRequest) {
@@ -53,9 +54,11 @@ export default function FactsPane() {
   const eventsColor = factsViewStyle === 'grouped' ? '#f1fa8c' : '#6272a4';
   const branchColor = showBranchNames ? '#f1fa8c' : '#6272a4';
   const titleColor = showBranchNames ? '#6272a4' : '#f1fa8c';
+  const filteredColor = factsSelectionActive ? '#f1fa8c' : '#6272a4';
+  const allColor = factsSelectionActive ? '#6272a4' : '#f1fa8c';
 
   const modeIndicatorBox = () => (
-    <box key="mode-indicator" width="100%" height={5} flexDirection="column">
+    <box key="mode-indicator" width="100%" height={6} flexDirection="column">
       <box height={1} flexDirection="row"
            onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
         <text fg="#44475a" wrapMode="none">{' [v] '}</text>
@@ -81,6 +84,13 @@ export default function FactsPane() {
         <text fg={titleColor} wrapMode="none">{'title'}</text>
         <text fg="#44475a" wrapMode="none">{' / '}</text>
         <text fg={branchColor} wrapMode="none">{'branch'}</text>
+      </box>
+      <box height={1} flexDirection="row"
+           onMouseDown={() => setFactsSelectionActive(!factsSelectionActive)}>
+        <text fg="#44475a" wrapMode="none">{' [s] '}</text>
+        <text fg={filteredColor} wrapMode="none">{'filtered'}</text>
+        <text fg="#44475a" wrapMode="none">{' / '}</text>
+        <text fg={allColor} wrapMode="none">{'all'}</text>
       </box>
     </box>
   );

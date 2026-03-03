@@ -15,7 +15,7 @@ import {
   getChangeDescription,
   formatRelativeTime,
   groupedEventsAtom,
-  groupedDeltasByEventIdAtom,
+  visibleDeltasByEventIdAtom,
   highlightedIndexAtom,
   sublistFocusedAtom,
   sublistIndexAtom,
@@ -32,7 +32,7 @@ export default function EventGroupedChangesView() {
   const [sublistFocused, setSublistFocused] = useAtom(sublistFocusedAtom);
   const [sublistIndex, setSublistIndex] = useAtom(sublistIndexAtom);
   const groupedEvents = useAtomValue(groupedEventsAtom);
-  const groupedDeltas = useAtomValue(groupedDeltasByEventIdAtom);
+  const groupedDeltas = useAtomValue(visibleDeltasByEventIdAtom);
   const selectMrForChange = useAtomSet(selectMrForChangeAtom);
   const now = useAtomValue(nowAtom);
   const currentUser = useAtomValue(currentUserIdAtom);

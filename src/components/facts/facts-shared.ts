@@ -5,8 +5,8 @@ import { eventChangesReadmodelAtom } from '../../changetracking/change-tracking-
 import type { Change } from '../../changetracking/change-tracking-projection';
 import { isMrChange, type MrInfo } from '../../changetracking/mr-change-tracking-projection';
 import type { LazyReviewerEvent } from '../../events/events';
-import { allMrsAtom, unwrappedMergeRequestsAtom, selectMrByIdAtom, selectedMrAtom } from '../../mergerequests/mergerequests-atom';
-import { appViewAtom, currentUserIdAtom } from '../../settings/settings-atom';
+import { allMrsAtom, unwrappedMergeRequestsAtom, selectMrByIdAtom, selectedMrAtom, filteredMrsAtom } from '../../mergerequests/mergerequests-atom';
+import { appViewAtom, currentUserIdAtom, factsSelectionActiveAtom } from '../../settings/settings-atom';
 import { isCurrentUser, mrProviderAuthor } from '../../userselection/userSelection';
 import { viewConfigs } from '../../ui/view-config';
 import { infoPaneTabAtom } from '../../ui/navigation-atom';
@@ -167,12 +167,44 @@ export const statusMessageAtom = Atom.make<string | null>(null);
 export const displayEventsAtom = Atom.readable((get) => {
 });
 
+const filteredMrIdentitiesAtom = Atom.readable((get) => {
+  const filteredMrs = get(filteredMrsAtom);
+  const mrIds = new Set(filteredMrs.map(mr => mr.id));
+  const jiraIssueKeys = new Set(filteredMrs.flatMap(mr => mr.jiraIssueKeys));
+  return { mrIds, jiraIssueKeys };
+});
+
+const isChangeInSelection = (
+  change: Change,
+  mrIds: Set<string>,
+  jiraKeys: Set<string>
+): boolean =>
+  isMrChange(change)
+    ? mrIds.has(change.mr.mrId)
+    : jiraKeys.has(change.issue.issueKey);
+
 export const groupedDeltasByEventIdAtom = Atom.readable((get) => {
   const eventChangesReadmodel = get(eventChangesReadmodelAtom);
 
   return eventChangesReadmodel.pipe(
     Result.map(v => v.groupedDeltasByEventId),
     Result.getOrElse(() => emptyDeltasByEventId)
+  );
+});
+
+export const visibleDeltasByEventIdAtom = Atom.readable((get) => {
+  const all = get(groupedDeltasByEventIdAtom);
+  const selectionActive = get(factsSelectionActiveAtom);
+  if (!selectionActive) return all;
+
+  const { mrIds, jiraIssueKeys } = get(filteredMrIdentitiesAtom);
+  return new Map(
+    Array.from(all.entries())
+      .map(([eventId, changes]) => [
+        eventId,
+        changes.filter(c => isChangeInSelection(c, mrIds, jiraIssueKeys))
+      ] as const)
+      .filter(([, changes]) => changes.length > 0)
   );
 });
 
@@ -183,13 +215,13 @@ export const currentEventChangesAtom = Atom.readable<Change[]>(get => {
   const currentEventIndex = highlightedIndex ?? allEvents.length - 1;
   const currentEvent = allEvents[currentEventIndex];
 
-  const groupedDeltas = get(groupedDeltasByEventIdAtom);
+  const groupedDeltas = get(visibleDeltasByEventIdAtom);
   return [...(groupedDeltas.get(currentEvent?.eventId ?? "") ?? emptyChange)].reverse();
 });
 
 export const groupedEventsAtom = Atom.readable<EventGroup[]>((get) => {
   const allEvents = resultToArray(get(allEventsAtom));
-  const groupedDeltas = get(groupedDeltasByEventIdAtom);
+  const groupedDeltas = get(visibleDeltasByEventIdAtom);
   const displayEvents = [...allEvents].reverse().slice(0, 50);
 
   const hasVisibleDeltas = (ev: LazyReviewerEvent): boolean =>
@@ -207,7 +239,7 @@ export const groupedEventsAtom = Atom.readable<EventGroup[]>((get) => {
 });
 
 export const chronologicalChangesAtom = Atom.readable<Change[]>((get) => {
-  const groupedDeltas = get(groupedDeltasByEventIdAtom);
+  const groupedDeltas = get(visibleDeltasByEventIdAtom);
   return Array.from(groupedDeltas.values())
     .flat()
     .sort((a, b) => b.changedAt.getTime() - a.changedAt.getTime())

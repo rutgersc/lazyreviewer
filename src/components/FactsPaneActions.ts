@@ -9,7 +9,7 @@ import { activePaneAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
 import { openFileInEditor } from "../utils/open-file";
 import { resultToArray } from "../utils/result-helpers";
-import { factsViewStyleAtom } from "../settings/settings-atom";
+import { factsViewStyleAtom, factsSelectionActiveAtom } from "../settings/settings-atom";
 import {
   statusMessageAtom,
   currentEventChangesAtom,
@@ -32,6 +32,17 @@ const getVisibleChronologicalChanges = (registry: Registry.Registry) => {
   const myJiraIssueKeys = registry.get(myJiraIssueKeysAtom);
   return allChanges.filter(change => config.classify(change, currentUser, myJiraIssueKeys) !== 'hidden');
 };
+
+const selectionAction = (registry: Registry.Registry): Action => ({
+  id: 'facts:toggle-selection',
+  keys: [parseKeyString('s')],
+  displayKey: 's',
+  description: 'Toggle selection filter',
+  handler: () => {
+    const current = registry.get(factsSelectionActiveAtom);
+    registry.set(factsSelectionActiveAtom, !current);
+  },
+});
 
 const chronologicalActions = (registry: Registry.Registry): Action[] => [
   {
@@ -100,6 +111,7 @@ const chronologicalActions = (registry: Registry.Registry): Action[] => [
       registry.set(sublistIndexAtom, 0);
     },
   },
+  selectionAction(registry),
 ];
 
 const eventGroupedSublistActions = (registry: Registry.Registry): Action[] => [
@@ -155,6 +167,7 @@ const eventGroupedSublistActions = (registry: Registry.Registry): Action[] => [
       registry.set(sublistIndexAtom, 0);
     },
   },
+  selectionAction(registry),
 ];
 
 const eventGroupedActions = (registry: Registry.Registry): Action[] => [
@@ -287,6 +300,7 @@ const eventGroupedActions = (registry: Registry.Registry): Action[] => [
       }
     },
   },
+  selectionAction(registry),
 ];
 
 export const factsPaneActionsAtom: Atom.Atom<Action[]> = Atom.make(get => {

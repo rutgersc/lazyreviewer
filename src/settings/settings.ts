@@ -122,6 +122,7 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
   sprintFilterId: Schema.optional(Schema.Number),
   sprintFilterName: Schema.optional(Schema.String),
   showBranchNames: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  factsSelectionActive: Schema.optionalWith(Schema.Boolean, { default: () => false }),
 }))
 export type Settings = Schema.Schema.Type<typeof SettingsSchema>
 
