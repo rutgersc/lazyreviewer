@@ -65,6 +65,47 @@ type RelationType =
   | { readonly _tag: 'direct' }
   | { readonly _tag: 'subtask' };
 
+type SelectedMrContext = {
+  readonly selectedMr: MergeRequest;
+  readonly selectedKeys: ReadonlySet<string>;
+  readonly selectedTicketKey: string | undefined;
+  readonly selectedParentKey: string | undefined;
+};
+
+const buildSelectedMrContext = (selectedMr: MergeRequest, jiraIssuesMap: ReadonlyMap<string, JiraIssue>): SelectedMrContext => {
+  const selectedKeys = new Set(selectedMr.jiraIssueKeys);
+  const selectedIssues = selectedMr.jiraIssueKeys.flatMap(k => {
+    const issue = jiraIssuesMap.get(k);
+    return issue ? [issue] : [];
+  });
+  const selectedTicketKey = selectedIssues[0]?.key;
+  const selectedIsSubtask = selectedIssues[0]?.fields.issuetype.name.toLowerCase().includes('sub-task');
+  const selectedParentKey = selectedIsSubtask ? selectedIssues[0]?.fields.parent?.key : undefined;
+  return { selectedMr, selectedKeys, selectedTicketKey, selectedParentKey };
+};
+
+const getRelationType = (ctx: SelectedMrContext, mr: MergeRequest, jiraIssuesMap: ReadonlyMap<string, JiraIssue>): RelationType | null => {
+  if (ctx.selectedMr.targetbranch === mr.sourcebranch) return { _tag: 'stacked-into' };
+  if (mr.targetbranch === ctx.selectedMr.sourcebranch) return { _tag: 'stacked-from' };
+
+  const mrIssues = mr.jiraIssueKeys.flatMap(k => {
+    const issue = jiraIssuesMap.get(k);
+    return issue ? [issue] : [];
+  });
+  const mrTicketKey = mrIssues[0]?.key;
+
+  if (ctx.selectedTicketKey && mrTicketKey === ctx.selectedTicketKey) return { _tag: 'direct' };
+
+  if (ctx.selectedParentKey) {
+    const mrParentKey = mrIssues[0]?.fields.parent?.key;
+    if (mrParentKey === ctx.selectedParentKey) return { _tag: 'subtask' };
+  }
+
+  if (mr.jiraIssueKeys.some(key => ctx.selectedKeys.has(key))) return { _tag: 'direct' };
+
+  return null;
+};
+
 const relationBadge: Record<RelationType['_tag'], { readonly label: string; readonly badgeBg: string; readonly titleBg: string }> = {
   'stacked-into': { label: ' target ', badgeBg: Colors.SUCCESS, titleBg: '#1a4a1a' },
   'stacked-from': { label: ' source ', badgeBg: '#ff79c6',     titleBg: '#3a1a2a' },
@@ -468,6 +509,39 @@ const IgnoredMergeRequestRow = ({
 );
 };
 
+const relationTagOrder: readonly RelationType['_tag'][] = ['stacked-into', 'stacked-from', 'direct', 'subtask'];
+
+const OutOfViewRelations = ({ relations }: { relations: ReadonlyMap<RelationType['_tag'], readonly MergeRequest[]> }) => {
+  if (relations.size === 0) return null;
+
+  const badges = relationTagOrder
+    .filter(tag => relations.has(tag))
+    .map(tag => ({ tag, count: relations.get(tag)!.length, badge: relationBadge[tag] }));
+
+  return (
+    <box style={{ flexDirection: "row", alignItems: "center" }}>
+      <box style={{ width: 19 }} />
+      <box style={{ flexDirection: "row", gap: 1, alignItems: "center" }}>
+        <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>+</text>
+        {badges.map(({ tag, count, badge }) => (
+          <text
+            key={tag}
+            style={{
+              fg: Colors.BACKGROUND,
+              bg: badge.badgeBg,
+              attributes: TextAttributes.BOLD,
+            }}
+            wrapMode='none'
+          >
+            {` ${count}${badge.label}`}
+          </text>
+        ))}
+        <text style={{ fg: Colors.SUPPORTING, attributes: TextAttributes.DIM }} wrapMode='none'>not in view</text>
+      </box>
+    </box>
+  );
+};
+
 const CopyNotificationPopup = ({
   notification,
 }: {
@@ -570,62 +644,51 @@ export default function MergeRequestPane() {
   const projectBranchMap = useAtomValue(projectBranchMapAtom);
   const allMrBranchesByProject = useAtomValue(allMrSourceBranchesByProjectAtom);
 
-  const relatedMrIndices = useMemo((): Map<number, RelationType> => {
+  const selectedMrContext = useMemo((): SelectedMrContext | null => {
     const selectedMr = mergeRequests[selectedIndex];
-    if (!selectedMr) return new Map();
+    return selectedMr ? buildSelectedMrContext(selectedMr, jiraIssuesMap) : null;
+  }, [mergeRequests, selectedIndex, jiraIssuesMap]);
 
-    const selectedKeys = new Set(selectedMr.jiraIssueKeys);
-    const selectedIssues = selectedMr.jiraIssueKeys.flatMap(k => {
-      const issue = jiraIssuesMap.get(k);
-      return issue ? [issue] : [];
-    });
-    const selectedTicketKey = selectedIssues[0]?.key;
-    const selectedIsSubtask = selectedIssues[0]?.fields.issuetype.name.toLowerCase().includes('sub-task');
-    const selectedParentKey = selectedIsSubtask ? selectedIssues[0]?.fields.parent?.key : undefined;
+  const relatedMrIndices = useMemo((): Map<number, RelationType> => {
+    if (!selectedMrContext) return new Map();
 
     return new Map(
       mergeRequests
         .map((mr, index): readonly [number, RelationType] | null => {
           if (index === selectedIndex) return null;
-
-          // Selected merges into this MR's branch (selected is stacked on top)
-          if (selectedMr.targetbranch === mr.sourcebranch) {
-            return [index, { _tag: 'stacked-into' }];
-          }
-          // This MR merges into selected's branch (this MR is stacked on top)
-          if (mr.targetbranch === selectedMr.sourcebranch) {
-            return [index, { _tag: 'stacked-from' }];
-          }
-
-          const mrIssues = mr.jiraIssueKeys.flatMap(k => {
-            const issue = jiraIssuesMap.get(k);
-            return issue ? [issue] : [];
-          });
-          const mrTicketKey = mrIssues[0]?.key;
-
-          // Same direct ticket
-          if (selectedTicketKey && mrTicketKey === selectedTicketKey) {
-            return [index, { _tag: 'direct' }];
-          }
-
-          // Same parent (only if selected is a subtask)
-          if (selectedParentKey) {
-            const mrParentKey = mrIssues[0]?.fields.parent?.key;
-            if (mrParentKey === selectedParentKey) {
-              return [index, { _tag: 'subtask' }];
-            }
-          }
-
-          // Check shared ELAB keys
-          if (mr.jiraIssueKeys.some(key => selectedKeys.has(key))) {
-            return [index, { _tag: 'direct' }];
-          }
-
-          return null;
+          const rel = getRelationType(selectedMrContext, mr, jiraIssuesMap);
+          return rel ? [index, rel] : null;
         })
         .filter((entry): entry is [number, RelationType] => entry !== null)
     );
-  }, [mergeRequests, selectedIndex, jiraIssuesMap]);
+  }, [mergeRequests, selectedIndex, selectedMrContext, jiraIssuesMap]);
+
+  const allMrsResult = useAtomValue(allMrsAtom);
+  const outOfViewRelations = useMemo((): ReadonlyMap<RelationType['_tag'], readonly MergeRequest[]> => {
+    if (!selectedMrContext) return new Map();
+
+    const visibleGids = new Set(mergeRequests.map(mr => mr.id));
+    const allMrsByGid = Result.match(allMrsResult, {
+      onInitial: () => new Map() as ReadonlyMap<string, MergeRequest>,
+      onSuccess: (state) => state.value.mrsByGid,
+      onFailure: () => new Map() as ReadonlyMap<string, MergeRequest>,
+    });
+
+    const grouped = new Map<RelationType['_tag'], MergeRequest[]>();
+    for (const mr of allMrsByGid.values()) {
+      if (visibleGids.has(mr.id)) continue;
+      if (mr.id === selectedMrContext.selectedMr.id) continue;
+      if (mr.state !== 'opened') continue;
+
+      const rel = getRelationType(selectedMrContext, mr, jiraIssuesMap);
+      if (!rel) continue;
+
+      const list = grouped.get(rel._tag);
+      if (list) list.push(mr);
+      else grouped.set(rel._tag, [mr]);
+    }
+    return grouped;
+  }, [selectedMrContext, mergeRequests, allMrsResult, jiraIssuesMap]);
 
   // Get the selected MR's Jira ticket info
   const selectedMrJiraInfo = useMemo(() => {
@@ -840,6 +903,7 @@ export default function MergeRequestPane() {
                   <>
                     <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} showBranchNames={showBranchNames} />
                     <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
+                    {index === selectedIndex && <OutOfViewRelations relations={outOfViewRelations} />}
                   </>
                 )}
               </box>
