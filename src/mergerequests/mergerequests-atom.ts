@@ -388,3 +388,19 @@ export const selectMrByIdAtom = Atom.writable(
     ctx.set(selectedMrIndexAtom, newMrIndex >= 0 ? newMrIndex : 0);
   }
 );
+
+export const selectMrByBranchAtom = Atom.writable(
+  () => undefined,
+  (ctx, params: { projectPath: string; branch: string }) => {
+    const allMrsResult = ctx.get(allMrsAtom);
+    const mr = Result.match(allMrsResult, {
+      onInitial: () => undefined,
+      onFailure: () => undefined,
+      onSuccess: (state) =>
+        Array.from(state.value.mrsByGid.values()).find(
+          m => m.project.fullPath === params.projectPath && m.sourcebranch === params.branch
+        )
+    });
+    if (mr) ctx.set(selectMrByIdAtom, { mrId: mr.id });
+  }
+);

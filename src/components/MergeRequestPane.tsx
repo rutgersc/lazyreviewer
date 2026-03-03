@@ -20,7 +20,7 @@ import type { MergeRequestState } from "../domain/merge-request-state";
 import { filterPipelineJobs } from "../domain/display/pipelineJobFiltering";
 import { Atom, useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Result } from "@effect-atom/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom, allMrSourceBranchesByProjectAtom } from "../mergerequests/mergerequests-atom";
+import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, refreshMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom, allMrSourceBranchesByProjectAtom, selectMrByBranchAtom } from "../mergerequests/mergerequests-atom";
 import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom";
 import { currentUserIdAtom } from "../settings/settings-atom";
 import type { JiraIssue } from "../jira/jira-schema";
@@ -531,6 +531,7 @@ export default function MergeRequestPane() {
   const ignoredMergeRequests = useAtomValue(ignoredMergeRequestsAtom);
   const monitoredMergeRequests = useAtomValue(monitoredMergeRequestsAtom);
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
+  const selectMrByBranch = useAtomSet(selectMrByBranchAtom);
   const now = useAtomValue(nowAtom);
 
   const [copyNotification, setCopyNotification] = useState<string | null>(null);
@@ -868,16 +869,23 @@ export default function MergeRequestPane() {
                 {allWorktrees?.map((wt) => {
                   const isCheckedOut = wt.branch != null && checkedOutBranches?.has(wt.branch) === true;
                   return (
-                    <text
+                    <box
                       key={wt.folderName}
-                      style={{
-                        fg: isCheckedOut ? Colors.INFO : Colors.PRIMARY,
-                        attributes: isCheckedOut ? TextAttributes.BOLD : 0,
-                      }}
-                      wrapMode='none'
+                      height={1}
+                      onMouseDown={isCheckedOut && wt.branch
+                        ? () => selectMrByBranch({ projectPath: repo.projectPath, branch: wt.branch! })
+                        : undefined}
                     >
-                      {`[${wt.index}] ${wt.folderName} : ${wt.branch ?? '(detached)'}`}
-                    </text>
+                      <text
+                        style={{
+                          fg: isCheckedOut ? Colors.INFO : Colors.PRIMARY,
+                          attributes: isCheckedOut ? TextAttributes.BOLD : 0,
+                        }}
+                        wrapMode='none'
+                      >
+                        {`[${wt.index}] ${wt.folderName} : ${wt.branch ?? '(detached)'}`}
+                      </text>
+                    </box>
                   );
                 })}
               </box>
