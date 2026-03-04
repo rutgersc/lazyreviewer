@@ -5,6 +5,7 @@ import { Effect, Runtime } from 'effect'
 import { Colors } from '../colors'
 import { getAppRuntime } from '../appLayerRuntime'
 import type { DiscoveredRepo, DiscoveredUser } from './onboarding-types'
+import type { RepoFetchStatus } from './onboarding-effects'
 import type { UserSelectionEntry, UserId } from '../userselection/userSelection'
 import { PREMADE_SELECTIONS, getSelectionMembers } from './onboarding-defaults'
 import { fetchMrsForRepos, mergeWithPredefinedUsers } from './onboarding-effects'
@@ -21,7 +22,9 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
   const [selections] = useState<UserSelectionEntry[]>(PREMADE_SELECTIONS)
   const [highlightIndex, setHighlightIndex] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [progress, setProgress] = useState('')
+  const [repoStatuses, setRepoStatuses] = useState<ReadonlyMap<string, RepoFetchStatus>>(
+    () => new Map(repos.map(r => [r.fullPath, 'pending' as const]))
+  )
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -29,17 +32,14 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
 
     const load = async () => {
       try {
-        setProgress(`Fetching MRs... 0/${repos.length} repos`)
         const runtime = await getAppRuntime()
         const discovered: DiscoveredUser[] = await Runtime.runPromise(runtime)(
-          fetchMrsForRepos(repos, (done, total, repoPath) => {
-            setProgress(`Fetching MRs... ${done}/${total} repos (${repoPath})`)
+          fetchMrsForRepos(repos, (repoPath, status) => {
+            if (!cancelled) setRepoStatuses(prev => new Map([...prev, [repoPath, status]]))
           })
         )
 
         if (cancelled) return
-
-        setProgress('')
 
         const predefinedIds = predefinedUserSelections
           .filter((u): u is { type: 'user'; id: UserId } => u.type === 'user')
@@ -101,10 +101,19 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
       </text>
 
       {loading && (
-        <box style={{ padding: 2 }}>
-          <text style={{ fg: Colors.INFO }} wrapMode='none'>
-            {progress || 'Discovering users from merge requests...'}
+        <box style={{ flexDirection: 'column', paddingLeft: 2, paddingTop: 1 }}>
+          <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
+            Discovering users from merge requests...
           </text>
+          {[...repoStatuses.entries()].map(([repoPath, status]) => {
+            const icon = status === 'done' ? '✓' : status === 'error' ? '✗' : status === 'fetching' ? '⟳' : '·'
+            const color = status === 'done' ? Colors.SUCCESS : status === 'error' ? Colors.ERROR : status === 'fetching' ? Colors.WARNING : Colors.SUPPORTING
+            return (
+              <text key={repoPath} style={{ fg: color, paddingLeft: 1 }} wrapMode='none'>
+                {icon} {repoPath}
+              </text>
+            )
+          })}
         </box>
       )}
 

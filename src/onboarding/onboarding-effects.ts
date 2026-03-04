@@ -102,24 +102,27 @@ export const fetchBitbucketRepos = (workspace: string): Effect.Effect<RepoFetchR
   Effect.succeed({ repos: [] as DiscoveredRepo[], warnings: [String(warning)] })
 ))
 
+export type RepoFetchStatus = 'pending' | 'fetching' | 'done' | 'error'
+
 export const fetchMrsForRepos = (
   repos: readonly DiscoveredRepo[],
-  onProgress?: (completed: number, total: number, repoPath: string) => void
+  onProgress?: (repoPath: string, status: RepoFetchStatus) => void
 ) => Effect.gen(function* () {
-  let completed = 0
   const results = yield* Effect.forEach(
     repos,
-    (repo) => fetchMrsForRepo(repo).pipe(
-      Effect.tap(() => {
-        completed++
-        onProgress?.(completed, repos.length, repo.fullPath)
-        return Effect.void
-      }),
+    (repo) => Effect.gen(function* () {
+      onProgress?.(repo.fullPath, 'fetching')
+      return yield* fetchMrsForRepo(repo).pipe(
+        Effect.tap(() => {
+          onProgress?.(repo.fullPath, 'done')
+          return Effect.void
+        }),
+      )
+    }).pipe(
       Effect.catchAll((err) =>
         Console.error(`[Onboarding] Error fetching MRs for ${repo.fullPath}: ${err}`).pipe(
           Effect.tap(() => {
-            completed++
-            onProgress?.(completed, repos.length, repo.fullPath)
+            onProgress?.(repo.fullPath, 'error')
             return Effect.void
           }),
           Effect.as({ users: [] as DiscoveredUser[], jiraKeys: [] as string[] })
