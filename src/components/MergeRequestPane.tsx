@@ -60,10 +60,10 @@ const truncate = (text: string, max: number) =>
   text.length > max ? text.substring(0, max) + "..." : text;
 
 type RelationType =
-  | { readonly _tag: 'stacked-into' }
-  | { readonly _tag: 'stacked-from' }
-  | { readonly _tag: 'direct' }
-  | { readonly _tag: 'subtask' };
+  | { readonly _tag: 'stack-base' }
+  | { readonly _tag: 'stacked-on-this' }
+  | { readonly _tag: 'same-ticket' }
+  | { readonly _tag: 'sibling-ticket' };
 
 type SelectedMrContext = {
   readonly selectedMr: MergeRequest;
@@ -86,8 +86,8 @@ const buildSelectedMrContext = (selectedMr: MergeRequest, jiraIssuesMap: Readonl
 
 const getRelationType = (ctx: SelectedMrContext, mr: MergeRequest, jiraIssuesMap: ReadonlyMap<string, JiraIssue>): RelationType | null => {
   const sameProject = ctx.selectedMr.project.fullPath === mr.project.fullPath;
-  if (sameProject && ctx.selectedMr.targetbranch === mr.sourcebranch) return { _tag: 'stacked-into' };
-  if (sameProject && mr.targetbranch === ctx.selectedMr.sourcebranch) return { _tag: 'stacked-from' };
+  if (sameProject && ctx.selectedMr.targetbranch === mr.sourcebranch) return { _tag: 'stack-base' };
+  if (sameProject && mr.targetbranch === ctx.selectedMr.sourcebranch) return { _tag: 'stacked-on-this' };
 
   const mrIssues = mr.jiraIssueKeys.flatMap(k => {
     const issue = jiraIssuesMap.get(k);
@@ -95,23 +95,23 @@ const getRelationType = (ctx: SelectedMrContext, mr: MergeRequest, jiraIssuesMap
   });
   const mrTicketKey = mrIssues[0]?.key;
 
-  if (ctx.selectedTicketKey && mrTicketKey === ctx.selectedTicketKey) return { _tag: 'direct' };
+  if (ctx.selectedTicketKey && mrTicketKey === ctx.selectedTicketKey) return { _tag: 'same-ticket' };
 
   if (ctx.selectedParentKey) {
     const mrParentKey = mrIssues[0]?.fields.parent?.key;
-    if (mrParentKey === ctx.selectedParentKey) return { _tag: 'subtask' };
+    if (mrParentKey === ctx.selectedParentKey) return { _tag: 'sibling-ticket' };
   }
 
-  if (mr.jiraIssueKeys.some(key => ctx.selectedKeys.has(key))) return { _tag: 'direct' };
+  if (mr.jiraIssueKeys.some(key => ctx.selectedKeys.has(key))) return { _tag: 'same-ticket' };
 
   return null;
 };
 
 const relationBadge: Record<RelationType['_tag'], { readonly label: string; readonly badgeBg: string; readonly titleBg: string }> = {
-  'stacked-into': { label: ' target ', badgeBg: Colors.SUCCESS, titleBg: '#1a4a1a' },
-  'stacked-from': { label: ' source ', badgeBg: '#ff79c6',     titleBg: '#3a1a2a' },
-  direct:         { label: ' direct ',   badgeBg: Colors.WARNING, titleBg: '#4a2a00' },
-  subtask:        { label: ' subtask ',  badgeBg: Colors.INFO,    titleBg: '#003a4a' },
+  'stack-base':      { label: ' base ',      badgeBg: Colors.SUCCESS, titleBg: '#1a4a1a' },
+  'stacked-on-this': { label: ' stacked ', badgeBg: '#ff79c6',     titleBg: '#3a1a2a' },
+  'same-ticket':     { label: ' same ticket ',     badgeBg: Colors.WARNING, titleBg: '#4a2a00' },
+  'sibling-ticket':  { label: ' same parent ',  badgeBg: Colors.INFO,    titleBg: '#003a4a' },
 };
 
 const TimeColumnAuthorTitle = ({
@@ -510,7 +510,7 @@ const IgnoredMergeRequestRow = ({
 );
 };
 
-const relationTagOrder: readonly RelationType['_tag'][] = ['stacked-into', 'stacked-from', 'direct', 'subtask'];
+const relationTagOrder: readonly RelationType['_tag'][] = ['stack-base', 'stacked-on-this', 'same-ticket', 'sibling-ticket'];
 
 const OutOfViewRelations = ({ relations }: { relations: ReadonlyMap<RelationType['_tag'], readonly MergeRequest[]> }) => {
   if (relations.size === 0) return null;
@@ -534,10 +534,9 @@ const OutOfViewRelations = ({ relations }: { relations: ReadonlyMap<RelationType
             }}
             wrapMode='none'
           >
-            {` ${count}${badge.label}`}
+            {` ${count}${badge.label}(not in view) `}
           </text>
         ))}
-        <text style={{ fg: Colors.SUPPORTING, attributes: TextAttributes.DIM }} wrapMode='none'>not in view</text>
       </box>
     </box>
   );
