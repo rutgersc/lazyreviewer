@@ -318,6 +318,30 @@ export const ensureRepositoryPathsAtom = appAtomRuntime.fn((repoPaths: readonly 
   })
 );
 
+export type CompleteOnboardingParams = {
+  readonly repoPaths: readonly string[]
+  readonly currentUser: string
+  readonly selectedUserSelectionEntryId: string
+}
+
+export const completeOnboardingAtom = appAtomRuntime.fn((params: CompleteOnboardingParams) =>
+  SettingsService.modify(s => {
+    const repositoryPaths = { ...s.repositoryPaths }
+    for (const path of params.repoPaths) {
+      if (!(path in repositoryPaths)) {
+        repositoryPaths[path] = { localPath: '', remoteName: 'origin' }
+      }
+    }
+    return {
+      ...s,
+      repoSelection: [...params.repoPaths],
+      repositoryPaths,
+      currentUser: params.currentUser,
+      selectedUserSelectionEntryId: params.selectedUserSelectionEntryId,
+    }
+  })
+);
+
 const mrSortOrderRawAtom = selectFromSettings(
   s => s.mrSortOrder ?? 'updatedAt',
   'updatedAt' as MrSortOrder

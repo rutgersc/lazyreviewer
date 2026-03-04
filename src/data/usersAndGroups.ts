@@ -12,7 +12,11 @@ const arjen = { type: 'userId', userId: 'arjen', gitlab: 'ArjenPost', jira: 'Arj
 const haike = { type: 'userId', userId: 'haike', gitlab: 'HaikeZegwaard', jira: 'Haike Zegwaard' } satisfies UserId;
 const chen = { type: 'userId', userId: 'chen', gitlab: 'c.zrubavel', jira: 'Chen Zrubavel' } satisfies UserId;
 const harold = { type: 'userId', userId: 'harold', gitlab: 'h.harkema', jira: 'Harold Harkema' } satisfies UserId;
+const jelle = { type: 'userId', userId: 'jelle', gitlab: 'j.becirspahic', jira: 'Jelle Becirspahic' } satisfies UserId;
+const erickmartijn = { type: 'userId', userId: 'em', gitlab: 'ErickMartijnBouma', jira: 'Erick Martijn Bouma' } satisfies UserId;
 const vic = { type: 'userId', userId: 'vic', gitlab: 'VicUlrich', jira: 'Vic Ulrich' } satisfies UserId;
+const max = { type: 'userId', userId: 'max', gitlab: 'm.luppes', jira: 'Max Luppes' } satisfies UserId;
+const george = { type: 'userId', userId: 'georgios', gitlab: 'g.petridis', jira: 'Georgios Petridis' } satisfies UserId;
 
 export const users: UserSelection[] = [
   { type: 'user', id: rutger },
@@ -26,6 +30,11 @@ export const users: UserSelection[] = [
   { type: 'user', id: chen },
   { type: 'user', id: harold },
   { type: 'user', id: vic },
+  { type: 'user', id: haike },
+  { type: 'user', id: jelle },
+  { type: 'user', id: erickmartijn },
+  { type: 'user', id: max },
+  { type: 'user', id: george },
 ]
 
 const florenceBEId = { type: 'groupId', id: 'FlorenceBE' } satisfies GroupId;
@@ -52,15 +61,20 @@ export const groups: UserGroup[] = [
     id: florenceId,
     children: [ florenceFEId, florenceBEId ]
   },
-  // { type: 'group',
-  //   name: 'Erlenmeyer FE',
-  //   id: erlenmeyerFEId,
-  //   children: [  ]
-  // },
+  { type: 'group',
+    name: 'Erlenmeyer FE',
+    id: erlenmeyerFEId,
+    children: [ erickmartijn, jelle, haike, max, george ]
+  },
   { type: 'group',
     name: 'Erlenmeyer BE',
     id: erlenmeyerBEId,
-    children: [ harold, chen, vic ]
+    children: [ harold, chen, vic, arjen ]
+  },
+  { type: 'group',
+    name: 'Erlenmeyer',
+    id: erlenmeyerId,
+    children: [ erlenmeyerFEId, erlenmeyerBEId ]
   },
 ]
 

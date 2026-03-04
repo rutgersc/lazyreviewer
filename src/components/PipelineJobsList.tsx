@@ -252,7 +252,7 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
                 wrapMode='none'
                 onMouseDown={() => handleImportanceClick(selectedPipelineJob.job.name)}
               >
-                {importanceDisplay}
+                {`${importanceDisplay} (press m to toggle)`}
               </text>
             </box>
             {selectedPipelineJob.job.webPath && (

@@ -5,6 +5,7 @@ import { MrGid } from '../domain/identifiers';
 import { PipelineJobSchema } from '../domain/merge-request-schema';
 
 const SETTINGS_FILE = 'lazygitlab-settings.json';
+const DEFAULT_SETTINGS_FILE = 'default-settings.json';
 
 // Schema for coercing string|number to number (for user-edited JSON)
 const NumberFromStringOrNumber = Schema.transform(
@@ -114,7 +115,7 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
   selectedUserSelectionEntryId: Schema.optional(Schema.String),
   currentUser: Schema.optional(Schema.String),
   notifications: Schema.optionalWith(NotificationSettingsSchema, { default: () => ({ enabled: false }) }),
-  backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 300, scalingFactorHours: 24, pageFetchTimestamps: {} }) }),
+  backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 500, scalingFactorHours: 24, pageFetchTimestamps: {} }) }),
   jiraBoardId: Schema.optional(NumberFromStringOrNumber),
   mrSortOrder: Schema.optionalWith(MrSortOrderSchema, { default: () => 'updatedAt' as const }),
   appView: Schema.optionalWith(Schema.Literal('review', 'focus'), { default: () => 'review' as const }),
@@ -160,11 +161,22 @@ export class SettingsService extends Effect.Service<SettingsService>()("Settings
   effect: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
 
+    const loadDefaultOverrides = Effect.gen(function* () {
+      const exists = yield* fs.exists(DEFAULT_SETTINGS_FILE);
+      if (!exists) return {};
+      const content = yield* fs.readFileString(DEFAULT_SETTINGS_FILE);
+      return JSON.parse(content) as Record<string, unknown>;
+    }).pipe(
+      Effect.catchAll(() => Effect.succeed({} as Record<string, unknown>))
+    );
+
     const load = Effect.gen(function* () {
       const exists = yield* fs.exists(SETTINGS_FILE);
       if (!exists) {
-        yield* fs.writeFileString(SETTINGS_FILE, serializeSettings(defaultSettings));
-        return defaultSettings;
+        const overrides = yield* loadDefaultOverrides;
+        const initial = decodeSettings(overrides);
+        yield* fs.writeFileString(SETTINGS_FILE, serializeSettings(initial));
+        return initial;
       }
       const content = yield* fs.readFileString(SETTINGS_FILE);
       return decodeSettings(sanitizeJson(JSON.parse(content)));

@@ -1,0 +1,67 @@
+{
+  "pipelineJobImportance": {
+    "elab/BlackLotus": {
+      "03_snapshot_diff": "ignore",
+      "01_source_and_target_branch_check": "ignore",
+      "02_build_test": "monitored",
+      "01_publish_black_lotus_eql_nuget": "low",
+      "02_publish_automations_processor_nuget": "low",
+      "03_publish_black_lotus_artifact": "low",
+      "04_push_release_artifact_to_octopus": "low",
+      "ai_code_review": "low"
+    },
+    "elab/elab": {
+      "lint": "monitored",
+      "bundleValidation": "ignore",
+      "typecheck": "monitored",
+      "npm-audit": "ignore",
+      "buildElabDebug": "ignore",
+      "buildWebRoot": "ignore",
+      "e2eAdminGroupAndUserTest": "ignore",
+      "e2eInventoryRebuildTest 1/2": "ignore",
+      "e2eInventoryRebuildTest 2/2": "ignore",
+      "e2eJournalTest": "ignore",
+      "apiTest": "monitored",
+      "unitTest": "monitored",
+      "translate": "ignore",
+      "scisure": "ignore",
+      "performanceTestBrowser": "ignore",
+      "performanceTest": "ignore",
+      "e2eOLDInventoryTest 1/2": "low",
+      "e2eOLDInventoryTest 2/2": "low",
+      "performanceTestApi": "low",
+      "production_prepare_test": "low",
+      "typecheck-protocols": "low",
+      "typecheck-sdk": "low",
+      "typecheck-sdk-support": "low",
+      "typecheck-common": "low",
+      "typecheck-inventory": "low",
+      "typecheck-automations": "low",
+      "ai-code-review": "ignore",
+      "e2e": "monitored",
+      "integrationTest": "monitored",
+      "combineReports": "ignore",
+      "smoketest": "ignore"
+    },
+    "elab/helix": {
+      "lint": "low",
+      "audit": "ignore",
+      "test": "low",
+      "build": "low",
+      "build_histoire": "low"
+    },
+    "elab/DeveloperExperience": {
+      "dummy": "ignore",
+      "backend": "low",
+      "npm-audit": "ignore",
+      "frontend": "low"
+    },
+    "elab/gitversion": {
+      "determineversion": "low",
+      "docker_create_image": "low"
+    },
+    "elab/elab-custom-plugins": {
+      "eslint": "low"
+    }
+  }
+}

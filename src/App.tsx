@@ -66,8 +66,9 @@ export default function App() {
   const isOnboardingComplete = useAtomValue(isOnboardingCompleteAtom);
   const setRepoSelection = useAtomSet(repoSelectionAtom);
 
-  // Only local UI state: user dismissed the config page this session
+  // Only local UI state: user dismissed the config/onboarding page this session
   const [configDismissed, setConfigDismissed] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
   // Pure derivations — no useEffect
   const credentialsLoaded = missingCredentialsResult._tag === 'Success';
@@ -77,7 +78,7 @@ export default function App() {
     missingCredentials.some(c => c.required) ||
     (!isOnboardingComplete && missingCredentials.length > 0)
   );
-  const showOnboarding = !showConfigPage && !isOnboardingComplete && credentialsLoaded;
+  const showOnboarding = !showConfigPage && !isOnboardingComplete && !onboardingDismissed && credentialsLoaded;
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [repoFilter, setRepoFilter] = useAtom(repoFilterAtom);
@@ -572,7 +573,7 @@ export default function App() {
 
       {/* Onboarding Page - shown after config, before normal use */}
       {showOnboarding && (
-        <OnboardingPage />
+        <OnboardingPage onComplete={() => setOnboardingDismissed(true)} />
       )}
 
       {/* Configuration Page - fullscreen overlay with highest priority */}
