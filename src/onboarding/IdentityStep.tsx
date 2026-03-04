@@ -81,7 +81,7 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
       </text>
 
       <text style={{ fg: Colors.PRIMARY, paddingLeft: 1, paddingTop: 1 }} wrapMode='none'>
-        Select your identity — this determines which MRs are "yours":
+        Select your identity:
       </text>
 
       {inputFocused && (

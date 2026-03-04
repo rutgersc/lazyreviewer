@@ -106,11 +106,11 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
             Discovering users from merge requests...
           </text>
           {[...repoStatuses.entries()].map(([repoPath, status]) => {
-            const icon = status === 'done' ? '✓' : status === 'error' ? '✗' : status === 'fetching' ? '⟳' : '·'
+            const label = status === 'done' ? '✓ done' : status === 'error' ? '✗ error' : status === 'fetching' ? '⟳ fetching' : '· pending'
             const color = status === 'done' ? Colors.SUCCESS : status === 'error' ? Colors.ERROR : status === 'fetching' ? Colors.WARNING : Colors.SUPPORTING
             return (
               <text key={repoPath} style={{ fg: color, paddingLeft: 1 }} wrapMode='none'>
-                {icon} {repoPath}
+                {label}  {repoPath}
               </text>
             )
           })}
