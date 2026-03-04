@@ -1,3 +1,5 @@
+import { existsSync } from 'fs'
+import { join } from 'path'
 import { spawn } from 'child_process'
 import { TextAttributes, type ParsedKey } from '@opentui/core'
 import { useKeyboard } from '@opentui/react'
@@ -10,6 +12,20 @@ interface RepoLocationStepProps {
   readonly onNext: (localPaths: ReadonlyMap<string, string>) => void
   readonly onBack: () => void
 }
+
+const GIT_REPOS_BASE = 'C:\\git_repos'
+
+const discoverLocalPath = (repo: DiscoveredRepo): string | undefined => {
+  const candidate = join(GIT_REPOS_BASE, repo.name)
+  return existsSync(candidate) ? candidate : undefined
+}
+
+const discoverAllPaths = (repos: readonly DiscoveredRepo[]): ReadonlyMap<string, string> =>
+  new Map(
+    repos
+      .map(repo => [repo.fullPath, discoverLocalPath(repo)] as const)
+      .filter((pair): pair is [string, string] => pair[1] !== undefined)
+  )
 
 const openFolderPicker = (): Promise<string | undefined> =>
   new Promise((resolve) => {
@@ -27,35 +43,76 @@ const openFolderPicker = (): Promise<string | undefined> =>
   })
 
 export default function RepoLocationStep({ repos, onNext, onBack }: RepoLocationStepProps) {
-  const [localPaths, setLocalPaths] = useState<ReadonlyMap<string, string>>(new Map())
+  const [localPaths, setLocalPaths] = useState<ReadonlyMap<string, string>>(() => discoverAllPaths(repos))
   const [highlightIndex, setHighlightIndex] = useState(0)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [editValue, setEditValue] = useState('')
   const [picking, setPicking] = useState(false)
 
-  // repos + 1 for "Continue" button
   const totalItems = repos.length + 1
   const isContinueHighlighted = highlightIndex === repos.length
 
-  const handleBrowse = async (repo: DiscoveredRepo) => {
-    if (picking) return
-    const existing = localPaths.get(repo.fullPath)
-    if (existing) {
-      setLocalPaths(prev => {
-        const next = new Map(prev)
-        next.delete(repo.fullPath)
-        return next
-      })
-      return
+  const setPath = (fullPath: string, path: string) =>
+    setLocalPaths(prev => new Map(prev).set(fullPath, path))
+
+  const clearPath = (fullPath: string) =>
+    setLocalPaths(prev => {
+      const next = new Map(prev)
+      next.delete(fullPath)
+      return next
+    })
+
+  const startEditing = (idx: number) => {
+    const repo = repos[idx]
+    if (!repo) return
+    setEditingIndex(idx)
+    setEditValue(localPaths.get(repo.fullPath) ?? '')
+  }
+
+  const commitEdit = () => {
+    if (editingIndex === null) return
+    const repo = repos[editingIndex]
+    if (!repo) return
+    const trimmed = editValue.trim()
+    if (trimmed) {
+      setPath(repo.fullPath, trimmed)
+    } else {
+      clearPath(repo.fullPath)
     }
+    setEditingIndex(null)
+  }
+
+  const cancelEdit = () => {
+    setEditingIndex(null)
+  }
+
+  const handleBrowse = async (idx: number) => {
+    if (picking) return
+    const repo = repos[idx]
+    if (!repo) return
     setPicking(true)
     const selected = await openFolderPicker()
     setPicking(false)
     if (selected) {
-      setLocalPaths(prev => new Map(prev).set(repo.fullPath, selected))
+      setPath(repo.fullPath, selected)
+      setEditingIndex(null)
     }
   }
 
   useKeyboard((key: ParsedKey) => {
     if (picking) return
+
+    if (editingIndex !== null) {
+      if (key.name === 'escape') {
+        cancelEdit()
+        return
+      }
+      if (key.name === 'tab') {
+        handleBrowse(editingIndex)
+        return
+      }
+      return
+    }
 
     if (key.name === 'escape') {
       onBack()
@@ -75,12 +132,25 @@ export default function RepoLocationStep({ repos, onNext, onBack }: RepoLocation
         if (isContinueHighlighted) {
           onNext(localPaths)
         } else {
+          startEditing(highlightIndex)
+        }
+        break
+      case 'tab':
+        if (!isContinueHighlighted) {
+          handleBrowse(highlightIndex)
+        }
+        break
+      case 'x':
+      case 'delete':
+        if (!isContinueHighlighted) {
           const repo = repos[highlightIndex]
-          if (repo) handleBrowse(repo)
+          if (repo) clearPath(repo.fullPath)
         }
         break
     }
   })
+
+  const isEditing = editingIndex !== null
 
   return (
     <box style={{ flexDirection: 'column', flexGrow: 1 }}>
@@ -89,7 +159,9 @@ export default function RepoLocationStep({ repos, onNext, onBack }: RepoLocation
           Step 2/4: Locate repositories locally (optional)
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          j/k: nav | Enter: browse/clear | Esc: back
+          {isEditing
+            ? 'Enter: confirm | Tab: browse | Esc: cancel'
+            : 'j/k: nav | Enter: edit | Tab: browse | x: clear | Esc: back'}
         </text>
       </box>
       <text style={{ fg: Colors.NEUTRAL, paddingLeft: 1 }} wrapMode='none'>
@@ -114,13 +186,14 @@ export default function RepoLocationStep({ repos, onNext, onBack }: RepoLocation
         <box style={{ flexDirection: 'column', paddingTop: 1 }}>
           {repos.map((repo, idx) => {
             const isHighlighted = idx === highlightIndex
+            const isEditingThis = editingIndex === idx
             const localPath = localPaths.get(repo.fullPath)
             return (
               <box
                 key={repo.fullPath}
                 onMouseDown={() => {
                   setHighlightIndex(idx)
-                  handleBrowse(repo)
+                  startEditing(idx)
                 }}
                 style={{
                   flexDirection: 'row',
@@ -132,9 +205,26 @@ export default function RepoLocationStep({ repos, onNext, onBack }: RepoLocation
                 <text style={{ fg: isHighlighted ? Colors.SUCCESS : Colors.PRIMARY }} wrapMode='none'>
                   {isHighlighted ? '> ' : '  '}{repo.fullPath}
                 </text>
-                <text style={{ fg: localPath ? Colors.INFO : Colors.SUPPORTING }} wrapMode='none'>
-                  {localPath ?? '(not set)'}
-                </text>
+                {isEditingThis ? (
+                  <input
+                    focused={true}
+                    value={editValue}
+                    placeholder="C:\path\to\repo"
+                    style={{
+                      width: 50,
+                      textColor: Colors.PRIMARY,
+                      backgroundColor: Colors.TRACK,
+                      cursorColor: Colors.INFO,
+                      placeholderColor: Colors.SUPPORTING,
+                    }}
+                    onInput={setEditValue}
+                    onSubmit={() => commitEdit()}
+                  />
+                ) : (
+                  <text style={{ fg: localPath ? Colors.INFO : Colors.SUPPORTING }} wrapMode='none'>
+                    {localPath ?? '(not set)'}
+                  </text>
+                )}
               </box>
             )
           })}
