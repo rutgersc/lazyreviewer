@@ -129,7 +129,7 @@ export const decideFetchUserMrs = (
   state: MergeRequestState,
   knownMrs: ReadonlyMap<MrGid, KnownMrInfo>
 ): Effect.Effect<
-  void,
+  readonly string[],
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
@@ -150,6 +150,8 @@ export const decideFetchUserMrs = (
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
   yield* EventStorage.appendEvent(jiraEvent)
+
+  return [...new Set(gitlabMrs.map(mr => mr.project.fullPath))]
 })
 
 export type PageFetchResult = {

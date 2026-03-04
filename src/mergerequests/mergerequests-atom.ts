@@ -20,6 +20,7 @@ import { refetchMrPipeline } from './mergerequests-effects';
 import { loadJiraTicketsAsEvent } from '../jira/jira-service';
 import type { JiraIssue } from "../jira/jira-service";
 import { mrSortOrderAtom, repoSelectionAtom, userFilterUsernamesAtom, userFilterGroupIdsAtom } from "../settings/settings-atom";
+import { SettingsService } from "../settings/settings";
 import { sprintFilterIssueKeysAtom } from "../jiraboard/sprint-issues-atom";
 import { groupsAtom } from "../data/data-atom";
 import { resolveGroupIds } from "../userselection/userSelection";
@@ -226,10 +227,23 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
         yield* Console.log(`[Refresh] Fetching ${filterMrState} MRs for users [${userIds.map(u => u.gitlab).join(', ')}] (first page)`);
         const cacheKey = new MRCacheKey({ users: userIds, state: filterMrState });
         const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
-        yield* decideFetchUserMrs(userIds, filterMrState, knownMrs).pipe(
+        const discoveredPaths = yield* decideFetchUserMrs(userIds, filterMrState, knownMrs).pipe(
           Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
-          Effect.catchAllCause((cause) => Console.error("Error fetching user MRs:", cause))
+          Effect.catchAllCause((cause) => Console.error("Error fetching user MRs:", cause).pipe(Effect.as([] as readonly string[])))
         );
+        if (discoveredPaths.length > 0) {
+          yield* SettingsService.modify(s => {
+            const updated = { ...s.repositoryPaths };
+            let changed = false;
+            for (const path of discoveredPaths) {
+              if (!(path in updated)) {
+                updated[path] = { localPath: '', remoteName: 'origin' };
+                changed = true;
+              }
+            }
+            return changed ? { ...s, repositoryPaths: updated } : s;
+          });
+        }
       } else {
         if (gitlabRepos.length > 0) {
           yield* Console.log(`[Refresh] Fetching ${filterMrState} MRs for ${gitlabRepos.length} GitLab repos: [${gitlabRepos.map(repositoryFullPath).join(', ')}] (first page, max 50 per repo)`);
