@@ -23,6 +23,7 @@ type BitbucketRepo = {
 
 type BitbucketResponse = {
   values: BitbucketRepo[]
+  next?: string
 }
 
 export type RepoFetchResult = {
@@ -70,34 +71,52 @@ export const fetchBitbucketRepos = (workspace: string): Effect.Effect<RepoFetchR
   }
 
   const authToken = Buffer.from(`${email}:${token}`).toString('base64')
-
-  const response = yield* Effect.tryPromise({
-    try: () => fetch(`https://api.bitbucket.org/2.0/repositories/${workspace}?pagelen=100`, {
-      headers: {
-        'Authorization': `Basic ${authToken}`,
-        'Accept': 'application/json',
-      }
-    }),
-    catch: (cause) => `Bitbucket: network error - ${cause}`
-  })
-
-  if (!response.ok) {
-    return { repos: [], warnings: [`Bitbucket: API returned ${response.status} ${response.statusText}`] }
+  const headers = {
+    'Authorization': `Basic ${authToken}`,
+    'Accept': 'application/json',
   }
 
-  const data = yield* Effect.tryPromise({
-    try: () => response.json() as Promise<BitbucketResponse>,
-    catch: (cause) => `Bitbucket: JSON parse error - ${cause}`
+  type PageResult = { repos: DiscoveredRepo[], warnings: string[], next: string | undefined }
+  const fetchPage = (url: string): Effect.Effect<PageResult, string> => Effect.gen(function* () {
+    const response = yield* Effect.tryPromise({
+      try: () => fetch(url, { headers }),
+      catch: (cause) => `Bitbucket: network error - ${cause}`
+    })
+
+    if (!response.ok) {
+      return { repos: [] as DiscoveredRepo[], warnings: [`Bitbucket: API returned ${response.status} ${response.statusText}`] as string[], next: undefined as string | undefined }
+    }
+
+    const data = yield* Effect.tryPromise({
+      try: () => response.json() as Promise<BitbucketResponse>,
+      catch: (cause) => `Bitbucket: JSON parse error - ${cause}`
+    })
+
+    return {
+      repos: data.values.map((r): DiscoveredRepo => ({
+        provider: 'bitbucket',
+        fullPath: r.full_name,
+        name: r.name,
+        workspace: r.workspace.slug,
+        repoSlug: r.slug,
+      })),
+      warnings: [] as string[],
+      next: data.next,
+    }
   })
 
-  const repos = data.values.map((r): DiscoveredRepo => ({
-    provider: 'bitbucket',
-    fullPath: r.full_name,
-    name: r.name,
-    workspace: r.workspace.slug,
-    repoSlug: r.slug,
-  }))
-  return { repos, warnings: [] }
+  let url: string | undefined = `https://api.bitbucket.org/2.0/repositories/${workspace}?pagelen=100`
+  const allRepos: DiscoveredRepo[] = []
+  const allWarnings: string[] = []
+
+  while (url) {
+    const page: PageResult = yield* fetchPage(url)
+    allRepos.push(...page.repos)
+    allWarnings.push(...page.warnings)
+    url = page.next
+  }
+
+  return { repos: allRepos, warnings: allWarnings }
 }).pipe(Effect.catchAll((warning) =>
   Effect.succeed({ repos: [] as DiscoveredRepo[], warnings: [String(warning)] })
 ))
