@@ -11,8 +11,8 @@ interface MrSortModalProps {
 }
 
 const SORT_OPTIONS: Array<{ key: MrSortOrder; label: string }> = [
-  { key: 'updatedAt', label: 'Last Updated' },
   { key: 'createdAt', label: 'Created Date' },
+  { key: 'updatedAt', label: 'Last Updated' },
 ];
 
 export default function MrSortModal({

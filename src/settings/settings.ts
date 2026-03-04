@@ -117,7 +117,7 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
   notifications: Schema.optionalWith(NotificationSettingsSchema, { default: () => ({ enabled: false }) }),
   backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 500, scalingFactorHours: 24, pageFetchTimestamps: {} }) }),
   jiraBoardId: Schema.optional(NumberFromStringOrNumber),
-  mrSortOrder: Schema.optionalWith(MrSortOrderSchema, { default: () => 'updatedAt' as const }),
+  mrSortOrder: Schema.optionalWith(MrSortOrderSchema, { default: () => 'createdAt' as const }),
   appView: Schema.optionalWith(Schema.Literal('review', 'focus'), { default: () => 'review' as const }),
   factsViewStyle: Schema.optionalWith(Schema.Literal('chronological', 'grouped'), { default: () => 'chronological' as const }),
   sprintFilterId: Schema.optional(Schema.Number),

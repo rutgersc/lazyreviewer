@@ -375,7 +375,7 @@ export default function App() {
   const widths = getWidths();
 
   return (
-    <box style={{ flexDirection: "column", height: "100%", backgroundColor: '#282a36' }}>
+    <box onMouseDown={(e) => { if (e.button === 2) setActiveModal('help'); }} style={{ flexDirection: "column", height: "100%", backgroundColor: '#282a36' }}>
       {/* Main content area - horizontal layout */}
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
 
