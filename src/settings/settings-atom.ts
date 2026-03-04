@@ -304,6 +304,20 @@ export const repositoryPathsAtom = selectFromSettings(
   shallowObjectEquals
 );
 
+export const ensureRepositoryPathsAtom = appAtomRuntime.fn((repoPaths: readonly string[]) =>
+  SettingsService.modify(s => {
+    const updated = { ...s.repositoryPaths }
+    let changed = false
+    for (const path of repoPaths) {
+      if (!(path in updated)) {
+        updated[path] = { localPath: '', remoteName: 'origin' }
+        changed = true
+      }
+    }
+    return changed ? { ...s, repositoryPaths: updated } : s
+  })
+);
+
 const mrSortOrderRawAtom = selectFromSettings(
   s => s.mrSortOrder ?? 'updatedAt',
   'updatedAt' as MrSortOrder

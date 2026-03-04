@@ -210,5 +210,11 @@ export const mergeWithPredefinedUsers = (
     }
   })
 
+  predefinedUsers.forEach(p => {
+    if (!byUserId.has(p.userId)) {
+      byUserId.set(p.userId, p)
+    }
+  })
+
   return [...byUserId.values()]
 }

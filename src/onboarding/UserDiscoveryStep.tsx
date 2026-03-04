@@ -147,7 +147,13 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
                   return (
                     <box
                       key={sel.userSelectionEntryId}
-                      onMouseDown={() => { setHighlightIndex(idx) }}
+                      onMouseDown={() => {
+                        if (idx === highlightIndex) {
+                          handleProceed()
+                        } else {
+                          setHighlightIndex(idx)
+                        }
+                      }}
                       style={{
                         flexDirection: 'row',
                         backgroundColor: isHighlighted ? Colors.SELECTED : 'transparent',

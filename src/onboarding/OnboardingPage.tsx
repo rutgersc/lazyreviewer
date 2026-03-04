@@ -5,7 +5,7 @@ import { useAtomSet } from '@effect-atom/atom-react'
 import { Colors } from '../colors'
 import type { OnboardingStep, DiscoveredRepo } from './onboarding-types'
 import type { UserId, UserSelectionEntry } from '../userselection/userSelection'
-import { repoSelectionAtom, selectedUserSelectionEntryIdAtom, setCurrentUserAtom } from '../settings/settings-atom'
+import { repoSelectionAtom, selectedUserSelectionEntryIdAtom, setCurrentUserAtom, ensureRepositoryPathsAtom } from '../settings/settings-atom'
 import { userSelectionsAtom } from '../userselection/userselection-atom'
 import RepoSelectionStep from './RepoSelectionStep'
 import UserDiscoveryStep from './UserDiscoveryStep'
@@ -23,6 +23,7 @@ export default function OnboardingPage() {
   const setCurrentUser = useAtomSet(setCurrentUserAtom)
   const setSelectedUserSelectionEntryId = useAtomSet(selectedUserSelectionEntryIdAtom)
   const setUserSelections = useAtomSet(userSelectionsAtom)
+  const ensureRepositoryPaths = useAtomSet(ensureRepositoryPathsAtom)
   const renderer = useRenderer()
 
   useKeyboard((key: ParsedKey) => {
@@ -45,6 +46,7 @@ export default function OnboardingPage() {
     try {
       const repoPaths = selectedRepos.map(r => r.fullPath)
       setRepoSelection(repoPaths)
+      ensureRepositoryPaths(repoPaths)
       setCurrentUser(userId.userId)
       setUserSelections(selections)
       setSelectedUserSelectionEntryId(selectedSelectionId)
