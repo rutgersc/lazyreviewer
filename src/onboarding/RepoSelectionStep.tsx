@@ -99,7 +99,7 @@ export default function RepoSelectionStep({ onNext, onBack }: RepoSelectionStepP
     <box style={{ flexDirection: 'column', flexGrow: 1 }}>
       <box style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 1, paddingRight: 1 }}>
         <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
-          Step 1/3: Select Repositories
+          Step 1/4: Select Repositories
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
           j/k: nav | space: toggle | Enter: next | Esc: close

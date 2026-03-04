@@ -10,6 +10,7 @@ import { userSelectionsAtom } from '../userselection/userselection-atom'
 import RepoSelectionStep from './RepoSelectionStep'
 import UserDiscoveryStep from './UserDiscoveryStep'
 import IdentityStep from './IdentityStep'
+import RepoLocationStep from './RepoLocationStep'
 
 export default function OnboardingPage({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState<OnboardingStep>('repos')
@@ -26,8 +27,15 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
     if (key.name === 'z') renderer.console.toggle()
   })
 
+  const [repoLocalPaths, setRepoLocalPaths] = useState<ReadonlyMap<string, string>>(new Map())
+
   const handleReposDone = (repos: DiscoveredRepo[]) => {
     setSelectedReposLocal(repos)
+    setStep('locaterepos')
+  }
+
+  const handleLocateReposDone = (localPaths: ReadonlyMap<string, string>) => {
+    setRepoLocalPaths(localPaths)
     setStep('users')
   }
 
@@ -41,7 +49,12 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
   const handleIdentityDone = (userId: UserId) => {
     try {
       const repoPaths = selectedRepos.map(r => r.fullPath)
-      completeOnboarding({ repoPaths, currentUser: userId.userId, selectedUserSelectionEntryId: selectedSelectionId })
+      completeOnboarding({
+        repoPaths,
+        currentUser: userId.userId,
+        selectedUserSelectionEntryId: selectedSelectionId,
+        repositoryLocalPaths: repoLocalPaths,
+      })
       setUserSelections(selections)
       onComplete()
     } catch (e) {
@@ -69,11 +82,19 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
         />
       )}
 
+      {step === 'locaterepos' && (
+        <RepoLocationStep
+          repos={selectedRepos}
+          onNext={handleLocateReposDone}
+          onBack={() => setStep('repos')}
+        />
+      )}
+
       {step === 'users' && (
         <UserDiscoveryStep
           repos={selectedRepos}
           onNext={handleUsersDone}
-          onBack={() => setStep('repos')}
+          onBack={() => setStep('locaterepos')}
         />
       )}
 

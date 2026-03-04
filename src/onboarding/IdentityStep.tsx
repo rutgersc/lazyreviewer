@@ -70,7 +70,7 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
     <box style={{ flexDirection: 'column', flexGrow: 1 }}>
       <box style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 1, paddingRight: 1 }}>
         <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
-          Step 3/3: Who Are You?
+          Step 4/4: Who Are You?
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
           j/k: nav | Enter/click: select | Tab: type manually | Esc: back

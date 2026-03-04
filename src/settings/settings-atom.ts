@@ -322,14 +322,17 @@ export type CompleteOnboardingParams = {
   readonly repoPaths: readonly string[]
   readonly currentUser: string
   readonly selectedUserSelectionEntryId: string
+  readonly repositoryLocalPaths: ReadonlyMap<string, string>
 }
 
 export const completeOnboardingAtom = appAtomRuntime.fn((params: CompleteOnboardingParams) =>
   SettingsService.modify(s => {
     const repositoryPaths = { ...s.repositoryPaths }
     for (const path of params.repoPaths) {
-      if (!(path in repositoryPaths)) {
-        repositoryPaths[path] = { localPath: '', remoteName: 'origin' }
+      const localPath = params.repositoryLocalPaths.get(path) ?? ''
+      repositoryPaths[path] = {
+        localPath,
+        remoteName: repositoryPaths[path]?.remoteName ?? 'origin',
       }
     }
     return {

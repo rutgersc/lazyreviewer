@@ -12,4 +12,4 @@ export type DiscoveredUser = {
   readonly displayName?: string
 }
 
-export type OnboardingStep = 'repos' | 'users' | 'identity'
+export type OnboardingStep = 'repos' | 'users' | 'identity' | 'locaterepos'
