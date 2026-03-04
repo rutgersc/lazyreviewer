@@ -225,6 +225,17 @@ export default function RepoLocationStep({ repos, onNext, onBack }: RepoLocation
                     {localPath ?? '(not set)'}
                   </text>
                 )}
+                <text
+                  onMouseDown={(e: { stopPropagation: () => void }) => {
+                    e.stopPropagation()
+                    setHighlightIndex(idx)
+                    handleBrowse(idx)
+                  }}
+                  style={{ fg: Colors.NEUTRAL }}
+                  wrapMode='none'
+                >
+                  [Browse]
+                </text>
               </box>
             )
           })}

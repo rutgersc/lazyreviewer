@@ -174,16 +174,12 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
           border: true,
           borderColor: Colors.SUCCESS,
           backgroundColor: Colors.BACKGROUND,
-          padding: 2,
+          padding: 1,
           width: 70,
           maxHeight: '80%',
           flexDirection: "column"
         }}
       >
-        <text style={{ fg: Colors.SUCCESS, marginBottom: 1, attributes: TextAttributes.BOLD }} wrapMode='none'>
-          LazyGitLab - Keyboard Shortcuts
-        </text>
-
         <scrollbox
           ref={scrollBoxRef}
           style={{
@@ -232,7 +228,7 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
           </box>
         </scrollbox>
 
-        <text style={{ fg: Colors.NEUTRAL, marginTop: 1, attributes: TextAttributes.DIM }} wrapMode='none'>
+        <text style={{ fg: Colors.SUPPORTING, marginTop: 1 }} wrapMode='none'>
           j/k: Navigate • Enter: Execute • Esc: Close
         </text>
       </box>

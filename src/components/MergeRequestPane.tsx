@@ -934,7 +934,7 @@ export default function MergeRequestPane() {
                 {index > 0 && <text>{""}</text>}
                 {!repo.localPath && (
                   <text style={{ fg: Colors.WARNING }} wrapMode='none'>
-                    {repo.projectName}: {"<no path set> (press ctrl+s to configure)"}
+                    {repo.projectName}: {"<no path set> (press , to configure)"}
                   </text>
                 )}
                 {allWorktrees?.map((wt) => {

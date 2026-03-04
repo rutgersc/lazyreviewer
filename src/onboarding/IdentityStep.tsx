@@ -73,7 +73,7 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
           Step 4/4: Who Are You?
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          j/k: nav | Enter/click: select | Tab: type manually | Esc: back
+          j/k: nav | Enter/dbl-click: select | Tab: type manually | Esc: back
         </text>
       </box>
       <text style={{ fg: Colors.NEUTRAL, paddingLeft: 1 }} wrapMode='none'>
@@ -125,8 +125,11 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
                 key={user.userId}
                 onMouseDown={() => {
                   setInputFocused(false)
-                  setHighlightIndex(idx)
-                  onNext(user)
+                  if (idx === highlightIndex) {
+                    onNext(user)
+                  } else {
+                    setHighlightIndex(idx)
+                  }
                 }}
                 style={{
                   flexDirection: 'row',
