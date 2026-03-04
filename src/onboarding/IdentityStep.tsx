@@ -104,7 +104,7 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
 
       <box style={{ paddingLeft: 1, paddingTop: 1 }}>
         <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD }} wrapMode='none'>
-          Known Users ({discoveredUsers.length})
+          Select user ({discoveredUsers.length})
         </text>
       </box>
 

@@ -223,6 +223,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
 
       if (hasUserFilter && gitlabRepos.length > 0) {
         const userIds: UserId[] = userFilter.map(username => ({ type: 'userId', userId: username, gitlab: username }));
+        yield* Console.log(`[Refresh] Fetching ${filterMrState} MRs for users [${userIds.map(u => u.gitlab).join(', ')}] (first page)`);
         const cacheKey = new MRCacheKey({ users: userIds, state: filterMrState });
         const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
         yield* decideFetchUserMrs(userIds, filterMrState, knownMrs).pipe(
@@ -230,6 +231,9 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
           Effect.catchAllCause((cause) => Console.error("Error fetching user MRs:", cause))
         );
       } else {
+        if (gitlabRepos.length > 0) {
+          yield* Console.log(`[Refresh] Fetching ${filterMrState} MRs for ${gitlabRepos.length} GitLab repos: [${gitlabRepos.map(repositoryFullPath).join(', ')}] (first page, max 50 per repo)`);
+        }
         yield* Effect.forEach(
           gitlabRepos,
           (repo) => {
@@ -243,6 +247,9 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
         );
       }
 
+      if (bitbucketRepos.length > 0) {
+        yield* Console.log(`[Refresh] Fetching ${filterMrState} PRs for ${bitbucketRepos.length} Bitbucket repos: [${bitbucketRepos.map(repositoryFullPath).join(', ')}]`);
+      }
       yield* Effect.forEach(
         bitbucketRepos,
         (repo) => {

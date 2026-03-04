@@ -148,13 +148,13 @@ export const getSingleMr = Effect.fn("getSingleMr")(function* (projectPath: stri
 })
 
 // Event-returning wrapper functions
-export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (usernames: string[], state: MergeRequestState = 'opened') {
+export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (usernames: string[], state: MergeRequestState = 'opened', first: number = 50) {
   const sdk = getElabGitSdk();
   const data = yield* Effect.tryPromise({
     try: () => sdk.MRs({
       usernames: usernames,
       state: state,
-      first: 50
+      first
     }),
     catch: cause => new FetchGitlabMrsError({ cause })
   });

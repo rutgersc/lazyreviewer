@@ -167,14 +167,14 @@ export const selectedUserSelectionEntryIdAtom = Atom.writable(
 export const isOnboardingCompleteAtom = Atom.make(get =>
   Result.match(get(settingsAtom), {
     onInitial: () => true,
-    onSuccess: ({ value }) => value.repoSelection.length > 0,
+    onSuccess: ({ value }) => value.currentUser !== undefined,
     onFailure: () => true,
   })
 );
 
 export const currentUserAtom = selectFromSettings(
   s => s.currentUser,
-  'rutger'
+  undefined as string | undefined
 );
 
 export const setCurrentUserAtom = Atom.writable(
@@ -185,7 +185,7 @@ export const setCurrentUserAtom = Atom.writable(
 );
 
 export const currentUserIdAtom = Atom.make((get): UserId => {
-  const currentUserName = get(currentUserAtom);
+  const currentUserName = get(currentUserAtom) ?? '';
   const users = get(usersAtom);
   const found = users
     .filter((u): u is User => u.type === 'user')

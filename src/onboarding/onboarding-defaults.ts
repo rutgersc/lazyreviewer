@@ -1,7 +1,7 @@
 import type { UserSelectionEntry } from '../userselection/userSelection'
 import { groups } from '../data/usersAndGroups'
 
-export const DEFAULT_GITLAB_REPOS = ['elab/elab', 'elab/BlackLotus', 'elab/helix', 'elab/elab-custom-plugins'] as const
+export const DEFAULT_GITLAB_REPOS = ['elab/elab', 'elab/BlackLotus', 'elab/helix' ] as const
 export const DEFAULT_BITBUCKET_REPOS = ['raftdev/core.iam', 'raftdev/Core.AI-Instructions'] as const
 export const BITBUCKET_WORKSPACE = 'raftdev'
 

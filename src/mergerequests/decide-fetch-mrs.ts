@@ -134,25 +134,22 @@ export const decideFetchUserMrs = (
   EventStorage
 > => Effect.gen(function* () {
   const gitlabUsernames = users.map(u => u.gitlab).filter((g): g is string => g !== undefined)
-  const mrEvent = yield* getGitlabMrsAsEvent(gitlabUsernames, state)
-  yield* EventStorage.appendEvent(mrEvent)
+
+  const fetchAndAppend = (fetchState: MergeRequestState, first?: number) =>
+    Effect.gen(function* () {
+      const event = yield* getGitlabMrsAsEvent(gitlabUsernames, fetchState, first)
+      yield* EventStorage.appendEvent(event)
+      return event
+    })
+
+  const mrEvent = state === 'opened'
+    ? (yield* Effect.all([fetchAndAppend(state), fetchAndAppend('merged', 10)], { concurrency: 2 }))[0]
+    : yield* fetchAndAppend(state)
 
   const gitlabMrs = projectGitlabUserMrsFetchedEvent(mrEvent)
-
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
   yield* EventStorage.appendEvent(jiraEvent)
-
-  const anyHasNextPage = mrEvent.mrs.users?.nodes?.some(
-    user => user?.authoredMergeRequests?.pageInfo?.hasNextPage
-  ) ?? false
-  if (state === 'opened') {
-    if (anyHasNextPage) {
-      yield* Console.log(`[Fetch] Skipping missing-MR check for users: response was paginated`)
-    } else {
-      yield* forkFetchMissingMrs(knownMrs, new Set(gitlabMrs.map(mr => mr.id)))
-    }
-  }
 })
 
 export type PageFetchResult = {
@@ -247,6 +244,25 @@ export const fetchRepoPage = (
 
     if (trulyMissing.size > 0) {
       yield* forkFetchMissingMrs(trulyMissing, fetchedGids)
+    }
+
+    // Fetch recent merged MRs to detect state changes (opened → merged)
+    if (isPage1) {
+      yield* Effect.forkDaemon(
+        Effect.gen(function* () {
+          yield* Console.log(`[Fetch] Fetching recent merged MRs for project "${repository.id}" to detect state changes`)
+          const mergedEvent = yield* getGitlabMrsByProjectAsEvent(repository.id, 'merged', null, 10)
+          yield* EventStorage.appendEvent(mergedEvent)
+
+          const mergedMrs = projectGitlabProjectMrsFetchedEvent(mergedEvent)
+          const mergedJiraKeys = Array.from(new Set(mergedMrs.flatMap(mr => mr.jiraIssueKeys)))
+          if (mergedJiraKeys.length > 0) {
+            yield* Effect.forkDaemon(fetchJiraForKeys(mergedJiraKeys))
+          }
+        }).pipe(
+          Effect.catchAllCause((cause) => Console.error(`[Fetch] Error fetching recent merged MRs for project "${repository.id}":`, cause))
+        )
+      )
     }
   }
 

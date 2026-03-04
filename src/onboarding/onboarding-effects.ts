@@ -6,6 +6,7 @@ import { getGitlabMrsByProjectAsEvent } from '../gitlab/gitlab-graphql'
 import { getBitbucketPrsAsEvent } from '../bitbucket/bitbucketapi'
 import { projectGitlabProjectMrsFetchedEvent } from '../gitlab/gitlab-projections'
 import { projectBitbucketPrsFetchedEvent } from '../bitbucket/bitbucket-projections'
+import { loadJiraTicketsAsEvent } from '../jira/jira-service'
 
 type GitlabProject = {
   id: number
@@ -101,20 +102,49 @@ export const fetchBitbucketRepos = (workspace: string): Effect.Effect<RepoFetchR
   Effect.succeed({ repos: [] as DiscoveredRepo[], warnings: [String(warning)] })
 ))
 
-export const fetchMrsForRepos = (repos: readonly DiscoveredRepo[]) => Effect.gen(function* () {
+export const fetchMrsForRepos = (
+  repos: readonly DiscoveredRepo[],
+  onProgress?: (completed: number, total: number, repoPath: string) => void
+) => Effect.gen(function* () {
+  let completed = 0
   const results = yield* Effect.forEach(
     repos,
     (repo) => fetchMrsForRepo(repo).pipe(
+      Effect.tap(() => {
+        completed++
+        onProgress?.(completed, repos.length, repo.fullPath)
+        return Effect.void
+      }),
       Effect.catchAll((err) =>
         Console.error(`[Onboarding] Error fetching MRs for ${repo.fullPath}: ${err}`).pipe(
-          Effect.as([] as DiscoveredUser[])
+          Effect.tap(() => {
+            completed++
+            onProgress?.(completed, repos.length, repo.fullPath)
+            return Effect.void
+          }),
+          Effect.as({ users: [] as DiscoveredUser[], jiraKeys: [] as string[] })
         )
       )
     ),
     { concurrency: 3 }
   )
 
-  const allUsers = results.flat()
+  const jiraKeys = Array.from(new Set(results.flatMap(r => r.jiraKeys)))
+  if (jiraKeys.length > 0) {
+    yield* Effect.forkDaemon(
+      Effect.gen(function* () {
+        yield* Console.log(`[Onboarding] Fetching ${jiraKeys.length} Jira tickets in background`)
+        const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
+        yield* EventStorage.appendEvent(jiraEvent)
+      }).pipe(
+        Effect.catchAll((err) =>
+          Console.error(`[Onboarding] Error fetching Jira tickets: ${err}`)
+        )
+      )
+    )
+  }
+
+  const allUsers = results.flatMap(r => r.users)
   const seen = new Set<string>()
   return allUsers.filter(u => {
     const key = `${u.provider}:${u.username}`
@@ -129,11 +159,14 @@ const fetchMrsForRepo = (repo: DiscoveredRepo) => Effect.gen(function* () {
     const mrEvent = yield* getGitlabMrsByProjectAsEvent(repo.fullPath, 'opened')
     yield* EventStorage.appendEvent(mrEvent)
     const mrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
-    return mrs.map((mr): DiscoveredUser => ({
-      provider: 'gitlab',
-      username: mr.author,
-      displayName: mr.author,
-    }))
+    return {
+      users: mrs.map((mr): DiscoveredUser => ({
+        provider: 'gitlab',
+        username: mr.author,
+        displayName: mr.author,
+      })),
+      jiraKeys: mrs.flatMap(mr => mr.jiraIssueKeys),
+    }
   }
 
   const workspace = repo.workspace ?? repo.fullPath.split('/')[0] ?? ''
@@ -141,11 +174,14 @@ const fetchMrsForRepo = (repo: DiscoveredRepo) => Effect.gen(function* () {
   const bbEvent = yield* getBitbucketPrsAsEvent(workspace, repoSlug, 'opened')
   yield* EventStorage.appendEvent(bbEvent)
   const prs = projectBitbucketPrsFetchedEvent(bbEvent, new Map())
-  return prs.map((pr): DiscoveredUser => ({
-    provider: 'bitbucket',
-    username: pr.author,
-    displayName: pr.author,
-  }))
+  return {
+    users: prs.map((pr): DiscoveredUser => ({
+      provider: 'bitbucket',
+      username: pr.author,
+      displayName: pr.author,
+    })),
+    jiraKeys: prs.flatMap(pr => pr.jiraIssueKeys),
+  }
 })
 
 export const mergeWithPredefinedUsers = (

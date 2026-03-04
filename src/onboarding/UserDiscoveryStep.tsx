@@ -29,9 +29,13 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
 
     const load = async () => {
       try {
-        setProgress(`Discovering users... 0/${repos.length} repos`)
+        setProgress(`Fetching MRs... 0/${repos.length} repos`)
         const runtime = await getAppRuntime()
-        const discovered: DiscoveredUser[] = await Runtime.runPromise(runtime)(fetchMrsForRepos(repos))
+        const discovered: DiscoveredUser[] = await Runtime.runPromise(runtime)(
+          fetchMrsForRepos(repos, (done, total, repoPath) => {
+            setProgress(`Fetching MRs... ${done}/${total} repos (${repoPath})`)
+          })
+        )
 
         if (cancelled) return
 

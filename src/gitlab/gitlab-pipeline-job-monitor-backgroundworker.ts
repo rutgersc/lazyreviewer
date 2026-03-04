@@ -232,19 +232,18 @@ const backgroundWorker =
         Effect.either
       )
 
-    yield* Either.match(pollResults, {
-      onLeft: (error) => {
-        return Console.log("[PipelineJobMonitor] `Failed to poll mr: ", error)
-      },
-      onRight: (polls) => Effect.gen(function* () {
+    const formatResult = (r: { type?: string; _tag?: string; message?: string; reason?: string }) =>
+      `${r.type ?? r._tag ?? '?'}${r.message ? `: ${r.message}` : ''}${r.reason ? `: ${r.reason}` : ''}`
 
+    yield* Either.match(pollResults, {
+      onLeft: (errors) =>
+        Console.log(`[PipelineJobMonitor] Failed to poll MRs:\n${errors.map(e => `  - ${formatResult(e)}`).join('\n')}`),
+      onRight: (polls) => Effect.gen(function* () {
         const nonSkipped = polls
-          .filter(p => p.type !== 'skipped' && p.type !== 'noChange')
-          .values()
-          .toArray();
+          .filter(p => p.type !== 'skipped' && p.type !== 'noChange');
 
         if (nonSkipped.length > 0) {
-          yield* Console.log("[PipelineJobMonitor] Poll complete:", nonSkipped)
+          yield* Console.log(`[PipelineJobMonitor] Poll complete:\n${nonSkipped.map(p => `  - ${formatResult(p)}`).join('\n')}`)
         }
       })
     })

@@ -70,9 +70,6 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     }
 
     const loadEvents = Effect.gen(function* () {
-      yield* Console.log(`[EventStorage] loading events..`)
-
-      // Read directory
       const files = yield* fs.readDirectory(eventsDir).pipe(
         Effect.catchAll(() => Effect.succeed([]))
       )
