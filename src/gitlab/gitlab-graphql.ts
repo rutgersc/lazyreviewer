@@ -49,7 +49,7 @@ export class FetchJobTraceError extends Data.TaggedError("FetchJobTraceError")<{
   cause: unknown;
 }> { }
 
-const getJobTraceRaw = Effect.fn("getJobTraceRaw")(function* (projectId: string, jobId: string) {
+export const getJobTraceRaw = Effect.fn("getJobTraceRaw")(function* (projectId: string, jobId: string) {
   const token = process.env.GITLAB_TOKEN;
   const encodedProjectId = encodeURIComponent(projectId);
   const realIdLol = jobId.split("/");

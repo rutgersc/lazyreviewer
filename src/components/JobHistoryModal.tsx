@@ -3,12 +3,16 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { getJobStatusDisplay } from '../domain/display/jobStatus';
 import { Colors } from '../colors';
-import { useAtomValue, useAtomSet, Atom } from '@effect-atom/atom-react';
+import { useAtomValue, useAtomSet, Atom, Registry, RegistryContext } from '@effect-atom/atom-react';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { appAtomRuntime } from '../appLayerRuntime';
-import { Console, Effect } from 'effect';
-import { fetchJobHistory } from '../gitlab/gitlab-graphql';
+import { Console, Effect, Exit } from 'effect';
+import { fetchJobHistory, getJobTraceRaw } from '../gitlab/gitlab-graphql';
 import type { JobHistoryEntry } from '../domain/merge-request-schema';
+import { spawn } from 'child_process';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { repositoryPathsAtom } from '../settings/settings-atom';
 
 export interface JobHistoryQuery {
   readonly projectPath: string;
@@ -56,38 +60,143 @@ export const fetchJobHistoryAtom = appAtomRuntime.fn((_: number, get) =>
   })
 );
 
-const loadMoreJobHistoryAtom = appAtomRuntime.fn((_: void, get) =>
+interface LoadMoreArgs {
+  readonly query: JobHistoryQuery;
+  readonly endCursor: string | null;
+  readonly currentHistory: JobHistoryEntry[];
+}
+
+const loadMoreJobHistoryAtom = appAtomRuntime.fn((args: LoadMoreArgs, get) =>
   Effect.gen(function* () {
-    const query = get(jobHistoryQueryAtom);
     const limit = get(jobHistoryLimitAtom);
-    const endCursor = get(jobHistoryEndCursorAtom);
-    const hasNextPage = get(jobHistoryHasNextPageAtom);
-    const currentHistory = get(jobHistoryDataAtom);
 
-    if (!hasNextPage) {
-      yield* Console.log('[JobHistory] No more pages to load');
-      return { history: currentHistory, pageInfo: { hasNextPage: false, endCursor: null as string | null }, appended: false };
-    }
-
-    if (!query) {
-      yield* Console.log('[JobHistory] No query set');
-      return { history: currentHistory, pageInfo: { hasNextPage: false, endCursor: null as string | null }, appended: false };
-    }
-
-    yield* Console.log(`[JobHistory] Loading more for ${query.jobName} (cursor: ${endCursor})`);
+    yield* Console.log(`[JobHistory] Loading more for ${args.query.jobName} (cursor: ${args.endCursor})`);
 
     const result = yield* fetchJobHistory(
-      query.projectPath,
-      query.jobName,
+      args.query.projectPath,
+      args.query.jobName,
       limit,
-      endCursor
+      args.endCursor
     );
 
     yield* Console.log(`[JobHistory] Fetched ${result.history.length} more entries`);
 
-    const newHistory: JobHistoryEntry[] = [...currentHistory, ...result.history];
+    const newHistory: JobHistoryEntry[] = [...args.currentHistory, ...result.history];
 
-    return { history: newHistory, pageInfo: result.pageInfo, appended: true };
+    return { history: newHistory, pageInfo: result.pageInfo };
+  })
+);
+
+const buildDebugPrompt = (
+  query: JobHistoryQuery,
+  totalLoaded: number,
+  localRepoPath: string | null,
+  traces: readonly { job: JobHistoryEntry; trace: string | null }[]
+): string => {
+  const stripAnsi = (s: string) =>
+    s.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '')
+     .replace(/\x1B\[0K/g, '')
+     .replace(/^section_(?:start|end):[^\n]*$/gm, '')
+     .replace(/\r/g, '')
+     .replace(/\n{3,}/g, '\n\n');
+
+  const tailLines = (s: string, n: number) => {
+    const lines = s.split('\n');
+    return lines.length > n
+      ? `... (${lines.length - n} lines truncated)\n${lines.slice(-n).join('\n')}`
+      : s;
+  };
+
+  const sections = traces.map(({ job, trace }) => {
+    const traceContent = trace
+      ? tailLines(stripAnsi(trace), 200)
+      : '(trace unavailable)';
+
+    return [
+      `## Pipeline #${job.pipelineIid} — ${job.pipelineRef}`,
+      '',
+      `- **Commit**: \`${job.shortShaCommit || 'unknown'}\``,
+      `- **Created**: ${job.pipelineCreatedAt}`,
+      `- **Duration**: ${job.duration ? `${job.duration}s` : 'unknown'}`,
+      job.failureMessage ? `- **Failure**: ${job.failureMessage}` : null,
+      job.mergeRequestTitle ? `- **MR**: !${job.mergeRequestIid} ${job.mergeRequestTitle}` : null,
+      job.runner ? `- **Runner**: ${job.runner.description || job.runner.shortSha}` : null,
+      '',
+      '### Job Log (last 200 lines)',
+      '',
+      '```',
+      traceContent,
+      '```',
+      ''
+    ].filter(line => line !== null).join('\n');
+  });
+
+  return [
+    `# Debug: Failed "${query.jobName}" runs`,
+    '',
+    `> ${traces.length} failed run(s) out of ${totalLoaded} total loaded runs in \`${query.projectPath}\``,
+    localRepoPath ? `> Local repository: \`${localRepoPath}\`` : null,
+    '',
+    'Analyze these failed CI job logs. The commits referenced below can be inspected in the local repository.',
+    '',
+    'Identify:',
+    '1. **Root cause(s)** — What is causing each failure?',
+    '2. **Patterns** — Are multiple failures related? Same root cause or different?',
+    '3. **Fix suggestions** — What changes would resolve these failures?',
+    '4. **Flaky vs real** — Are any of these flaky test failures vs genuine bugs?',
+    '',
+    '---',
+    '',
+    ...sections
+  ].filter(line => line !== null).join('\n');
+};
+
+const generateDebugPromptAtom = appAtomRuntime.fn((_: void, get) =>
+  Effect.gen(function* () {
+    const query = get(jobHistoryQueryAtom);
+    const history = get(jobHistoryDataAtom);
+    const repoPaths = get(repositoryPathsAtom);
+
+    if (!query) return;
+
+    const localRepoPath = repoPaths[query.projectPath]?.localPath || null;
+
+    const failedJobs = history.filter(e => e.jobStatus === 'FAILED');
+    if (failedJobs.length === 0) {
+      yield* Console.log('[JobHistory] No failed jobs to debug');
+      return;
+    }
+
+    yield* Console.log(`[JobHistory] Fetching traces for ${failedJobs.length} failed jobs...`);
+
+    const traces = yield* Effect.all(
+      failedJobs.map(job =>
+        getJobTraceRaw(query.projectPath, job.jobId).pipe(
+          Effect.map(trace => ({ job, trace })),
+          Effect.catchAll(() => Effect.succeed({ job, trace: null as string | null }))
+        )
+      ),
+      { concurrency: 5 }
+    );
+
+    const prompt = buildDebugPrompt(query, history.length, localRepoPath, traces);
+
+    const sanitize = (s: string) => s.replace(/[<>:"/\\|?*]/g, '_');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const dir = join(process.cwd(), 'logs', 'debug-prompts');
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    const filePath = join(dir, `${sanitize(query.jobName)}_${timestamp}.md`);
+
+    writeFileSync(filePath, prompt, 'utf8');
+    yield* Console.log(`[JobHistory] Debug prompt saved to: ${filePath}`);
+
+    if (process.platform === 'win32') {
+      spawn('start', ['', filePath], { shell: true, detached: true, stdio: 'ignore' });
+    } else if (process.platform === 'darwin') {
+      spawn('open', [filePath], { detached: true, stdio: 'ignore' });
+    } else {
+      spawn('xdg-open', [filePath], { detached: true, stdio: 'ignore' });
+    }
   })
 );
 
@@ -128,14 +237,15 @@ export default function JobHistoryModal({
 }: JobHistoryModalProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
-  useAtomValue(jobHistoryQueryAtom);
+  const registry = React.useContext(RegistryContext);
+  const query = useAtomValue(jobHistoryQueryAtom);
   const jobName = useAtomValue(selectedJobForHistoryAtom);
   const jobHistory = useAtomValue(jobHistoryDataAtom);
   const hasNextPage = useAtomValue(jobHistoryHasNextPageAtom);
+  const endCursor = useAtomValue(jobHistoryEndCursorAtom);
   const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
   const setJobHistoryEndCursor = useAtomSet(jobHistoryEndCursorAtom);
   const setJobHistoryHasNextPage = useAtomSet(jobHistoryHasNextPageAtom);
-  const runLoadMore = useAtomSet(loadMoreJobHistoryAtom, { mode: 'promiseExit' });
   const isLoading = false; // TODO;
 
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
@@ -160,16 +270,21 @@ export default function JobHistoryModal({
         return newIndex;
       });
     } else if (key.name === 'm') {
-      if (hasNextPage) {
-        runLoadMore().then((exit) => {
-          if (exit._tag === 'Success') {
+      if (hasNextPage && query) {
+        registry.set(loadMoreJobHistoryAtom, { query, endCursor, currentHistory: jobHistory });
+        Effect.runPromiseExit(
+          Registry.getResult(registry, loadMoreJobHistoryAtom, { suspendOnWaiting: true })
+        ).then((exit) => {
+          if (Exit.isSuccess(exit)) {
             const { history, pageInfo } = exit.value;
-            setJobHistoryData(history);
-            setJobHistoryEndCursor(pageInfo.endCursor);
-            setJobHistoryHasNextPage(pageInfo.hasNextPage);
+            registry.set(jobHistoryDataAtom, history);
+            registry.set(jobHistoryEndCursorAtom, pageInfo.endCursor);
+            registry.set(jobHistoryHasNextPageAtom, pageInfo.hasNextPage);
           }
         });
       }
+    } else if (key.name === 'd') {
+      registry.set(generateDebugPromptAtom, undefined);
     } else if (key.name === 'return') {
       const selectedEntry = jobHistory[selectedIndex];
       if (selectedEntry?.webPath) {
@@ -344,7 +459,7 @@ export default function JobHistoryModal({
         </scrollbox>
 
         {/* Footer */}
-        {/* <box style={{
+        <box style={{
           padding: 1,
           border: true,
           borderColor: Colors.NEUTRAL,
@@ -357,9 +472,9 @@ export default function JobHistoryModal({
             {`${totalRuns} loaded · ${developRuns} on develop · ${failedRuns} failures${hasNextPage ? ' · more available' : ' · all loaded'}`}
           </text>
           <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
-            {hasNextPage ? 'j/k: navigate • enter: open • m: load more • esc: close' : 'j/k: navigate • enter: open • esc: close'}
+            {hasNextPage ? 'j/k: navigate • enter: open • m: load more • d: debug prompt • esc: close' : 'j/k: navigate • enter: open • d: debug prompt • esc: close'}
           </text>
-        </box> */}
+        </box>
       </box>
   );
 }
