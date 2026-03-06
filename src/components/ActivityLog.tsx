@@ -203,13 +203,12 @@ const extractEvents = (mr: MergeRequest): Event[] => {
 const getEventTypeColor = (type: EventType, data?: any): string => {
   // Color code by source
   if (type === 'jira_comment') {
-    return '#bd93f9'; // Purple for Jira
+    return Colors.NEUTRAL;
   }
   if (type === 'pipeline') {
     return data?.hasFailures ? Colors.ERROR : Colors.SUCCESS;
   }
-  // MR-related events
-  return '#8be9fd'; // Cyan for MR events
+  return Colors.INFO;
 };
 
 const formatEventDetails = (event: Event): string => {
@@ -314,9 +313,9 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
       style={{
         flexGrow: 1,
         width: "100%",
-        contentOptions: { backgroundColor: '#282a36' },
+        contentOptions: { backgroundColor: Colors.BACKGROUND },
         scrollbarOptions: {
-          trackOptions: { foregroundColor: '#bd93f9', backgroundColor: '#44475a' },
+          trackOptions: { foregroundColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK },
         },
       }}
     >

@@ -2,6 +2,7 @@ import React from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import type { MrSortOrder } from '../mergerequests/mergerequests-atom';
+import { Colors } from '../colors';
 
 interface MrSortModalProps {
   isVisible: boolean;
@@ -64,22 +65,22 @@ export default function MrSortModal({
       <box
         style={{
           border: true,
-          borderColor: "#50fa7b",
-          backgroundColor: '#282a36',
+          borderColor: Colors.SUCCESS,
+          backgroundColor: Colors.BACKGROUND,
           flexDirection: "column",
           minWidth: 50,
           minHeight: 5
         }}
       >
-        <text style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD }} wrapMode='none'>
+        <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrapMode='none'>
           Sort by
         </text>
         {SORT_OPTIONS.map((option, index) => (
           <text
             key={option.key}
             style={{
-              fg: index === selectedIndex ? '#f8f8f2' : '#bd93f9',
-              bg: index === selectedIndex ? '#44475a' : undefined,
+              fg: index === selectedIndex ? Colors.PRIMARY : Colors.NEUTRAL,
+              bg: index === selectedIndex ? Colors.TRACK : undefined,
               attributes: index === selectedIndex ? TextAttributes.BOLD : undefined
             }}
             wrapMode='none'

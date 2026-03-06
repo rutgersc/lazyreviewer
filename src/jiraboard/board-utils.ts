@@ -5,9 +5,9 @@ export type StatusInfo = { text: string; color: string; dimColor?: string };
 
 export const mapStatus = (statusName: string): StatusInfo => {
   const s = statusName.toLowerCase();
-  if (s.includes('merged')) return { text: 'MGD', color: Colors.SUCCESS, dimColor: '#69a373' };
-  if (s.includes('done')) return { text: 'DONE', color: Colors.SUCCESS, dimColor: '#69a373' };
-  if (s.includes('reject')) return { text: 'REJ', color: Colors.ERROR, dimColor: '#a36969' };
+  if (s.includes('merged')) return { text: 'MGD', color: Colors.SUCCESS, dimColor: Colors.SUPPORTING };
+  if (s.includes('done')) return { text: 'DONE', color: Colors.SUCCESS, dimColor: Colors.SUPPORTING };
+  if (s.includes('reject')) return { text: 'REJ', color: Colors.ERROR, dimColor: Colors.SUPPORTING };
   if (s.includes('merge')) return { text: 'MREQ', color: Colors.SUCCESS };
   if (s.includes('test in progress')) return { text: 'TIP', color: Colors.SECONDARY };
   if (s.includes('testing')) return { text: 'TEST', color: Colors.WARNING };
@@ -22,10 +22,10 @@ export type PriorityInfo = { color: string };
 
 export const mapPriority = (priorityName: string): PriorityInfo => {
   const p = priorityName.toLowerCase();
-  if (p.includes('high') || p.includes('critical') || p.includes('blocker')) return { color: '#ff5555' };
-  if (p.includes('medium') || p.includes('normal')) return { color: '#ffb86c' };
-  if (p.includes('low') || p.includes('minor') || p.includes('trivial')) return { color: '#6272a4' };
-  return { color: '#6272a4' };
+  if (p.includes('high') || p.includes('critical') || p.includes('blocker')) return { color: Colors.ERROR };
+  if (p.includes('medium') || p.includes('normal')) return { color: Colors.WARNING };
+  if (p.includes('low') || p.includes('minor') || p.includes('trivial')) return { color: Colors.DIM };
+  return { color: Colors.DIM };
 };
 
 const EPIC_COLORS = ['#ff5555', '#50fa7b', '#8be9fd', '#bd93f9', '#f1fa8c', '#ffb86c', '#ff79c6'];
@@ -74,7 +74,7 @@ export const transformToBoard = (issues: readonly JiraIssue[]): BoardStory[] => 
     return {
       issue: p,
       displayItems: [p, ...(subtasksByParent.get(p.key) ?? [])],
-      epicColor: epicKey ? generateEpicColor(epicKey) : '#44475a',
+      epicColor: epicKey ? generateEpicColor(epicKey) : Colors.TRACK,
     };
   });
 };

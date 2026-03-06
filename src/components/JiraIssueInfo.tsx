@@ -16,7 +16,7 @@ export default function JiraIssueInfo({ issue, selectedCommentIndex, commentFocu
     if (!comments || comments.length === 0) {
       return (
         <text
-          style={{ fg: '#bd93f9', attributes: TextAttributes.DIM }}
+          style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
           wrapMode='word'
         >
           No comments
@@ -27,7 +27,7 @@ export default function JiraIssueInfo({ issue, selectedCommentIndex, commentFocu
     return (
       <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
         <text
-          style={{ fg: '#bd93f9', attributes: TextAttributes.BOLD, marginBottom: 1 }}
+          style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.BOLD, marginBottom: 1 }}
           wrapMode='word'
         >
           {`Comments (${comments.length})`}
@@ -40,17 +40,17 @@ export default function JiraIssueInfo({ issue, selectedCommentIndex, commentFocu
             <box
               key={comment.id}
               id={`jira-comment-${comment.id}`}
-              style={{ flexDirection: "column", marginLeft: 2, width: "100%", backgroundColor: isSelected ? Colors.SELECTED : '#1a1a1a', padding: 1 }}
+              style={{ flexDirection: "column", marginLeft: 2, width: "100%", backgroundColor: isSelected ? Colors.SELECTED : Colors.BACKGROUND_ALT, padding: 1 }}
             >
               <box style={{ flexDirection: "row", gap: 0, width: "100%" }}>
                 <text
-                  style={{ fg: '#8be9fd', attributes: TextAttributes.BOLD }}
+                  style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }}
                   wrapMode='word'
                 >
                   {comment.author.displayName}
                 </text>
                 <text
-                  style={{ fg: '#bd93f9', attributes: TextAttributes.DIM }}
+                  style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
                   wrapMode='word'
                 >
                   {` ${formatCompactTime(new Date(comment.created))} (${new Date(comment.created).toLocaleDateString()} ${new Date(comment.created).toLocaleTimeString()}):`}
@@ -58,7 +58,7 @@ export default function JiraIssueInfo({ issue, selectedCommentIndex, commentFocu
               </box>
               <box style={{ marginLeft: 4 }}>
                 <text
-                  style={{ fg: '#f1fa8c' }}
+                  style={{ fg: Colors.SECONDARY }}
                   wrapMode='word'
                 >
                   {commentText}
@@ -76,7 +76,7 @@ export default function JiraIssueInfo({ issue, selectedCommentIndex, commentFocu
       <box style={{ flexDirection: "column", marginBottom: 1, width: "100%" }}>
         {issue.fields.assignee && (
           <text
-            style={{ fg: '#8be9fd', marginBottom: 1 }}
+            style={{ fg: Colors.INFO, marginBottom: 1 }}
             wrapMode='word'
           >
             {`Assignee: ${issue.fields.assignee.displayName}`}

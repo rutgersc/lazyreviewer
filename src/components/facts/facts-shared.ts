@@ -8,6 +8,7 @@ import type { LazyReviewerEvent } from '../../events/events';
 import { allMrsAtom, unwrappedMergeRequestsAtom, selectMrByIdAtom, selectedMrAtom, filteredMrsAtom } from '../../mergerequests/mergerequests-atom';
 import { appViewAtom, currentUserIdAtom, factsSelectionActiveAtom } from '../../settings/settings-atom';
 import { isCurrentUser, mrProviderAuthor } from '../../userselection/userSelection';
+import { Colors } from '../../colors';
 import { viewConfigs } from '../../ui/view-config';
 import { infoPaneTabAtom } from '../../ui/navigation-atom';
 import { targetNoteIdAtom } from '../ActivityLog';
@@ -35,41 +36,41 @@ export function getChangeDescription(change: Change): { color: string; text: str
 
   switch (change.type) {
     case 'new-mr':
-      return { color: '#50fa7b', text: `${jira}New MR: ${change.mr.mrName} (${mrAuthorName(change.mr)})` };
+      return { color: Colors.SUCCESS, text: `${jira}New MR: ${change.mr.mrName} (${mrAuthorName(change.mr)})` };
     case 'merged-mr':
-      return { color: '#bd93f9', text: `${jira}Merged: ${change.mr.mrName}` };
+      return { color: Colors.NEUTRAL, text: `${jira}Merged: ${change.mr.mrName}` };
     case 'closed-mr':
-      return { color: '#ff5555', text: `${jira}Closed: ${change.mr.mrName}` };
+      return { color: Colors.ERROR, text: `${jira}Closed: ${change.mr.mrName}` };
     case 'reopened-mr':
-      return { color: '#ffb86c', text: `${jira}Reopened: ${change.mr.mrName}` };
+      return { color: Colors.WARNING, text: `${jira}Reopened: ${change.mr.mrName}` };
     case 'system-note':
-      return { color: '#6272a4', text: `${jira}${change.authorDisplayName}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
+      return { color: Colors.DIM, text: `${jira}${change.authorDisplayName}: ${change.body.slice(0, 50)}${change.body.length > 50 ? '...' : ''}` };
     case 'system-notes-compacted': {
       const author = change.authorDisplayNames[0];
       switch (change.systemNoteType) {
         case 'commits-added':
-          return { color: '#6272a4', text: `${jira}${author}: added ${change.count} commits` };
+          return { color: Colors.DIM, text: `${jira}${author}: added ${change.count} commits` };
         case 'approved':
-          return { color: '#6272a4', text: `${jira}${author}: approved this merge request ${change.count} times` };
+          return { color: Colors.DIM, text: `${jira}${author}: approved this merge request ${change.count} times` };
         case 'mentioned-in-mr':
-          return { color: '#6272a4', text: `${jira}${author}: mentioned in ${change.count} merge requests` };
+          return { color: Colors.DIM, text: `${jira}${author}: mentioned in ${change.count} merge requests` };
         default:
-          return { color: '#6272a4', text: `${jira}${author}: ${change.count} system notes` };
+          return { color: Colors.DIM, text: `${jira}${author}: ${change.count} system notes` };
       }
     }
     case 'diff-comment': {
       const lineInfo = change.line ? `:${change.line}` : '';
       const fileName = change.filePath.split('/').pop() ?? change.filePath;
-      return { color: '#8be9fd', text: `${jira}${change.authorDisplayName} on ${fileName}${lineInfo}` };
+      return { color: Colors.INFO, text: `${jira}${change.authorDisplayName} on ${fileName}${lineInfo}` };
     }
     case 'discussion-comment':
-      return { color: '#ffb86c', text: `${jira}${change.authorDisplayName} commented on ${change.mr.mrName}` };
+      return { color: Colors.WARNING, text: `${jira}${change.authorDisplayName} commented on ${change.mr.mrName}` };
     case 'new-jira-issue':
-      return { color: '#50fa7b', text: `${jira}New Jira: ${change.issue.summary}` };
+      return { color: Colors.SUCCESS, text: `${jira}New Jira: ${change.issue.summary}` };
     case 'jira-status-changed':
-      return { color: '#bd93f9', text: `${jira}${change.fromStatus ? `${change.fromStatus} → ` : ''}${change.toStatus}` };
+      return { color: Colors.NEUTRAL, text: `${jira}${change.fromStatus ? `${change.fromStatus} → ` : ''}${change.toStatus}` };
     case 'jira-comment':
-      return { color: '#8be9fd', text: `${jira}${change.authorDisplayName} commented` };
+      return { color: Colors.INFO, text: `${jira}${change.authorDisplayName} commented` };
     default: {
       const _: never = change;
       throw new Error("unreachable");

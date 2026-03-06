@@ -76,7 +76,7 @@ export default function NotificationsPage({ onClose }: NotificationsPageProps) {
       <box style={{ flexDirection: 'column', padding: 1 }}>
         {/* Header */}
         <box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <text style={{ fg: '#ff79c6', attributes: TextAttributes.BOLD }} wrapMode='none'>
+          <text style={{ fg: Colors.ACCENT, attributes: TextAttributes.BOLD }} wrapMode='none'>
             Notifications
           </text>
           <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>

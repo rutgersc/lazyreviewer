@@ -11,6 +11,7 @@ import {
   scrollToEventIdRequestAtom,
   statusMessageAtom,
 } from './facts/facts-shared';
+import { Colors } from '../colors';
 
 // Re-export atoms for backward compat with FactsPaneActions.ts and other consumers
 export {
@@ -46,50 +47,50 @@ export default function FactsPane() {
     }
   }, [scrollToEventIdRequest, scrollToId, setScrollToEventIdRequest]);
 
-  const reviewColor = appView === 'review' ? viewConfigs.review.modeIndicator.labelColor : '#6272a4';
-  const focusColor = appView === 'focus' ? viewConfigs.focus.modeIndicator.labelColor : '#6272a4';
+  const reviewColor = appView === 'review' ? viewConfigs.review.modeIndicator.labelColor : Colors.DIM;
+  const focusColor = appView === 'focus' ? viewConfigs.focus.modeIndicator.labelColor : Colors.DIM;
 
-  const notifColor = notificationSettings.enabled ? '#f1fa8c' : '#6272a4';
-  const chronoColor = factsViewStyle === 'chronological' ? '#f1fa8c' : '#6272a4';
-  const eventsColor = factsViewStyle === 'grouped' ? '#f1fa8c' : '#6272a4';
-  const branchColor = showBranchNames ? '#f1fa8c' : '#6272a4';
-  const titleColor = showBranchNames ? '#6272a4' : '#f1fa8c';
-  const filteredColor = factsSelectionActive ? '#f1fa8c' : '#6272a4';
-  const allColor = factsSelectionActive ? '#6272a4' : '#f1fa8c';
+  const notifColor = notificationSettings.enabled ? Colors.SECONDARY : Colors.DIM;
+  const chronoColor = factsViewStyle === 'chronological' ? Colors.SECONDARY : Colors.DIM;
+  const eventsColor = factsViewStyle === 'grouped' ? Colors.SECONDARY : Colors.DIM;
+  const branchColor = showBranchNames ? Colors.SECONDARY : Colors.DIM;
+  const titleColor = showBranchNames ? Colors.DIM : Colors.SECONDARY;
+  const filteredColor = factsSelectionActive ? Colors.SECONDARY : Colors.DIM;
+  const allColor = factsSelectionActive ? Colors.DIM : Colors.SECONDARY;
 
   const modeIndicatorBox = () => (
     <box key="mode-indicator" width="100%" height={6} flexDirection="column">
       <box height={1} flexDirection="row"
            onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
-        <text fg="#44475a" wrapMode="none">{' [v] '}</text>
+        <text fg={Colors.TRACK} wrapMode="none">{' [v] '}</text>
         <text fg={reviewColor} wrapMode="none">{'review'}</text>
-        <text fg="#44475a" wrapMode="none">{' / '}</text>
+        <text fg={Colors.TRACK} wrapMode="none">{' / '}</text>
         <text fg={focusColor} wrapMode="none">{'focus'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => setFactsViewStyle(factsViewStyle === 'grouped' ? 'chronological' : 'grouped')}>
-        <text fg="#44475a" wrapMode="none">{' [c] '}</text>
+        <text fg={Colors.TRACK} wrapMode="none">{' [c] '}</text>
         <text fg={chronoColor} wrapMode="none">{'chronological'}</text>
-        <text fg="#44475a" wrapMode="none">{' / '}</text>
+        <text fg={Colors.TRACK} wrapMode="none">{' / '}</text>
         <text fg={eventsColor} wrapMode="none">{'events'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => toggleNotifications()}>
-        <text fg="#44475a" wrapMode="none">{' [n] '}</text>
+        <text fg={Colors.TRACK} wrapMode="none">{' [n] '}</text>
         <text fg={notifColor} wrapMode="none">{notificationSettings.enabled ? 'notifications' : 'notifications off'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => setShowBranchNames(!showBranchNames)}>
-        <text fg="#44475a" wrapMode="none">{' [B] '}</text>
+        <text fg={Colors.TRACK} wrapMode="none">{' [B] '}</text>
         <text fg={titleColor} wrapMode="none">{'title'}</text>
-        <text fg="#44475a" wrapMode="none">{' / '}</text>
+        <text fg={Colors.TRACK} wrapMode="none">{' / '}</text>
         <text fg={branchColor} wrapMode="none">{'branch'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => setFactsSelectionActive(!factsSelectionActive)}>
-        <text fg="#44475a" wrapMode="none">{' [s] '}</text>
+        <text fg={Colors.TRACK} wrapMode="none">{' [s] '}</text>
         <text fg={filteredColor} wrapMode="none">{'filtered'}</text>
-        <text fg="#44475a" wrapMode="none">{' / '}</text>
+        <text fg={Colors.TRACK} wrapMode="none">{' / '}</text>
         <text fg={allColor} wrapMode="none">{'all'}</text>
       </box>
     </box>
@@ -105,7 +106,7 @@ export default function FactsPane() {
       {modeIndicatorBox()}
       {statusMessage && (
         <box height={1} width="100%" flexDirection="row">
-          <text fg="#ffb86c" wrapMode="word">{statusMessage}</text>
+          <text fg={Colors.WARNING} wrapMode="word">{statusMessage}</text>
         </box>
       )}
       <scrollbox
@@ -113,16 +114,16 @@ export default function FactsPane() {
         style={{
           flexGrow: 1,
           contentOptions: {
-            backgroundColor: '#282a36',
+            backgroundColor: Colors.BACKGROUND,
           },
           viewportOptions: {
-            backgroundColor: '#282a36',
+            backgroundColor: Colors.BACKGROUND,
           },
           scrollbarOptions: {
             width: 1,
             trackOptions: {
-              foregroundColor: '#bd93f9',
-              backgroundColor: '#1e1f29',
+              foregroundColor: Colors.NEUTRAL,
+              backgroundColor: Colors.BACKGROUND_ALT,
             },
           },
         }}

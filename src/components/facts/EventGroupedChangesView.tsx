@@ -72,16 +72,16 @@ export default function EventGroupedChangesView() {
 
         const isSelected = false;
         if (isSelected && isHighlighted) {
-          color = '#5af78e';
+          color = Colors.SUCCESS;
           headerAttributes = 0;
-          backgroundColor = '#2d2f3a';
+          backgroundColor = Colors.STRIPE;
         } else if (isSelected) {
-          color = '#50fa7b';
+          color = Colors.SUCCESS;
           headerAttributes = 0;
         } else if (isHighlighted) {
-          color = '#5fd7ff';
+          color = Colors.INFO;
           headerAttributes = 0;
-          backgroundColor = '#3a3d4e';
+          backgroundColor = Colors.STRIPE;
         }
 
         const handleEventClick = () => {
@@ -130,10 +130,10 @@ export default function EventGroupedChangesView() {
             </box>
             {!hasEventDeltas && rawEventDeltas.length === 0 && (
               <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
-                <text fg="#44475a" bg="#1e1f29">
+                <text fg={Colors.TRACK} bg={Colors.BACKGROUND_ALT}>
                   {'      —'}
                 </text>
-                <box flexGrow={1} height={1} style={{ backgroundColor: '#1e1f29' }} />
+                <box flexGrow={1} height={1} style={{ backgroundColor: Colors.BACKGROUND_ALT }} />
               </box>
             )}
             {classifiedDeltas.map(({ change, relevance }, i) => {
@@ -157,13 +157,13 @@ export default function EventGroupedChangesView() {
                   flexDirection='row'
                   onMouseDown={() => handleChangeClick(i, change)}
                   style={isMrMatch ? { border: ['left'] } : undefined}
-                  borderColor={isMrMatch ? '#bd93f9' : undefined}
+                  borderColor={isMrMatch ? Colors.NEUTRAL : undefined}
                 >
                   <box width={isMrMatch ? 3 : 4} flexShrink={0} height={1}>
                     <text
                       wrapMode='none'
-                      fg={isSublistSelected ? '#50fa7b' : dateFg}
-                      bg={isSublistSelected ? '#44475a' : style.bg}
+                      fg={isSublistSelected ? Colors.SUCCESS :dateFg}
+                      bg={isSublistSelected ? Colors.TRACK : style.bg}
                       style={{attributes: TextAttributes.DIM | style.attributes}}
                     >
                       {isMrMatch ? '' : ' '}{formattedDate}
@@ -171,8 +171,8 @@ export default function EventGroupedChangesView() {
                   </box>
                   <text
                     wrapMode='none'
-                    fg={isSublistSelected ? '#50fa7b' : changeFg}
-                    bg={isSublistSelected ? '#44475a' : style.bg}
+                    fg={isSublistSelected ? Colors.SUCCESS :changeFg}
+                    bg={isSublistSelected ? Colors.TRACK : style.bg}
                     style={style.attributes ? { attributes: style.attributes } : undefined}
                   >
                     {' '}{text}
@@ -198,17 +198,17 @@ function renderRangeGroup(
   const isHighlighted = currentHighlight >= group.startIndex && currentHighlight <= group.endIndex;
   const isSelected = false;
 
-  let color = '#c8c9caff';
+  let color = Colors.PRIMARY;
   let backgroundColor: string | undefined = undefined;
 
   if (isSelected && isHighlighted) {
-    color = '#5af78e';
-    backgroundColor = '#2d2f3a';
+    color = Colors.SUCCESS;
+    backgroundColor = Colors.STRIPE;
   } else if (isSelected) {
-    color = '#50fa7b';
+    color = Colors.SUCCESS;
   } else if (isHighlighted) {
-    color = '#5fd7ff';
-    backgroundColor = '#3a3d4e';
+    color = Colors.INFO;
+    backgroundColor = Colors.STRIPE;
   }
 
   const handleRangeClick = () => {
@@ -224,10 +224,10 @@ function renderRangeGroup(
         </text>
       </box>
       <box height={1} width="100%" flexDirection="row" onMouseDown={handleRangeClick}>
-        <text fg={isHighlighted ? color : '#44475a'} bg="#1e1f29">
+        <text fg={isHighlighted ? color : Colors.TRACK} bg={Colors.BACKGROUND_ALT}>
           {'      —'}
         </text>
-        <box flexGrow={1} height={1} style={{ backgroundColor: '#1e1f29' }} />
+        <box flexGrow={1} height={1} style={{ backgroundColor: Colors.BACKGROUND_ALT }} />
       </box>
     </box>
   );

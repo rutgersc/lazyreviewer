@@ -107,11 +107,13 @@ const getRelationType = (ctx: SelectedMrContext, mr: MergeRequest, jiraIssuesMap
   return null;
 };
 
-const relationBadge: Record<RelationType['_tag'], { readonly label: string; readonly badgeBg: string; readonly titleBg: string }> = {
-  'stack-base':      { label: ' base ',      badgeBg: Colors.SUCCESS, titleBg: '#1a4a1a' },
-  'stacked-on-this': { label: ' stacked ', badgeBg: '#ff79c6',     titleBg: '#3a1a2a' },
-  'same-ticket':     { label: ' same ticket ',     badgeBg: Colors.WARNING, titleBg: '#4a2a00' },
-  'sibling-ticket':  { label: ' same parent ',  badgeBg: Colors.INFO,    titleBg: '#003a4a' },
+const getRelationBadge = (tag: RelationType['_tag']): { readonly label: string; readonly badgeBg: string; readonly titleBg: string } => {
+  switch (tag) {
+    case 'stack-base':      return { label: ' base ',         badgeBg: Colors.SUCCESS, titleBg: Colors.BADGE_SUCCESS_BG };
+    case 'stacked-on-this': return { label: ' stacked ',      badgeBg: Colors.ACCENT,  titleBg: Colors.BADGE_ACCENT_BG };
+    case 'same-ticket':     return { label: ' same ticket ',  badgeBg: Colors.WARNING, titleBg: Colors.BADGE_WARNING_BG };
+    case 'sibling-ticket':  return { label: ' same parent ',  badgeBg: Colors.INFO,    titleBg: Colors.BADGE_INFO_BG };
+  }
 };
 
 const TimeColumnAuthorTitle = ({
@@ -127,7 +129,7 @@ const TimeColumnAuthorTitle = ({
   now: Date;
   showBranchNames: boolean;
 }) => {
-  const badge = relationType ? relationBadge[relationType._tag] : null;
+  const badge = relationType ? getRelationBadge(relationType._tag) : null;
   return (
     <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
       <box style={{ width: 3 }}>
@@ -140,7 +142,7 @@ const TimeColumnAuthorTitle = ({
       </box>
 
       <box style={{ width: 15 }}>
-        <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL }} wrapMode='none'>
+        <text style={{ fg: isMyMr ? Colors.SECONDARY : Colors.NEUTRAL }} wrapMode='none'>
           {mr.author}
         </text>
       </box>
@@ -458,7 +460,7 @@ const IgnoredMergeRequestRow = ({
         </box>
 
         <box style={{ width: 15 }}>
-          <text style={{ fg: isMyMr ? '#f1fa8c' : Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
+          <text style={{ fg: isMyMr ? Colors.SECONDARY : Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
             {mr.author}
           </text>
         </box>
@@ -517,7 +519,7 @@ const OutOfViewRelations = ({ relations }: { relations: ReadonlyMap<RelationType
 
   const badges = relationTagOrder
     .filter(tag => relations.has(tag))
-    .map(tag => ({ tag, count: relations.get(tag)!.length, badge: relationBadge[tag] }));
+    .map(tag => ({ tag, count: relations.get(tag)!.length, badge: getRelationBadge(tag) }));
 
   return (
     <box style={{ flexDirection: "row", alignItems: "center" }}>
@@ -894,7 +896,7 @@ export default function MergeRequestPane() {
             >
               <box style={{
                 width: 1,
-                backgroundColor: isMonitored ? '#ff79c6' : 'transparent',
+                backgroundColor: isMonitored ? Colors.ACCENT : 'transparent',
               }} />
               <box style={{ flexDirection: "column", flexGrow: 1 }}>
                 {isIgnored ? (

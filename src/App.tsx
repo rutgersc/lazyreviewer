@@ -40,6 +40,7 @@ import { openFileInEditor } from './utils/open-file';
 import { appInitAtom } from './app-init';
 import { clearUnreadCount } from './notifications/title-indicator';
 import { missingCredentialsAtom } from './config/config-atom';
+import { Colors, detectSchemeFromBackground, getColorScheme, setColorScheme } from './colors';
 
 export default function App() {
   useAtomValue(appInitAtom);
@@ -294,12 +295,28 @@ export default function App() {
     },
   ], [activePane, mergeRequests.length, notificationSettings.enabled, backgroundSyncSettings.enabled, jiraBoardId, appView, factsViewStyle, showBranchNames]);
 
+  // Force re-render on color scheme change
+  const [, setSchemeVersion] = useState(0);
+
   useEffect(() => {
-    // renderer.console.toggle();
     const onFocus = () => clearUnreadCount();
     renderer.on('focus', onFocus);
-    return () => { renderer.off('focus', onFocus); };
 
+    // Re-detect terminal color scheme every 30s (picks up light/dark mode switches)
+    const pollScheme = setInterval(async () => {
+      renderer.clearPaletteCache();
+      const palette = await renderer.getPalette({ timeout: 1000 });
+      const detected = detectSchemeFromBackground(palette.defaultBackground);
+      if (detected !== getColorScheme()) {
+        setColorScheme(detected);
+        setSchemeVersion(v => v + 1);
+      }
+    }, 30_000);
+
+    return () => {
+      renderer.off('focus', onFocus);
+      clearInterval(pollScheme);
+    };
   }, [renderer]);
 
   const handleStateSelect = async (newState: MergeRequestState) => {
@@ -375,7 +392,7 @@ export default function App() {
   const widths = getWidths();
 
   return (
-    <box onMouseDown={(e) => { if (e.button === 2) setActiveModal(activeModal === 'help' ? 'none' : 'help'); }} style={{ flexDirection: "column", height: "100%", backgroundColor: '#282a36' }}>
+    <box onMouseDown={(e) => { if (e.button === 2) setActiveModal(activeModal === 'help' ? 'none' : 'help'); }} style={{ flexDirection: "column", height: "100%", backgroundColor: Colors.BACKGROUND }}>
       {/* Main content area - horizontal layout */}
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
 
@@ -386,9 +403,9 @@ export default function App() {
               style={{
                 flexDirection: "column",
                 border: true,
-                borderColor: activePane === ActivePane.Facts ? "#50fa7b" : "#6272a4",
+                borderColor: activePane === ActivePane.Facts ? Colors.SUCCESS : Colors.DIM,
                 height: "80%",
-                backgroundColor: '#282a36'
+                backgroundColor: Colors.BACKGROUND
               }}
           >
               <FactsPane />
@@ -400,9 +417,9 @@ export default function App() {
             style={{
               flexDirection: "column",
               border: true,
-              borderColor: activePane === ActivePane.UserSelection ? "#50fa7b" : "#6272a4",
+              borderColor: activePane === ActivePane.UserSelection ? Colors.SUCCESS : Colors.DIM,
               height: "20%",
-              backgroundColor: '#282a36'
+              backgroundColor: Colors.BACKGROUND
             }}
           >
             <RepositoriesPane />
@@ -414,9 +431,9 @@ export default function App() {
           style={{
             flexDirection: "column",
             border: true,
-            borderColor: activePane === ActivePane.MergeRequests ? "#50fa7b" : "#6272a4",
+            borderColor: activePane === ActivePane.MergeRequests ? Colors.SUCCESS : Colors.DIM,
             width: widths.middle,
-            backgroundColor: '#282a36'
+            backgroundColor: Colors.BACKGROUND
           }}
         >
           <MergeRequestPane />
@@ -427,7 +444,7 @@ export default function App() {
           style={{
             flexDirection: "column",
             width: widths.right,
-            backgroundColor: '#282a36'
+            backgroundColor: Colors.BACKGROUND
           }}
         >
           {/* Info pane */}
@@ -435,9 +452,9 @@ export default function App() {
             style={{
               flexDirection: "column",
               border: true,
-              borderColor: activePane === ActivePane.InfoPane ? "#50fa7b" : "#6272a4",
+              borderColor: activePane === ActivePane.InfoPane ? Colors.SUCCESS : Colors.DIM,
               height: "80%",
-              backgroundColor: '#282a36'
+              backgroundColor: Colors.BACKGROUND
             }}
           >
             <InfoPane activePane={activePane} />
@@ -448,9 +465,9 @@ export default function App() {
             style={{
               flexDirection: "column",
               border: true,
-              borderColor: activePane === ActivePane.Console ? "#50fa7b" : "#6272a4",
+              borderColor: activePane === ActivePane.Console ? Colors.SUCCESS : Colors.DIM,
               height: "20%",
-              backgroundColor: '#282a36'
+              backgroundColor: Colors.BACKGROUND
             }}
           >
             <ConsolePane isActive={activePane === ActivePane.Console} />
@@ -593,13 +610,13 @@ export default function App() {
             right: 3,
             padding: 1,
             border: true,
-            borderColor: '#50fa7b',
-            backgroundColor: '#282a36',
+            borderColor: Colors.SUCCESS,
+            backgroundColor: Colors.BACKGROUND,
             zIndex: 1000,
           }}
         >
           <text
-            style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD }}
+            style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }}
             wrapMode='none'
           >
             {copyNotification}

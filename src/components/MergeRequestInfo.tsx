@@ -71,8 +71,8 @@ export default function MergeRequestInfo() {
     const isReply = index > 0; // First note is original, rest are replies
     const marginLeft = isReply ? 4 : 2;
     const marginLeftrrow = isReply ? "-> " : "";
-    const authorColor = isReply ? '#8be9fd' : '#bd93f9';
-    const textColor = isReply ? '#f1fa8c' : '#f8f8f2';
+    const authorColor = isReply ? Colors.INFO : Colors.NEUTRAL;
+    const textColor = isReply ? Colors.SECONDARY : Colors.PRIMARY;
 
     const createdAt =`${formatCompactTime(note.createdAt)} (${note?.createdAt?.toLocaleDateString()} ${note?.createdAt?.toLocaleTimeString()}):`;
 
@@ -105,7 +105,7 @@ export default function MergeRequestInfo() {
         {fileInfo && (
           <box>
             <text
-              style={{ fg: '#ffb86c', attributes: TextAttributes.DIM }}
+              style={{ fg: Colors.WARNING, attributes: TextAttributes.DIM }}
               wrapMode='word'
             >
               {fileInfo}
@@ -133,7 +133,7 @@ export default function MergeRequestInfo() {
     if (unresolvedDiscussions.length === 0) {
       return (
         <text
-          style={{ fg: '#50fa7b' }}
+          style={{ fg: Colors.SUCCESS }}
           wrapMode='word'
         >
           All discussions resolved ✓
@@ -159,7 +159,7 @@ export default function MergeRequestInfo() {
         >
           <text
             style={{
-              fg: '#ff5555',
+              fg: Colors.ERROR,
               attributes: TextAttributes.BOLD,
             }}
             wrapMode='word'
@@ -179,7 +179,7 @@ export default function MergeRequestInfo() {
                 marginLeft: 2,
                 marginBottom: 0,
                 width: "100%",
-                backgroundColor: selected ? Colors.SELECTED : '#1a1a1a',
+                backgroundColor: selected ? Colors.SELECTED : Colors.BACKGROUND_ALT,
                 padding: 1,
                 border: selected,
                 borderColor: selected ? Colors.SUCCESS : undefined
@@ -216,7 +216,7 @@ export default function MergeRequestInfo() {
         >
           <text
             style={{
-              fg: '#50fa7b',
+              fg: Colors.SUCCESS,
               attributes: TextAttributes.BOLD,
             }}
             wrapMode='word'
@@ -236,7 +236,7 @@ export default function MergeRequestInfo() {
                 marginLeft: 2,
                 marginBottom: 0,
                 width: "100%",
-                backgroundColor: selected ? Colors.SELECTED : '#1a1a1a',
+                backgroundColor: selected ? Colors.SELECTED : Colors.BACKGROUND_ALT,
                 padding: 1,
                 border: selected,
                 borderColor: selected ? Colors.SUCCESS : undefined

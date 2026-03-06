@@ -129,9 +129,9 @@ export default function Overview({
         style={{
           flexGrow: 1,
           width: "100%",
-          contentOptions: { backgroundColor: '#282a36' },
+          contentOptions: { backgroundColor: Colors.BACKGROUND },
           scrollbarOptions: {
-            trackOptions: { foregroundColor: '#bd93f9', backgroundColor: '#44475a' },
+            trackOptions: { foregroundColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK },
           },
         }}
       >

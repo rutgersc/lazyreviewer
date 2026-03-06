@@ -3,6 +3,7 @@ import { isMrChange } from '../changetracking/mr-change-tracking-projection'
 import { TextAttributes } from '@opentui/core'
 import type { AppView } from '../settings/settings-atom'
 import { type UserId, type AuthorIdentity, isCurrentUser } from '../userselection/userSelection'
+import { Colors } from '../colors'
 
 export type FocusRelevance = 'primary' | 'dimmed' | 'hidden'
 
@@ -83,39 +84,44 @@ const focusClassify = (change: Change, currentUser: UserId, myJiraIssueKeys: Set
   }
 }
 
+// Getters so Colors.X resolves at access time (supports theme switching)
 export const viewConfigs: Record<AppView, ViewConfig> = {
-  review: {
-    modeIndicator: {
-      label: 'review mode',
-      labelColor: '#f1fa8c',
-      borderColor: '#44475a',
-      hintColor: '#44475a',
-    },
-    classify: reviewClassify,
-    changeStyle: {
-      primary: { fg: 'USE_CHANGE_COLOR', dateFg: 'USE_AGE_COLOR', attributes: 0, bg: '#1e1f29' },
-      dimmed:  { fg: 'USE_CHANGE_COLOR', dateFg: 'USE_AGE_COLOR', attributes: 0, bg: '#1e1f29' },
-    },
-    eventHeader: {
-      primary: { fg: '#f8f8f2', attributes: 0 },
-      dimmed:  { fg: '#f8f8f2', attributes: 0 },
-    },
+  get review(): ViewConfig {
+    return {
+      modeIndicator: {
+        label: 'review mode',
+        labelColor: Colors.SECONDARY,
+        borderColor: Colors.TRACK,
+        hintColor: Colors.TRACK,
+      },
+      classify: reviewClassify,
+      changeStyle: {
+        primary: { fg: 'USE_CHANGE_COLOR', dateFg: 'USE_AGE_COLOR', attributes: 0, bg: Colors.BACKGROUND_ALT },
+        dimmed:  { fg: 'USE_CHANGE_COLOR', dateFg: 'USE_AGE_COLOR', attributes: 0, bg: Colors.BACKGROUND_ALT },
+      },
+      eventHeader: {
+        primary: { fg: Colors.PRIMARY, attributes: 0 },
+        dimmed:  { fg: Colors.PRIMARY, attributes: 0 },
+      },
+    }
   },
-  focus: {
-    modeIndicator: {
-      label: 'focus mode',
-      labelColor: '#f1fa8c',
-      borderColor: '#44475a',
-      hintColor: '#44475a',
-    },
-    classify: focusClassify,
-    changeStyle: {
-      primary: { fg: 'USE_CHANGE_COLOR', dateFg: 'USE_AGE_COLOR', attributes: 0, bg: '#1e1f29' },
-      dimmed:  { fg: '#6272a4',           dateFg: '#6272a4',       attributes: TextAttributes.DIM, bg: '#1e1f29' },
-    },
-    eventHeader: {
-      primary: { fg: '#f8f8f2', attributes: 0 },
-      dimmed:  { fg: '#6272a4', attributes: TextAttributes.DIM },
-    },
+  get focus(): ViewConfig {
+    return {
+      modeIndicator: {
+        label: 'focus mode',
+        labelColor: Colors.SECONDARY,
+        borderColor: Colors.TRACK,
+        hintColor: Colors.TRACK,
+      },
+      classify: focusClassify,
+      changeStyle: {
+        primary: { fg: 'USE_CHANGE_COLOR', dateFg: 'USE_AGE_COLOR', attributes: 0, bg: Colors.BACKGROUND_ALT },
+        dimmed:  { fg: Colors.DIM,           dateFg: Colors.DIM,       attributes: TextAttributes.DIM, bg: Colors.BACKGROUND_ALT },
+      },
+      eventHeader: {
+        primary: { fg: Colors.PRIMARY, attributes: 0 },
+        dimmed:  { fg: Colors.DIM, attributes: TextAttributes.DIM },
+      },
+    }
   },
 }

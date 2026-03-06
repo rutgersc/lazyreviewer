@@ -69,13 +69,13 @@ export default function ChronologicalChangesView() {
             flexDirection='row'
             onMouseDown={() => handleClick(i, change)}
             style={isMrMatch ? { border: ['left'] } : undefined}
-            borderColor={isMrMatch ? '#bd93f9' : undefined}
+            borderColor={isMrMatch ? Colors.NEUTRAL : undefined}
           >
             <box width={isMrMatch ? 3 : 4} flexShrink={0} height={1}>
               <text
                 wrapMode='none'
-                fg={isSelected ? '#50fa7b' : dateFg}
-                bg={isSelected ? '#44475a' : style.bg}
+                fg={isSelected ? Colors.SUCCESS :dateFg}
+                bg={isSelected ? Colors.TRACK : style.bg}
                 style={{attributes: TextAttributes.DIM | style.attributes}}
               >
                 {isMrMatch ? '' : ' '}{formattedDate}
@@ -83,8 +83,8 @@ export default function ChronologicalChangesView() {
             </box>
             <text
               wrapMode='none'
-              fg={isSelected ? '#50fa7b' : changeFg}
-              bg={isSelected ? '#44475a' : style.bg}
+              fg={isSelected ? Colors.SUCCESS :changeFg}
+              bg={isSelected ? Colors.TRACK : style.bg}
               style={style.attributes ? { attributes: style.attributes } : undefined}
             >
               {' '}{text}

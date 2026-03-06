@@ -105,7 +105,7 @@ export default function MonitoredMergeRequestsPage({ onClose }: MonitoredMergeRe
         }}
       >
         <box style={{ flexDirection: 'row', gap: 1 }}>
-          <text style={{ fg: '#ff79c6' }} wrapMode='none'>|</text>
+          <text style={{ fg: Colors.ACCENT }} wrapMode='none'>|</text>
           <text style={{ fg: Colors.SECONDARY }} wrapMode='none'>
             {formatCompactTime(mr.updatedAt, now)}
           </text>
@@ -159,7 +159,7 @@ export default function MonitoredMergeRequestsPage({ onClose }: MonitoredMergeRe
             justifyContent: 'space-between',
           }}
         >
-          <text style={{ fg: '#ff79c6', attributes: TextAttributes.BOLD }} wrapMode='none'>
+          <text style={{ fg: Colors.ACCENT, attributes: TextAttributes.BOLD }} wrapMode='none'>
             Monitored Merge Requests ({monitoredMrs.length})
           </text>
           <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>

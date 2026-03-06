@@ -1,37 +1,38 @@
 import { TextAttributes } from '@opentui/core';
 import { useConsoleLogs, type LogEntry } from '../logging/logging-atom';
+import { Colors } from '../colors';
+
+const getLogColor = (level: LogEntry['level']) => {
+  switch (level) {
+    case 'error': return Colors.ERROR;
+    case 'warn': return Colors.WARNING;
+    case 'info': return Colors.INFO;
+    case 'debug': return Colors.NEUTRAL;
+    default: return Colors.PRIMARY;
+  }
+};
 
 export default function ConsolePane({ isActive }: { isActive: boolean }) {
   const logs = useConsoleLogs();
 
-  const getLogColor = (level: LogEntry['level']) => {
-    switch (level) {
-      case 'error': return '#ff5555';
-      case 'warn': return '#ffb86c';
-      case 'info': return '#8be9fd';
-      case 'debug': return '#bd93f9';
-      default: return '#f8f8f2';
-    }
-  };
-
   return (
     <box style={{ flexDirection: "column", height: "100%", paddingLeft: 1 }}>
-      <text style={{ fg: '#f8f8f2', marginBottom: 1, attributes: TextAttributes.BOLD }} wrapMode='none'>
+      <text style={{ fg: Colors.PRIMARY, marginBottom: 1, attributes: TextAttributes.BOLD }} wrapMode='none'>
         Console Output (~)
       </text>
 
       <scrollbox
         style={{
           contentOptions: {
-            backgroundColor: '#282a36',
+            backgroundColor: Colors.BACKGROUND,
           },
           viewportOptions: {
-            backgroundColor: '#282a36',
+            backgroundColor: Colors.BACKGROUND,
           },
           scrollbarOptions: {
             trackOptions: {
-              foregroundColor: '#bd93f9',
-              backgroundColor: '#44475a',
+              foregroundColor: Colors.NEUTRAL,
+              backgroundColor: Colors.TRACK,
             },
           },
         }}
@@ -40,19 +41,19 @@ export default function ConsolePane({ isActive }: { isActive: boolean }) {
         focused={isActive}
       >
         {logs.length === 0 ? (
-          <text style={{ fg: '#bd93f9', padding: 1 }} wrapMode='none'>
+          <text style={{ fg: Colors.NEUTRAL, padding: 1 }} wrapMode='none'>
             No console output yet...
           </text>
         ) : (
           logs.map((log, index) => (
             <box key={index} style={{ flexDirection: "row", gap: 1, paddingLeft: 1, paddingRight: 1 }}>
-              <text style={{ fg: '#bd93f9' }} wrapMode='none'>
+              <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
                 {`[${log.timestamp}]`}
               </text>
               <text style={{ fg: getLogColor(log.level), attributes: TextAttributes.BOLD }} wrapMode='none'>
                 {`[${log.level.toUpperCase()}]`}
               </text>
-              <text style={{ fg: '#f8f8f2' }} wrapMode='none'>
+              <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
                 {log.message}
               </text>
             </box>

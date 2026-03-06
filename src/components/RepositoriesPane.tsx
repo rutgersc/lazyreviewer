@@ -136,7 +136,7 @@ export default function RepositoriesPane() {
             <box
               key={label}
               style={{
-                backgroundColor: isHighlighted ? '#191a21' : 'transparent',
+                backgroundColor: isHighlighted ? Colors.SELECTED : 'transparent',
               }}
             >
               <box style={{ flexDirection: "row" }}>
@@ -165,8 +165,8 @@ export default function RepositoriesPane() {
               <scrollbox
                 style={{
                   height: 1,
-                  contentOptions: { backgroundColor: isHighlighted ? '#191a21' : Colors.BACKGROUND },
-                  viewportOptions: { backgroundColor: isHighlighted ? '#191a21' : Colors.BACKGROUND },
+                  contentOptions: { backgroundColor: isHighlighted ? Colors.SELECTED : Colors.BACKGROUND },
+                  viewportOptions: { backgroundColor: isHighlighted ? Colors.SELECTED : Colors.BACKGROUND },
                 }}
                 focused={false}
                 onMouseDown={() => handleRepoClick(label)}

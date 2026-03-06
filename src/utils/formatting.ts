@@ -1,3 +1,5 @@
+import { Colors } from '../colors';
+
 const hexToRgb = (hex: string): [number, number, number] => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return [255, 255, 255];
@@ -19,11 +21,10 @@ const lerpColor = (color1: string, color2: string, t: number): string => {
 export const getAgeColor = (date: Date, now: Date = new Date()): string => {
   const ageInDays = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
 
-  // Color stops: fresh → yellow → orange → red
-  const fresh = '#50fa7b';   // green
-  const yellow = '#f1fa8c';  // yellow
-  const orange = '#ffb86c';  // orange
-  const red = '#ff5555';     // red
+  const fresh = Colors.SUCCESS;
+  const yellow = Colors.SECONDARY;
+  const orange = Colors.WARNING;
+  const red = Colors.ERROR;
 
   if (ageInDays <= 0) return fresh;
   if (ageInDays <= 3) return lerpColor(fresh, yellow, ageInDays / 3);

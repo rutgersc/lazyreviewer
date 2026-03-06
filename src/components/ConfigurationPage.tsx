@@ -7,6 +7,7 @@ import { openFileInEditor } from '../utils/open-file';
 import { appLayer } from '../appLayerRuntime';
 import { useState } from 'react';
 import { useDoubleClick } from '../hooks/useDoubleClick';
+import { Colors } from '../colors';
 
 interface ConfigurationPageProps {
   missingCredentials: MissingCredential[];
@@ -50,19 +51,17 @@ export default function ConfigurationPage({ missingCredentials, onClose }: Confi
         left: 0,
         width: '100%',
         height: '100%',
-        backgroundColor: '#282a36',
+        backgroundColor: Colors.BACKGROUND,
         zIndex: 2000,
         flexDirection: 'column',
       }}
     >
-      {/* Header */}
-      <box style={{ paddingLeft: 1, paddingRight: 1, border: true, borderColor: '#6272a4' }}>
-        <text style={{ fg: '#50fa7b', attributes: TextAttributes.BOLD }} wrapMode="none">
+      <box style={{ paddingLeft: 1, paddingRight: 1, border: true, borderColor: Colors.DIM }}>
+        <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrapMode="none">
           Configuration  ({configured}/{ENV_CREDENTIALS.length} configured)
         </text>
       </box>
 
-      {/* Credentials List */}
       <box style={{ flexDirection: 'column', paddingLeft: 1, paddingRight: 1, flexGrow: 1, overflow: 'hidden' }}>
         {ENV_CREDENTIALS.map((credential, index) => {
           const isSelected = selectedIndex === index;
@@ -74,16 +73,16 @@ export default function ConfigurationPage({ missingCredentials, onClose }: Confi
               onMouseDown={() => handleClick(index)}
               style={{
                 flexDirection: 'row',
-                backgroundColor: isSelected ? '#44475a' : 'transparent',
+                backgroundColor: isSelected ? Colors.TRACK : 'transparent',
               }}
             >
-              <text style={{ fg: isMissing ? '#ff5555' : '#50fa7b' }} wrapMode="none">
+              <text style={{ fg: isMissing ? Colors.ERROR : Colors.SUCCESS }} wrapMode="none">
                 {isMissing ? ' x ' : ' v '}
               </text>
-              <text style={{ fg: '#f8f8f2', attributes: TextAttributes.BOLD }} wrapMode="none">
+              <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode="none">
                 {credential.key}
               </text>
-              <text style={{ fg: '#bd93f9' }} wrapMode="none">
+              <text style={{ fg: Colors.NEUTRAL }} wrapMode="none">
                 {' '}{credential.description}
               </text>
             </box>
@@ -91,12 +90,11 @@ export default function ConfigurationPage({ missingCredentials, onClose }: Confi
         })}
       </box>
 
-      {/* Footer */}
-      <box style={{ paddingLeft: 1, paddingRight: 1, border: true, borderColor: '#6272a4', flexDirection: 'column' }}>
-        <text style={{ fg: '#f8f8f2' }} wrapMode="none">
+      <box style={{ paddingLeft: 1, paddingRight: 1, border: true, borderColor: Colors.DIM, flexDirection: 'column' }}>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode="none">
           Enter/e/Double-click: Open .env in editor  |  q/Esc: Close
         </text>
-        <text style={{ fg: '#f8f8f2' }} wrapMode="none">
+        <text style={{ fg: Colors.PRIMARY }} wrapMode="none">
           {envPath}
         </text>
       </box>
