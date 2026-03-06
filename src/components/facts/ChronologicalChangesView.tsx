@@ -4,7 +4,8 @@ import { TextAttributes } from '@opentui/core';
 import { Colors } from '../../colors';
 import { getAgeColor } from '../../utils/formatting';
 import { nowAtom } from '../../ui/navigation-atom';
-import { currentUserIdAtom } from '../../settings/settings-atom';
+import { appViewAtom, currentUserIdAtom } from '../../settings/settings-atom';
+import { viewConfigs } from '../../ui/view-config';
 import type { Change } from '../../changetracking/change-tracking-projection';
 import {
   getChangeDescription,
@@ -12,7 +13,6 @@ import {
   chronologicalChangesAtom,
   sublistIndexAtom,
   myJiraIssueKeysAtom,
-  viewConfigAtom,
   selectMrForChangeAtom,
   selectedMrIdentityAtom,
   isChangeForMr,
@@ -25,7 +25,7 @@ export default function ChronologicalChangesView() {
   const now = useAtomValue(nowAtom);
   const currentUser = useAtomValue(currentUserIdAtom);
   const myJiraIssueKeys = useAtomValue(myJiraIssueKeysAtom);
-  const config = useAtomValue(viewConfigAtom);
+  const config = viewConfigs[useAtomValue(appViewAtom)];
   const mrIdentity = useAtomValue(selectedMrIdentityAtom);
   const lastClickRef = useRef<{ index: number; time: number } | null>(null);
 

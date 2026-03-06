@@ -6,10 +6,9 @@ import type { Change } from '../../changetracking/change-tracking-projection';
 import { isMrChange, type MrInfo } from '../../changetracking/mr-change-tracking-projection';
 import type { LazyReviewerEvent } from '../../events/events';
 import { allMrsAtom, unwrappedMergeRequestsAtom, selectMrByIdAtom, selectedMrAtom, filteredMrsAtom } from '../../mergerequests/mergerequests-atom';
-import { appViewAtom, currentUserIdAtom, factsSelectionActiveAtom } from '../../settings/settings-atom';
+import { currentUserIdAtom, factsSelectionActiveAtom } from '../../settings/settings-atom';
 import { isCurrentUser, mrProviderAuthor } from '../../userselection/userSelection';
 import { Colors } from '../../colors';
-import { viewConfigs } from '../../ui/view-config';
 import { infoPaneTabAtom } from '../../ui/navigation-atom';
 import { targetNoteIdAtom } from '../ActivityLog';
 import { useDiscussionScroll } from '../../hooks/useDiscussionScroll';
@@ -247,7 +246,6 @@ export const chronologicalChangesAtom = Atom.readable<Change[]>((get) => {
     .slice(0, 200);
 });
 
-export const viewConfigAtom = Atom.readable((get) => viewConfigs[get(appViewAtom)]);
 
 export const selectedMrIdentityAtom = Atom.readable((get) => {
   const mr = get(selectedMrAtom);

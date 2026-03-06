@@ -6,7 +6,8 @@ import { getAgeColor } from '../../utils/formatting';
 import { allEventsAtom } from '../../events/events-atom';
 import { resultToArray } from '../../utils/result-helpers';
 import { nowAtom } from '../../ui/navigation-atom';
-import { currentUserIdAtom } from '../../settings/settings-atom';
+import { appViewAtom, currentUserIdAtom } from '../../settings/settings-atom';
+import { viewConfigs } from '../../ui/view-config';
 import type { Change } from '../../changetracking/change-tracking-projection';
 import type { LazyReviewerEvent } from '../../events/events';
 import {
@@ -20,7 +21,6 @@ import {
   sublistFocusedAtom,
   sublistIndexAtom,
   myJiraIssueKeysAtom,
-  viewConfigAtom,
   selectMrForChangeAtom,
   selectedMrIdentityAtom,
   isChangeForMr,
@@ -37,7 +37,7 @@ export default function EventGroupedChangesView() {
   const now = useAtomValue(nowAtom);
   const currentUser = useAtomValue(currentUserIdAtom);
   const myJiraIssueKeys = useAtomValue(myJiraIssueKeysAtom);
-  const config = useAtomValue(viewConfigAtom);
+  const config = viewConfigs[useAtomValue(appViewAtom)];
   const mrIdentity = useAtomValue(selectedMrIdentityAtom);
   const lastClickRef = useRef<{ eventId: string; time: number } | null>(null);
 

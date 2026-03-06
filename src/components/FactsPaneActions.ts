@@ -9,7 +9,8 @@ import { activePaneAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
 import { openFileInEditor } from "../utils/open-file";
 import { resultToArray } from "../utils/result-helpers";
-import { factsViewStyleAtom, factsSelectionActiveAtom } from "../settings/settings-atom";
+import { appViewAtom, factsViewStyleAtom, factsSelectionActiveAtom, currentUserIdAtom } from "../settings/settings-atom";
+import { viewConfigs } from "../ui/view-config";
 import {
   statusMessageAtom,
   currentEventChangesAtom,
@@ -20,14 +21,12 @@ import {
   selectMrForChangeAtom,
   sublistFocusedAtom,
   sublistIndexAtom,
-  viewConfigAtom,
   myJiraIssueKeysAtom,
 } from "./facts/facts-shared";
-import { currentUserIdAtom } from "../settings/settings-atom";
 
 const getVisibleChronologicalChanges = (registry: Registry.Registry) => {
   const allChanges = registry.get(chronologicalChangesAtom);
-  const config = registry.get(viewConfigAtom);
+  const config = viewConfigs[registry.get(appViewAtom)];
   const currentUser = registry.get(currentUserIdAtom);
   const myJiraIssueKeys = registry.get(myJiraIssueKeysAtom);
   return allChanges.filter(change => config.classify(change, currentUser, myJiraIssueKeys) !== 'hidden');
