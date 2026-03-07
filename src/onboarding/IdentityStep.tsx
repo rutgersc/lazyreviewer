@@ -3,13 +3,16 @@ import { useKeyboard } from '@opentui/react'
 import { useState } from 'react'
 import { Colors } from '../colors'
 import type { UserId } from '../userselection/userSelection'
-import { users as predefinedUserSelections } from '../data/usersAndGroups'
+import { settingsUsersToUserSelections } from '../userselection/userSelection'
+import { DEFAULT_USERS } from '../data/default-users-and-groups'
 
 interface IdentityStepProps {
   discoveredUsers: readonly UserId[]
   onNext: (userId: UserId) => void
   onBack: () => void
 }
+
+const predefinedUserSelections = settingsUsersToUserSelections(DEFAULT_USERS)
 
 const resolveUserId = (username: string): UserId => {
   const predefined = predefinedUserSelections

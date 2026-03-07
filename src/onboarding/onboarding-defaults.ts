@@ -1,5 +1,6 @@
 import type { UserSelectionEntry } from '../userselection/userSelection'
-import { groups } from '../data/usersAndGroups'
+import { settingsGroupsToUserGroups } from '../userselection/userSelection'
+import { DEFAULT_GROUPS, DEFAULT_USERS } from '../data/default-users-and-groups'
 
 export const DEFAULT_GITLAB_REPOS = ['elab/elab', 'elab/BlackLotus', 'elab/helix' ] as const
 export const DEFAULT_BITBUCKET_REPOS = ['raftdev/core.iam', 'raftdev/Core.AI-Instructions'] as const
@@ -37,11 +38,13 @@ export const PREMADE_SELECTIONS: UserSelectionEntry[] = [
   },
 ]
 
+const defaultGroups = settingsGroupsToUserGroups(DEFAULT_GROUPS, DEFAULT_USERS)
+
 export const getSelectionMembers = (entry: UserSelectionEntry): string =>
   entry.selection
     .map(s => {
       if (s.type === 'groupId') {
-        const group = groups.find(g => g.id.id === s.id)
+        const group = defaultGroups.find(g => g.id.id === s.id)
         return group ? group.children
           .filter(c => c.type === 'userId')
           .map(c => c.userId)

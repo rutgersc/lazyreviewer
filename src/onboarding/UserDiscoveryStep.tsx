@@ -9,7 +9,8 @@ import type { RepoFetchStatus } from './onboarding-effects'
 import type { UserSelectionEntry, UserId } from '../userselection/userSelection'
 import { PREMADE_SELECTIONS, getSelectionMembers } from './onboarding-defaults'
 import { fetchMrsForRepos, mergeWithPredefinedUsers } from './onboarding-effects'
-import { users as predefinedUserSelections } from '../data/usersAndGroups'
+import { settingsUsersToUserSelections } from '../userselection/userSelection'
+import { DEFAULT_USERS } from '../data/default-users-and-groups'
 
 interface UserDiscoveryStepProps {
   repos: readonly DiscoveredRepo[]
@@ -41,7 +42,7 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
 
         if (cancelled) return
 
-        const predefinedIds = predefinedUserSelections
+        const predefinedIds = settingsUsersToUserSelections(DEFAULT_USERS)
           .filter((u): u is { type: 'user'; id: UserId } => u.type === 'user')
           .map(u => u.id)
         const merged = mergeWithPredefinedUsers(discovered, predefinedIds)

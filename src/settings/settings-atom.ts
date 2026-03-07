@@ -1,10 +1,11 @@
 import { Effect, Stream, Console, Option } from "effect"
 import { appAtomRuntime } from "../appLayerRuntime"
 import { type NotificationSettings, type BackgroundSyncSettings, type MrSortOrder, defaultSettings, type Settings, SettingsService } from "./settings"
+import { type UserSettings, defaultUserSettings, UserSettingsService } from "./user-filter-presets"
 import { Atom, Result } from "@effect-atom/atom-react"
 import type { MrGid } from "../domain/identifiers"
 import type { UserId, User } from "../userselection/userSelection"
-import { usersAtom } from "../data/data-atom"
+import { settingsUsersToUserSelections } from "../userselection/userSelection"
 
 
 // Equality helpers for selector atoms
@@ -54,6 +55,30 @@ export const settingsAtom = appAtomRuntime.atom(
 const modifySettingsFn = appAtomRuntime.fn((f: (s: Settings) => Settings) =>
   SettingsService.modify(f)
 );
+
+// User settings (users, groups, presets) — separate file
+export const userSettingsAtom = appAtomRuntime.atom(
+  Stream.unwrap(UserSettingsService.watchStream),
+  { initialValue: defaultUserSettings }
+).pipe(Atom.setLazy(false), Atom.keepAlive)
+
+const selectFromUserSettings = <T>(
+  selector: (settings: UserSettings) => T,
+  defaultValue: T,
+  equals: (a: T, b: T) => boolean = Object.is
+): Atom.Atom<T> =>
+  Atom.make(get => {
+    const previous = get.self<T>();
+    const newValue = Result.match(get(userSettingsAtom), {
+      onInitial: () => defaultValue,
+      onSuccess: ({ value }) => selector(value),
+      onFailure: () => defaultValue
+    });
+    if (Option.isSome(previous) && equals(previous.value, newValue)) {
+      return previous.value;
+    }
+    return newValue;
+  });
 
 // Intermediate selector - only changes when ignoredMergeRequests array changes
 const ignoredMergeRequestsRawAtom = selectFromSettings(
@@ -186,7 +211,12 @@ export const setCurrentUserAtom = Atom.writable(
 
 export const currentUserIdAtom = Atom.make((get): UserId => {
   const currentUserName = get(currentUserAtom) ?? '';
-  const users = get(usersAtom);
+  const userSettings = Result.match(get(userSettingsAtom), {
+    onInitial: () => defaultUserSettings,
+    onSuccess: ({ value }) => value,
+    onFailure: () => defaultUserSettings,
+  });
+  const users = settingsUsersToUserSelections(userSettings.users);
   const found = users
     .filter((u): u is User => u.type === 'user')
     .find(u => u.id.userId === currentUserName || u.id.gitlab === currentUserName || u.id.bitbucket === currentUserName);
@@ -429,5 +459,70 @@ export const factsViewStyleAtom = Atom.writable(
   (ctx, newValue: FactsViewStyle) => {
     ctx.set(modifySettingsFn, (s: Settings) => ({ ...s, factsViewStyle: newValue }));
   }
+);
+
+// User groups
+import type { SettingsGroup } from '../data/default-users-and-groups'
+
+const groupsEquals = (a: readonly SettingsGroup[], b: readonly SettingsGroup[]): boolean => {
+  if (a.length !== b.length) return false;
+  return a.every((g, i) => g.id === b[i]?.id && g.name === b[i]?.name);
+};
+
+export const userGroupsAtom = selectFromUserSettings(
+  s => s.userGroups,
+  [] as SettingsGroup[],
+  groupsEquals
+);
+
+export const saveGroupFromFilterAtom = appAtomRuntime.fn(
+  ({ name }: { name: string }) =>
+    Effect.gen(function* () {
+      const settings = yield* SettingsService.load;
+      const userSettings = yield* UserSettingsService.load;
+      const reverseMap = new Map(userSettings.users.map(u => [u.gitlab, u.userId]));
+      const users = settings.userFilterUsernames
+        .map(gitlab => reverseMap.get(gitlab))
+        .filter((id): id is string => id !== undefined);
+      const group: SettingsGroup = {
+        id: `group-${Date.now()}`,
+        name,
+        users,
+        groups: [...settings.userFilterGroupIds],
+      };
+      yield* UserSettingsService.modify(s => ({
+        ...s,
+        userGroups: [...s.userGroups, group],
+      }));
+    })
+);
+
+export const deleteGroupAtom = appAtomRuntime.fn(
+  (groupId: string) =>
+    UserSettingsService.modify(s => ({
+      ...s,
+      userGroups: s.userGroups.filter(g => g.id !== groupId),
+    }))
+);
+
+export const moveGroupAtom = appAtomRuntime.fn(
+  ({ groupId, direction }: { groupId: string; direction: 'up' | 'down' }) =>
+    UserSettingsService.modify(s => {
+      const idx = s.userGroups.findIndex(g => g.id === groupId);
+      if (idx < 0) return s;
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= s.userGroups.length) return s;
+      const reordered = [...s.userGroups];
+      [reordered[idx], reordered[targetIdx]] = [reordered[targetIdx]!, reordered[idx]!];
+      return { ...s, userGroups: reordered };
+    })
+);
+
+export const saveGroupsFromOnboardingAtom = appAtomRuntime.fn(
+  (groups: readonly SettingsGroup[]) =>
+    UserSettingsService.modify(s => ({
+      ...s,
+      userGroups: [...groups],
+    }))
 );
 

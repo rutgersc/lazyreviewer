@@ -11,6 +11,7 @@ import { PipelineJobMonitor } from "./gitlab/gitlab-pipeline-job-monitor-backgro
 import { MrStateService } from "./mergerequests/mr-state-service"
 import { BgSyncReadModelService } from "./notifications/bg-sync-read-model"
 import { SettingsService } from "./settings/settings"
+import { UserSettingsService } from "./settings/user-filter-presets"
 import { type Projection, project } from "./utils/define-projection"
 
 const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
@@ -19,6 +20,10 @@ const commandExecutorLayer = CommandExecutor.layer.pipe(
 )
 
 const settingsServiceLayer = SettingsService.Default.pipe(
+  Layer.provide(fileSystemLayer)
+)
+
+const userSettingsServiceLayer = UserSettingsService.Default.pipe(
   Layer.provide(fileSystemLayer)
 )
 
@@ -46,6 +51,7 @@ export const appLayer = Layer.mergeAll(
   fileSystemLayer,
   commandExecutorLayer,
   settingsServiceLayer,
+  userSettingsServiceLayer,
   JiraScrollService.Default,
   DiscussionScrollService.Default,
   BackgroundSyncService.Default,

@@ -1,8 +1,10 @@
 import { Atom } from "@effect-atom/atom-react";
-import type { UserSelectionEntry } from "./userSelection";
-import { mockUserSelections } from "../data/usersAndGroups";
+import { groupToUserSelectionEntry } from "./userSelection";
+import { userGroupsAtom } from "../settings/settings-atom";
 
-export const userSelectionsAtom = Atom.make<UserSelectionEntry[]>(mockUserSelections);
+export const userSelectionsAtom = Atom.make(get =>
+  get(userGroupsAtom).map(groupToUserSelectionEntry)
+);
 
 export const userSelectionsByIdAtom = Atom.map(
   userSelectionsAtom,

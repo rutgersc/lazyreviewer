@@ -36,9 +36,9 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
 
   const rightItems: readonly UserId[] = knownAuthors;
 
-  const groupMemberUsernames = React.useMemo(() => {
+  const groupMemberUserIds = React.useMemo(() => {
     const resolved = resolveGroupIds([...checkedGroupIds], groups);
-    return new Set(resolved.map(u => u.gitlab ?? u.userId));
+    return new Set(resolved.map(u => u.userId));
   }, [checkedGroupIds, groups]);
 
   React.useEffect(() => {
@@ -145,7 +145,7 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
 
   const getUserColor = (author: UserId): string => {
     const isIndividual = checkedUsernames.has(author.userId);
-    const isGroupMember = groupMemberUsernames.has(author.gitlab ?? author.userId);
+    const isGroupMember = groupMemberUserIds.has(author.userId);
     if (isIndividual && isGroupMember) return Colors.WARNING;
     if (isIndividual) return Colors.INFO;
     if (isGroupMember) return Colors.SECONDARY;

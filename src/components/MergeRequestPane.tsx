@@ -5,7 +5,8 @@ import { type PipelineStage, type PipelineJob } from "../domain/merge-request-sc
 import { formatCompactTime, getAgeColor } from "../utils/formatting";
 import { openUrl } from "../system/open-url";
 import { getJobStatusDisplay } from "../domain/display/jobStatus";
-import { ActivePane, type UserId, isCurrentUser, mrProviderAuthor } from "../userselection/userSelection";
+import { type UserId, isCurrentUser, mrProviderAuthor } from "../userselection/userSelection";
+import { ActivePane } from '../userselection/ActivePane';
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useDoubleClick } from "../hooks/useDoubleClick";
 import { Colors } from "../colors";
@@ -24,7 +25,7 @@ import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchS
 import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom";
 import { currentUserIdAtom } from "../settings/settings-atom";
 import type { JiraIssue } from "../jira/jira-schema";
-import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom, repositoryColorsAtom, pipelineJobImportanceAtom, showBranchNamesAtom } from "../settings/settings-atom";
+import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom, pipelineJobImportanceAtom, showBranchNamesAtom } from "../settings/settings-atom";
 
 export const scrollToItemRequestAtom = Atom.make<number | null>(null);
 export const copyNotificationRequestAtom = Atom.make<string | null>(null);
@@ -230,11 +231,10 @@ const PipelineStagesWithJobStatuses = ({ mr, pipelineJobImportance }: { mr: Merg
   );
 };
 
-const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, repoColor, branchDifferenceMap, jiraIssuesMap, now, currentUser, seenMergeRequests, pipelineJobImportance }: { mr: MergeRequest; isActiveInLocalRepo: boolean; worktreeMatch: WorktreeMatch | null; createdAt: Date; repoColor?: string; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue>; now: Date; currentUser: UserId; seenMergeRequests: Set<string>; pipelineJobImportance: Record<string, Record<string, JobImportance>> }) => {
+const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, branchDifferenceMap, jiraIssuesMap, now, currentUser, seenMergeRequests, pipelineJobImportance }: { mr: MergeRequest; isActiveInLocalRepo: boolean; worktreeMatch: WorktreeMatch | null; createdAt: Date; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; jiraIssuesMap: ReadonlyMap<string, JiraIssue>; now: Date; currentUser: UserId; seenMergeRequests: Set<string>; pipelineJobImportance: Record<string, Record<string, JobImportance>> }) => {
   const isSeen = seenMergeRequests.has(mr.id);
   const isApprovedByMe = mr.approvedBy.some(approver => isCurrentUser(currentUser, mrProviderAuthor(mr.provider, approver.username)));
   const isMyMr = isCurrentUser(currentUser, mrProviderAuthor(mr.provider, mr.author));
-  const projectColor = repoColor || Colors.SUCCESS;
   const branchDifference = branchDifferenceMap.get(mr.id);
 
   const jiraIssues = mr.jiraIssueKeys.flatMap(key => {
@@ -253,11 +253,11 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
         </text>
       </box>
 
-      <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? projectColor : "transparent", flexDirection: "row" }}>
+      <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? Colors.SUCCESS : "transparent", flexDirection: "row" }}>
         <text
           style={{
-            fg: isActiveInLocalRepo ? Colors.BACKGROUND : projectColor,
-            attributes: TextAttributes.DIM
+            fg: isActiveInLocalRepo ? Colors.BACKGROUND : Colors.SUCCESS,
+            ...(!isActiveInLocalRepo && { attributes: TextAttributes.DIM })
           }}
           wrapMode='none'
         >
@@ -434,18 +434,15 @@ const IgnoredMergeRequestRow = ({
   mr,
   isActiveInLocalRepo,
   worktreeMatch,
-  repoColor,
   isMyMr,
   now
 }: {
   mr: MergeRequest;
   isActiveInLocalRepo: boolean;
   worktreeMatch: WorktreeMatch | null;
-  repoColor?: string;
   isMyMr: boolean;
   now: Date;
 }) => {
-  const projectColor = repoColor || Colors.SUCCESS;
 
   return (
     <>
@@ -467,7 +464,7 @@ const IgnoredMergeRequestRow = ({
 
         <box style={{ flexGrow: 1 }}>
           <text
-            style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
+            style={{ fg: Colors.DIM }}
             wrapMode='none'
           >
             {mr.title.length > 100 ? mr.title.substring(0, 100) + "..." : mr.title}
@@ -485,10 +482,10 @@ const IgnoredMergeRequestRow = ({
           </text>
         </box>
 
-        <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? projectColor : "transparent", flexDirection: "row" }}>
+        <box style={{ width: 15, backgroundColor: isActiveInLocalRepo ? Colors.SUCCESS : "transparent", flexDirection: "row" }}>
           <text
             style={{
-              fg: isActiveInLocalRepo ? Colors.BACKGROUND : projectColor,
+              fg: isActiveInLocalRepo ? Colors.BACKGROUND : Colors.SUCCESS,
               attributes: TextAttributes.DIM
             }}
             wrapMode='none'
@@ -631,7 +628,7 @@ export default function MergeRequestPane() {
 
   const repositoryBranches = useAtomValue(repositoryBranchesAtom);
   const branchDifferences = useAtomValue(branchDifferencesAtom);
-  const repositoryColors = useAtomValue(repositoryColorsAtom);
+
   const seenMergeRequests = useAtomValue(seenMergeRequestsAtom);
   const pipelineJobImportanceMap = useAtomValue(pipelineJobImportanceAtom);
   const pipelineJobImportance = useMemo(() =>
@@ -882,7 +879,7 @@ export default function MergeRequestPane() {
           const isIgnored = ignoredMergeRequests.has(mr.id);
           const isMonitored = monitoredMergeRequests.has(mr.id);
           const highlightInfo = getMrHighlightInfo(mr, index);
-          const repoColor = repositoryColors[mr.project.fullPath];
+
           const isMyMr = isCurrentUser(currentUser, mrProviderAuthor(mr.provider, mr.author));
 
           return (
@@ -900,11 +897,11 @@ export default function MergeRequestPane() {
               }} />
               <box style={{ flexDirection: "column", flexGrow: 1 }}>
                 {isIgnored ? (
-                  <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} repoColor={repoColor} isMyMr={isMyMr} now={now} />
+                  <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} isMyMr={isMyMr} now={now} />
                 ) : (
                   <>
                     <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} showBranchNames={showBranchNames} />
-                    <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} createdAt={mr.createdAt} repoColor={repoColor} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
+                    <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} createdAt={mr.createdAt} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
                     {index === selectedIndex && <OutOfViewRelations relations={outOfViewRelations} />}
                   </>
                 )}
@@ -921,9 +918,8 @@ export default function MergeRequestPane() {
             marginTop: 1,
             height: repositoryBranches.reduce((sum, repo, index) => {
               const wtCount = projectBranchMap.get(repo.projectPath)?.allWorktrees.length ?? 0;
-              const separator = index > 0 ? 1 : 0;
               const noPathWarning = repo.localPath ? 0 : 1;
-              return sum + separator + noPathWarning + wtCount;
+              return sum + noPathWarning + wtCount;
             }, 0),
           }}
         >
@@ -932,7 +928,6 @@ export default function MergeRequestPane() {
             const checkedOutBranches = allMrBranchesByProject.get(repo.projectPath);
             return (
               <box key={repo.projectPath} style={{ flexDirection: "column" }}>
-                {index > 0 && <text>{""}</text>}
                 {!repo.localPath && (
                   <text style={{ fg: Colors.WARNING }} wrapMode='none'>
                     {repo.projectName}: {"<no path set> (press , to configure)"}

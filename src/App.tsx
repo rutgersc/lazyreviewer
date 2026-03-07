@@ -20,6 +20,7 @@ import { JiraBoardPage } from "./jiraboard";
 import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage";
 import NotificationsPage from "./components/NotificationsPage";
 import FailedJobPickerModal from "./components/FailedJobPickerModal";
+import GroupPickerModal from "./components/GroupPickerModal";
 import ConfigurationPage from "./components/ConfigurationPage";
 import OnboardingPage from "./onboarding/OnboardingPage";
 import { ActivePane } from "./userselection/userSelection";
@@ -329,9 +330,9 @@ export default function App() {
 
   // Single keyboard handler for ALL actions
   useKeyboard((key: ParsedKey) => {
-    // Handle escape - close any active modal
+    // Handle escape - close any active modal (except self-managing ones)
     if (key.name === 'escape') {
-      if (activeModal !== 'none') {
+      if (activeModal !== 'none' && activeModal !== 'groupPicker') {
         setActiveModal('none');
         return;
       }
@@ -489,6 +490,12 @@ export default function App() {
           setUserFilter({ usernames, groupIds });
           setActiveModal('none');
         }}
+        onClose={() => setActiveModal('none')}
+      />
+
+      {/* Group Picker Modal */}
+      <GroupPickerModal
+        isVisible={activeModal === 'groupPicker'}
         onClose={() => setActiveModal('none')}
       />
 

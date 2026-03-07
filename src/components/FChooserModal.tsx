@@ -26,6 +26,9 @@ export default function FChooserModal({ isVisible, onChoose, onClose }: FChooser
       case 'r':
         onChoose('repoFilter');
         break;
+      case 'p':
+        onChoose('groupPicker');
+        break;
       case 'escape':
         onClose();
         break;
@@ -71,6 +74,9 @@ export default function FChooserModal({ isVisible, onChoose, onClose }: FChooser
         </text>
         <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
           r  Repositories
+        </text>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
+          p  Pick group
         </text>
         <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
           Esc  Cancel

@@ -1,6 +1,6 @@
 import { Atom, Result } from "@effect-atom/atom-react";
 import type { MergeRequest } from "./mergerequest-schema";
-import { repositoryFullPath, resolveRepoPath, type RepositoryId, type UserId } from "../userselection/userSelection";
+import { repositoryFullPath, resolveRepoPath, type RepositoryId, type UserId, type User, isCurrentUser, mrProviderAuthor } from "../userselection/userSelection";
 import {
   fetchRepoPage,
   extractKnownProjects,
@@ -22,7 +22,7 @@ import type { JiraIssue } from "../jira/jira-service";
 import { mrSortOrderAtom, repoSelectionAtom, userFilterUsernamesAtom, userFilterGroupIdsAtom } from "../settings/settings-atom";
 import { SettingsService } from "../settings/settings";
 import { sprintFilterIssueKeysAtom } from "../jiraboard/sprint-issues-atom";
-import { groupsAtom } from "../data/data-atom";
+import { groupsAtom, usersAtom } from "../data/data-atom";
 import { resolveGroupIds } from "../userselection/userSelection";
 import { allEventsAtom } from "../events/events-atom";
 import type { LazyReviewerEvent } from "../events/events";
@@ -91,16 +91,21 @@ export const allJiraIssuesAtom = Atom.map(
     })
 );
 
-// Unique authors across all fetched MRs
+// Unique authors across all fetched MRs, enriched with settings user info
 export const knownAuthorsAtom = Atom.make((get): readonly UserId[] => {
   const allMrsResult = get(allMrsAtom);
+  const settingsUsers = get(usersAtom);
+  const gitlabToUser = new Map(settingsUsers.filter((u): u is User => u.type === 'user').map(u => [u.id.gitlab, u.id]));
+  const bitbucketToUser = new Map(settingsUsers.filter((u): u is User => u.type === 'user').map(u => [u.id.bitbucket, u.id]));
   return Result.match(allMrsResult, {
     onInitial: () => [] as UserId[],
     onSuccess: (state) => {
       const seen = new Map<string, UserId>();
       for (const mr of state.value.mrsByGid.values()) {
         if (!seen.has(mr.author)) {
-          seen.set(mr.author, { type: 'userId', userId: mr.author, [mr.provider]: mr.author });
+          const lookup = mr.provider === 'gitlab' ? gitlabToUser : bitbucketToUser;
+          const known = lookup.get(mr.author);
+          seen.set(mr.author, known ?? { type: 'userId', userId: mr.author, [mr.provider]: mr.author });
         }
       }
       return [...seen.values()].sort((a, b) => a.userId.localeCompare(b.userId));
@@ -121,20 +126,31 @@ export const knownProjectsAtom = Atom.make((get): readonly RepositoryId[] => {
   });
 });
 
-export const effectiveUserFilterAtom = Atom.make((get): readonly string[] => {
-  const usernames = get(userFilterUsernamesAtom);
+export const effectiveUserFilterAtom = Atom.make((get): readonly UserId[] => {
+  const userIds = get(userFilterUsernamesAtom);
   const groupIds = get(userFilterGroupIdsAtom);
-  if (usernames.length === 0 && groupIds.length === 0) return [];
+  if (userIds.length === 0 && groupIds.length === 0) return [];
   const groups = get(groupsAtom);
-  const groupUsernames = resolveGroupIds(groupIds, groups).map(u => u.gitlab ?? u.userId);
-  return [...new Set([...usernames, ...groupUsernames])];
+  const settingsUsers = get(usersAtom);
+  const userLookup = new Map(settingsUsers.filter((u): u is User => u.type === 'user').map(u => [u.id.userId, u.id]));
+  const groupUsers = resolveGroupIds(groupIds, groups);
+  const directUsers = userIds.map(id => userLookup.get(id) ?? { type: 'userId' as const, userId: id });
+  const seen = new Set<string>();
+  return [...groupUsers, ...directUsers].filter(u => {
+    if (seen.has(u.userId)) return false;
+    seen.add(u.userId);
+    return true;
+  });
 });
+
+const mrMatchesUserFilter = (mr: MergeRequest, userFilter: readonly UserId[]): boolean =>
+  userFilter.length === 0 || userFilter.some(u => isCurrentUser(u, mrProviderAuthor(mr.provider, mr.author)));
 
 const filterMrs = (
   allMrs: ReadonlyMap<MrGid, MergeRequest>,
   state: MergeRequestState,
   repoFilter: readonly string[],
-  userFilter: readonly string[],
+  userFilter: readonly UserId[],
   sortOrder: MrSortOrder,
   sprintIssueKeys: ReadonlySet<string>,
 ): readonly MergeRequest[] => {
@@ -142,7 +158,7 @@ const filterMrs = (
   return [...allMrs.values()]
     .filter(mr => mr.state === state)
     .filter(mr => repoFilterSet.size === 0 || repoFilterSet.has(mr.project.fullPath))
-    .filter(mr => userFilter.length === 0 || userFilter.includes(mr.author))
+    .filter(mr => mrMatchesUserFilter(mr, userFilter))
     .filter(mr => sprintIssueKeys.size === 0 || mr.jiraIssueKeys.some(key => sprintIssueKeys.has(key)))
     .sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
 };
@@ -223,11 +239,10 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
       const hasUserFilter = userFilter.length > 0;
 
       if (hasUserFilter && gitlabRepos.length > 0) {
-        const userIds: UserId[] = userFilter.map(username => ({ type: 'userId', userId: username, gitlab: username }));
-        yield* Console.log(`[Refresh] Fetching ${filterMrState} MRs for users [${userIds.map(u => u.gitlab).join(', ')}] (first page)`);
-        const cacheKey = new MRCacheKey({ users: userIds, state: filterMrState });
+        yield* Console.log(`[Refresh] Fetching ${filterMrState} MRs for users [${userFilter.map(u => u.gitlab ?? u.userId).join(', ')}] (first page)`);
+        const cacheKey = new MRCacheKey({ users: [...userFilter], state: filterMrState });
         const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
-        const discoveredPaths = yield* decideFetchUserMrs(userIds, filterMrState, knownMrs).pipe(
+        const discoveredPaths = yield* decideFetchUserMrs([...userFilter], filterMrState, knownMrs).pipe(
           Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
           Effect.catchAllCause((cause) => Console.error("Error fetching user MRs:", cause).pipe(Effect.as([] as readonly string[])))
         );
@@ -403,7 +418,7 @@ export const selectMrByIdAtom = Atom.writable(
     const newFilteredMrs = Array.from(allMrsState.mrsByGid.values())
       .filter(m => m.state === newState)
       .filter(m => rFilter.size === 0 || rFilter.has(m.project.fullPath))
-      .filter(m => userFilter.length === 0 || userFilter.includes(m.author))
+      .filter(m => mrMatchesUserFilter(m, userFilter))
       .sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
     const newMrIndex = newFilteredMrs.findIndex(m => m.id === mrId);
     ctx.set(selectedMrIndexAtom, newMrIndex >= 0 ? newMrIndex : 0);

@@ -62,35 +62,35 @@ export default function FactsPane() {
     <box key="mode-indicator" width="100%" height={6} flexDirection="column">
       <box height={1} flexDirection="row"
            onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
-        <text fg={Colors.TRACK} wrapMode="none">{' [v] '}</text>
+        <text fg={Colors.SUPPORTING} wrapMode="none">{' [v] '}</text>
         <text fg={reviewColor} wrapMode="none">{'review'}</text>
-        <text fg={Colors.TRACK} wrapMode="none">{' / '}</text>
+        <text fg={Colors.SUPPORTING} wrapMode="none">{' / '}</text>
         <text fg={focusColor} wrapMode="none">{'focus'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => setFactsViewStyle(factsViewStyle === 'grouped' ? 'chronological' : 'grouped')}>
-        <text fg={Colors.TRACK} wrapMode="none">{' [c] '}</text>
+        <text fg={Colors.SUPPORTING} wrapMode="none">{' [c] '}</text>
         <text fg={chronoColor} wrapMode="none">{'chronological'}</text>
-        <text fg={Colors.TRACK} wrapMode="none">{' / '}</text>
+        <text fg={Colors.SUPPORTING} wrapMode="none">{' / '}</text>
         <text fg={eventsColor} wrapMode="none">{'events'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => toggleNotifications()}>
-        <text fg={Colors.TRACK} wrapMode="none">{' [n] '}</text>
+        <text fg={Colors.SUPPORTING} wrapMode="none">{' [n] '}</text>
         <text fg={notifColor} wrapMode="none">{notificationSettings.enabled ? 'notifications' : 'notifications off'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => setShowBranchNames(!showBranchNames)}>
-        <text fg={Colors.TRACK} wrapMode="none">{' [B] '}</text>
+        <text fg={Colors.SUPPORTING} wrapMode="none">{' [B] '}</text>
         <text fg={titleColor} wrapMode="none">{'title'}</text>
-        <text fg={Colors.TRACK} wrapMode="none">{' / '}</text>
+        <text fg={Colors.SUPPORTING} wrapMode="none">{' / '}</text>
         <text fg={branchColor} wrapMode="none">{'branch'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => setFactsSelectionActive(!factsSelectionActive)}>
-        <text fg={Colors.TRACK} wrapMode="none">{' [s] '}</text>
+        <text fg={Colors.SUPPORTING} wrapMode="none">{' [s] '}</text>
         <text fg={filteredColor} wrapMode="none">{'filtered'}</text>
-        <text fg={Colors.TRACK} wrapMode="none">{' / '}</text>
+        <text fg={Colors.SUPPORTING} wrapMode="none">{' / '}</text>
         <text fg={allColor} wrapMode="none">{'all'}</text>
       </box>
     </box>

@@ -72,10 +72,6 @@ export interface UserSelectionState {
   selectedIndex: number | null; // Actually selected item index (space to select)
 }
 
-
-/**
- * Active pane indices for the four pane system
- */
 export enum ActivePane {
   Facts = 0,
   MergeRequests = 1,
@@ -121,6 +117,46 @@ export const getUsersFromSelection = (
   groups: readonly UserGroup[]
 ): readonly UserId[] =>
   resolveSelection(entry, groups).users;
+
+import type { SettingsUser, SettingsGroup } from '../data/default-users-and-groups'
+
+export const settingsUsersToUserSelections = (users: readonly SettingsUser[]): UserSelection[] =>
+  users.map((u): User => ({
+    type: 'user',
+    id: { type: 'userId', userId: u.userId, gitlab: u.gitlab, bitbucket: u.bitbucket, jira: u.jira },
+  }))
+
+export const settingsGroupsToUserGroups = (groups: readonly SettingsGroup[], users: readonly SettingsUser[]): UserGroup[] => {
+  const userLookup = new Map(users.map(u => [u.userId, u]));
+  return groups.map((g): UserGroup => ({
+    type: 'group',
+    name: g.name,
+    id: { type: 'groupId', id: g.id },
+    children: [
+      ...g.users.map((userId): UserId => {
+        const u = userLookup.get(userId);
+        return { type: 'userId', userId, gitlab: u?.gitlab, bitbucket: u?.bitbucket, jira: u?.jira };
+      }),
+      ...g.groups.map((id): GroupId => ({ type: 'groupId', id })),
+    ],
+  }));
+}
+
+export const groupToUserSelectionEntry = (group: SettingsGroup): UserSelectionEntry => ({
+  userSelectionEntryId: group.id,
+  name: group.name,
+  selection: [
+    ...group.users.map((userId): UserId => ({ type: 'userId', userId })),
+    ...group.groups.map((id): GroupId => ({ type: 'groupId', id })),
+  ],
+})
+
+export const userSelectionEntryToGroup = (entry: UserSelectionEntry): SettingsGroup => ({
+  id: entry.userSelectionEntryId,
+  name: entry.name,
+  users: entry.selection.filter((s): s is UserId => s.type === 'userId').map(s => s.userId),
+  groups: entry.selection.filter((s): s is GroupId => s.type === 'groupId').map(s => s.id),
+})
 
 export const findSelectionForAuthor = (
   author: AuthorIdentity,

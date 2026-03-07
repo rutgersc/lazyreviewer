@@ -5,8 +5,8 @@ import { useAtomSet } from '@effect-atom/atom-react'
 import { Colors } from '../colors'
 import type { OnboardingStep, DiscoveredRepo } from './onboarding-types'
 import type { UserId, UserSelectionEntry } from '../userselection/userSelection'
-import { completeOnboardingAtom } from '../settings/settings-atom'
-import { userSelectionsAtom } from '../userselection/userselection-atom'
+import { userSelectionEntryToGroup } from '../userselection/userSelection'
+import { completeOnboardingAtom, saveGroupsFromOnboardingAtom } from '../settings/settings-atom'
 import RepoSelectionStep from './RepoSelectionStep'
 import UserDiscoveryStep from './UserDiscoveryStep'
 import IdentityStep from './IdentityStep'
@@ -20,7 +20,7 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
   const [selectedSelectionId, setSelectedSelectionId] = useState<string>('')
 
   const completeOnboarding = useAtomSet(completeOnboardingAtom)
-  const setUserSelections = useAtomSet(userSelectionsAtom)
+  const saveGroupsFromOnboarding = useAtomSet(saveGroupsFromOnboardingAtom)
   const renderer = useRenderer()
 
   useKeyboard((key: ParsedKey) => {
@@ -55,7 +55,7 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
         selectedUserSelectionEntryId: selectedSelectionId,
         repositoryLocalPaths: repoLocalPaths,
       })
-      setUserSelections(selections)
+      saveGroupsFromOnboarding(selections.map(userSelectionEntryToGroup))
       onComplete()
     } catch (e) {
       console.error(`[onboarding] error completing:`, e)
