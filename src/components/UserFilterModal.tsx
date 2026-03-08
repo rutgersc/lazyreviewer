@@ -41,6 +41,14 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
     return new Set(resolved.map(u => u.userId));
   }, [checkedGroupIds, groups]);
 
+  const highlightedGroupMemberIds = React.useMemo(() => {
+    if (activeColumn !== 'left') return new Set<string>();
+    const item = leftItems[leftIndex];
+    if (!item || item === 'all') return new Set<string>();
+    const resolved = resolveGroupIds([item.id.id], groups);
+    return new Set(resolved.map(u => u.userId));
+  }, [activeColumn, leftIndex, leftItems, groups]);
+
   React.useEffect(() => {
     if (isVisible) {
       setCheckedUsernames(new Set(currentUsernames));
@@ -146,8 +154,10 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
   const getUserColor = (author: UserId): string => {
     const isIndividual = checkedUsernames.has(author.userId);
     const isGroupMember = groupMemberUserIds.has(author.userId);
+    const isHighlightedMember = highlightedGroupMemberIds.has(author.userId);
     if (isIndividual && isGroupMember) return Colors.WARNING;
     if (isIndividual) return Colors.INFO;
+    if (isHighlightedMember) return Colors.ACCENT;
     if (isGroupMember) return Colors.SECONDARY;
     return Colors.PRIMARY;
   };
@@ -214,6 +224,10 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
                 return (
                   <box
                     key={isAll ? '__all__' : `group-${item.id.id}`}
+                    onMouseOver={() => {
+                      setActiveColumn('left');
+                      setLeftIndex(idx);
+                    }}
                     onMouseDown={() => {
                       setActiveColumn('left');
                       setLeftIndex(idx);
@@ -252,6 +266,10 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
                 return (
                   <box
                     key={`user-${author.userId}`}
+                    onMouseOver={() => {
+                      setActiveColumn('right');
+                      setRightIndex(idx);
+                    }}
                     onMouseDown={() => {
                       setActiveColumn('right');
                       setRightIndex(idx);

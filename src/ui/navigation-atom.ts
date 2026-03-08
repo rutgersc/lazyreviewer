@@ -20,7 +20,8 @@ export type ActiveModal =
   | 'repoFilter'
   | 'onboarding'
   | 'failedJobPicker'
-  | 'groupPicker';
+  | 'groupPicker'
+  | 'refreshPicker';
 
 export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);
 export const activeModalAtom = Atom.make<ActiveModal>('none');

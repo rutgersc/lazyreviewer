@@ -21,6 +21,7 @@ import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage"
 import NotificationsPage from "./components/NotificationsPage";
 import FailedJobPickerModal from "./components/FailedJobPickerModal";
 import GroupPickerModal from "./components/GroupPickerModal";
+import RefreshPickerModal from "./components/RefreshPickerModal";
 import ConfigurationPage from "./components/ConfigurationPage";
 import OnboardingPage from "./onboarding/OnboardingPage";
 import { ActivePane } from "./userselection/userSelection";
@@ -31,11 +32,11 @@ import { activePaneActionsAtom } from './actions/pane-actions-atoms';
 import { type MergeRequestState } from "./domain/merge-request-state";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
-import { filterMrStateAtom, refreshMergeRequestsAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
+import { filterMrStateAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
 import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, showBranchNamesAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
-import { Console, Effect } from 'effect';
+import { Effect } from 'effect';
 import { appLayer } from './appLayerRuntime';
 import { openFileInEditor } from './utils/open-file';
 import { appInitAtom } from './app-init';
@@ -46,7 +47,6 @@ import { Colors, detectSchemeFromBackground, getColorScheme, setColorScheme } fr
 export default function App() {
   useAtomValue(appInitAtom);
 
-  const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
   const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
   const notificationSettings = useAtomValue(notificationSettingsAtom);
   const toggleBackgroundSync = useAtomSet(toggleBackgroundSyncAtom, { mode: 'promiseExit' });
@@ -126,11 +126,8 @@ export default function App() {
       id: 'global:refresh',
       keys: [parseKeyString('s')],
       displayKey: 's',
-      description: 'Refresh merge requests',
-      handler: async () => {
-        const mr = await refreshMergeRequests();
-        Console.log(mr).pipe(Effect.runPromise);
-      },
+      description: 'Refresh picker',
+      handler: () => setActiveModal('refreshPicker'),
     },
     {
       id: 'global:help',
@@ -332,7 +329,7 @@ export default function App() {
   useKeyboard((key: ParsedKey) => {
     // Handle escape - close any active modal (except self-managing ones)
     if (key.name === 'escape') {
-      if (activeModal !== 'none' && activeModal !== 'groupPicker') {
+      if (activeModal !== 'none' && activeModal !== 'groupPicker' && activeModal !== 'refreshPicker') {
         setActiveModal('none');
         return;
       }
@@ -496,6 +493,13 @@ export default function App() {
       {/* Group Picker Modal */}
       <GroupPickerModal
         isVisible={activeModal === 'groupPicker'}
+        onClose={() => setActiveModal('none')}
+        onEditFilter={() => setActiveModal('userFilter')}
+      />
+
+      {/* Refresh Picker Modal */}
+      <RefreshPickerModal
+        isVisible={activeModal === 'refreshPicker'}
         onClose={() => setActiveModal('none')}
       />
 
