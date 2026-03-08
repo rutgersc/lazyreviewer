@@ -213,7 +213,7 @@ export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
   return Result.isWaiting(refreshResult);
 });
 
-export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
+export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: readonly UserId[] | undefined, get) => {
     return Effect.gen(function* () {
       const repoFilter = get(repoFilterAtom);
       const repoPaths = repoFilter.length > 0 ? repoFilter : get(repoSelectionAtom);
@@ -232,7 +232,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((_, get) => {
       const repos = repoPaths
         .map(path => resolveRepoPath(path, knownProjects));
 
-      const userFilter = get(effectiveUserFilterAtom);
+      const userFilter = overrideUserFilter ?? get(effectiveUserFilterAtom);
       const gitlabRepos = repos.filter(r => r.provider === 'gitlab');
       const bitbucketRepos = repos.filter(r => r.provider === 'bitbucket');
 

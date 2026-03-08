@@ -3,7 +3,8 @@ import { Colors } from '../colors';
 import { userGroupsAtom, setUserFilterAtom, repoSelectionAtom } from '../settings/settings-atom';
 import { knownProjectsAtom, refreshMergeRequestsAtom } from '../mergerequests/mergerequests-atom';
 import { refreshSingleRepoAtom } from './RepositoriesPaneActions';
-import { repositoryFullPath } from '../userselection/userSelection';
+import { repositoryFullPath, resolveGroupIds } from '../userselection/userSelection';
+import { groupsAtom } from '../data/data-atom';
 import PickerModal, { type PickerItem, type PickerHint } from './PickerModal';
 
 interface RefreshPickerModalProps {
@@ -18,6 +19,7 @@ const HINTS: readonly PickerHint[] = [
 
 export default function RefreshPickerModal({ isVisible, onClose }: RefreshPickerModalProps) {
   const groups = useAtomValue(userGroupsAtom);
+  const resolvedGroups = useAtomValue(groupsAtom);
   const knownProjects = useAtomValue(knownProjectsAtom);
   const customRepos = useAtomValue(repoSelectionAtom);
 
@@ -50,8 +52,9 @@ export default function RefreshPickerModal({ isVisible, onClose }: RefreshPicker
   const handleSelect = (item: PickerItem) => {
     if (item.id.startsWith('group:')) {
       const groupId = item.id.slice('group:'.length);
+      const resolvedUsers = resolveGroupIds([groupId], resolvedGroups);
       setUserFilter({ usernames: [], groupIds: [groupId] });
-      refreshMergeRequests();
+      refreshMergeRequests(resolvedUsers);
     } else {
       const repoPath = item.id.slice('repo:'.length);
       refreshSingleRepo({ repoPath, deep: false });

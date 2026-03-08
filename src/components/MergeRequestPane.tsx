@@ -829,7 +829,7 @@ export default function MergeRequestPane() {
               </text>
             )}
             <text
-               onMouseDown={() => refreshMergeRequests()}
+               onMouseDown={() => refreshMergeRequests(undefined)}
                style={{
                 fg: Colors.INFO
                }}

@@ -80,7 +80,7 @@ export default function App() {
     missingCredentials.some(c => c.required) ||
     (!isOnboardingComplete && missingCredentials.length > 0)
   );
-  const showOnboarding = !showConfigPage && !isOnboardingComplete && !onboardingDismissed && credentialsLoaded;
+  const showOnboarding = !showConfigPage && !isOnboardingComplete && !onboardingDismissed;
 
   const [filterMrState, setFilterMrState] = useAtom(filterMrStateAtom);
   const [repoFilter, setRepoFilter] = useAtom(repoFilterAtom);
