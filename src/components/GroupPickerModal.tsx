@@ -17,8 +17,8 @@ interface GroupPickerModalProps {
 
 const KEY_SAVE = [parseKeyString('ctrl+n')];
 const KEY_DELETE = [parseKeyString('ctrl+x'), parseKeyString('delete')];
-const KEY_MOVE_UP = [parseKeyString('ctrl+up')];
-const KEY_MOVE_DOWN = [parseKeyString('ctrl+down')];
+const KEY_MOVE_UP = [parseKeyString('ctrl+k')];
+const KEY_MOVE_DOWN = [parseKeyString('ctrl+j')];
 const KEY_UP = [parseKeyString('up')];
 const KEY_DOWN = [parseKeyString('down')];
 
@@ -221,11 +221,11 @@ export default function GroupPickerModal({ isVisible, onClose }: GroupPickerModa
               </box>
             </scrollbox>
 
-            <box style={{ flexDirection: 'column', marginTop: 1 }}>
+            <box style={{ flexDirection: 'column', marginTop: 1, flexShrink: 0 }}>
               <box style={{ flexDirection: 'row' }}><text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>Enter</text><text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>apply group</text></box>
               <box style={{ flexDirection: 'row' }}><text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>Ctrl+n</text><text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>save current filter</text></box>
               <box style={{ flexDirection: 'row' }}><text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>Ctrl+x</text><text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>delete group</text></box>
-              <box style={{ flexDirection: 'row' }}><text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>C+↑/↓</text><text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>move group</text></box>
+              <box style={{ flexDirection: 'row' }}><text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>C+j/k</text><text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>move group</text></box>
               <box style={{ flexDirection: 'row' }}><text style={{ fg: Colors.SUPPORTING, width: 8 }} wrapMode='none'>Esc</text><text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>close</text></box>
             </box>
           </>
