@@ -162,13 +162,18 @@ const buildDebugPrompt = (
     localRepoPath ? `> Local repository: \`${localRepoPath}\`` : null,
     `> Job logs directory: \`${debugDir}\``,
     '',
-    'Analyze these failed CI job logs. The log files are in the directory above. The commits referenced below can be inspected in the local repository.',
+    'Analyze these failed CI job logs to find consistent error patterns and spot flaky tests.',
+    'The log files are in the directory above. The commits referenced below can be inspected in the local repository.',
     '',
-    'Identify:',
-    '1. **Root cause(s)** — What is causing each failure?',
-    '2. **Patterns** — Are multiple failures related? Same root cause or different?',
-    '3. **Fix suggestions** — What changes would resolve these failures?',
-    '4. **Flaky vs real** — Are any of these flaky test failures vs genuine bugs?',
+    '## Instructions',
+    '1. **Extract the error message / failed test name** from each log file.',
+    '2. **Group by error** — find which errors repeat across multiple jobs/branches.',
+    '3. **Classify each error**:',
+    '   - **Flaky test** — appears intermittently across unrelated branches or sometimes passes on the same branch.',
+    '   - **Consistent failure** — appears reliably across multiple runs. Errors that also appear on `develop` are slightly more concerning as it is the main branch.',
+    '   - **Branch-specific** — only appears on one feature branch. Likely a legitimate WIP issue — ignore these.',
+    '4. **Output a summary table** (markdown) with columns: Error | Classification | Branches | Count',
+    '5. **Verdict**: What are the real problems? Which errors are systemic vs one-off? Any flaky tests that need attention?',
     '',
     '---',
     '',
@@ -209,13 +214,12 @@ const generateDebugPromptAtom = appAtomRuntime.fn((_: void, get) =>
     const downloaded: { job: JobHistoryEntry; logPath: string }[] = [];
     const errors: { job: JobHistoryEntry; error: string }[] = [];
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < failedJobs.length; i++) {
       const job = failedJobs[i]!;
       setStatus(`Downloading log ${i + 1}/${failedJobs.length} (pipeline #${job.pipelineIid})...`);
       const mr = { project: { path: '', fullPath: query.projectPath }, sourcebranch: job.pipelineRef };
       const jobRef = { id: job.jobId, name: job.jobName, localId: job.pipelineIid };
       try {
-        yield* Effect.sleep("500 millis");
         yield* downloadJobTrace(mr, jobRef, debugDir);
         downloaded.push({ job, logPath: getJobLogPath(mr, jobRef, debugDir) });
         yield* Console.log(`[Debug] Downloaded ${i + 1}/${failedJobs.length}`);
