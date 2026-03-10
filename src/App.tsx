@@ -557,7 +557,6 @@ export default function App() {
       {/* Job History Modal - rendered at app level to cover entire screen */}
       {activeModal === 'jobHistory' && (
         <JobHistoryModal
-          isVisible={true}
           onClose={() => setActiveModal('none')}
         />
       )}

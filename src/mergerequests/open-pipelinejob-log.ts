@@ -10,15 +10,17 @@ type JobLogJob = { id: string; name: string; localId: number };
 
 const sanitizeForFilename = (s: string) => s.replace(/[<>:"/\\|?*]/g, '_');
 
-export const getJobLogPath = (mr: JobLogMr, job: JobLogJob): string =>
-  join(
-    process.cwd(), "logs", "jobs",
-    `${sanitizeForFilename(mr.sourcebranch)}_${sanitizeForFilename(job.name)}_${job.localId}.ansi`
-  );
+const jobLogFilename = (mr: JobLogMr, job: JobLogJob): string =>
+  `${sanitizeForFilename(mr.sourcebranch)}_${sanitizeForFilename(job.name)}_${job.localId}.ansi`;
 
-export const downloadJobTrace = Effect.fn(function* (mr: JobLogMr, job: JobLogJob) {
-  const logsDir = join(process.cwd(), "logs", "jobs");
-  const logFilePath = getJobLogPath(mr, job);
+const defaultJobLogDir = join(process.cwd(), "logs", "jobs");
+
+export const getJobLogPath = (mr: JobLogMr, job: JobLogJob, dir?: string): string =>
+  join(dir ?? defaultJobLogDir, jobLogFilename(mr, job));
+
+export const downloadJobTrace = Effect.fn(function* (mr: JobLogMr, job: JobLogJob, targetDir?: string) {
+  const logsDir = targetDir ?? defaultJobLogDir;
+  const logFilePath = join(logsDir, jobLogFilename(mr, job));
 
   if (!existsSync(logsDir)) {
     mkdirSync(logsDir, { recursive: true });

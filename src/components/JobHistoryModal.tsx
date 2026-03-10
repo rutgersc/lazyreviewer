@@ -3,17 +3,19 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { getJobStatusDisplay } from '../domain/display/jobStatus';
 import { Colors } from '../colors';
-import { useAtomValue, useAtomSet, Atom, Registry, RegistryContext } from '@effect-atom/atom-react';
+import { useAtomValue, Atom, Registry, RegistryContext, useAtomSet } from '@effect-atom/atom-react';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { Console, Effect, Exit } from 'effect';
-import { fetchJobHistory, getJobTraceRaw } from '../gitlab/gitlab-graphql';
+import { fetchJobHistory } from '../gitlab/gitlab-graphql';
 import type { JobHistoryEntry } from '../domain/merge-request-schema';
 import { spawn } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { repositoryPathsAtom } from '../settings/settings-atom';
-import { loadJobLogInternal } from '../mergerequests/open-pipelinejob-log';
+import { loadJobLogInternal, downloadJobTrace, getJobLogPath } from '../mergerequests/open-pipelinejob-log';
+import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
+import { getPipelineJobsFromMr } from './PipelineJobsList';
 
 export interface JobHistoryQuery {
   readonly projectPath: string;
@@ -22,23 +24,31 @@ export interface JobHistoryQuery {
 
 export const jobHistoryQueryAtom = Atom.make<JobHistoryQuery | null>(null);
 
-interface JobHistoryModalProps {
-  isVisible: boolean;
-  onClose: () => void;
-}
-
 export const selectedPipelineJobIndexAtom = Atom.make<number>(0);
 
 export const jobHistoryDataAtom = Atom.make<JobHistoryEntry[]>([]);
-export const selectedJobForHistoryAtom = Atom.make<string | null>(null);
-export const jobHistoryLimitAtom = Atom.make<number>(50);
 
-export const jobHistoryEndCursorAtom = Atom.make<string | null>(null);
-export const jobHistoryHasNextPageAtom = Atom.make<boolean>(false);
-export const jobHistoryPipelinesScannedAtom = Atom.make<number>(0);
-export const jobHistoryIsLoadingMoreAtom = Atom.make<boolean>(false);
+interface JobHistoryPageState {
+  readonly endCursor: string | null;
+  readonly hasNextPage: boolean;
+  readonly pipelinesScanned: number;
+  readonly isLoadingMore: boolean;
+}
 
-export const fetchJobHistoryAtom = appAtomRuntime.fn((_: number, get) =>
+const initialPageState: JobHistoryPageState = {
+  endCursor: null,
+  hasNextPage: false,
+  pipelinesScanned: 0,
+  isLoadingMore: false,
+};
+
+export const jobHistoryPageStateAtom = Atom.make<JobHistoryPageState>(initialPageState);
+
+const jobHistoryStatusAtom = Atom.make<string | null>(null);
+
+const jobHistoryLimitAtom = Atom.make<number>(50);
+
+const fetchJobHistoryAtom = appAtomRuntime.fn((_: number, get) =>
   Effect.gen(function* () {
     const query = get(jobHistoryQueryAtom);
     const limit = get(jobHistoryLimitAtom);
@@ -90,57 +100,69 @@ const loadMoreJobHistoryAtom = appAtomRuntime.fn((args: LoadMoreArgs, get) =>
   })
 );
 
+const resolveQueryFromContext = (registry: Registry.Registry): JobHistoryQuery | null => {
+  const currentMr = registry.get(selectedMrAtom);
+  const jobs = getPipelineJobsFromMr(currentMr);
+  const currentIndex = registry.get(selectedPipelineJobIndexAtom);
+  const selectedJob = jobs[currentIndex];
+  if (!selectedJob || !currentMr) return null;
+  return { projectPath: currentMr.project.fullPath, jobName: selectedJob.job.name };
+};
+
+const applyFetchResult = (
+  registry: Registry.Registry,
+  result: { history: JobHistoryEntry[]; pipelinesScanned: number; pageInfo: { hasNextPage: boolean; endCursor: string | null } }
+) => {
+  registry.set(jobHistoryDataAtom, result.history);
+  registry.set(jobHistoryPageStateAtom, {
+    endCursor: result.pageInfo.endCursor,
+    hasNextPage: result.pageInfo.hasNextPage,
+    pipelinesScanned: result.pipelinesScanned,
+    isLoadingMore: false,
+  });
+};
+
+const triggerInitialFetch = (registry: Registry.Registry) => {
+  registry.set(fetchJobHistoryAtom, 0);
+  Effect.runPromiseExit(
+    Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
+  ).then((exit) => {
+    if (Exit.isSuccess(exit)) {
+      applyFetchResult(registry, exit.value);
+    }
+  });
+};
+
+const sanitizeForFilename = (s: string) => s.replace(/[<>:"/\\|?*]/g, '_');
+
 const buildDebugPrompt = (
   query: JobHistoryQuery,
   totalLoaded: number,
   localRepoPath: string | null,
-  traces: readonly { job: JobHistoryEntry; trace: string | null }[]
+  debugDir: string,
+  jobs: readonly { job: JobHistoryEntry; logPath: string }[]
 ): string => {
-  const stripAnsi = (s: string) =>
-    s.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '')
-     .replace(/\x1B\[0K/g, '')
-     .replace(/^section_(?:start|end):[^\n]*$/gm, '')
-     .replace(/\r/g, '')
-     .replace(/\n{3,}/g, '\n\n');
-
-  const tailLines = (s: string, n: number) => {
-    const lines = s.split('\n');
-    return lines.length > n
-      ? `... (${lines.length - n} lines truncated)\n${lines.slice(-n).join('\n')}`
-      : s;
-  };
-
-  const sections = traces.map(({ job, trace }) => {
-    const traceContent = trace
-      ? tailLines(stripAnsi(trace), 200)
-      : '(trace unavailable)';
-
-    return [
-      `## Pipeline #${job.pipelineIid} — ${job.pipelineRef}`,
-      '',
-      `- **Commit**: \`${job.shortShaCommit || 'unknown'}\``,
-      `- **Created**: ${job.pipelineCreatedAt}`,
-      `- **Duration**: ${job.duration ? `${job.duration}s` : 'unknown'}`,
-      job.failureMessage ? `- **Failure**: ${job.failureMessage}` : null,
-      job.mergeRequestTitle ? `- **MR**: !${job.mergeRequestIid} ${job.mergeRequestTitle}` : null,
-      job.runner ? `- **Runner**: ${job.runner.description || job.runner.shortSha}` : null,
-      '',
-      '### Job Log (last 200 lines)',
-      '',
-      '```',
-      traceContent,
-      '```',
-      ''
-    ].filter(line => line !== null).join('\n');
-  });
+  const sections = jobs.map(({ job, logPath }) => [
+    `## Pipeline #${job.pipelineIid} — ${job.pipelineRef}`,
+    '',
+    `- **Commit**: \`${job.shortShaCommit || 'unknown'}\``,
+    `- **Created**: ${job.pipelineCreatedAt}`,
+    `- **Duration**: ${job.duration ? `${job.duration}s` : 'unknown'}`,
+    job.failureMessage ? `- **Failure**: ${job.failureMessage}` : null,
+    job.mergeRequestTitle ? `- **MR**: !${job.mergeRequestIid} ${job.mergeRequestTitle}` : null,
+    job.runner ? `- **Runner**: ${job.runner.description || job.runner.shortSha}` : null,
+    `- **Log**: \`${logPath}\``,
+    ''
+  ].filter(line => line !== null).join('\n'));
 
   return [
     `# Debug: Failed "${query.jobName}" runs`,
     '',
-    `> ${traces.length} failed run(s) out of ${totalLoaded} total loaded runs in \`${query.projectPath}\``,
+    `> ${jobs.length} failed run(s) out of ${totalLoaded} total loaded runs in \`${query.projectPath}\``,
     localRepoPath ? `> Local repository: \`${localRepoPath}\`` : null,
+    `> Job logs directory: \`${debugDir}\``,
     '',
-    'Analyze these failed CI job logs. The commits referenced below can be inspected in the local repository.',
+    'Analyze these failed CI job logs. The log files are in the directory above. The commits referenced below can be inspected in the local repository.',
     '',
     'Identify:',
     '1. **Root cause(s)** — What is causing each failure?',
@@ -165,6 +187,7 @@ const openJobLogFromHistoryAtom = appAtomRuntime.fn((entry: JobHistoryEntry, get
 
 const generateDebugPromptAtom = appAtomRuntime.fn((_: void, get) =>
   Effect.gen(function* () {
+    const setStatus = (msg: string | null) => get.registry.set(jobHistoryStatusAtom, msg);
     const query = get(jobHistoryQueryAtom);
     const history = get(jobHistoryDataAtom);
     const repoPaths = get(repositoryPathsAtom);
@@ -175,39 +198,54 @@ const generateDebugPromptAtom = appAtomRuntime.fn((_: void, get) =>
 
     const failedJobs = history.filter(e => e.jobStatus === 'FAILED');
     if (failedJobs.length === 0) {
-      yield* Console.log('[JobHistory] No failed jobs to debug');
+      setStatus('No failed jobs to debug');
       return;
     }
 
-    yield* Console.log(`[JobHistory] Fetching traces for ${failedJobs.length} failed jobs...`);
-
-    const traces = yield* Effect.all(
-      failedJobs.map(job =>
-        getJobTraceRaw(query.projectPath, job.jobId).pipe(
-          Effect.map(trace => ({ job, trace })),
-          Effect.catchAll(() => Effect.succeed({ job, trace: null as string | null }))
-        )
-      ),
-      { concurrency: 5 }
-    );
-
-    const prompt = buildDebugPrompt(query, history.length, localRepoPath, traces);
-
-    const sanitize = (s: string) => s.replace(/[<>:"/\\|?*]/g, '_');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const dir = join(process.cwd(), 'logs', 'debug-prompts');
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    const filePath = join(dir, `${sanitize(query.jobName)}_${timestamp}.md`);
+    const debugDir = join(process.cwd(), 'logs', 'debug', `${sanitizeForFilename(query.jobName)}_${timestamp}`);
+    if (!existsSync(debugDir)) mkdirSync(debugDir, { recursive: true });
 
-    writeFileSync(filePath, prompt, 'utf8');
-    yield* Console.log(`[JobHistory] Debug prompt saved to: ${filePath}`);
+    const downloaded: { job: JobHistoryEntry; logPath: string }[] = [];
+    const errors: { job: JobHistoryEntry; error: string }[] = [];
+
+    for (let i = 0; i < 5; i++) {
+      const job = failedJobs[i]!;
+      setStatus(`Downloading log ${i + 1}/${failedJobs.length} (pipeline #${job.pipelineIid})...`);
+      const mr = { project: { path: '', fullPath: query.projectPath }, sourcebranch: job.pipelineRef };
+      const jobRef = { id: job.jobId, name: job.jobName, localId: job.pipelineIid };
+      try {
+        yield* Effect.sleep("500 millis");
+        yield* downloadJobTrace(mr, jobRef, debugDir);
+        downloaded.push({ job, logPath: getJobLogPath(mr, jobRef, debugDir) });
+        yield* Console.log(`[Debug] Downloaded ${i + 1}/${failedJobs.length}`);
+      } catch (err) {
+        errors.push({ job, error: String(err) });
+        yield* Console.log(`[Debug] Failed ${i + 1}/${failedJobs.length}: ${String(err)}`);
+      }
+    }
+
+    yield* Console.log(`[Debug] Done: ${downloaded.length} downloaded, ${errors.length} failed`);
+
+    if (errors.length > 0) {
+      setStatus(`${errors.length} log(s) failed. Building prompt with ${downloaded.length}...`);
+    }
+
+    setStatus('Building debug prompt...');
+
+    const prompt = buildDebugPrompt(query, history.length, localRepoPath, debugDir, downloaded);
+    const promptPath = join(debugDir, 'prompt.md');
+    writeFileSync(promptPath, prompt, 'utf8');
+
+    yield* Console.log(`[Debug] Prompt saved to ${promptPath}`);
+    setStatus(`Saved to ${debugDir}`);
 
     if (process.platform === 'win32') {
-      spawn('start', ['', filePath], { shell: true, detached: true, stdio: 'ignore' });
+      spawn('start', ['', promptPath], { shell: true, detached: true, stdio: 'ignore' });
     } else if (process.platform === 'darwin') {
-      spawn('open', [filePath], { detached: true, stdio: 'ignore' });
+      spawn('open', [promptPath], { detached: true, stdio: 'ignore' });
     } else {
-      spawn('xdg-open', [filePath], { detached: true, stdio: 'ignore' });
+      spawn('xdg-open', [promptPath], { detached: true, stdio: 'ignore' });
     }
   })
 );
@@ -243,31 +281,41 @@ function formatDuration(seconds: number | null): string {
   return `${secs}s`;
 }
 
+interface JobHistoryModalProps {
+  onClose: () => void;
+}
+
 export default function JobHistoryModal({
-  isVisible,
   onClose
 }: JobHistoryModalProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
   const registry = React.useContext(RegistryContext);
   const query = useAtomValue(jobHistoryQueryAtom);
-  const jobName = useAtomValue(selectedJobForHistoryAtom);
   const jobHistory = useAtomValue(jobHistoryDataAtom);
-  const hasNextPage = useAtomValue(jobHistoryHasNextPageAtom);
-  const endCursor = useAtomValue(jobHistoryEndCursorAtom);
-  const pipelinesScanned = useAtomValue(jobHistoryPipelinesScannedAtom);
-  const isLoadingMore = useAtomValue(jobHistoryIsLoadingMoreAtom);
-  const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
-  const setJobHistoryEndCursor = useAtomSet(jobHistoryEndCursorAtom);
-  const setJobHistoryHasNextPage = useAtomSet(jobHistoryHasNextPageAtom);
+  const pageState = useAtomValue(jobHistoryPageStateAtom);
+  const statusMessage = useAtomValue(jobHistoryStatusAtom);
+  const setGenerateDebugPromptAtom = useAtomSet(generateDebugPromptAtom);
+
+  const initialFetchDone = React.useRef(false);
+  React.useEffect(() => {
+    if (initialFetchDone.current) return;
+    initialFetchDone.current = true;
+    const existingQuery = registry.get(jobHistoryQueryAtom);
+    if (!existingQuery) {
+      const derived = resolveQueryFromContext(registry);
+      if (derived) {
+        registry.set(jobHistoryQueryAtom, derived);
+      }
+    }
+    triggerInitialFetch(registry);
+  }, []);
 
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
     lookahead: 2,
   });
 
   useKeyboard((key: ParsedKey) => {
-    if (!isVisible) return;
-
     if (key.name === 'escape') {
       onClose();
     } else if (key.name === 'j' || key.name === 'down') {
@@ -283,33 +331,47 @@ export default function JobHistoryModal({
         return newIndex;
       });
     } else if (key.name === 'm') {
-      if (hasNextPage && query && !isLoadingMore) {
-        registry.set(jobHistoryIsLoadingMoreAtom, true);
-        registry.set(loadMoreJobHistoryAtom, { query, endCursor, currentHistory: jobHistory });
+      console.log("things", { pageState, query })
+
+      if (pageState.hasNextPage && query && !pageState.isLoadingMore) {
+        registry.set(jobHistoryPageStateAtom, { ...pageState, isLoadingMore: true });
+        registry.set(loadMoreJobHistoryAtom, { query, endCursor: pageState.endCursor, currentHistory: jobHistory });
         Effect.runPromiseExit(
           Registry.getResult(registry, loadMoreJobHistoryAtom, { suspendOnWaiting: true })
         ).then((exit) => {
-          registry.set(jobHistoryIsLoadingMoreAtom, false);
           if (Exit.isSuccess(exit)) {
-            const { history, pageInfo, pipelinesScanned: batchScanned } = exit.value;
-            registry.set(jobHistoryDataAtom, history);
-            registry.set(jobHistoryEndCursorAtom, pageInfo.endCursor);
-            registry.set(jobHistoryHasNextPageAtom, pageInfo.hasNextPage);
-            registry.set(jobHistoryPipelinesScannedAtom, pipelinesScanned + batchScanned);
+            const currentPageState = registry.get(jobHistoryPageStateAtom);
+            registry.set(jobHistoryDataAtom, exit.value.history);
+            registry.set(jobHistoryPageStateAtom, {
+              endCursor: exit.value.pageInfo.endCursor,
+              hasNextPage: exit.value.pageInfo.hasNextPage,
+              pipelinesScanned: currentPageState.pipelinesScanned + exit.value.pipelinesScanned,
+              isLoadingMore: false,
+            });
+          } else {
+            registry.set(jobHistoryPageStateAtom, { ...registry.get(jobHistoryPageStateAtom), isLoadingMore: false });
           }
         });
       }
     } else if (key.name === 'd') {
-      registry.set(generateDebugPromptAtom, undefined);
+      setGenerateDebugPromptAtom();
     } else if (key.name === 'return') {
       const selectedEntry = jobHistory[selectedIndex];
       if (selectedEntry) {
         registry.set(openJobLogFromHistoryAtom, selectedEntry);
       }
+    } else if (key.name === 'x') {
+      const selectedEntry = jobHistory[selectedIndex];
+      if (selectedEntry?.webPath) {
+        const { spawn } = require('child_process');
+        const url = `https://git.elabnext.com${selectedEntry.webPath}`;
+        const command = process.platform === 'win32' ? 'start' :
+                       process.platform === 'darwin' ? 'open' : 'xdg-open';
+        spawn(command, [url], { shell: true, detached: true, stdio: 'ignore' });
+      }
     }
-  });
 
-  if (!isVisible) return null;
+  });
 
   const totalRuns = jobHistory.length;
   const developRuns = jobHistory.filter(entry => entry.isDevelopBranch).length;
@@ -331,10 +393,19 @@ export default function JobHistoryModal({
     >
 
         {/* Header */}
-        <box style={{ padding: 1, border: true, borderColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK, flexShrink: 0 }}>
+        <box style={{ paddingLeft: 1, paddingTop: 1, flexShrink: 0, flexDirection: 'column' }}>
           <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
-            {`📋 Job History: ${jobName} (${totalRuns} runs across all branches)`}
+            {`Job History: ${query?.jobName ?? '?'} (${totalRuns} runs)`}
           </text>
+          <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
+            {`${pageState.pipelinesScanned} scanned · ${developRuns} develop · ${failedRuns} failed${pageState.isLoadingMore ? ' · loading...' : pageState.hasNextPage ? ' · more available' : ''}`}
+          </text>
+          {statusMessage && (
+            <text style={{ fg: Colors.INFO }} wrapMode='none'>
+              {statusMessage}
+            </text>
+          )}
+          <text>{''}</text>
         </box>
 
         {/* Content */}
@@ -356,8 +427,7 @@ export default function JobHistoryModal({
               No history found for this job.
             </text>
           ) : (
-            <box style={{ flexDirection: 'column', gap: 0 }}>
-              {jobHistory.map((entry, index) => {
+            jobHistory.map((entry, index) => {
                 const statusDisplay = getJobStatusDisplay(entry.jobStatus);
                 const isSelected = index === selectedIndex;
                 const developIndicator = entry.isDevelopBranch ? '★ ' : '  ';
@@ -461,26 +531,20 @@ export default function JobHistoryModal({
                     )}
                   </box>
                 );
-              })}
-            </box>
+              })
           )}
         </scrollbox>
 
         {/* Footer */}
-        <box style={{
-          padding: 1,
-          border: true,
-          borderColor: Colors.NEUTRAL,
-          backgroundColor: Colors.TRACK,
-          flexDirection: 'column',
-          gap: 0,
-          flexShrink: 0
-        }}>
+        <box style={{ paddingLeft: 1, paddingBottom: 1, flexShrink: 0 }}>
           <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
-            {`${totalRuns} matching jobs · ${pipelinesScanned} pipelines scanned · ${developRuns} on develop · ${failedRuns} failures${isLoadingMore ? ' · loading...' : hasNextPage ? ' · more available' : ' · all loaded'}`}
-          </text>
-          <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
-            {hasNextPage ? 'j/k: navigate • enter: open • m: load more • d: debug prompt • esc: close' : 'j/k: navigate • enter: open • d: debug prompt • esc: close'}
+            {[
+              'j/k',
+              'enter: open',
+              pageState.hasNextPage ? 'm: more' : null,
+              'd: debug',
+              'esc: close',
+            ].filter(Boolean).join(' · ')}
           </text>
         </box>
       </box>

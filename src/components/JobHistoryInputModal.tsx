@@ -5,15 +5,7 @@ import { Colors } from '../colors';
 import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 import { activeModalAtom } from '../ui/navigation-atom';
-import {
-  fetchJobHistoryAtom,
-  jobHistoryDataAtom,
-  jobHistoryEndCursorAtom,
-  jobHistoryHasNextPageAtom,
-  jobHistoryPipelinesScannedAtom,
-  jobHistoryQueryAtom,
-  selectedJobForHistoryAtom,
-} from './JobHistoryModal';
+import { jobHistoryQueryAtom } from './JobHistoryModal';
 
 interface JobHistoryInputModalProps {
   onClose: () => void;
@@ -25,17 +17,10 @@ export default function JobHistoryInputModal({ onClose }: JobHistoryInputModalPr
   const selectedMr = useAtomValue(selectedMrAtom);
   const setActiveModal = useAtomSet(activeModalAtom);
   const setJobHistoryQuery = useAtomSet(jobHistoryQueryAtom);
-  const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
-  const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
-  const setJobHistoryEndCursor = useAtomSet(jobHistoryEndCursorAtom);
-  const setJobHistoryHasNextPage = useAtomSet(jobHistoryHasNextPageAtom);
-  const setJobHistoryPipelinesScanned = useAtomSet(jobHistoryPipelinesScannedAtom);
-  const runFetch = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
 
   const [projectPath, setProjectPath] = useState(() => selectedMr?.project.fullPath ?? '');
   const [jobName, setJobName] = useState('');
   const [focusedField, setFocusedField] = useState<FocusedField>('jobName');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const projectPathRef = useRef<InputRenderable>(null);
   const jobNameRef = useRef<InputRenderable>(null);
@@ -43,23 +28,10 @@ export default function JobHistoryInputModal({ onClose }: JobHistoryInputModalPr
   const submit = () => {
     const trimmedProject = projectPath.trim();
     const trimmedJob = jobName.trim();
-    if (!trimmedProject || !trimmedJob || isSubmitting) return;
+    if (!trimmedProject || !trimmedJob) return;
 
-    setIsSubmitting(true);
     setJobHistoryQuery({ projectPath: trimmedProject, jobName: trimmedJob });
-
-    runFetch(0).then((exit) => {
-      setIsSubmitting(false);
-      if (exit._tag === 'Success') {
-        const { history, pipelinesScanned, pageInfo } = exit.value;
-        setJobHistoryData(history);
-        setSelectedJobForHistory(trimmedJob);
-        setJobHistoryEndCursor(pageInfo.endCursor);
-        setJobHistoryHasNextPage(pageInfo.hasNextPage);
-        setJobHistoryPipelinesScanned(pipelinesScanned);
-      }
-      setActiveModal('jobHistory');
-    });
+    setActiveModal('jobHistory');
   };
 
   useKeyboard((key: ParsedKey) => {
@@ -172,15 +144,9 @@ export default function JobHistoryInputModal({ onClose }: JobHistoryInputModalPr
 
         {/* Footer hints */}
         <box style={{ marginTop: 1, flexDirection: 'column' }}>
-          {isSubmitting ? (
-            <text style={{ fg: Colors.INFO }} wrapMode="none">
-              Fetching job history...
-            </text>
-          ) : (
-            <text style={{ fg: Colors.SUPPORTING, attributes: TextAttributes.DIM }} wrapMode="none">
-              Tab: switch field | Enter: submit/next | Esc: cancel
-            </text>
-          )}
+          <text style={{ fg: Colors.SUPPORTING, attributes: TextAttributes.DIM }} wrapMode="none">
+            Tab: switch field | Enter: submit/next | Esc: cancel
+          </text>
         </box>
       </box>
     </box>

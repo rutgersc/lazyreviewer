@@ -5,7 +5,7 @@ import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { getPipelineJobsFromMr, requestScrollPipelineJobsListToJob as requestScrollPipelineJobsListToJobAtom } from './PipelineJobsList';
 import { Effect } from 'effect';
-import { fetchJobHistoryAtom, jobHistoryDataAtom, jobHistoryEndCursorAtom, jobHistoryHasNextPageAtom, jobHistoryPipelinesScannedAtom, jobHistoryQueryAtom, selectedJobForHistoryAtom, selectedPipelineJobIndexAtom } from './JobHistoryModal';
+import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
 import { loadJobLogAtom, jobLogDownloadSignalAtom } from '../mergerequests/open-pipelinejob-log-atom';
 import { toggleJobImportanceAtom } from '../settings/settings-atom';
 
@@ -65,34 +65,7 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
       displayKey: 'y',
       description: 'View job history',
       handler: () => {
-        const currentMr = registry.get(selectedMrAtom);
-        const jobs = getPipelineJobsFromMr(currentMr);
-        const currentIndex = registry.get(selectedPipelineJobIndexAtom);
-        const selectedJob = jobs[currentIndex];
-
-        if (selectedJob && currentMr) {
-          registry.set(jobHistoryQueryAtom, {
-            projectPath: currentMr.project.fullPath,
-            jobName: selectedJob.job.name,
-          });
-
-          registry.set(fetchJobHistoryAtom, 0);
-
-          Effect.runPromiseExit(
-            Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
-          ).then((exit) => {
-              if (exit._tag === 'Success') {
-                const { history, pipelinesScanned, pageInfo } = exit.value;
-                registry.set(jobHistoryDataAtom, history);
-                registry.set(selectedJobForHistoryAtom, selectedJob.job.name);
-                registry.set(jobHistoryEndCursorAtom, pageInfo.endCursor);
-                registry.set(jobHistoryHasNextPageAtom, pageInfo.hasNextPage);
-                registry.set(jobHistoryPipelinesScannedAtom, pipelinesScanned);
-              }
-
-              registry.set(activeModalAtom, 'jobHistory');
-            });
-        }
+        registry.set(activeModalAtom, 'jobHistory');
       },
     },
     {
