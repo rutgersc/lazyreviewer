@@ -10,6 +10,7 @@ import {
   jobHistoryDataAtom,
   jobHistoryEndCursorAtom,
   jobHistoryHasNextPageAtom,
+  jobHistoryPipelinesScannedAtom,
   jobHistoryQueryAtom,
   selectedJobForHistoryAtom,
 } from './JobHistoryModal';
@@ -28,6 +29,7 @@ export default function JobHistoryInputModal({ onClose }: JobHistoryInputModalPr
   const setSelectedJobForHistory = useAtomSet(selectedJobForHistoryAtom);
   const setJobHistoryEndCursor = useAtomSet(jobHistoryEndCursorAtom);
   const setJobHistoryHasNextPage = useAtomSet(jobHistoryHasNextPageAtom);
+  const setJobHistoryPipelinesScanned = useAtomSet(jobHistoryPipelinesScannedAtom);
   const runFetch = useAtomSet(fetchJobHistoryAtom, { mode: 'promiseExit' });
 
   const [projectPath, setProjectPath] = useState(() => selectedMr?.project.fullPath ?? '');
@@ -49,11 +51,12 @@ export default function JobHistoryInputModal({ onClose }: JobHistoryInputModalPr
     runFetch(0).then((exit) => {
       setIsSubmitting(false);
       if (exit._tag === 'Success') {
-        const { history, pageInfo } = exit.value;
+        const { history, pipelinesScanned, pageInfo } = exit.value;
         setJobHistoryData(history);
         setSelectedJobForHistory(trimmedJob);
         setJobHistoryEndCursor(pageInfo.endCursor);
         setJobHistoryHasNextPage(pageInfo.hasNextPage);
+        setJobHistoryPipelinesScanned(pipelinesScanned);
       }
       setActiveModal('jobHistory');
     });

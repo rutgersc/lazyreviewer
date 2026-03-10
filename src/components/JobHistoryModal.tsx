@@ -13,6 +13,7 @@ import { spawn } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { repositoryPathsAtom } from '../settings/settings-atom';
+import { loadJobLogInternal } from '../mergerequests/open-pipelinejob-log';
 
 export interface JobHistoryQuery {
   readonly projectPath: string;
@@ -34,6 +35,8 @@ export const jobHistoryLimitAtom = Atom.make<number>(50);
 
 export const jobHistoryEndCursorAtom = Atom.make<string | null>(null);
 export const jobHistoryHasNextPageAtom = Atom.make<boolean>(false);
+export const jobHistoryPipelinesScannedAtom = Atom.make<number>(0);
+export const jobHistoryIsLoadingMoreAtom = Atom.make<boolean>(false);
 
 export const fetchJobHistoryAtom = appAtomRuntime.fn((_: number, get) =>
   Effect.gen(function* () {
@@ -42,7 +45,7 @@ export const fetchJobHistoryAtom = appAtomRuntime.fn((_: number, get) =>
 
     if (!query) {
       yield* Console.log('[JobHistory] No query set');
-      return { history: [] as JobHistoryEntry[], pageInfo: { hasNextPage: false, endCursor: null as string | null } };
+      return { history: [] as JobHistoryEntry[], pipelinesScanned: 0, pageInfo: { hasNextPage: false, endCursor: null as string | null } };
     }
 
     yield* Console.log(`[JobHistory] Fetching history for ${query.jobName} (limit: ${limit})`);
@@ -54,9 +57,9 @@ export const fetchJobHistoryAtom = appAtomRuntime.fn((_: number, get) =>
       null
     );
 
-    yield* Console.log(`[JobHistory] Fetched ${result.history.length} entries`);
+    yield* Console.log(`[JobHistory] Fetched ${result.history.length} entries (scanned ${result.pipelinesScanned} pipelines)`);
 
-    return { history: result.history, pageInfo: result.pageInfo };
+    return { history: result.history, pipelinesScanned: result.pipelinesScanned, pageInfo: result.pageInfo };
   })
 );
 
@@ -79,11 +82,11 @@ const loadMoreJobHistoryAtom = appAtomRuntime.fn((args: LoadMoreArgs, get) =>
       args.endCursor
     );
 
-    yield* Console.log(`[JobHistory] Fetched ${result.history.length} more entries`);
+    yield* Console.log(`[JobHistory] Fetched ${result.history.length} more entries (scanned ${result.pipelinesScanned} pipelines)`);
 
     const newHistory: JobHistoryEntry[] = [...args.currentHistory, ...result.history];
 
-    return { history: newHistory, pageInfo: result.pageInfo };
+    return { history: newHistory, pipelinesScanned: result.pipelinesScanned, pageInfo: result.pageInfo };
   })
 );
 
@@ -150,6 +153,15 @@ const buildDebugPrompt = (
     ...sections
   ].filter(line => line !== null).join('\n');
 };
+
+const openJobLogFromHistoryAtom = appAtomRuntime.fn((entry: JobHistoryEntry, get) => {
+  const query = get(jobHistoryQueryAtom);
+  if (!query) return Effect.void;
+  return loadJobLogInternal(
+    { project: { path: '', fullPath: query.projectPath }, sourcebranch: entry.pipelineRef },
+    { id: entry.jobId, name: entry.jobName, localId: entry.pipelineIid }
+  );
+});
 
 const generateDebugPromptAtom = appAtomRuntime.fn((_: void, get) =>
   Effect.gen(function* () {
@@ -243,10 +255,11 @@ export default function JobHistoryModal({
   const jobHistory = useAtomValue(jobHistoryDataAtom);
   const hasNextPage = useAtomValue(jobHistoryHasNextPageAtom);
   const endCursor = useAtomValue(jobHistoryEndCursorAtom);
+  const pipelinesScanned = useAtomValue(jobHistoryPipelinesScannedAtom);
+  const isLoadingMore = useAtomValue(jobHistoryIsLoadingMoreAtom);
   const setJobHistoryData = useAtomSet(jobHistoryDataAtom);
   const setJobHistoryEndCursor = useAtomSet(jobHistoryEndCursorAtom);
   const setJobHistoryHasNextPage = useAtomSet(jobHistoryHasNextPageAtom);
-  const isLoading = false; // TODO;
 
   const { scrollBoxRef, scrollToItem } = useAutoScroll({
     lookahead: 2,
@@ -270,16 +283,19 @@ export default function JobHistoryModal({
         return newIndex;
       });
     } else if (key.name === 'm') {
-      if (hasNextPage && query) {
+      if (hasNextPage && query && !isLoadingMore) {
+        registry.set(jobHistoryIsLoadingMoreAtom, true);
         registry.set(loadMoreJobHistoryAtom, { query, endCursor, currentHistory: jobHistory });
         Effect.runPromiseExit(
           Registry.getResult(registry, loadMoreJobHistoryAtom, { suspendOnWaiting: true })
         ).then((exit) => {
+          registry.set(jobHistoryIsLoadingMoreAtom, false);
           if (Exit.isSuccess(exit)) {
-            const { history, pageInfo } = exit.value;
+            const { history, pageInfo, pipelinesScanned: batchScanned } = exit.value;
             registry.set(jobHistoryDataAtom, history);
             registry.set(jobHistoryEndCursorAtom, pageInfo.endCursor);
             registry.set(jobHistoryHasNextPageAtom, pageInfo.hasNextPage);
+            registry.set(jobHistoryPipelinesScannedAtom, pipelinesScanned + batchScanned);
           }
         });
       }
@@ -287,12 +303,8 @@ export default function JobHistoryModal({
       registry.set(generateDebugPromptAtom, undefined);
     } else if (key.name === 'return') {
       const selectedEntry = jobHistory[selectedIndex];
-      if (selectedEntry?.webPath) {
-        const { spawn } = require('child_process');
-        const url = `https://git.elabnext.com${selectedEntry.webPath}`;
-        const command = process.platform === 'win32' ? 'start' :
-                       process.platform === 'darwin' ? 'open' : 'xdg-open';
-        spawn(command, [url], { shell: true, detached: true, stdio: 'ignore' });
+      if (selectedEntry) {
+        registry.set(openJobLogFromHistoryAtom, selectedEntry);
       }
     }
   });
@@ -339,11 +351,7 @@ export default function JobHistoryModal({
             },
           }}
         >
-          {isLoading ? (
-            <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
-              Loading job history...
-            </text>
-          ) : jobHistory.length === 0 ? (
+          {jobHistory.length === 0 ? (
             <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
               No history found for this job.
             </text>
@@ -469,7 +477,7 @@ export default function JobHistoryModal({
           flexShrink: 0
         }}>
           <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
-            {`${totalRuns} loaded · ${developRuns} on develop · ${failedRuns} failures${hasNextPage ? ' · more available' : ' · all loaded'}`}
+            {`${totalRuns} matching jobs · ${pipelinesScanned} pipelines scanned · ${developRuns} on develop · ${failedRuns} failures${isLoadingMore ? ' · loading...' : hasNextPage ? ' · more available' : ' · all loaded'}`}
           </text>
           <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
             {hasNextPage ? 'j/k: navigate • enter: open • m: load more • d: debug prompt • esc: close' : 'j/k: navigate • enter: open • d: debug prompt • esc: close'}

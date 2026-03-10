@@ -154,6 +154,7 @@ export const projectGitlabPipelineFetchedEvent = (event: GitlabPipelineFetchedEv
 
 export interface JobHistoryResult {
   history: JobHistoryEntry[];
+  pipelinesScanned: number;
   pageInfo: {
     hasNextPage: boolean;
     endCursor: string | null;
@@ -198,6 +199,7 @@ export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetch
 
   return {
     history,
+    pipelinesScanned: pipelines.length,
     pageInfo: {
       hasNextPage: pageInfo.hasNextPage,
       endCursor: pageInfo.endCursor

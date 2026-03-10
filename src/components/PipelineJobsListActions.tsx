@@ -5,7 +5,7 @@ import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { getPipelineJobsFromMr, requestScrollPipelineJobsListToJob as requestScrollPipelineJobsListToJobAtom } from './PipelineJobsList';
 import { Effect } from 'effect';
-import { fetchJobHistoryAtom, jobHistoryDataAtom, jobHistoryEndCursorAtom, jobHistoryHasNextPageAtom, jobHistoryQueryAtom, selectedJobForHistoryAtom, selectedPipelineJobIndexAtom } from './JobHistoryModal';
+import { fetchJobHistoryAtom, jobHistoryDataAtom, jobHistoryEndCursorAtom, jobHistoryHasNextPageAtom, jobHistoryPipelinesScannedAtom, jobHistoryQueryAtom, selectedJobForHistoryAtom, selectedPipelineJobIndexAtom } from './JobHistoryModal';
 import { loadJobLogAtom, jobLogDownloadSignalAtom } from '../mergerequests/open-pipelinejob-log-atom';
 import { toggleJobImportanceAtom } from '../settings/settings-atom';
 
@@ -82,11 +82,12 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
             Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
           ).then((exit) => {
               if (exit._tag === 'Success') {
-                const { history, pageInfo } = exit.value;
+                const { history, pipelinesScanned, pageInfo } = exit.value;
                 registry.set(jobHistoryDataAtom, history);
                 registry.set(selectedJobForHistoryAtom, selectedJob.job.name);
                 registry.set(jobHistoryEndCursorAtom, pageInfo.endCursor);
                 registry.set(jobHistoryHasNextPageAtom, pageInfo.hasNextPage);
+                registry.set(jobHistoryPipelinesScannedAtom, pipelinesScanned);
               }
 
               registry.set(activeModalAtom, 'jobHistory');

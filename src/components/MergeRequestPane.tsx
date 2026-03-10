@@ -902,6 +902,7 @@ export default function MergeRequestPane() {
                   <>
                     <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} showBranchNames={showBranchNames} />
                     <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} createdAt={mr.createdAt} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
+                    {!showBranchNames && <BranchInformation mr={mr} branchDifferenceMap={branchDifferences} worktreeMatch={worktreeMatch} />}
                     {index === selectedIndex && <OutOfViewRelations relations={outOfViewRelations} />}
                   </>
                 )}
