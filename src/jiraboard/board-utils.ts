@@ -12,7 +12,7 @@ export const mapStatus = (statusName: string): StatusInfo => {
   if (s.includes('test in progress')) return { text: 'TIP', color: Colors.SECONDARY };
   if (s.includes('testing')) return { text: 'TEST', color: Colors.WARNING };
   if (s.includes('test') || s.includes('qa')) return { text: 'TEST', color: Colors.WARNING };
-  if (s.includes('review')) return { text: 'REV', color: Colors.WARNING };
+  if (s.includes('review')) return { text: 'REV', color: Colors.SECONDARY };
   if (s.includes('progress')) return { text: 'WIP', color: Colors.INFO };
   if (s === 'todo' || s === 'to do') return { text: 'TODO', color: Colors.PRIMARY };
   return { text: statusName.slice(0, 6).toUpperCase(), color: Colors.ERROR };
