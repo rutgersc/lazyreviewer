@@ -277,7 +277,20 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
       </box>
 
       <box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-        <box>
+        <box style={{ flexDirection: "row" }}>
+          <text
+            style={{
+              fg: isSeen
+                ? Colors.ERROR
+                : (isApprovedByMe || isMyMr) ? Colors.SUCCESS : Colors.PRIMARY,
+              attributes: (isApprovedByMe || isMyMr || isSeen)
+                ? TextAttributes.BOLD
+                : TextAttributes.DIM
+            }}
+            wrapMode='none'
+          >
+            {isSeen ? '? ' : (isApprovedByMe || isMyMr) ? '☒ ' : '☐ '}
+          </text>
           <text
             style={{
               fg: isSeen
@@ -291,15 +304,20 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
             }}
             wrapMode='none'
           >
-            {isSeen
-              ? `? ${mr.approvedBy.length}`
-              : (isApprovedByMe || isMyMr)
-              ? `☒ ${mr.approvedBy.length}`
-              : `☐ ${mr.approvedBy.length}`}
+            {`${mr.approvedBy.length}`}
           </text>
         </box>
 
-      <box>
+      <box style={{ flexDirection: "row" }}>
+        <text
+          style={{
+            fg: Colors.PRIMARY,
+            attributes: TextAttributes.DIM,
+          }}
+          wrapMode='none'
+        >
+          {'comments: '}
+        </text>
         <text
           style={{
             fg: mr.unresolvedDiscussions > 0
@@ -311,7 +329,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
           }}
           wrapMode='none'
         >
-          {`💬 ${mr.resolvedDiscussions}/${mr.resolvableDiscussions}`}
+          {`${mr.resolvedDiscussions}/${mr.resolvableDiscussions}`}
         </text>
       </box>
 

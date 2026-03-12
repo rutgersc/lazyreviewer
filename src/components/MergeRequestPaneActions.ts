@@ -9,6 +9,9 @@ import { toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, toggleMonitor
 import { copyToClipboard } from "../system/clipboard";
 import { openUrl } from "../system/open-url";
 import { copyNotificationRequestAtom, scrollToItemRequestAtom } from "./MergeRequestPane";
+import { getPipelineJobsFromMr } from "./PipelineJobsList";
+import { loadJobLogAtom, jobLogDownloadSignalAtom } from "../mergerequests/open-pipelinejob-log-atom";
+import { jobPickerItemsAtom, jobPickerMrAtom } from "./JobPickerModal";
 
 const getSelectedMr = (registry: Registry.Registry) => {
   const mergeRequests = registry.get(unwrappedMergeRequestsAtom);
@@ -187,6 +190,32 @@ export const mrActionsAtom = Atom.make((get) => {
         if (mr) {
           registry.set(toggleSeenMergeRequestAtom, mr.id);
         }
+      },
+    },
+    {
+      id: 'mr:open-job-log',
+      keys: [parseKeyString('i')],
+      displayKey: 'i',
+      description: 'Open job log',
+      handler: () => {
+        const mr = getSelectedMr(registry);
+        if (!mr) return;
+        const jobs = getPipelineJobsFromMr(mr);
+        if (jobs.length === 0) return;
+
+        if (jobs.length === 1) {
+          registry.set(loadJobLogAtom, { mergeRequest: mr, job: jobs[0]!.job });
+          Effect.runPromiseExit(
+            Registry.getResult(registry, loadJobLogAtom, { suspendOnWaiting: true })
+          ).then(() => {
+            registry.set(jobLogDownloadSignalAtom, registry.get(jobLogDownloadSignalAtom) + 1);
+          });
+          return;
+        }
+
+        registry.set(jobPickerItemsAtom, jobs);
+        registry.set(jobPickerMrAtom, mr);
+        registry.set(activeModalAtom, 'jobPicker');
       },
     },
   ];

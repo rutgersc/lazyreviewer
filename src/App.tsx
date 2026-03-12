@@ -20,6 +20,7 @@ import { JiraBoardPage } from "./jiraboard";
 import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage";
 import NotificationsPage from "./components/NotificationsPage";
 import FailedJobPickerModal from "./components/FailedJobPickerModal";
+import JobPickerModal from "./components/JobPickerModal";
 import GroupPickerModal from "./components/GroupPickerModal";
 import RefreshPickerModal from "./components/RefreshPickerModal";
 import ConfigurationPage from "./components/ConfigurationPage";
@@ -587,6 +588,13 @@ export default function App() {
       {/* Failed Job Picker Modal */}
       {activeModal === 'failedJobPicker' && (
         <FailedJobPickerModal
+          onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {/* Job Picker Modal */}
+      {activeModal === 'jobPicker' && (
+        <JobPickerModal
           onClose={() => setActiveModal('none')}
         />
       )}

@@ -20,6 +20,7 @@ export type ActiveModal =
   | 'repoFilter'
   | 'onboarding'
   | 'failedJobPicker'
+  | 'jobPicker'
   | 'groupPicker'
   | 'refreshPicker';
 
