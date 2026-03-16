@@ -10,7 +10,7 @@ export const getCurrentBranch = (repoPath: string): string | null => {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'ignore']
     }).trim();
-    return branch;
+    return branch === 'HEAD' ? null : branch;
   } catch {
     return null;
   }
@@ -106,9 +106,21 @@ export const getRemoteBranchCommit = (
 export interface WorktreeInfo {
   readonly path: string;
   readonly branch: string | null;
+  readonly tag: string | null;
+  readonly head: string | null;
+  readonly headSubject: string | null;
   readonly folderName: string;
   readonly isMain: boolean;
 }
+
+export const formatDetachedLabel = (wt: Pick<WorktreeInfo, 'tag' | 'head' | 'headSubject'>): string => {
+  if (wt.tag) return `${wt.tag} (tag)`;
+  const shortHash = wt.head?.slice(0, 7) ?? '?';
+  const subject = wt.headSubject
+    ? ` ${wt.headSubject.length > 40 ? wt.headSubject.slice(0, 40) + '…' : wt.headSubject}`
+    : '';
+  return `${shortHash}${subject}`;
+};
 
 export const getWorktrees = (repoPath: string): readonly WorktreeInfo[] => {
   try {
@@ -125,15 +137,36 @@ export const getWorktrees = (repoPath: string): readonly WorktreeInfo[] => {
         const lines = block.trim().split('\n');
         const worktreeLine = lines.find(l => l.startsWith('worktree '));
         const branchLine = lines.find(l => l.startsWith('branch '));
+        const headLine = lines.find(l => l.startsWith('HEAD '));
         const isBare = lines.some(l => l === 'bare');
 
         const path = worktreeLine?.slice('worktree '.length) ?? '';
         const rawBranch = branchLine?.slice('branch '.length) ?? null;
         const branch = rawBranch?.replace('refs/heads/', '') ?? null;
+        const head = headLine?.slice('HEAD '.length) ?? null;
+
+        const tag = (!branch && head)
+          ? (() => { try {
+              return execSync(`git describe --tags --exact-match ${head}`, {
+                cwd: repoPath, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']
+              }).trim() || null;
+            } catch { return null; } })()
+          : null;
+
+        const headSubject = (!branch && !tag && head)
+          ? (() => { try {
+              return execSync(`git log -1 --format=%s ${head}`, {
+                cwd: repoPath, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore']
+              }).trim() || null;
+            } catch { return null; } })()
+          : null;
 
         return {
           path,
           branch,
+          tag,
+          head,
+          headSubject,
           folderName: basename(path),
           isMain: index === 0 || isBare
         };

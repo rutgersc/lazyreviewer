@@ -16,6 +16,9 @@ export interface RepositoryBranch {
   projectName: string;
   localPath: string;
   currentBranch: string | null;
+  currentTag: string | null;
+  currentHead: string | null;
+  currentHeadSubject: string | null;
   worktrees: readonly WorktreeInfo[];
 }
 
@@ -36,13 +39,16 @@ export const repositoryBranchesAtom = Atom.make((get): RepositoryBranch[] => {
       const normalizedLocal = localPath ? resolve(localPath).toLowerCase() : '';
       const isCurrentWorktree = (wt: WorktreeInfo) =>
         resolve(wt.path).toLowerCase() === normalizedLocal;
-      const currentBranch = allWorktrees.find(isCurrentWorktree)?.branch ?? null;
+      const currentWt = allWorktrees.find(isCurrentWorktree);
 
       return {
         projectPath,
         projectName: projectPath,
         localPath,
-        currentBranch,
+        currentBranch: currentWt?.branch ?? null,
+        currentTag: currentWt?.tag ?? null,
+        currentHead: currentWt?.head ?? null,
+        currentHeadSubject: currentWt?.headSubject ?? null,
         worktrees: allWorktrees.filter(wt => !isCurrentWorktree(wt))
       };
     })
@@ -56,10 +62,13 @@ export const projectBranchMapAtom = Atom.make((get) => {
       const additionalWorktrees = repo.worktrees.map((wt, index) => ({
         index: index + 1,
         folderName: wt.folderName,
-        branch: wt.branch
+        branch: wt.branch,
+        tag: wt.tag,
+        head: wt.head,
+        headSubject: wt.headSubject,
       }));
       const mainWorktree = repo.localPath
-        ? [{ index: 0, folderName: basename(repo.localPath), branch: repo.currentBranch }]
+        ? [{ index: 0, folderName: basename(repo.localPath), branch: repo.currentBranch, tag: repo.currentTag, head: repo.currentHead, headSubject: repo.currentHeadSubject }]
         : [];
       return [
         repo.projectPath,

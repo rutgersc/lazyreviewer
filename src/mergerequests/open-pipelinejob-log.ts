@@ -1,12 +1,15 @@
 import { getJobTraceAsEvent } from "../gitlab/gitlab-graphql";
-import { existsSync, writeFileSync, mkdirSync } from "fs";
+import { existsSync, writeFileSync, mkdirSync, unlinkSync } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";
 import { Effect, Console } from "effect";
 import { projectGitlabJobTraceFetchedEvent } from "../gitlab/gitlab-projections";
+import type { CiJobStatus } from "../domain/ci-status";
 
 type JobLogMr = { project: { path: string, fullPath: string }, sourcebranch: string };
-type JobLogJob = { id: string; name: string; localId: number };
+type JobLogJob = { id: string; name: string; localId: number; status?: CiJobStatus };
+
+const terminalStatuses: ReadonlySet<CiJobStatus> = new Set(['SUCCESS', 'FAILED', 'CANCELED', 'SKIPPED']);
 
 const sanitizeForFilename = (s: string) => s.replace(/[<>:"/\\|?*]/g, '_');
 
@@ -24,6 +27,12 @@ export const downloadJobTrace = Effect.fn(function* (mr: JobLogMr, job: JobLogJo
 
   if (!existsSync(logsDir)) {
     mkdirSync(logsDir, { recursive: true });
+  }
+
+  const isTerminal = !job.status || terminalStatuses.has(job.status);
+  if (!isTerminal && existsSync(logFilePath)) {
+    unlinkSync(logFilePath);
+    yield* Console.log(`Removed stale log (job ${job.status}): ${logFilePath}`);
   }
 
   if (!existsSync(logFilePath)) {

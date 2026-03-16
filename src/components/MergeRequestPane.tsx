@@ -12,6 +12,7 @@ import { useDoubleClick } from "../hooks/useDoubleClick";
 import { Colors } from "../colors";
 import { mapStatus } from "../jiraboard/board-utils";
 import { repositoryBranchesAtom, projectBranchMapAtom, type WorktreeMatch } from "../mergerequests/hooks/useRepositoryBranches";
+import { formatDetachedLabel } from "../git/git-effects";
 import { type JobImportance } from "../settings/settings";
 import MrStateTabs from "./MrStateTabs";
 import UserFilterBar from "./UserFilterBar";
@@ -969,7 +970,7 @@ export default function MergeRequestPane() {
                         }}
                         wrapMode='none'
                       >
-                        {`[${wt.index}] ${wt.folderName} : ${wt.branch ?? '(detached)'}`}
+                        {`[${wt.index}] ${wt.folderName} : ${wt.branch ?? formatDetachedLabel(wt)}`}
                       </text>
                     </box>
                   );

@@ -3,7 +3,7 @@ import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { Colors } from "../colors";
 import { execSync } from "child_process";
 import { useState, useEffect } from "react";
-import { getWorkingTreeStatus, getWorktrees, type GitWorkingTreeStatus, type WorktreeInfo } from "../git/git-effects";
+import { formatDetachedLabel, getWorkingTreeStatus, getWorktrees, type GitWorkingTreeStatus, type WorktreeInfo } from "../git/git-effects";
 
 interface GitSwitchModalProps {
   isVisible: boolean;
@@ -170,7 +170,7 @@ export default function GitSwitchModal({
                 wrapMode='none'
               >
                 {i === selectedWorktreeIndex ? '> ' : '  '}
-                [{i}] {wt.folderName} {wt.branch ? `(${wt.branch})` : '(detached)'}
+                [{i}] {wt.folderName} {wt.branch ? `(${wt.branch})` : formatDetachedLabel(wt)}
                 {wt.isMain ? ' [main]' : ''}
               </text>
             ))}
@@ -206,7 +206,7 @@ export default function GitSwitchModal({
             Current branch:
           </text>
           <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
-            {"  "}{(status.currentBranch || '(detached)').slice(0, 80)}
+            {"  "}{(status.currentBranch || formatDetachedLabel(worktrees[selectedWorktreeIndex] ?? { tag: null, head: null, headSubject: null })).slice(0, 80)}
           </text>
           <text style={{ fg: Colors.NEUTRAL, marginTop: 1 }} wrapMode='none'>
             Target branch:

@@ -97,7 +97,16 @@ const backgroundWorker =
 
       const currentCommit = getRemoteBranchCommit(localPath, remoteName, mr.sourcebranch);
       if (!currentCommit) {
-        return yield* Effect.fail({ type: 'getRemoteBranchError' as const, message: `` });
+        // Branch was likely deleted (squash-merge + delete branch).
+        // Refetch the MR to update local state so the next poll sees it as merged/closed.
+        yield* decideFetchSingleMr(mr.project.fullPath, mr.iid).pipe(
+          Effect.catchAll(() => Effect.void)
+        )
+        yield* SettingsService.modify(s => {
+          const { [mr.id]: _, ...rest } = s.monitoredMergeRequests
+          return { ...s, monitoredMergeRequests: rest as typeof s.monitoredMergeRequests }
+        })
+        return yield* Effect.succeed({ type: 'mrCompleted' as const, reason: 'branch deleted' })
       }
 
       const existingJobStates = !existingMrPipelineState
