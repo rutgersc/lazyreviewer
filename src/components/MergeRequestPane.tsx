@@ -35,6 +35,7 @@ const getJiraStatusColor = (statusName: string | undefined, mrState: string): st
   if (!statusName) return Colors.PRIMARY;
   const s = statusName.toLowerCase();
   if (s.includes('merged') && mrState !== 'merged') return Colors.ERROR;
+  if (s.includes('progress') && !s.includes('test in progress')) return Colors.ERROR;
   return mapStatus(statusName).color;
 };
 
