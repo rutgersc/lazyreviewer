@@ -104,6 +104,7 @@ export function mapBitbucketToMergeRequest(
     iid: MrIid(String(pr.id)),
     provider: 'bitbucket',
     title: pr.title,
+    description: pr.description ?? null,
     jiraIssueKeys: extractElabTickets(pr.title, pr.source.branch.name),
     webUrl: pr.links.html.href,
     sourcebranch: pr.source.branch.name,

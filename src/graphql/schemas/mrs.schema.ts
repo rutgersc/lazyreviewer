@@ -7,6 +7,7 @@ export const MergeRequestFieldsFragmentSchema: Schema.Schema<MergeRequestFieldsF
   iid: Schema.String,
   name: Schema.NullOr(Schema.String),
   title: Schema.String,
+  description: Schema.NullOr(Schema.String),
   webUrl: Schema.NullOr(Schema.String),
   sourceBranch: Schema.String,
   targetBranch: Schema.String,

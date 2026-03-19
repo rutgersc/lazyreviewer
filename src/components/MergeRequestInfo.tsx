@@ -1,4 +1,5 @@
-import { TextAttributes } from '@opentui/core';
+import { TextAttributes, SyntaxStyle, parseColor } from '@opentui/core';
+import { useMemo } from 'react';
 import type { Discussion, DiscussionNote } from '../domain/merge-request-schema';
 import { formatCompactTime } from '../utils/formatting';
 import { Colors } from '../colors';
@@ -64,6 +65,29 @@ export default function MergeRequestInfo() {
     if (!selection) return false;
     return itemsEqual(item, selection);
   };
+
+  const markdownStyle = useMemo(() => SyntaxStyle.fromStyles({
+    "markup.heading.1": { fg: parseColor(Colors.ACCENT), bold: true },
+    "markup.heading.2": { fg: parseColor(Colors.ACCENT), bold: true },
+    "markup.heading.3": { fg: parseColor(Colors.ACCENT), bold: true },
+    "markup.heading.4": { fg: parseColor(Colors.ACCENT) },
+    "markup.heading.5": { fg: parseColor(Colors.ACCENT) },
+    "markup.heading.6": { fg: parseColor(Colors.ACCENT) },
+    "markup.heading": { fg: parseColor(Colors.ACCENT), bold: true },
+    "markup.strong": { bold: true },
+    "markup.italic": { italic: true },
+    "markup.raw": { fg: parseColor(Colors.WARNING) },
+    "markup.raw.block": { fg: parseColor(Colors.WARNING) },
+    "markup.link": { fg: parseColor(Colors.INFO) },
+    "markup.link.url": { fg: parseColor(Colors.INFO), underline: true },
+    "markup.link.label": { fg: parseColor(Colors.INFO) },
+    "markup.list": { fg: parseColor(Colors.NEUTRAL) },
+    "markup.list.checked": { fg: parseColor(Colors.SUCCESS) },
+    "markup.list.unchecked": { fg: parseColor(Colors.ERROR) },
+    "markup.quote": { fg: parseColor(Colors.DIM), italic: true },
+    "markup.strikethrough": { fg: parseColor(Colors.DIM), dim: true },
+    "punctuation.special": { fg: parseColor(Colors.DIM) },
+  }), []);
 
   if (!mergeRequest) return null;
 
@@ -272,6 +296,17 @@ export default function MergeRequestInfo() {
           </text>
         </box>
       </box>
+
+      {mergeRequest.description && (
+        <box style={{ width: "100%", marginBottom: 1 }}>
+          <code
+            content={mergeRequest.description}
+            filetype="markdown"
+            syntaxStyle={markdownStyle}
+            style={{ width: "100%" }}
+          />
+        </box>
+      )}
 
       <box style={{ marginBottom: 1, width: "100%" }}>
         {renderUnresolvedDiscussions(mergeRequest.discussions || [])}

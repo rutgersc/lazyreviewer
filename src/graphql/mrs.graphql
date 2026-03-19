@@ -3,6 +3,7 @@ fragment MergeRequestFields on MergeRequest {
   iid
   name
   title
+  description
   webUrl
   sourceBranch
   targetBranch

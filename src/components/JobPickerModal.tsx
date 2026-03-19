@@ -99,19 +99,26 @@ export default function JobPickerModal({ onClose }: JobPickerModalProps) {
         <box style={{ flexDirection: "column" }}>
           {sortedItems.map(({ stage, job }, i) => {
             const importance = projectImportance.get(job.name) ?? 'low';
+            const isSelected = i === selectedIndex;
             return (
-              <text
+              <box
                 key={job.id}
-                style={{
-                  fg: i === selectedIndex ? Colors.PRIMARY : Colors.NEUTRAL,
-                  attributes: i === selectedIndex ? TextAttributes.BOLD : 0,
-                }}
-                wrapMode='none'
+                onMouseOver={() => setSelectedIndex(i)}
+                onMouseDown={() => confirmSelection(i)}
+                style={{ backgroundColor: isSelected ? Colors.TRACK : undefined }}
               >
-                {i === selectedIndex ? '> ' : '  '}
-                [{i}] {getJobStatusDisplay(job.status).symbol} {stage.name}: {job.name}
-                {importance === 'monitored' ? ' ■' : ''}
-              </text>
+                <text
+                  style={{
+                    fg: isSelected ? Colors.PRIMARY : Colors.NEUTRAL,
+                    attributes: isSelected ? TextAttributes.BOLD : 0,
+                  }}
+                  wrapMode='none'
+                >
+                  {isSelected ? '> ' : '  '}
+                  [{i}] {getJobStatusDisplay(job.status).symbol} {stage.name}: {job.name}
+                  {importance === 'monitored' ? ' ■' : ''}
+                </text>
+              </box>
             );
           })}
         </box>

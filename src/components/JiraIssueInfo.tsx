@@ -32,7 +32,7 @@ export default function JiraIssueInfo({ issue, selectedCommentIndex, commentFocu
         >
           {`Comments (${comments.length})`}
         </text>
-        {comments.map((comment, index) => {
+        {[...comments].reverse().map((comment, index) => {
           const commentText = extractTextFromJiraComment(comment);
           const isSelected = commentFocused && index === selectedCommentIndex;
 

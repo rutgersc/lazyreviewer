@@ -27,15 +27,18 @@ const KeyRow = ({
   binding,
   isSelected,
   onMouseDown,
+  onMouseOver,
 }: {
   id: string;
   binding: KeyBinding;
   isSelected: boolean;
   onMouseDown?: () => void;
+  onMouseOver?: () => void;
 }) => (
   <box
     id={id}
     onMouseDown={onMouseDown}
+    onMouseOver={onMouseOver}
     style={{
       flexDirection: "row",
       backgroundColor: isSelected ? Colors.SELECTED : 'transparent',
@@ -199,7 +202,7 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
                 </text>
                 <box style={{ flexDirection: "column", marginBottom: 1 }}>
                   {paneKeys.map((binding, index) => (
-                    <KeyRow key={index} id={`help-key-${index}`} binding={binding} isSelected={index === selectedIndex} onMouseDown={() => handleRowClick(index)} />
+                    <KeyRow key={index} id={`help-key-${index}`} binding={binding} isSelected={index === selectedIndex} onMouseDown={() => handleRowClick(index)} onMouseOver={() => setSelectedIndex(index)} />
                   ))}
                 </box>
 
@@ -222,6 +225,7 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
                   binding={binding}
                   isSelected={paneKeys.length + index === selectedIndex}
                   onMouseDown={() => handleRowClick(paneKeys.length + index)}
+                  onMouseOver={() => setSelectedIndex(paneKeys.length + index)}
                 />
               ))}
             </box>

@@ -114,16 +114,21 @@ export const knownAuthorsAtom = Atom.make((get): readonly UserId[] => {
   });
 });
 
-// Unique project paths across all fetched MRs
+// Unique project paths across all fetched MRs + configured repos from settings
 export const knownProjectsAtom = Atom.make((get): readonly RepositoryId[] => {
   const allMrsResult = get(allMrsAtom);
-  return Result.match(allMrsResult, {
+  const mrProjects = Result.match(allMrsResult, {
     onInitial: () => [] as RepositoryId[],
-    onSuccess: (state) =>
-      [...extractKnownProjects(state.value.mrsByGid)]
-        .sort((a, b) => repositoryFullPath(a).localeCompare(repositoryFullPath(b))),
+    onSuccess: (state) => [...extractKnownProjects(state.value.mrsByGid)],
     onFailure: () => [] as RepositoryId[]
   });
+  const settingsRepoPaths = get(repoSelectionAtom);
+  const seen = new Set(mrProjects.map(repositoryFullPath));
+  const settingsRepos = settingsRepoPaths
+    .filter(path => !seen.has(path))
+    .map(path => resolveRepoPath(path, mrProjects));
+  return [...mrProjects, ...settingsRepos]
+    .sort((a, b) => repositoryFullPath(a).localeCompare(repositoryFullPath(b)));
 });
 
 export const effectiveUserFilterAtom = Atom.make((get): readonly UserId[] => {
