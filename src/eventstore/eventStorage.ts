@@ -225,6 +225,47 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     // Clear in-memory events
     const clearInMemoryEvents = Ref.set(inMemoryEventsRef, [] as InMemoryLazyReviewerEvent[])
 
+    const parseEventTimestamp = (eventId: string): Date | null => {
+      // eventId format: 2026-03-19T11-20-22-770Z_event-type_uuid
+      const timestampPart = eventId.split('_')[0]
+      if (!timestampPart) return null
+      // Convert back to ISO: 2026-03-19T11-20-22-770Z → 2026-03-19T11:20:22.770Z
+      const iso = timestampPart.replace(
+        /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/,
+        '$1T$2:$3:$4.$5Z'
+      )
+      const date = new Date(iso)
+      return isNaN(date.getTime()) ? null : date
+    }
+
+    const deleteEventsOlderThan = (olderThanMs: number) => Effect.gen(function* () {
+      const cutoff = new Date(Date.now() - olderThanMs)
+      const files = yield* fs.readDirectory(eventsDir).pipe(
+        Effect.catchAll(() => Effect.succeed([]))
+      )
+
+      const toDelete = files
+        .map(filename => ({ filename, parsed: parseFilename(filename) }))
+        .filter(({ parsed }) => {
+          if (!parsed) return false
+          const ts = parseEventTimestamp(parsed.eventId)
+          return ts !== null && ts < cutoff
+        })
+
+      yield* Effect.all(
+        toDelete.map(({ filename }) =>
+          fs.remove(path.join(eventsDir, filename)).pipe(
+            Effect.catchAll(() => Effect.void)
+          )
+        ),
+        { concurrency: "unbounded" }
+      )
+
+      yield* Console.log(`[EventStorage] Cleanup: deleted ${toDelete.length} events older than ${cutoff.toISOString()}`)
+
+      return toDelete.length
+    })
+
     return {
       loadEvents,
       appendEvent,
@@ -233,7 +274,8 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       inMemoryEventsStream,
       combinedEventsStream,
       clearInMemoryEvents,
-      getEventFilePath
+      getEventFilePath,
+      deleteEventsOlderThan
     } as const
   })
 }) {}

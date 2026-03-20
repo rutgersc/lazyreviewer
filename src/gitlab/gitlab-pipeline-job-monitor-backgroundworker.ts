@@ -133,7 +133,7 @@ const backgroundWorker =
       }
 
       const isExistingPipelineOutOfDate = existingMrPipelineState
-        ? existingMrPipelineState.pipelineIid === headPipeline.iid
+        ? existingMrPipelineState.pipelineIid !== headPipeline.iid
         : true;
 
       const allJobs = headPipeline.stage.flatMap(stage => stage.jobs);
@@ -236,7 +236,7 @@ const backgroundWorker =
 
     const pollResults = yield* Effect.validateAll(
       monitoredMrs,
-      (mrKey) => monitorMr(mrKey), { concurrency: 3 })
+      (mrKey) => monitorMr(mrKey))
       .pipe(
         Effect.either
       )

@@ -25,7 +25,7 @@ import { openUrl } from '../../system/open-url';
 import { copyToClipboard } from '../../system/clipboard';
 import JiraBoardSetup from './JiraBoardSetup';
 import EpicLegend from './EpicLegend';
-import { transformToBoard, flattenBoard, mapStatus, mapPriority, sortStories } from '../board-utils';
+import { transformToBoard, flattenBoard, mapStatus, mapPriority, sortStories, type CollapseState } from '../board-utils';
 import { selectMrByIdAtom } from '../../mergerequests/mergerequests-atom';
 import type { MergeRequest } from '../../mergerequests/mergerequest-schema';
 
@@ -116,17 +116,17 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const { stories, flatItems, epicColors } = useMemo(() => {
     const rawStories = transformToBoard(issues);
     const sortedStories = sortStories(rawStories, sortOrder);
-    const flatItems = flattenBoard(sortedStories, subtasksCollapsed);
+    const flatItems = flattenBoard(sortedStories, subtasksCollapsed, mrsByJiraKey);
     const epicColors = new Map(sortedStories.map(s => [s.issue.key, s.epicColor]));
     return { stories: sortedStories, flatItems, epicColors };
-  }, [issues, sortOrder, subtasksCollapsed]);
+  }, [issues, sortOrder, subtasksCollapsed, mrsByJiraKey]);
 
   const focusKey = useAtomValue(jiraBoardFocusKeyAtom);
   const focusAppliedRef = useRef(false);
 
   if (focusKey && flatItems.length > 0 && !focusAppliedRef.current) {
     focusAppliedRef.current = true;
-    const matchIdx = flatItems.findIndex(fi => fi.item.key === focusKey);
+    const matchIdx = flatItems.findIndex(fi => fi.type === 'issue' && fi.item.key === focusKey);
     if (matchIdx >= 0) {
       setSelectedIndex(matchIdx);
     }
@@ -134,6 +134,12 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   }
 
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+
+  const scrollToItem = (idx: number) => {
+    const fi = flatItems[idx];
+    if (!fi) return;
+    scrollToId(fi.type === 'detail' ? `board-detail-${idx}` : `board-item-${fi.storyIndex}-${fi.itemIndex}`);
+  };
 
   const isLoadingSprints = Result.isWaiting(loadSprintsResult);
   const isLoadingIssues = Result.isWaiting(loadSprintIssuesResult);
@@ -158,25 +164,32 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     const now = Date.now();
     const last = lastClickRef.current;
     if (last.index === index && now - last.time < 400) {
-      const item = flatItems[index];
-      if (item) {
+      const clickedItem = flatItems[index];
+      if (clickedItem?.type === 'detail' && clickedItem.detailKind === 'mr') {
+        openUrl(clickedItem.mr.webUrl);
+      } else if (clickedItem?.type === 'issue') {
         const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
-        openUrl(`${baseUrl}/browse/${item.item.key}`);
+        openUrl(`${baseUrl}/browse/${clickedItem.item.key}`);
       }
       lastClickRef.current = { index: -1, time: 0 };
       return;
     }
     lastClickRef.current = { index, time: now };
     setSelectedIndex(index);
-    const item = flatItems[index];
-    if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+    scrollToItem(index);
   };
 
   const searchLower = searchQuery.toLowerCase();
-  const itemMatchesSearch = (flatItem: (typeof flatItems)[number]) =>
-    !searchQuery ||
-    flatItem.item.key.toLowerCase().includes(searchLower) ||
-    flatItem.item.fields.summary.toLowerCase().includes(searchLower);
+  const itemMatchesSearch = (flatItem: (typeof flatItems)[number]) => {
+    if (!searchQuery) return true;
+    if (flatItem.type === 'detail') {
+      return flatItem.issueKey.toLowerCase().includes(searchLower) ||
+        flatItem.mr.title.toLowerCase().includes(searchLower) ||
+        flatItem.mr.sourcebranch.toLowerCase().includes(searchLower);
+    }
+    return flatItem.item.key.toLowerCase().includes(searchLower) ||
+      flatItem.item.fields.summary.toLowerCase().includes(searchLower);
+  };
 
   const mrPickerOpen = mrPickerMrs.length > 0;
 
@@ -273,16 +286,14 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           const prevMatch = beforeIdx >= 0 ? beforeIdx : flatItems.findLastIndex(itemMatchesSearch);
           if (prevMatch >= 0) {
             setSelectedIndex(prevMatch);
-            const item = flatItems[prevMatch];
-            if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+            scrollToItem(prevMatch);
           }
         } else {
           const afterIdx = flatItems.findIndex((item, i) => i > selectedIndex && itemMatchesSearch(item));
           const nextMatch = afterIdx >= 0 ? afterIdx : flatItems.findIndex(itemMatchesSearch);
           if (nextMatch >= 0) {
             setSelectedIndex(nextMatch);
-            const item = flatItems[nextMatch];
-            if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+            scrollToItem(nextMatch);
           }
         }
         break;
@@ -294,8 +305,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           : selectedIndex < flatItems.length - 1 ? selectedIndex + 1 : -1;
         if (nextIdx >= 0) {
           setSelectedIndex(nextIdx);
-          const item = flatItems[nextIdx];
-          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+          scrollToItem(nextIdx);
         }
         break;
       }
@@ -306,8 +316,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           : selectedIndex > 0 ? selectedIndex - 1 : -1;
         if (prevIdx >= 0) {
           setSelectedIndex(prevIdx);
-          const item = flatItems[prevIdx];
-          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+          scrollToItem(prevIdx);
         }
         break;
       }
@@ -316,8 +325,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           const halfPage = Math.floor(scrollBoxRef.current.viewport.getLayoutNode().getComputedLayout().height / 2);
           const newIndex = Math.min(selectedIndex + halfPage, flatItems.length - 1);
           setSelectedIndex(newIndex);
-          const item = flatItems[newIndex];
-          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+          scrollToItem(newIndex);
         }
         break;
       case 'u':
@@ -325,17 +333,22 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           const halfPage = Math.floor(scrollBoxRef.current.viewport.getLayoutNode().getComputedLayout().height / 2);
           const newIndex = Math.max(selectedIndex - halfPage, 0);
           setSelectedIndex(newIndex);
-          const item = flatItems[newIndex];
-          if (item) scrollToId(`board-item-${item.storyIndex}-${item.itemIndex}`);
+          scrollToItem(newIndex);
         }
         break;
       case 'e':
         setEpicLegendVisible(!epicLegendVisible);
         break;
-      case 'x':
-        setSubtasksCollapsed(!subtasksCollapsed);
+      case 'x': {
+        const nextState: Record<CollapseState, CollapseState> = {
+          normal: 'expanded',
+          expanded: 'collapsed',
+          collapsed: 'normal',
+        };
+        setSubtasksCollapsed(nextState[subtasksCollapsed]);
         setSelectedIndex(0);
         break;
+      }
       case 'g':
         if (key.shift) {
           setGoalVisible(!goalVisible);
@@ -347,39 +360,50 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           setSortSelectedIndex(SORT_OPTIONS.findIndex(o => o.key === sortOrder));
         } else {
           const oItem = flatItems[selectedIndex];
-          if (oItem) {
+          if (oItem?.type === 'detail' && oItem.detailKind === 'mr') {
+            openUrl(oItem.mr.webUrl);
+          } else if (oItem?.type === 'issue') {
             const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
             openUrl(`${baseUrl}/browse/${oItem.item.key}`);
           }
         }
         break;
       case 'i': {
-        const item = flatItems[selectedIndex];
-        if (item) {
+        const iItem = flatItems[selectedIndex];
+        if (iItem?.type === 'detail' && iItem.detailKind === 'mr') {
+          openUrl(iItem.mr.webUrl);
+        } else if (iItem?.type === 'issue') {
           const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
-          openUrl(`${baseUrl}/browse/${item.item.key}`);
+          openUrl(`${baseUrl}/browse/${iItem.item.key}`);
         }
         break;
       }
       case 'c': {
-        const item = flatItems[selectedIndex];
-        if (item) {
+        const cItem = flatItems[selectedIndex];
+        if (cItem?.type === 'detail' && cItem.detailKind === 'mr') {
+          copyToClipboard(cItem.mr.webUrl);
+        } else if (cItem?.type === 'issue') {
           const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
-          copyToClipboard(`${baseUrl}/browse/${item.item.key}`);
+          copyToClipboard(`${baseUrl}/browse/${cItem.item.key}`);
         }
         break;
       }
       case 'y': {
-        const item = flatItems[selectedIndex];
-        if (item) {
-          copyToClipboard(item.item.key);
+        const yItem = flatItems[selectedIndex];
+        if (yItem?.type === 'detail') {
+          copyToClipboard(yItem.mr.sourcebranch);
+        } else if (yItem?.type === 'issue') {
+          copyToClipboard(yItem.item.key);
         }
         break;
       }
       case 'return': {
-        const item = flatItems[selectedIndex];
-        if (item) {
-          const linkedMrs = mrsByJiraKey.get(item.item.key) ?? [];
+        const returnItem = flatItems[selectedIndex];
+        if (returnItem?.type === 'detail' && returnItem.detailKind === 'mr') {
+          onClose();
+          selectMrById({ mrId: returnItem.mr.id });
+        } else if (returnItem?.type === 'issue') {
+          const linkedMrs = mrsByJiraKey.get(returnItem.item.key) ?? [];
           if (linkedMrs.length === 1) {
             onClose();
             selectMrById({ mrId: linkedMrs[0]!.id });
@@ -440,8 +464,50 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     }
   });
 
+  // Extra indent beyond the summary column to visually distinguish detail rows from tasks
+  const DETAIL_INDENT = 59;
+
+  const renderDetailRow = (flatItem: Extract<(typeof flatItems)[number], { type: 'detail' }>, index: number) => {
+    const isSelected = index === selectedIndex;
+    const isDimmed = !itemMatchesSearch(flatItem);
+    const isRowDim = isDimmed || !!flatItem.dimColor;
+    const dimColor = isDimmed ? Colors.SUPPORTING : (flatItem.dimColor ?? Colors.SUPPORTING);
+    const dimAttr = isRowDim ? TextAttributes.DIM : undefined;
+    const rowColor = isRowDim ? dimColor : flatItem.statusColor;
+
+    const mr = flatItem.mr;
+    const approvalIcon = mr.approvedBy.length > 0 ? '☒' : '☐';
+    const approvalCount = mr.approvedBy.length > 0 ? mr.approvedBy.length : 1;
+    const discussions = mr.resolvableDiscussions > 0
+      ? ` 💬 ${mr.resolvedDiscussions}/${mr.resolvableDiscussions}`
+      : '';
+
+    return (
+      <box
+        key={`mr-${mr.id}`}
+        id={`board-detail-${index}`}
+        onMouseDown={() => handleItemClick(index)}
+        style={{
+          flexDirection: 'row',
+          gap: 1,
+          backgroundColor: isSelected ? Colors.SELECTED : 'transparent',
+        }}
+      >
+        <text wrapMode="none">{' '.repeat(DETAIL_INDENT)}</text>
+        <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, attributes: dimAttr }} wrapMode="none">{'mr:'.padEnd(8)}</text>
+        <text style={{ fg: rowColor, attributes: dimAttr }} wrapMode="none">!{mr.iid}</text>
+        <text style={{ fg: rowColor, flexShrink: 1, attributes: dimAttr }} wrapMode="none">{mr.sourcebranch}</text>
+        <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, attributes: dimAttr }} wrapMode="none">{approvalIcon}{approvalCount}{discussions} ({mr.project.name})</text>
+      </box>
+    );
+  };
+
   const renderList = () => {
     return flatItems.flatMap((flatItem, index) => {
+      if (flatItem.type === 'detail') {
+        return [renderDetailRow(flatItem, index)];
+      }
+
       const { story, item } = flatItem;
       const isSelected = index === selectedIndex;
       const isDimmed = !itemMatchesSearch(flatItem);
@@ -460,10 +526,10 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       const dimColor = isDimmed ? Colors.SUPPORTING : (status.dimColor ?? Colors.SUPPORTING);
       const dimAttr = isRowDim ? TextAttributes.DIM : undefined;
 
-      const rowColor = isRowDim ? dimColor : Colors.PRIMARY;
-      const keyColor = isRowDim ? dimColor : (isTopLevel ? Colors.SECONDARY : Colors.INFO);
-
       const showSeparator = flatItem.itemIndex === 0 && flatItem.storyIndex > 0;
+
+      // In expanded mode, MR info is shown as detail rows; in normal/collapsed, show inline
+      const showInlineMrIndicator = subtasksCollapsed !== 'expanded';
 
       const row = (
         <box
@@ -491,7 +557,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           {item.fields.assignee && (
             <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, attributes: dimAttr }} wrapMode="none"> @{item.fields.assignee.displayName}</text>
           )}
-          {(() => {
+          {showInlineMrIndicator && (() => {
             const linkedMrs = mrsByJiraKey.get(item.key);
             if (!linkedMrs || linkedMrs.length === 0) return null;
             const approvedCount = linkedMrs.reduce((n, mr) => n + (mr.approvedBy.length > 0 ? 1 : 0), 0);
@@ -670,7 +736,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       <box style={{ flexDirection: 'column', flexShrink: 0 }}>
         <box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <text style={{ fg: Colors.PRIMARY, flexShrink: 0, attributes: TextAttributes.BOLD }} wrapMode="none">
-            ✦ Sprint Board {selectedSprint ? `- ${selectedSprint.name}` : ''} {subtasksCollapsed ? '[collapsed]' : ''}
+            ✦ Sprint Board {selectedSprint ? `- ${selectedSprint.name}` : ''} {subtasksCollapsed !== 'normal' ? `[${subtasksCollapsed}]` : ''}
           </text>
           <text style={{ fg: Colors.SUPPORTING, flexShrink: 1 }} wrapMode="none">
             q: close | ↵: MR | S: board | r: sprints | f: fetch | F: filter MRs | G: goal | x: collapse | O: sort | o: open | y: yank

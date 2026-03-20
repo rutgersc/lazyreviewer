@@ -7,7 +7,6 @@ import type { Action } from '../actions/action-types';
 import { infoPaneTabAtom, activePaneAtom, activeModalAtom, type InfoPaneTab } from '../ui/navigation-atom';
 import { paneActionsForDisplayAtom } from '../actions/pane-actions-atoms';
 import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
-import { useDoubleClick } from '../hooks/useDoubleClick';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 
 interface HelpModalProps {
@@ -121,10 +120,10 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
 
   const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
 
-  const handleRowClick = useDoubleClick<number>({
-    onSingleClick: (index) => setSelectedIndex(index),
-    onDoubleClick: (index) => executeAction(index),
-  });
+  const handleRowClick = (index: number) => {
+    if (index === selectedIndex) executeAction(index);
+    else setSelectedIndex(index);
+  };
 
   // Reset selection when modal opens or pane changes
   React.useEffect(() => {

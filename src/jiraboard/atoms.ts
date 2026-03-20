@@ -20,7 +20,7 @@ export { selectedIssueIndexAtom };
 // Board View Atoms
 export const boardSelectedIndexAtom = Atom.make<number>(0);
 export const epicLegendVisibleAtom = Atom.make<boolean>(false);
-export const subtasksCollapsedAtom = Atom.make<boolean>(false);
+export const subtasksCollapsedAtom = Atom.make<import('./board-utils').CollapseState>('expanded');
 export const sortOrderAtom = Atom.make<'default' | 'epic' | 'priority'>('default');
 export const sortPopupVisibleAtom = Atom.make<boolean>(false);
 export const goalVisibleAtom = Atom.make<boolean>(false);

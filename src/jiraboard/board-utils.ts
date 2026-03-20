@@ -79,7 +79,10 @@ export const transformToBoard = (issues: readonly JiraIssue[]): BoardStory[] => 
   });
 };
 
-export type FlatBoardItem = {
+export type CollapseState = 'expanded' | 'normal' | 'collapsed';
+
+export type IssueFlatItem = {
+  type: 'issue';
   storyIndex: number;
   itemIndex: number;
   story: BoardStory;
@@ -87,16 +90,56 @@ export type FlatBoardItem = {
   isStoryWithoutSubtasks: boolean;
 };
 
-export const flattenBoard = (stories: BoardStory[], collapsed: boolean): FlatBoardItem[] =>
+export type DetailFlatItem = {
+  type: 'detail';
+  detailKind: 'mr';
+  storyIndex: number;
+  issueKey: string;
+  statusColor: string;
+  dimColor: string | undefined;
+  mr: import('../mergerequests/mergerequest-schema').MergeRequest;
+};
+
+export type FlatBoardItem = IssueFlatItem | DetailFlatItem;
+
+export const flattenBoard = (
+  stories: BoardStory[],
+  collapseState: CollapseState,
+  mrsByJiraKey: ReadonlyMap<string, readonly import('../mergerequests/mergerequest-schema').MergeRequest[]>,
+): FlatBoardItem[] =>
   stories.flatMap((story, storyIndex) => {
-    const items = collapsed ? [story.displayItems[0]!] : story.displayItems;
-    return items.map((item, itemIndex) => ({
-      storyIndex,
-      itemIndex,
-      story,
-      item,
-      isStoryWithoutSubtasks: story.displayItems.length === 1,
-    }));
+    const items = collapseState === 'collapsed'
+      ? [story.displayItems[0]!]
+      : story.displayItems;
+
+    return items.flatMap((item, itemIndex): FlatBoardItem[] => {
+      const issueItem: IssueFlatItem = {
+        type: 'issue',
+        storyIndex,
+        itemIndex,
+        story,
+        item,
+        isStoryWithoutSubtasks: story.displayItems.length === 1,
+      };
+
+      if (collapseState !== 'expanded') return [issueItem];
+
+      const linkedMrs = mrsByJiraKey.get(item.key) ?? [];
+      if (linkedMrs.length === 0) return [issueItem];
+
+      const status = mapStatus(item.fields.status.name);
+      const mrItems: DetailFlatItem[] = linkedMrs.map(mr => ({
+        type: 'detail' as const,
+        detailKind: 'mr' as const,
+        storyIndex,
+        issueKey: item.key,
+        statusColor: status.color,
+        dimColor: status.dimColor,
+        mr,
+      }));
+
+      return [issueItem, ...mrItems];
+    });
   });
 
 const priorityOrder = (name: string): number => {
