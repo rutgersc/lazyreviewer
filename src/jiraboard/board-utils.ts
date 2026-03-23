@@ -28,12 +28,11 @@ export const mapPriority = (priorityName: string): PriorityInfo => {
   return { color: Colors.DIM };
 };
 
-const EPIC_COLORS = ['#ff5555', '#50fa7b', '#8be9fd', '#bd93f9', '#f1fa8c', '#ffb86c', '#ff79c6'];
-
 export const generateEpicColor = (key: string): string => {
+  const palette = Colors.EPIC_PALETTE;
   let hash = 0;
   for (const char of key) hash = ((hash << 5) - hash) + char.charCodeAt(0);
-  return EPIC_COLORS[Math.abs(hash) % EPIC_COLORS.length]!;
+  return palette[Math.abs(hash) % palette.length]!;
 };
 
 export type BoardStory = {

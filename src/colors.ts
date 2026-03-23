@@ -22,12 +22,14 @@ const DarkColors = {
   BADGE_ACCENT_BG: '#3a1a2a',
   BADGE_WARNING_BG: '#4a2a00',
   BADGE_INFO_BG: '#003a4a',
+
+  EPIC_PALETTE: ['#ff5555', '#50fa7b', '#8be9fd', '#bd93f9', '#f1fa8c', '#ffb86c', '#ff79c6'],
 } as const;
 
 // Light theme palette
 const LightColors = {
-  SUCCESS: '#1a7f37',
-  ERROR: '#cf222e',
+  SUCCESS: '#1a8c40',
+  ERROR: '#d1242f',
   WARNING: '#9a6700',
   INFO: '#0969da',
   NEUTRAL: '#8250df',
@@ -40,7 +42,7 @@ const LightColors = {
 
   BACKGROUND: '#ffffff',
   BACKGROUND_ALT: '#f6f8fa',
-  SELECTED: '#ddf4ff',
+  SELECTED: '#b6e3ff',
   STRIPE: '#f0f0f0',
   TRACK: '#d0d7de',
 
@@ -48,10 +50,12 @@ const LightColors = {
   BADGE_ACCENT_BG: '#ffeff7',
   BADGE_WARNING_BG: '#fff8c5',
   BADGE_INFO_BG: '#ddf4ff',
+
+  EPIC_PALETTE: ['#cf222e', '#1a7f37', '#0969da', '#8250df', '#7d4e00', '#bf3989', '#0a3069'],
 } as const;
 
 export type ColorScheme = 'dark' | 'light';
-export type ColorPalette = { -readonly [K in keyof typeof DarkColors]: string };
+export type ColorPalette = { -readonly [K in keyof typeof DarkColors]: (typeof DarkColors)[K] extends readonly string[] ? readonly string[] : string };
 
 // Mutable palette — mutated in place via setColorScheme so all
 // render-time reads of Colors.X pick up the current theme.
