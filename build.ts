@@ -1,3 +1,7 @@
+import { buildTreeSitterWorker } from "./build-treesitter-worker";
+
+await buildTreeSitterWorker("./dist");
+
 const result = await Bun.build({
   entrypoints: ["./src/index.tsx"],
   outdir: "./dist",
@@ -9,14 +13,8 @@ const result = await Bun.build({
 
 if (!result.success) {
   console.error("Build failed");
-  for (const message of result.logs) {
-    console.error(message);
-  }
+  for (const message of result.logs) console.error(message);
   process.exit(1);
 }
 
-console.log("✅ Build completed successfully!");
-console.log("Files generated:");
-result.outputs.forEach((output) => {
-  console.log(`  ${output.path}`);
-});
+console.log("✅ Build completed");

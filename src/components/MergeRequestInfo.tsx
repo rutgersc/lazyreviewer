@@ -299,10 +299,10 @@ export default function MergeRequestInfo() {
 
       {mergeRequest.description && (
         <box style={{ width: "100%", marginBottom: 1 }}>
-          <code
+          <markdown
             content={mergeRequest.description}
-            filetype="markdown"
             syntaxStyle={markdownStyle}
+            conceal={true}
             style={{ width: "100%" }}
           />
         </box>
