@@ -11,6 +11,7 @@ import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useDoubleClick } from "../hooks/useDoubleClick";
 import { Colors } from "../colors";
 import { mapStatus } from "../jiraboard/board-utils";
+import { type RelationType, type SelectedMrContext, buildSelectedMrContext, getRelationType, relationTagOrder } from "../mergerequests/mr-relations";
 import { repositoryBranchesAtom, projectBranchMapAtom, type WorktreeMatch } from "../mergerequests/hooks/useRepositoryBranches";
 import { formatDetachedLabel } from "../git/git-effects";
 import { type JobImportance } from "../settings/settings";
@@ -22,8 +23,7 @@ import type { MergeRequestState } from "../domain/merge-request-state";
 import { filterPipelineJobs } from "../domain/display/pipelineJobFiltering";
 import { Atom, AsyncResult } from "effect/unstable/reactivity"
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
-;
-import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom, allMrSourceBranchesByProjectAtom, selectMrByBranchAtom } from "../mergerequests/mergerequests-atom";
+import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom, allMrSourceBranchesByProjectAtom, selectMrByBranchAtom, pinnedMrGidsAtom } from "../mergerequests/mergerequests-atom";
 import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom";
 import { currentUserIdAtom } from "../settings/settings-atom";
 import type { JiraIssue } from "../jira/jira-schema";
@@ -61,53 +61,6 @@ const getMergeBlockedLabel = (status: string | null): string | null => {
 const truncate = (text: string, max: number) =>
   text.length > max ? text.substring(0, max) + "..." : text;
 
-type RelationType =
-  | { readonly _tag: 'stack-base' }
-  | { readonly _tag: 'stacked-on-this' }
-  | { readonly _tag: 'same-ticket' }
-  | { readonly _tag: 'sibling-ticket' };
-
-type SelectedMrContext = {
-  readonly selectedMr: MergeRequest;
-  readonly selectedKeys: ReadonlySet<string>;
-  readonly selectedTicketKey: string | undefined;
-  readonly selectedParentKey: string | undefined;
-};
-
-const buildSelectedMrContext = (selectedMr: MergeRequest, jiraIssuesMap: ReadonlyMap<string, JiraIssue>): SelectedMrContext => {
-  const selectedKeys = new Set(selectedMr.jiraIssueKeys);
-  const selectedIssues = selectedMr.jiraIssueKeys.flatMap(k => {
-    const issue = jiraIssuesMap.get(k);
-    return issue ? [issue] : [];
-  });
-  const selectedTicketKey = selectedIssues[0]?.key;
-  const selectedIsSubtask = selectedIssues[0]?.fields.issuetype.name.toLowerCase().includes('sub-task');
-  const selectedParentKey = selectedIsSubtask ? selectedIssues[0]?.fields.parent?.key : undefined;
-  return { selectedMr, selectedKeys, selectedTicketKey, selectedParentKey };
-};
-
-const getRelationType = (ctx: SelectedMrContext, mr: MergeRequest, jiraIssuesMap: ReadonlyMap<string, JiraIssue>): RelationType | null => {
-  const sameProject = ctx.selectedMr.project.fullPath === mr.project.fullPath;
-  if (sameProject && ctx.selectedMr.targetbranch === mr.sourcebranch) return { _tag: 'stack-base' };
-  if (sameProject && mr.targetbranch === ctx.selectedMr.sourcebranch) return { _tag: 'stacked-on-this' };
-
-  const mrIssues = mr.jiraIssueKeys.flatMap(k => {
-    const issue = jiraIssuesMap.get(k);
-    return issue ? [issue] : [];
-  });
-  const mrTicketKey = mrIssues[0]?.key;
-
-  if (ctx.selectedTicketKey && mrTicketKey === ctx.selectedTicketKey) return { _tag: 'same-ticket' };
-
-  if (ctx.selectedParentKey) {
-    const mrParentKey = mrIssues[0]?.fields.parent?.key;
-    if (mrParentKey === ctx.selectedParentKey) return { _tag: 'sibling-ticket' };
-  }
-
-  if (mr.jiraIssueKeys.some(key => ctx.selectedKeys.has(key))) return { _tag: 'same-ticket' };
-
-  return null;
-};
 
 const getRelationBadge = (tag: RelationType['_tag']): { readonly label: string; readonly badgeBg: string; readonly titleBg: string } => {
   switch (tag) {
@@ -475,10 +428,19 @@ const IgnoredMergeRequestRow = ({
 );
 };
 
-const relationTagOrder: readonly RelationType['_tag'][] = ['stack-base', 'stacked-on-this', 'same-ticket', 'sibling-ticket'];
+const OutOfViewRelations = ({ relations, hasPinnedMrs }: { relations: ReadonlyMap<RelationType['_tag'], readonly MergeRequest[]>; hasPinnedMrs: boolean }) => {
+  if (relations.size === 0 && !hasPinnedMrs) return null;
 
-const OutOfViewRelations = ({ relations }: { relations: ReadonlyMap<RelationType['_tag'], readonly MergeRequest[]> }) => {
-  if (relations.size === 0) return null;
+  if (hasPinnedMrs) {
+    return (
+      <box style={{ flexDirection: "row", alignItems: "center" }}>
+        <box style={{ width: 19 }} />
+        <text style={{ fg: Colors.ACCENT, attributes: TextAttributes.BOLD }} wrapMode='none'>
+          {' pinned MRs in view (+to unpin) '}
+        </text>
+      </box>
+    );
+  }
 
   const badges = relationTagOrder
     .filter(tag => relations.has(tag))
@@ -502,6 +464,7 @@ const OutOfViewRelations = ({ relations }: { relations: ReadonlyMap<RelationType
             {` ${count}${badge.label}(not in view) `}
           </text>
         ))}
+        <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>(+to pin)</text>
       </box>
     </box>
   );
@@ -567,6 +530,8 @@ export default function MergeRequestPane() {
   const currentUser = useAtomValue(currentUserIdAtom);
 
   const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
+  const pinnedMrGids = useAtomValue(pinnedMrGidsAtom);
+
   const ignoredMergeRequests = useAtomValue(ignoredMergeRequestsAtom);
   const monitoredMergeRequests = useAtomValue(monitoredMergeRequestsAtom);
   const setActiveModal = useAtomSet(activeModalAtom);
@@ -865,7 +830,7 @@ export default function MergeRequestPane() {
                   <>
                     <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} />
                     <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} createdAt={mr.createdAt} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
-                    {index === selectedIndex && <OutOfViewRelations relations={outOfViewRelations} />}
+                    {index === selectedIndex && <OutOfViewRelations relations={outOfViewRelations} hasPinnedMrs={pinnedMrGids.size > 0} />}
                   </>
                 )}
               </box>

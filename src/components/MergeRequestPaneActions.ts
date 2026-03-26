@@ -4,7 +4,7 @@ import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
 import { activePaneAtom, activeModalAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
-import { unwrappedMergeRequestsAtom, selectedMrIndexAtom, refetchSelectedMrAtom } from "../mergerequests/mergerequests-atom";
+import { unwrappedMergeRequestsAtom, selectedMrIndexAtom, refetchSelectedMrAtom, allMrsAtom, allJiraIssuesAtom, pinnedMrGidsAtom } from "../mergerequests/mergerequests-atom";
 import { toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, toggleMonitorMergeRequestAtom } from "../settings/settings-atom";
 import { copyToClipboard } from "../system/clipboard";
 import { openUrl } from "../system/open-url";
@@ -12,6 +12,7 @@ import { copyNotificationRequestAtom, scrollToItemRequestAtom } from "./MergeReq
 import { getPipelineJobsFromMr } from "./PipelineJobsList";
 import { loadJobLogAtom, jobLogDownloadSignalAtom } from "../mergerequests/open-pipelinejob-log-atom";
 import { jobPickerItemsAtom, jobPickerMrAtom } from "./JobPickerModal";
+import { getOutOfViewRelatedGids } from "../mergerequests/mr-relations";
 
 const getSelectedMr = (registry: AtomRegistry.AtomRegistry) => {
   const mergeRequests = registry.get(unwrappedMergeRequestsAtom);
@@ -190,6 +191,44 @@ export const mrActionsAtom = Atom.make((get) => {
         if (mr) {
           registry.set(toggleSeenMergeRequestAtom, mr.id);
         }
+      },
+    },
+    {
+      id: 'mr:pin-related',
+      keys: [parseKeyString('+'), parseKeyString('shift+=')],
+      displayKey: '+',
+      description: 'Pin related MRs into view',
+      handler: () => {
+        const mr = getSelectedMr(registry);
+        if (!mr) return;
+
+        const currentPins = registry.get(pinnedMrGidsAtom);
+        if (currentPins.size > 0) {
+          registry.set(pinnedMrGidsAtom, new Set());
+          registry.set(copyNotificationRequestAtom, 'Unpinned related MRs');
+          setTimeout(() => registry.set(copyNotificationRequestAtom, null), 2000);
+          return;
+        }
+
+        const jiraIssuesMap = registry.get(allJiraIssuesAtom);
+        const allMrsResult = registry.get(allMrsAtom);
+        const allMrsByGid = Result.match(allMrsResult, {
+          onInitial: () => new Map(),
+          onSuccess: (state) => state.value.mrsByGid,
+          onFailure: () => new Map(),
+        });
+        const visibleGids = new Set(registry.get(unwrappedMergeRequestsAtom).map(m => m.id));
+        const relatedGids = getOutOfViewRelatedGids(mr, jiraIssuesMap, visibleGids, allMrsByGid);
+
+        if (relatedGids.size === 0) {
+          registry.set(copyNotificationRequestAtom, 'No related MRs outside view');
+          setTimeout(() => registry.set(copyNotificationRequestAtom, null), 2000);
+          return;
+        }
+
+        registry.set(pinnedMrGidsAtom, relatedGids);
+        registry.set(copyNotificationRequestAtom, `Pinned ${relatedGids.size} related MR${relatedGids.size > 1 ? 's' : ''} into view`);
+        setTimeout(() => registry.set(copyNotificationRequestAtom, null), 2000);
       },
     },
     {

@@ -1,6 +1,6 @@
 import { Schema } from "effect"
 import type { AccessLevelEnum, AccessTokenGranularScopeAccess, AccessTokenSort, AccessTokenState, AgentTokenStatus, AiAcceptedSelfHostedModels, AiAction, AiAdditionalContextCategory, AiCatalogFlowConfigType, AiCatalogItemReportReason, AiCatalogItemType, AiCatalogItemVerificationLevel, AiCatalogMcpServerAuthType, AiCatalogMcpServerTransport, AiCatalogVersionBump, AiConversationsThreadsConversationType, AiFeatureProviders, AiFeatures, AiFlowTriggerEventType, AiMessageRole, AiMessageType, AiModelSelectionFeatures, AiSelfHostedModelReleaseState, AiUsageEventType, AiUserMetricsSort, AlertManagementAlertSort, AlertManagementDomainFilter, AlertManagementIntegrationType, AlertManagementPayloadAlertFieldName, AlertManagementPayloadAlertFieldType, AlertManagementSeverity, AlertManagementStatus, AnalyticsAggregationPeriod, AnalyzerStatusEnum, AnalyzerTypeEnum, ApiFuzzingScanMode, ApprovalReportType, ApprovalRuleType, AssigneeWildcardId, AttributeFilterOperator, AutoStopSetting, AvailabilityEnum, AvailableExportFields, BlobViewersType, CarStatus, CiCatalogResourceScope, CiCatalogResourceSort, CiCatalogResourceVerificationLevel, CiConfigIncludeType, CiConfigStatus, CiFreezePeriodStatus, CiGroupVariablesSort, CiInputsType, CiJobAnalyticsSort, CiJobFailureReason, CiJobKind, CiJobSource, CiJobStatus, CiJobTokenScopeDirection, CiJobTokenScopePolicies, CiPipelineCreationStatus, CiPipelineSources, CiRunnerAccessLevel, CiRunnerCloudProvider, CiRunnerCreationMethod, CiRunnerCreationState, CiRunnerJobExecutionStatus, CiRunnerMembershipFilter, CiRunnerSort, CiRunnerStatus, CiRunnerType, CiRunnerUpgradeStatus, CiVariableSort, CiVariableType, CodeFlowNodeType, CodeQualityDegradationSeverity, CodequalityReportsComparerReportGenerationStatus, CodequalityReportsComparerStatus, CommitActionMode, CommitEncoding, ComparableSecurityReportType, ComparisonOperator, ComplianceFrameworkPresenceFilter, ComplianceFrameworkSort, ComplianceStandardsAdherenceCheckName, ComplianceStandardsAdherenceStandard, ComplianceStandardsAdherenceStatus, ComplianceViolationReason, ComplianceViolationSeverity, ComplianceViolationSort, ComplianceViolationStatus, ConanMetadatumFileTypeEnum, ContactSort, ContainerExpirationPolicyCadenceEnum, ContainerExpirationPolicyKeepEnum, ContainerExpirationPolicyOlderThanEnum, ContainerProtectionRepositoryRuleAccessLevel, ContainerProtectionTagRuleAccessLevel, ContainerRepositoryCleanupStatus, ContainerRepositorySort, ContainerRepositoryStatus, ContainerRepositoryTagSort, CustomFieldType, CustomerRelationsContactState, CustomerRelationsOrganizationState, CustomizableDashboardCategory, CustomizableDashboardGridHeight, CvssSeverity, DastPreScanVerificationCheckType, DastPreScanVerificationStatus, DastProfileCadenceUnit, DastScanMethodType, DastScanTypeEnum, DastSiteProfileValidationStatusEnum, DastSiteValidationStatusEnum, DastSiteValidationStrategyEnum, DastTargetTypeEnum, DataVisualizationColorEnum, DataVisualizationWeightEnum, DependencyProxyManifestStatus, DependencySort, DeploymentApprovalSummaryStatus, DeploymentStatus, DeploymentTier, DeploymentsApprovalStatus, DesignCollectionCopyState, DesignVersionEvent, DetailedMergeStatus, DiffPositionType, DismissalType, DoraMetricBucketingInterval, DuoWorkflowStatus, DuoWorkflowStatusGroup, DuoWorkflowsWorkflowSort, EntryType, EpicSort, EpicState, EpicStateEvent, EpicWildcardId, ErrorTrackingStatus, EscalationRuleStatus, EventAction, ExclusionScannerEnum, ExclusionTypeEnum, ExtensionsMarketplaceOptInStatus, FindingReportsComparerStatus, FlowTypeSort, GeoRegistriesBulkAction, GeoRegistryAction, GeoRegistryClass, GeoRegistrySort, GitlabSubscriptionsAddOnType, GitlabSubscriptionsUserRole, GitlabSubscriptionsUserSort, GoogleCloudArtifactRegistryArtifactsSort, GroupMemberRelation, GroupPermission, GroupReleaseSort, GroupSecretsManagerStatus, GroupSort, GroupingEnum, HealthStatus, HealthStatusFilter, ImportSource, ImportSourceUserStatus, IntegrationType, IssuableResourceLinkType, IssuableSearchableField, IssuableSeverity, IssuableState, IssueCreationIterationWildcardId, IssueEscalationStatus, IssueSort, IssueState, IssueStateEvent, IssueType, IterationSearchableField, IterationSort, IterationState, IterationWildcardId, JobArtifactFileType, LabelSearchFieldList, LdapAdminRoleSyncStatus, ListLimitMetric, MeasurementIdentifier, MemberAccessLevel, MemberAccessLevelName, MemberApprovalStatusType, MemberRoleAdminPermission, MemberRolePermission, MemberRoleStandardPermission, MemberRolesAccessLevel, MemberRolesOrderBy, MemberSort, MergeRequestNewState, MergeRequestReviewState, MergeRequestSort, MergeRequestState, MergeRequestsDashboardListType, MergeStatus, MergeStrategyEnum, MergeTrainStatus, MergeabilityCheckIdentifier, MergeabilityCheckStatus, MilestoneSort, MilestoneStateEnum, MilestoneWildcardId, MlModelVersionsOrderBy, MlModelsOrderBy, MoveType, MutationOperationMode, NamespaceClusterAgentFilter, NamespaceProjectSort, NegatedIterationWildcardId, NegatedMilestoneWildcardId, NotesFilterType, OncallRotationUnitEnum, OpenTelemetryMetricType, OrganizationClusterAgentFilter, OrganizationGroupProjectDisplay, OrganizationGroupProjectSort, OrganizationSort, OrganizationUserAccessLevel, PackageDependencyType, PackageGroupSort, PackageManager, PackageSort, PackageStatus, PackageTypeEnum, PackagesCleanupKeepDuplicatedPackageFilesEnum, PackagesProtectionRuleAccessLevel, PackagesProtectionRuleAccessLevelForDelete, PackagesProtectionRulePackageType, PermissionBoundary, PipelineAnalyticsJobStatus, PipelineConfigSourceEnum, PipelineMergeRequestEventType, PipelineScheduleSort, PipelineScheduleStatus, PipelineScopeEnum, PipelineSecurityReportFindingSort, PipelineStatusEnum, PipelineVariablesDefaultRoleType, PolicyEnforcementType, PolicyProjectCreatedStatus, PolicyStatus, PolicyType, PolicyViolationErrorType, PolicyViolationStatus, PolicyViolations, PrincipalType, ProductAnalyticsState, ProjectArchived, ProjectComplianceControlStatus, ProjectComplianceRequirementStatusOrderBy, ProjectFeatureAccessLevel, ProjectMemberRelation, ProjectSecretsManagerStatus, ProjectSort, ProjectTrackedContext, PromptInjectionProtectionLevel, ReachabilityType, RefType, RegistryState, RelationshipType, RelativePositionType, ReleaseAssetLinkType, ReleaseSort, ReleaseTagWildcardId, ReplicationStateEnum, RequirementState, RequirementStatusFilter, ResourceGroupsProcessMode, ReviewerWildcardId, RiskRating, SastUiComponentSize, SbomSourceType, ScanModeEnum, ScanStatus, SearchLevel, SearchType, SecretRotationStatus, SecretStatus, SecretsManagementAction, SecurityAttributeBulkUpdateMode, SecurityCategoryEditableState, SecurityCategoryTemplateType, SecurityPolicyRelationType, SecurityPreferredLicenseSourceConfiguration, SecurityReportTypeEnum, SecurityScanProfileType, SecurityScannerType, SecurityTrackedRefScope, SecurityTrackedRefState, SecurityTrackedRefType, SentryErrorStatus, ServiceType, ShaFormat, SharedRunnersSetting, SnippetBlobActionEnum, Sort, SortDirectionEnum, SourceUserSort, SquashOptionSetting, SubscriptionHistoryChangeType, SubscriptionStatus, TestCaseStatus, TestReportState, TimeboxReportErrorReason, TimelogSort, TodoActionEnum, TodoSort, TodoStateEnum, TodoTargetEnum, TrainingUrlRequestStatus, TypeEnum, UserCalloutFeatureNameEnum, UserGroupCalloutFeatureName, UserPromotionStatusType, UserState, UserType, ValueStreamDashboardMetric, ValueStreamDashboardProjectLevelMetric, ValueStreamStageEvent, ValueStreamStageItemSort, VerificationStateEnum, VerificationStatus, VisibilityLevelsEnum, VisibilityPipelineIdType, VisibilityScopesEnum, VulnerabilityDismissalReason, VulnerabilityExternalIssueLinkExternalTracker, VulnerabilityExternalIssueLinkType, VulnerabilityFalsePositiveDetectionStatus, VulnerabilityFindingTokenStatusState, VulnerabilityGrade, VulnerabilityIssueLinkType, VulnerabilityOwasp2021Top10, VulnerabilityOwaspTop10, VulnerabilityReportType, VulnerabilitySeverity, VulnerabilitySort, VulnerabilityState, VulnerabilityWorkflowName, WebhookAlertStatus, WebhookBranchFilterStrategy, WeightWildcardId, WorkItemAwardEmojiUpdateAction, WorkItemDiscussionsSort, WorkItemParentWildcardId, WorkItemRelatedLinkType, WorkItemSort, WorkItemState, WorkItemStateEvent, WorkItemStatusCategoryEnum, WorkItemSubscriptionEvent, WorkItemTodoUpdateAction, WorkItemWidgetType, WorkItemsSavedViewsSort, WorkflowEnvironment, WorkspaceVariableInputType, WorkspaceVariableType } from "./gitlab-base-types"
-export const AccessLevelEnumSchema: Schema.Codec<AccessLevelEnum> = Schema.Union([
+export const AccessLevelEnumSchema: Schema.Schema<AccessLevelEnum> = Schema.Union(
   Schema.Literal('ADMIN'),
   Schema.Literal('DEVELOPER'),
   Schema.Literal('GUEST'),
@@ -10,15 +10,15 @@ export const AccessLevelEnumSchema: Schema.Codec<AccessLevelEnum> = Schema.Union
   Schema.Literal('OWNER'),
   Schema.Literal('PLANNER'),
   Schema.Literal('REPORTER')
-])
-export const AccessTokenGranularScopeAccessSchema: Schema.Codec<AccessTokenGranularScopeAccess> = Schema.Union([
+)
+export const AccessTokenGranularScopeAccessSchema: Schema.Schema<AccessTokenGranularScopeAccess> = Schema.Union(
   Schema.Literal('ALL_MEMBERSHIPS'),
   Schema.Literal('INSTANCE'),
   Schema.Literal('PERSONAL_PROJECTS'),
   Schema.Literal('SELECTED_MEMBERSHIPS'),
   Schema.Literal('USER')
-])
-export const AccessTokenSortSchema: Schema.Codec<AccessTokenSort> = Schema.Union([
+)
+export const AccessTokenSortSchema: Schema.Schema<AccessTokenSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('EXPIRES_ASC'),
@@ -31,16 +31,16 @@ export const AccessTokenSortSchema: Schema.Codec<AccessTokenSort> = Schema.Union
   Schema.Literal('NAME_DESC'),
   Schema.Literal('UPDATED_ASC'),
   Schema.Literal('UPDATED_DESC')
-])
-export const AccessTokenStateSchema: Schema.Codec<AccessTokenState> = Schema.Union([
+)
+export const AccessTokenStateSchema: Schema.Schema<AccessTokenState> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('INACTIVE')
-])
-export const AgentTokenStatusSchema: Schema.Codec<AgentTokenStatus> = Schema.Union([
+)
+export const AgentTokenStatusSchema: Schema.Schema<AgentTokenStatus> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('REVOKED')
-])
-export const AiAcceptedSelfHostedModelsSchema: Schema.Codec<AiAcceptedSelfHostedModels> = Schema.Union([
+)
+export const AiAcceptedSelfHostedModelsSchema: Schema.Schema<AiAcceptedSelfHostedModels> = Schema.Union(
   Schema.Literal('CLAUDE_3'),
   Schema.Literal('CODEGEMMA'),
   Schema.Literal('CODELLAMA'),
@@ -51,11 +51,11 @@ export const AiAcceptedSelfHostedModelsSchema: Schema.Codec<AiAcceptedSelfHosted
   Schema.Literal('LLAMA3'),
   Schema.Literal('MISTRAL'),
   Schema.Literal('MIXTRAL')
-])
-export const AiActionSchema: Schema.Codec<AiAction> = Schema.Union([
+)
+export const AiActionSchema: Schema.Schema<AiAction> = Schema.Union(
   Schema.Literal('CHAT')
-])
-export const AiAdditionalContextCategorySchema: Schema.Codec<AiAdditionalContextCategory> = Schema.Union([
+)
+export const AiAdditionalContextCategorySchema: Schema.Schema<AiAdditionalContextCategory> = Schema.Union(
   Schema.Literal('AGENT_USER_ENVIRONMENT'),
   Schema.Literal('DEPENDENCY'),
   Schema.Literal('DIRECTORY'),
@@ -67,54 +67,54 @@ export const AiAdditionalContextCategorySchema: Schema.Codec<AiAdditionalContext
   Schema.Literal('SNIPPET'),
   Schema.Literal('TERMINAL'),
   Schema.Literal('USER_RULE')
-])
-export const AiCatalogFlowConfigTypeSchema: Schema.Codec<AiCatalogFlowConfigType> = Schema.Union([
+)
+export const AiCatalogFlowConfigTypeSchema: Schema.Schema<AiCatalogFlowConfigType> = Schema.Union(
   Schema.Literal('CHAT')
-])
-export const AiCatalogItemReportReasonSchema: Schema.Codec<AiCatalogItemReportReason> = Schema.Union([
+)
+export const AiCatalogItemReportReasonSchema: Schema.Schema<AiCatalogItemReportReason> = Schema.Union(
   Schema.Literal('EXCESSIVE_RESOURCE_USAGE'),
   Schema.Literal('IMMEDIATE_SECURITY_THREAT'),
   Schema.Literal('OTHER'),
   Schema.Literal('POTENTIAL_SECURITY_THREAT'),
   Schema.Literal('SPAM_OR_LOW_QUALITY')
-])
-export const AiCatalogItemTypeSchema: Schema.Codec<AiCatalogItemType> = Schema.Union([
+)
+export const AiCatalogItemTypeSchema: Schema.Schema<AiCatalogItemType> = Schema.Union(
   Schema.Literal('AGENT'),
   Schema.Literal('FLOW'),
   Schema.Literal('THIRD_PARTY_FLOW')
-])
-export const AiCatalogItemVerificationLevelSchema: Schema.Codec<AiCatalogItemVerificationLevel> = Schema.Union([
+)
+export const AiCatalogItemVerificationLevelSchema: Schema.Schema<AiCatalogItemVerificationLevel> = Schema.Union(
   Schema.Literal('GITLAB_MAINTAINED'),
   Schema.Literal('GITLAB_PARTNER_MAINTAINED'),
   Schema.Literal('UNVERIFIED'),
   Schema.Literal('VERIFIED_CREATOR_MAINTAINED'),
   Schema.Literal('VERIFIED_CREATOR_SELF_MANAGED')
-])
-export const AiCatalogMcpServerAuthTypeSchema: Schema.Codec<AiCatalogMcpServerAuthType> = Schema.Union([
+)
+export const AiCatalogMcpServerAuthTypeSchema: Schema.Schema<AiCatalogMcpServerAuthType> = Schema.Union(
   Schema.Literal('NO_AUTH'),
   Schema.Literal('OAUTH')
-])
-export const AiCatalogMcpServerTransportSchema: Schema.Codec<AiCatalogMcpServerTransport> = Schema.Union([
+)
+export const AiCatalogMcpServerTransportSchema: Schema.Schema<AiCatalogMcpServerTransport> = Schema.Union(
   Schema.Literal('HTTP')
-])
-export const AiCatalogVersionBumpSchema: Schema.Codec<AiCatalogVersionBump> = Schema.Union([
+)
+export const AiCatalogVersionBumpSchema: Schema.Schema<AiCatalogVersionBump> = Schema.Union(
   Schema.Literal('MAJOR'),
   Schema.Literal('MINOR'),
   Schema.Literal('PATCH')
-])
-export const AiConversationsThreadsConversationTypeSchema: Schema.Codec<AiConversationsThreadsConversationType> = Schema.Union([
+)
+export const AiConversationsThreadsConversationTypeSchema: Schema.Schema<AiConversationsThreadsConversationType> = Schema.Union(
   Schema.Literal('DUO_CHAT'),
   Schema.Literal('DUO_CHAT_LEGACY'),
   Schema.Literal('DUO_CODE_REVIEW'),
   Schema.Literal('DUO_QUICK_CHAT')
-])
-export const AiFeatureProvidersSchema: Schema.Codec<AiFeatureProviders> = Schema.Union([
+)
+export const AiFeatureProvidersSchema: Schema.Schema<AiFeatureProviders> = Schema.Union(
   Schema.Literal('DISABLED'),
   Schema.Literal('SELF_HOSTED'),
   Schema.Literal('UNASSIGNED'),
   Schema.Literal('VENDORED')
-])
-export const AiFeaturesSchema: Schema.Codec<AiFeatures> = Schema.Union([
+)
+export const AiFeaturesSchema: Schema.Schema<AiFeatures> = Schema.Union(
   Schema.Literal('CODE_COMPLETIONS'),
   Schema.Literal('CODE_GENERATIONS'),
   Schema.Literal('DUO_AGENT_PLATFORM'),
@@ -133,22 +133,22 @@ export const AiFeaturesSchema: Schema.Codec<AiFeatures> = Schema.Union([
   Schema.Literal('REVIEW_MERGE_REQUEST'),
   Schema.Literal('SUMMARIZE_NEW_MERGE_REQUEST'),
   Schema.Literal('SUMMARIZE_REVIEW')
-])
-export const AiFlowTriggerEventTypeSchema: Schema.Codec<AiFlowTriggerEventType> = Schema.Union([
+)
+export const AiFlowTriggerEventTypeSchema: Schema.Schema<AiFlowTriggerEventType> = Schema.Union(
   Schema.Literal('ASSIGN'),
   Schema.Literal('ASSIGN_REVIEWER'),
   Schema.Literal('MENTION'),
   Schema.Literal('PIPELINE_HOOKS')
-])
-export const AiMessageRoleSchema: Schema.Codec<AiMessageRole> = Schema.Union([
+)
+export const AiMessageRoleSchema: Schema.Schema<AiMessageRole> = Schema.Union(
   Schema.Literal('ASSISTANT'),
   Schema.Literal('SYSTEM'),
   Schema.Literal('USER')
-])
-export const AiMessageTypeSchema: Schema.Codec<AiMessageType> = Schema.Union([
+)
+export const AiMessageTypeSchema: Schema.Schema<AiMessageType> = Schema.Union(
   Schema.Literal('TOOL')
-])
-export const AiModelSelectionFeaturesSchema: Schema.Codec<AiModelSelectionFeatures> = Schema.Union([
+)
+export const AiModelSelectionFeaturesSchema: Schema.Schema<AiModelSelectionFeatures> = Schema.Union(
   Schema.Literal('CODE_COMPLETIONS'),
   Schema.Literal('CODE_GENERATIONS'),
   Schema.Literal('DUO_AGENT_PLATFORM'),
@@ -166,13 +166,13 @@ export const AiModelSelectionFeaturesSchema: Schema.Codec<AiModelSelectionFeatur
   Schema.Literal('REVIEW_MERGE_REQUEST'),
   Schema.Literal('SUMMARIZE_NEW_MERGE_REQUEST'),
   Schema.Literal('SUMMARIZE_REVIEW')
-])
-export const AiSelfHostedModelReleaseStateSchema: Schema.Codec<AiSelfHostedModelReleaseState> = Schema.Union([
+)
+export const AiSelfHostedModelReleaseStateSchema: Schema.Schema<AiSelfHostedModelReleaseState> = Schema.Union(
   Schema.Literal('BETA'),
   Schema.Literal('EXPERIMENTAL'),
   Schema.Literal('GA')
-])
-export const AiUsageEventTypeSchema: Schema.Codec<AiUsageEventType> = Schema.Union([
+)
+export const AiUsageEventTypeSchema: Schema.Schema<AiUsageEventType> = Schema.Union(
   Schema.Literal('AGENT_PLATFORM_SESSION_CREATED'),
   Schema.Literal('AGENT_PLATFORM_SESSION_DROPPED'),
   Schema.Literal('AGENT_PLATFORM_SESSION_FINISHED'),
@@ -197,8 +197,8 @@ export const AiUsageEventTypeSchema: Schema.Codec<AiUsageEventType> = Schema.Uni
   Schema.Literal('REQUEST_REVIEW_DUO_CODE_REVIEW_ON_MR_BY_NON_AUTHOR'),
   Schema.Literal('START_MCP_TOOL_CALL'),
   Schema.Literal('TROUBLESHOOT_JOB')
-])
-export const AiUserMetricsSortSchema: Schema.Codec<AiUserMetricsSort> = Schema.Union([
+)
+export const AiUserMetricsSortSchema: Schema.Schema<AiUserMetricsSort> = Schema.Union(
   Schema.Literal('AGENT_PLATFORM_SESSION_CREATED_ASC'),
   Schema.Literal('AGENT_PLATFORM_SESSION_CREATED_DESC'),
   Schema.Literal('AGENT_PLATFORM_SESSION_DROPPED_ASC'),
@@ -261,8 +261,8 @@ export const AiUserMetricsSortSchema: Schema.Codec<AiUserMetricsSort> = Schema.U
   Schema.Literal('TROUBLESHOOT_JOB_DESC'),
   Schema.Literal('TROUBLESHOOT_JOB_TOTAL_COUNT_ASC'),
   Schema.Literal('TROUBLESHOOT_JOB_TOTAL_COUNT_DESC')
-])
-export const AlertManagementAlertSortSchema: Schema.Codec<AlertManagementAlertSort> = Schema.Union([
+)
+export const AlertManagementAlertSortSchema: Schema.Schema<AlertManagementAlertSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('CREATED_TIME_ASC'),
@@ -285,16 +285,16 @@ export const AlertManagementAlertSortSchema: Schema.Codec<AlertManagementAlertSo
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const AlertManagementDomainFilterSchema: Schema.Codec<AlertManagementDomainFilter> = Schema.Union([
+)
+export const AlertManagementDomainFilterSchema: Schema.Schema<AlertManagementDomainFilter> = Schema.Union(
   Schema.Literal('operations'),
   Schema.Literal('threat_monitoring')
-])
-export const AlertManagementIntegrationTypeSchema: Schema.Codec<AlertManagementIntegrationType> = Schema.Union([
+)
+export const AlertManagementIntegrationTypeSchema: Schema.Schema<AlertManagementIntegrationType> = Schema.Union(
   Schema.Literal('HTTP'),
   Schema.Literal('PROMETHEUS')
-])
-export const AlertManagementPayloadAlertFieldNameSchema: Schema.Codec<AlertManagementPayloadAlertFieldName> = Schema.Union([
+)
+export const AlertManagementPayloadAlertFieldNameSchema: Schema.Schema<AlertManagementPayloadAlertFieldName> = Schema.Union(
   Schema.Literal('DESCRIPTION'),
   Schema.Literal('END_TIME'),
   Schema.Literal('FINGERPRINT'),
@@ -305,38 +305,38 @@ export const AlertManagementPayloadAlertFieldNameSchema: Schema.Codec<AlertManag
   Schema.Literal('SEVERITY'),
   Schema.Literal('START_TIME'),
   Schema.Literal('TITLE')
-])
-export const AlertManagementPayloadAlertFieldTypeSchema: Schema.Codec<AlertManagementPayloadAlertFieldType> = Schema.Union([
+)
+export const AlertManagementPayloadAlertFieldTypeSchema: Schema.Schema<AlertManagementPayloadAlertFieldType> = Schema.Union(
   Schema.Literal('ARRAY'),
   Schema.Literal('DATETIME'),
   Schema.Literal('NUMBER'),
   Schema.Literal('STRING')
-])
-export const AlertManagementSeveritySchema: Schema.Codec<AlertManagementSeverity> = Schema.Union([
+)
+export const AlertManagementSeveritySchema: Schema.Schema<AlertManagementSeverity> = Schema.Union(
   Schema.Literal('CRITICAL'),
   Schema.Literal('HIGH'),
   Schema.Literal('INFO'),
   Schema.Literal('LOW'),
   Schema.Literal('MEDIUM'),
   Schema.Literal('UNKNOWN')
-])
-export const AlertManagementStatusSchema: Schema.Codec<AlertManagementStatus> = Schema.Union([
+)
+export const AlertManagementStatusSchema: Schema.Schema<AlertManagementStatus> = Schema.Union(
   Schema.Literal('ACKNOWLEDGED'),
   Schema.Literal('IGNORED'),
   Schema.Literal('RESOLVED'),
   Schema.Literal('TRIGGERED')
-])
-export const AnalyticsAggregationPeriodSchema: Schema.Codec<AnalyticsAggregationPeriod> = Schema.Union([
+)
+export const AnalyticsAggregationPeriodSchema: Schema.Schema<AnalyticsAggregationPeriod> = Schema.Union(
   Schema.Literal('DAY'),
   Schema.Literal('MONTH'),
   Schema.Literal('WEEK')
-])
-export const AnalyzerStatusEnumSchema: Schema.Codec<AnalyzerStatusEnum> = Schema.Union([
+)
+export const AnalyzerStatusEnumSchema: Schema.Schema<AnalyzerStatusEnum> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('NOT_CONFIGURED'),
   Schema.Literal('SUCCESS')
-])
-export const AnalyzerTypeEnumSchema: Schema.Codec<AnalyzerTypeEnum> = Schema.Union([
+)
+export const AnalyzerTypeEnumSchema: Schema.Schema<AnalyzerTypeEnum> = Schema.Union(
   Schema.Literal('API_FUZZING'),
   Schema.Literal('CLUSTER_IMAGE_SCANNING'),
   Schema.Literal('CONTAINER_SCANNING'),
@@ -351,40 +351,40 @@ export const AnalyzerTypeEnumSchema: Schema.Codec<AnalyzerTypeEnum> = Schema.Uni
   Schema.Literal('SECRET_DETECTION'),
   Schema.Literal('SECRET_DETECTION_PIPELINE_BASED'),
   Schema.Literal('SECRET_DETECTION_SECRET_PUSH_PROTECTION')
-])
-export const ApiFuzzingScanModeSchema: Schema.Codec<ApiFuzzingScanMode> = Schema.Union([
+)
+export const ApiFuzzingScanModeSchema: Schema.Schema<ApiFuzzingScanMode> = Schema.Union(
   Schema.Literal('HAR'),
   Schema.Literal('OPENAPI'),
   Schema.Literal('POSTMAN')
-])
-export const ApprovalReportTypeSchema: Schema.Codec<ApprovalReportType> = Schema.Union([
+)
+export const ApprovalReportTypeSchema: Schema.Schema<ApprovalReportType> = Schema.Union(
   Schema.Literal('ANY_MERGE_REQUEST'),
   Schema.Literal('LICENSE_SCANNING'),
   Schema.Literal('SCAN_FINDING')
-])
-export const ApprovalRuleTypeSchema: Schema.Codec<ApprovalRuleType> = Schema.Union([
+)
+export const ApprovalRuleTypeSchema: Schema.Schema<ApprovalRuleType> = Schema.Union(
   Schema.Literal('ANY_APPROVER'),
   Schema.Literal('CODE_OWNER'),
   Schema.Literal('REGULAR'),
   Schema.Literal('REPORT_APPROVER')
-])
-export const AssigneeWildcardIdSchema: Schema.Codec<AssigneeWildcardId> = Schema.Union([
+)
+export const AssigneeWildcardIdSchema: Schema.Schema<AssigneeWildcardId> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('NONE')
-])
-export const AttributeFilterOperatorSchema: Schema.Codec<AttributeFilterOperator> = Schema.Union([
+)
+export const AttributeFilterOperatorSchema: Schema.Schema<AttributeFilterOperator> = Schema.Union(
   Schema.Literal('IS_NOT_ONE_OF'),
   Schema.Literal('IS_ONE_OF')
-])
-export const AutoStopSettingSchema: Schema.Codec<AutoStopSetting> = Schema.Union([
+)
+export const AutoStopSettingSchema: Schema.Schema<AutoStopSetting> = Schema.Union(
   Schema.Literal('ALWAYS'),
   Schema.Literal('WITH_ACTION')
-])
-export const AvailabilityEnumSchema: Schema.Codec<AvailabilityEnum> = Schema.Union([
+)
+export const AvailabilityEnumSchema: Schema.Schema<AvailabilityEnum> = Schema.Union(
   Schema.Literal('BUSY'),
   Schema.Literal('NOT_SET')
-])
-export const AvailableExportFieldsSchema: Schema.Codec<AvailableExportFields> = Schema.Union([
+)
+export const AvailableExportFieldsSchema: Schema.Schema<AvailableExportFields> = Schema.Union(
   Schema.Literal('ASSIGNEE'),
   Schema.Literal('ASSIGNEE_USERNAME'),
   Schema.Literal('AUTHOR'),
@@ -410,25 +410,25 @@ export const AvailableExportFieldsSchema: Schema.Codec<AvailableExportFields> = 
   Schema.Literal('UPDATED_AT'),
   Schema.Literal('URL'),
   Schema.Literal('WEIGHT')
-])
-export const BlobViewersTypeSchema: Schema.Codec<BlobViewersType> = Schema.Union([
+)
+export const BlobViewersTypeSchema: Schema.Schema<BlobViewersType> = Schema.Union(
   Schema.Literal('auxiliary'),
   Schema.Literal('rich'),
   Schema.Literal('simple')
-])
-export const CarStatusSchema: Schema.Codec<CarStatus> = Schema.Union([
+)
+export const CarStatusSchema: Schema.Schema<CarStatus> = Schema.Union(
   Schema.Literal('FRESH'),
   Schema.Literal('IDLE'),
   Schema.Literal('MERGED'),
   Schema.Literal('MERGING'),
   Schema.Literal('SKIP_MERGED'),
   Schema.Literal('STALE')
-])
-export const CiCatalogResourceScopeSchema: Schema.Codec<CiCatalogResourceScope> = Schema.Union([
+)
+export const CiCatalogResourceScopeSchema: Schema.Schema<CiCatalogResourceScope> = Schema.Union(
   Schema.Literal('ALL'),
   Schema.Literal('NAMESPACES')
-])
-export const CiCatalogResourceSortSchema: Schema.Codec<CiCatalogResourceSort> = Schema.Union([
+)
+export const CiCatalogResourceSortSchema: Schema.Schema<CiCatalogResourceSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('LATEST_RELEASED_AT_ASC'),
@@ -439,42 +439,42 @@ export const CiCatalogResourceSortSchema: Schema.Codec<CiCatalogResourceSort> = 
   Schema.Literal('STAR_COUNT_DESC'),
   Schema.Literal('USAGE_COUNT_ASC'),
   Schema.Literal('USAGE_COUNT_DESC')
-])
-export const CiCatalogResourceVerificationLevelSchema: Schema.Codec<CiCatalogResourceVerificationLevel> = Schema.Union([
+)
+export const CiCatalogResourceVerificationLevelSchema: Schema.Schema<CiCatalogResourceVerificationLevel> = Schema.Union(
   Schema.Literal('GITLAB_MAINTAINED'),
   Schema.Literal('GITLAB_PARTNER_MAINTAINED'),
   Schema.Literal('UNVERIFIED'),
   Schema.Literal('VERIFIED_CREATOR_MAINTAINED'),
   Schema.Literal('VERIFIED_CREATOR_SELF_MANAGED')
-])
-export const CiConfigIncludeTypeSchema: Schema.Codec<CiConfigIncludeType> = Schema.Union([
+)
+export const CiConfigIncludeTypeSchema: Schema.Schema<CiConfigIncludeType> = Schema.Union(
   Schema.Literal('component'),
   Schema.Literal('file'),
   Schema.Literal('local'),
   Schema.Literal('remote'),
   Schema.Literal('template')
-])
-export const CiConfigStatusSchema: Schema.Codec<CiConfigStatus> = Schema.Union([
+)
+export const CiConfigStatusSchema: Schema.Schema<CiConfigStatus> = Schema.Union(
   Schema.Literal('INVALID'),
   Schema.Literal('VALID')
-])
-export const CiFreezePeriodStatusSchema: Schema.Codec<CiFreezePeriodStatus> = Schema.Union([
+)
+export const CiFreezePeriodStatusSchema: Schema.Schema<CiFreezePeriodStatus> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('INACTIVE')
-])
-export const CiGroupVariablesSortSchema: Schema.Codec<CiGroupVariablesSort> = Schema.Union([
+)
+export const CiGroupVariablesSortSchema: Schema.Schema<CiGroupVariablesSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('KEY_ASC'),
   Schema.Literal('KEY_DESC')
-])
-export const CiInputsTypeSchema: Schema.Codec<CiInputsType> = Schema.Union([
+)
+export const CiInputsTypeSchema: Schema.Schema<CiInputsType> = Schema.Union(
   Schema.Literal('ARRAY'),
   Schema.Literal('BOOLEAN'),
   Schema.Literal('NUMBER'),
   Schema.Literal('STRING')
-])
-export const CiJobAnalyticsSortSchema: Schema.Codec<CiJobAnalyticsSort> = Schema.Union([
+)
+export const CiJobAnalyticsSortSchema: Schema.Schema<CiJobAnalyticsSort> = Schema.Union(
   Schema.Literal('CANCELED_RATE_ASC'),
   Schema.Literal('CANCELED_RATE_DESC'),
   Schema.Literal('FAILED_RATE_ASC'),
@@ -495,8 +495,8 @@ export const CiJobAnalyticsSortSchema: Schema.Codec<CiJobAnalyticsSort> = Schema
   Schema.Literal('P99_DURATION_DESC'),
   Schema.Literal('SUCCESS_RATE_ASC'),
   Schema.Literal('SUCCESS_RATE_DESC')
-])
-export const CiJobFailureReasonSchema: Schema.Codec<CiJobFailureReason> = Schema.Union([
+)
+export const CiJobFailureReasonSchema: Schema.Schema<CiJobFailureReason> = Schema.Union(
   Schema.Literal('API_FAILURE'),
   Schema.Literal('ARCHIVED_FAILURE'),
   Schema.Literal('BRIDGE_PIPELINE_IS_CHILD_PIPELINE'),
@@ -538,12 +538,12 @@ export const CiJobFailureReasonSchema: Schema.Codec<CiJobFailureReason> = Schema
   Schema.Literal('UNMET_PREREQUISITES'),
   Schema.Literal('UPSTREAM_BRIDGE_PROJECT_NOT_FOUND'),
   Schema.Literal('USER_BLOCKED')
-])
-export const CiJobKindSchema: Schema.Codec<CiJobKind> = Schema.Union([
+)
+export const CiJobKindSchema: Schema.Schema<CiJobKind> = Schema.Union(
   Schema.Literal('BRIDGE'),
   Schema.Literal('BUILD')
-])
-export const CiJobSourceSchema: Schema.Codec<CiJobSource> = Schema.Union([
+)
+export const CiJobSourceSchema: Schema.Schema<CiJobSource> = Schema.Union(
   Schema.Literal('API'),
   Schema.Literal('CHAT'),
   Schema.Literal('CONTAINER_REGISTRY_PUSH'),
@@ -565,8 +565,8 @@ export const CiJobSourceSchema: Schema.Codec<CiJobSource> = Schema.Union([
   Schema.Literal('UNKNOWN'),
   Schema.Literal('WEB'),
   Schema.Literal('WEBIDE')
-])
-export const CiJobStatusSchema: Schema.Codec<CiJobStatus> = Schema.Union([
+)
+export const CiJobStatusSchema: Schema.Schema<CiJobStatus> = Schema.Union(
   Schema.Literal('CANCELED'),
   Schema.Literal('CANCELING'),
   Schema.Literal('CREATED'),
@@ -580,12 +580,12 @@ export const CiJobStatusSchema: Schema.Codec<CiJobStatus> = Schema.Union([
   Schema.Literal('SUCCESS'),
   Schema.Literal('WAITING_FOR_CALLBACK'),
   Schema.Literal('WAITING_FOR_RESOURCE')
-])
-export const CiJobTokenScopeDirectionSchema: Schema.Codec<CiJobTokenScopeDirection> = Schema.Union([
+)
+export const CiJobTokenScopeDirectionSchema: Schema.Schema<CiJobTokenScopeDirection> = Schema.Union(
   Schema.Literal('INBOUND'),
   Schema.Literal('OUTBOUND')
-])
-export const CiJobTokenScopePoliciesSchema: Schema.Codec<CiJobTokenScopePolicies> = Schema.Union([
+)
+export const CiJobTokenScopePoliciesSchema: Schema.Schema<CiJobTokenScopePolicies> = Schema.Union(
   Schema.Literal('ADMIN_DEPLOYMENTS'),
   Schema.Literal('ADMIN_ENVIRONMENTS'),
   Schema.Literal('ADMIN_JOBS'),
@@ -605,13 +605,13 @@ export const CiJobTokenScopePoliciesSchema: Schema.Codec<CiJobTokenScopePolicies
   Schema.Literal('READ_SECURE_FILES'),
   Schema.Literal('READ_TERRAFORM_STATE'),
   Schema.Literal('READ_WORK_ITEMS')
-])
-export const CiPipelineCreationStatusSchema: Schema.Codec<CiPipelineCreationStatus> = Schema.Union([
+)
+export const CiPipelineCreationStatusSchema: Schema.Schema<CiPipelineCreationStatus> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('IN_PROGRESS'),
   Schema.Literal('SUCCEEDED')
-])
-export const CiPipelineSourcesSchema: Schema.Codec<CiPipelineSources> = Schema.Union([
+)
+export const CiPipelineSourcesSchema: Schema.Schema<CiPipelineSources> = Schema.Union(
   Schema.Literal('API'),
   Schema.Literal('CHAT'),
   Schema.Literal('CONTAINER_REGISTRY_PUSH'),
@@ -631,33 +631,33 @@ export const CiPipelineSourcesSchema: Schema.Codec<CiPipelineSources> = Schema.U
   Schema.Literal('UNKNOWN'),
   Schema.Literal('WEB'),
   Schema.Literal('WEBIDE')
-])
-export const CiRunnerAccessLevelSchema: Schema.Codec<CiRunnerAccessLevel> = Schema.Union([
+)
+export const CiRunnerAccessLevelSchema: Schema.Schema<CiRunnerAccessLevel> = Schema.Union(
   Schema.Literal('NOT_PROTECTED'),
   Schema.Literal('REF_PROTECTED')
-])
-export const CiRunnerCloudProviderSchema: Schema.Codec<CiRunnerCloudProvider> = Schema.Union([
+)
+export const CiRunnerCloudProviderSchema: Schema.Schema<CiRunnerCloudProvider> = Schema.Union(
   Schema.Literal('GKE'),
   Schema.Literal('GOOGLE_CLOUD')
-])
-export const CiRunnerCreationMethodSchema: Schema.Codec<CiRunnerCreationMethod> = Schema.Union([
+)
+export const CiRunnerCreationMethodSchema: Schema.Schema<CiRunnerCreationMethod> = Schema.Union(
   Schema.Literal('AUTHENTICATED_USER'),
   Schema.Literal('REGISTRATION_TOKEN')
-])
-export const CiRunnerCreationStateSchema: Schema.Codec<CiRunnerCreationState> = Schema.Union([
+)
+export const CiRunnerCreationStateSchema: Schema.Schema<CiRunnerCreationState> = Schema.Union(
   Schema.Literal('FINISHED'),
   Schema.Literal('STARTED')
-])
-export const CiRunnerJobExecutionStatusSchema: Schema.Codec<CiRunnerJobExecutionStatus> = Schema.Union([
+)
+export const CiRunnerJobExecutionStatusSchema: Schema.Schema<CiRunnerJobExecutionStatus> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('IDLE')
-])
-export const CiRunnerMembershipFilterSchema: Schema.Codec<CiRunnerMembershipFilter> = Schema.Union([
+)
+export const CiRunnerMembershipFilterSchema: Schema.Schema<CiRunnerMembershipFilter> = Schema.Union(
   Schema.Literal('ALL_AVAILABLE'),
   Schema.Literal('DESCENDANTS'),
   Schema.Literal('DIRECT')
-])
-export const CiRunnerSortSchema: Schema.Codec<CiRunnerSort> = Schema.Union([
+)
+export const CiRunnerSortSchema: Schema.Schema<CiRunnerSort> = Schema.Union(
   Schema.Literal('CONTACTED_ASC'),
   Schema.Literal('CONTACTED_DESC'),
   Schema.Literal('CREATED_ASC'),
@@ -665,67 +665,67 @@ export const CiRunnerSortSchema: Schema.Codec<CiRunnerSort> = Schema.Union([
   Schema.Literal('MOST_ACTIVE_DESC'),
   Schema.Literal('TOKEN_EXPIRES_AT_ASC'),
   Schema.Literal('TOKEN_EXPIRES_AT_DESC')
-])
-export const CiRunnerStatusSchema: Schema.Codec<CiRunnerStatus> = Schema.Union([
+)
+export const CiRunnerStatusSchema: Schema.Schema<CiRunnerStatus> = Schema.Union(
   Schema.Literal('NEVER_CONTACTED'),
   Schema.Literal('OFFLINE'),
   Schema.Literal('ONLINE'),
   Schema.Literal('STALE')
-])
-export const CiRunnerTypeSchema: Schema.Codec<CiRunnerType> = Schema.Union([
+)
+export const CiRunnerTypeSchema: Schema.Schema<CiRunnerType> = Schema.Union(
   Schema.Literal('GROUP_TYPE'),
   Schema.Literal('INSTANCE_TYPE'),
   Schema.Literal('PROJECT_TYPE')
-])
-export const CiRunnerUpgradeStatusSchema: Schema.Codec<CiRunnerUpgradeStatus> = Schema.Union([
+)
+export const CiRunnerUpgradeStatusSchema: Schema.Schema<CiRunnerUpgradeStatus> = Schema.Union(
   Schema.Literal('AVAILABLE'),
   Schema.Literal('INVALID'),
   Schema.Literal('NOT_AVAILABLE'),
   Schema.Literal('RECOMMENDED')
-])
-export const CiVariableSortSchema: Schema.Codec<CiVariableSort> = Schema.Union([
+)
+export const CiVariableSortSchema: Schema.Schema<CiVariableSort> = Schema.Union(
   Schema.Literal('KEY_ASC'),
   Schema.Literal('KEY_DESC')
-])
-export const CiVariableTypeSchema: Schema.Codec<CiVariableType> = Schema.Union([
+)
+export const CiVariableTypeSchema: Schema.Schema<CiVariableType> = Schema.Union(
   Schema.Literal('ENV_VAR'),
   Schema.Literal('FILE')
-])
-export const CodeFlowNodeTypeSchema: Schema.Codec<CodeFlowNodeType> = Schema.Union([
+)
+export const CodeFlowNodeTypeSchema: Schema.Schema<CodeFlowNodeType> = Schema.Union(
   Schema.Literal('PROPAGATION'),
   Schema.Literal('SINK'),
   Schema.Literal('SOURCE')
-])
-export const CodeQualityDegradationSeveritySchema: Schema.Codec<CodeQualityDegradationSeverity> = Schema.Union([
+)
+export const CodeQualityDegradationSeveritySchema: Schema.Schema<CodeQualityDegradationSeverity> = Schema.Union(
   Schema.Literal('BLOCKER'),
   Schema.Literal('CRITICAL'),
   Schema.Literal('INFO'),
   Schema.Literal('MAJOR'),
   Schema.Literal('MINOR'),
   Schema.Literal('UNKNOWN')
-])
-export const CodequalityReportsComparerReportGenerationStatusSchema: Schema.Codec<CodequalityReportsComparerReportGenerationStatus> = Schema.Union([
+)
+export const CodequalityReportsComparerReportGenerationStatusSchema: Schema.Schema<CodequalityReportsComparerReportGenerationStatus> = Schema.Union(
   Schema.Literal('ERROR'),
   Schema.Literal('PARSED'),
   Schema.Literal('PARSING')
-])
-export const CodequalityReportsComparerStatusSchema: Schema.Codec<CodequalityReportsComparerStatus> = Schema.Union([
+)
+export const CodequalityReportsComparerStatusSchema: Schema.Schema<CodequalityReportsComparerStatus> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('NOT_FOUND'),
   Schema.Literal('SUCCESS')
-])
-export const CommitActionModeSchema: Schema.Codec<CommitActionMode> = Schema.Union([
+)
+export const CommitActionModeSchema: Schema.Schema<CommitActionMode> = Schema.Union(
   Schema.Literal('CHMOD'),
   Schema.Literal('CREATE'),
   Schema.Literal('DELETE'),
   Schema.Literal('MOVE'),
   Schema.Literal('UPDATE')
-])
-export const CommitEncodingSchema: Schema.Codec<CommitEncoding> = Schema.Union([
+)
+export const CommitEncodingSchema: Schema.Schema<CommitEncoding> = Schema.Union(
   Schema.Literal('BASE64'),
   Schema.Literal('TEXT')
-])
-export const ComparableSecurityReportTypeSchema: Schema.Codec<ComparableSecurityReportType> = Schema.Union([
+)
+export const ComparableSecurityReportTypeSchema: Schema.Schema<ComparableSecurityReportType> = Schema.Union(
   Schema.Literal('API_FUZZING'),
   Schema.Literal('CONTAINER_SCANNING'),
   Schema.Literal('COVERAGE_FUZZING'),
@@ -733,51 +733,51 @@ export const ComparableSecurityReportTypeSchema: Schema.Codec<ComparableSecurity
   Schema.Literal('DEPENDENCY_SCANNING'),
   Schema.Literal('SAST'),
   Schema.Literal('SECRET_DETECTION')
-])
-export const ComparisonOperatorSchema: Schema.Codec<ComparisonOperator> = Schema.Union([
+)
+export const ComparisonOperatorSchema: Schema.Schema<ComparisonOperator> = Schema.Union(
   Schema.Literal('EQUAL_TO'),
   Schema.Literal('GREATER_THAN_OR_EQUAL_TO'),
   Schema.Literal('LESS_THAN_OR_EQUAL_TO')
-])
-export const ComplianceFrameworkPresenceFilterSchema: Schema.Codec<ComplianceFrameworkPresenceFilter> = Schema.Union([
+)
+export const ComplianceFrameworkPresenceFilterSchema: Schema.Schema<ComplianceFrameworkPresenceFilter> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('NONE')
-])
-export const ComplianceFrameworkSortSchema: Schema.Codec<ComplianceFrameworkSort> = Schema.Union([
+)
+export const ComplianceFrameworkSortSchema: Schema.Schema<ComplianceFrameworkSort> = Schema.Union(
   Schema.Literal('NAME_ASC'),
   Schema.Literal('NAME_DESC'),
   Schema.Literal('UPDATED_AT_ASC'),
   Schema.Literal('UPDATED_AT_DESC')
-])
-export const ComplianceStandardsAdherenceCheckNameSchema: Schema.Codec<ComplianceStandardsAdherenceCheckName> = Schema.Union([
+)
+export const ComplianceStandardsAdherenceCheckNameSchema: Schema.Schema<ComplianceStandardsAdherenceCheckName> = Schema.Union(
   Schema.Literal('AT_LEAST_ONE_NON_AUTHOR_APPROVAL'),
   Schema.Literal('AT_LEAST_TWO_APPROVALS'),
   Schema.Literal('DAST'),
   Schema.Literal('PREVENT_APPROVAL_BY_MERGE_REQUEST_AUTHOR'),
   Schema.Literal('PREVENT_APPROVAL_BY_MERGE_REQUEST_COMMITTERS'),
   Schema.Literal('SAST')
-])
-export const ComplianceStandardsAdherenceStandardSchema: Schema.Codec<ComplianceStandardsAdherenceStandard> = Schema.Union([
+)
+export const ComplianceStandardsAdherenceStandardSchema: Schema.Schema<ComplianceStandardsAdherenceStandard> = Schema.Union(
   Schema.Literal('GITLAB'),
   Schema.Literal('SOC2')
-])
-export const ComplianceStandardsAdherenceStatusSchema: Schema.Codec<ComplianceStandardsAdherenceStatus> = Schema.Union([
+)
+export const ComplianceStandardsAdherenceStatusSchema: Schema.Schema<ComplianceStandardsAdherenceStatus> = Schema.Union(
   Schema.Literal('FAIL'),
   Schema.Literal('SUCCESS')
-])
-export const ComplianceViolationReasonSchema: Schema.Codec<ComplianceViolationReason> = Schema.Union([
+)
+export const ComplianceViolationReasonSchema: Schema.Schema<ComplianceViolationReason> = Schema.Union(
   Schema.Literal('APPROVED_BY_COMMITTER'),
   Schema.Literal('APPROVED_BY_INSUFFICIENT_USERS'),
   Schema.Literal('APPROVED_BY_MERGE_REQUEST_AUTHOR')
-])
-export const ComplianceViolationSeveritySchema: Schema.Codec<ComplianceViolationSeverity> = Schema.Union([
+)
+export const ComplianceViolationSeveritySchema: Schema.Schema<ComplianceViolationSeverity> = Schema.Union(
   Schema.Literal('CRITICAL'),
   Schema.Literal('HIGH'),
   Schema.Literal('INFO'),
   Schema.Literal('LOW'),
   Schema.Literal('MEDIUM')
-])
-export const ComplianceViolationSortSchema: Schema.Codec<ComplianceViolationSort> = Schema.Union([
+)
+export const ComplianceViolationSortSchema: Schema.Schema<ComplianceViolationSort> = Schema.Union(
   Schema.Literal('MERGED_AT_ASC'),
   Schema.Literal('MERGED_AT_DESC'),
   Schema.Literal('MERGE_REQUEST_TITLE_ASC'),
@@ -786,18 +786,18 @@ export const ComplianceViolationSortSchema: Schema.Codec<ComplianceViolationSort
   Schema.Literal('SEVERITY_LEVEL_DESC'),
   Schema.Literal('VIOLATION_REASON_ASC'),
   Schema.Literal('VIOLATION_REASON_DESC')
-])
-export const ComplianceViolationStatusSchema: Schema.Codec<ComplianceViolationStatus> = Schema.Union([
+)
+export const ComplianceViolationStatusSchema: Schema.Schema<ComplianceViolationStatus> = Schema.Union(
   Schema.Literal('DETECTED'),
   Schema.Literal('DISMISSED'),
   Schema.Literal('IN_REVIEW'),
   Schema.Literal('RESOLVED')
-])
-export const ConanMetadatumFileTypeEnumSchema: Schema.Codec<ConanMetadatumFileTypeEnum> = Schema.Union([
+)
+export const ConanMetadatumFileTypeEnumSchema: Schema.Schema<ConanMetadatumFileTypeEnum> = Schema.Union(
   Schema.Literal('PACKAGE_FILE'),
   Schema.Literal('RECIPE_FILE')
-])
-export const ContactSortSchema: Schema.Codec<ContactSort> = Schema.Union([
+)
+export const ContactSortSchema: Schema.Schema<ContactSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('DESCRIPTION_ASC'),
@@ -818,46 +818,46 @@ export const ContactSortSchema: Schema.Codec<ContactSort> = Schema.Union([
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const ContainerExpirationPolicyCadenceEnumSchema: Schema.Codec<ContainerExpirationPolicyCadenceEnum> = Schema.Union([
+)
+export const ContainerExpirationPolicyCadenceEnumSchema: Schema.Schema<ContainerExpirationPolicyCadenceEnum> = Schema.Union(
   Schema.Literal('EVERY_DAY'),
   Schema.Literal('EVERY_MONTH'),
   Schema.Literal('EVERY_THREE_MONTHS'),
   Schema.Literal('EVERY_TWO_WEEKS'),
   Schema.Literal('EVERY_WEEK')
-])
-export const ContainerExpirationPolicyKeepEnumSchema: Schema.Codec<ContainerExpirationPolicyKeepEnum> = Schema.Union([
+)
+export const ContainerExpirationPolicyKeepEnumSchema: Schema.Schema<ContainerExpirationPolicyKeepEnum> = Schema.Union(
   Schema.Literal('FIFTY_TAGS'),
   Schema.Literal('FIVE_TAGS'),
   Schema.Literal('ONE_HUNDRED_TAGS'),
   Schema.Literal('ONE_TAG'),
   Schema.Literal('TEN_TAGS'),
   Schema.Literal('TWENTY_FIVE_TAGS')
-])
-export const ContainerExpirationPolicyOlderThanEnumSchema: Schema.Codec<ContainerExpirationPolicyOlderThanEnum> = Schema.Union([
+)
+export const ContainerExpirationPolicyOlderThanEnumSchema: Schema.Schema<ContainerExpirationPolicyOlderThanEnum> = Schema.Union(
   Schema.Literal('FOURTEEN_DAYS'),
   Schema.Literal('NINETY_DAYS'),
   Schema.Literal('SEVEN_DAYS'),
   Schema.Literal('SIXTY_DAYS'),
   Schema.Literal('THIRTY_DAYS')
-])
-export const ContainerProtectionRepositoryRuleAccessLevelSchema: Schema.Codec<ContainerProtectionRepositoryRuleAccessLevel> = Schema.Union([
+)
+export const ContainerProtectionRepositoryRuleAccessLevelSchema: Schema.Schema<ContainerProtectionRepositoryRuleAccessLevel> = Schema.Union(
   Schema.Literal('ADMIN'),
   Schema.Literal('MAINTAINER'),
   Schema.Literal('OWNER')
-])
-export const ContainerProtectionTagRuleAccessLevelSchema: Schema.Codec<ContainerProtectionTagRuleAccessLevel> = Schema.Union([
+)
+export const ContainerProtectionTagRuleAccessLevelSchema: Schema.Schema<ContainerProtectionTagRuleAccessLevel> = Schema.Union(
   Schema.Literal('ADMIN'),
   Schema.Literal('MAINTAINER'),
   Schema.Literal('OWNER')
-])
-export const ContainerRepositoryCleanupStatusSchema: Schema.Codec<ContainerRepositoryCleanupStatus> = Schema.Union([
+)
+export const ContainerRepositoryCleanupStatusSchema: Schema.Schema<ContainerRepositoryCleanupStatus> = Schema.Union(
   Schema.Literal('ONGOING'),
   Schema.Literal('SCHEDULED'),
   Schema.Literal('UNFINISHED'),
   Schema.Literal('UNSCHEDULED')
-])
-export const ContainerRepositorySortSchema: Schema.Codec<ContainerRepositorySort> = Schema.Union([
+)
+export const ContainerRepositorySortSchema: Schema.Schema<ContainerRepositorySort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('NAME_ASC'),
@@ -868,107 +868,107 @@ export const ContainerRepositorySortSchema: Schema.Codec<ContainerRepositorySort
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const ContainerRepositoryStatusSchema: Schema.Codec<ContainerRepositoryStatus> = Schema.Union([
+)
+export const ContainerRepositoryStatusSchema: Schema.Schema<ContainerRepositoryStatus> = Schema.Union(
   Schema.Literal('DELETE_FAILED'),
   Schema.Literal('DELETE_ONGOING'),
   Schema.Literal('DELETE_SCHEDULED')
-])
-export const ContainerRepositoryTagSortSchema: Schema.Codec<ContainerRepositoryTagSort> = Schema.Union([
+)
+export const ContainerRepositoryTagSortSchema: Schema.Schema<ContainerRepositoryTagSort> = Schema.Union(
   Schema.Literal('NAME_ASC'),
   Schema.Literal('NAME_DESC'),
   Schema.Literal('PUBLISHED_AT_ASC'),
   Schema.Literal('PUBLISHED_AT_DESC')
-])
-export const CustomFieldTypeSchema: Schema.Codec<CustomFieldType> = Schema.Union([
+)
+export const CustomFieldTypeSchema: Schema.Schema<CustomFieldType> = Schema.Union(
   Schema.Literal('DATE'),
   Schema.Literal('MULTI_SELECT'),
   Schema.Literal('NUMBER'),
   Schema.Literal('SINGLE_SELECT'),
   Schema.Literal('TEXT')
-])
-export const CustomerRelationsContactStateSchema: Schema.Codec<CustomerRelationsContactState> = Schema.Union([
+)
+export const CustomerRelationsContactStateSchema: Schema.Schema<CustomerRelationsContactState> = Schema.Union(
   Schema.Literal('active'),
   Schema.Literal('all'),
   Schema.Literal('inactive')
-])
-export const CustomerRelationsOrganizationStateSchema: Schema.Codec<CustomerRelationsOrganizationState> = Schema.Union([
+)
+export const CustomerRelationsOrganizationStateSchema: Schema.Schema<CustomerRelationsOrganizationState> = Schema.Union(
   Schema.Literal('active'),
   Schema.Literal('all'),
   Schema.Literal('inactive')
-])
-export const CustomizableDashboardCategorySchema: Schema.Codec<CustomizableDashboardCategory> = Schema.Union([
+)
+export const CustomizableDashboardCategorySchema: Schema.Schema<CustomizableDashboardCategory> = Schema.Union(
   Schema.Literal('ANALYTICS')
-])
-export const CustomizableDashboardGridHeightSchema: Schema.Codec<CustomizableDashboardGridHeight> = Schema.Union([
+)
+export const CustomizableDashboardGridHeightSchema: Schema.Schema<CustomizableDashboardGridHeight> = Schema.Union(
   Schema.Literal('COMPACT'),
   Schema.Literal('DEFAULT')
-])
-export const CvssSeveritySchema: Schema.Codec<CvssSeverity> = Schema.Union([
+)
+export const CvssSeveritySchema: Schema.Schema<CvssSeverity> = Schema.Union(
   Schema.Literal('CRITICAL'),
   Schema.Literal('HIGH'),
   Schema.Literal('LOW'),
   Schema.Literal('MEDIUM'),
   Schema.Literal('NONE')
-])
-export const DastPreScanVerificationCheckTypeSchema: Schema.Codec<DastPreScanVerificationCheckType> = Schema.Union([
+)
+export const DastPreScanVerificationCheckTypeSchema: Schema.Schema<DastPreScanVerificationCheckType> = Schema.Union(
   Schema.Literal('AUTHENTICATION'),
   Schema.Literal('CONNECTION'),
   Schema.Literal('CRAWLING')
-])
-export const DastPreScanVerificationStatusSchema: Schema.Codec<DastPreScanVerificationStatus> = Schema.Union([
+)
+export const DastPreScanVerificationStatusSchema: Schema.Schema<DastPreScanVerificationStatus> = Schema.Union(
   Schema.Literal('COMPLETE'),
   Schema.Literal('COMPLETE_WITH_ERRORS'),
   Schema.Literal('FAILED'),
   Schema.Literal('RUNNING')
-])
-export const DastProfileCadenceUnitSchema: Schema.Codec<DastProfileCadenceUnit> = Schema.Union([
+)
+export const DastProfileCadenceUnitSchema: Schema.Schema<DastProfileCadenceUnit> = Schema.Union(
   Schema.Literal('DAY'),
   Schema.Literal('MONTH'),
   Schema.Literal('WEEK'),
   Schema.Literal('YEAR')
-])
-export const DastScanMethodTypeSchema: Schema.Codec<DastScanMethodType> = Schema.Union([
+)
+export const DastScanMethodTypeSchema: Schema.Schema<DastScanMethodType> = Schema.Union(
   Schema.Literal('GRAPHQL'),
   Schema.Literal('HAR'),
   Schema.Literal('OPENAPI'),
   Schema.Literal('POSTMAN_COLLECTION'),
   Schema.Literal('WEBSITE')
-])
-export const DastScanTypeEnumSchema: Schema.Codec<DastScanTypeEnum> = Schema.Union([
+)
+export const DastScanTypeEnumSchema: Schema.Schema<DastScanTypeEnum> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('PASSIVE')
-])
-export const DastSiteProfileValidationStatusEnumSchema: Schema.Codec<DastSiteProfileValidationStatusEnum> = Schema.Union([
+)
+export const DastSiteProfileValidationStatusEnumSchema: Schema.Schema<DastSiteProfileValidationStatusEnum> = Schema.Union(
   Schema.Literal('FAILED_VALIDATION'),
   Schema.Literal('INPROGRESS_VALIDATION'),
   Schema.Literal('NONE'),
   Schema.Literal('PASSED_VALIDATION'),
   Schema.Literal('PENDING_VALIDATION')
-])
-export const DastSiteValidationStatusEnumSchema: Schema.Codec<DastSiteValidationStatusEnum> = Schema.Union([
+)
+export const DastSiteValidationStatusEnumSchema: Schema.Schema<DastSiteValidationStatusEnum> = Schema.Union(
   Schema.Literal('FAILED_VALIDATION'),
   Schema.Literal('INPROGRESS_VALIDATION'),
   Schema.Literal('PASSED_VALIDATION'),
   Schema.Literal('PENDING_VALIDATION')
-])
-export const DastSiteValidationStrategyEnumSchema: Schema.Codec<DastSiteValidationStrategyEnum> = Schema.Union([
+)
+export const DastSiteValidationStrategyEnumSchema: Schema.Schema<DastSiteValidationStrategyEnum> = Schema.Union(
   Schema.Literal('HEADER'),
   Schema.Literal('META_TAG'),
   Schema.Literal('TEXT_FILE')
-])
-export const DastTargetTypeEnumSchema: Schema.Codec<DastTargetTypeEnum> = Schema.Union([
+)
+export const DastTargetTypeEnumSchema: Schema.Schema<DastTargetTypeEnum> = Schema.Union(
   Schema.Literal('API'),
   Schema.Literal('WEBSITE')
-])
-export const DataVisualizationColorEnumSchema: Schema.Codec<DataVisualizationColorEnum> = Schema.Union([
+)
+export const DataVisualizationColorEnumSchema: Schema.Schema<DataVisualizationColorEnum> = Schema.Union(
   Schema.Literal('AQUA'),
   Schema.Literal('BLUE'),
   Schema.Literal('GREEN'),
   Schema.Literal('MAGENTA'),
   Schema.Literal('ORANGE')
-])
-export const DataVisualizationWeightEnumSchema: Schema.Codec<DataVisualizationWeightEnum> = Schema.Union([
+)
+export const DataVisualizationWeightEnumSchema: Schema.Schema<DataVisualizationWeightEnum> = Schema.Union(
   Schema.Literal('WEIGHT_50'),
   Schema.Literal('WEIGHT_100'),
   Schema.Literal('WEIGHT_200'),
@@ -980,14 +980,14 @@ export const DataVisualizationWeightEnumSchema: Schema.Codec<DataVisualizationWe
   Schema.Literal('WEIGHT_800'),
   Schema.Literal('WEIGHT_900'),
   Schema.Literal('WEIGHT_950')
-])
-export const DependencyProxyManifestStatusSchema: Schema.Codec<DependencyProxyManifestStatus> = Schema.Union([
+)
+export const DependencyProxyManifestStatusSchema: Schema.Schema<DependencyProxyManifestStatus> = Schema.Union(
   Schema.Literal('DEFAULT'),
   Schema.Literal('ERROR'),
   Schema.Literal('PENDING_DESTRUCTION'),
   Schema.Literal('PROCESSING')
-])
-export const DependencySortSchema: Schema.Codec<DependencySort> = Schema.Union([
+)
+export const DependencySortSchema: Schema.Schema<DependencySort> = Schema.Union(
   Schema.Literal('LICENSE_ASC'),
   Schema.Literal('LICENSE_DESC'),
   Schema.Literal('NAME_ASC'),
@@ -996,13 +996,13 @@ export const DependencySortSchema: Schema.Codec<DependencySort> = Schema.Union([
   Schema.Literal('PACKAGER_DESC'),
   Schema.Literal('SEVERITY_ASC'),
   Schema.Literal('SEVERITY_DESC')
-])
-export const DeploymentApprovalSummaryStatusSchema: Schema.Codec<DeploymentApprovalSummaryStatus> = Schema.Union([
+)
+export const DeploymentApprovalSummaryStatusSchema: Schema.Schema<DeploymentApprovalSummaryStatus> = Schema.Union(
   Schema.Literal('APPROVED'),
   Schema.Literal('PENDING_APPROVAL'),
   Schema.Literal('REJECTED')
-])
-export const DeploymentStatusSchema: Schema.Codec<DeploymentStatus> = Schema.Union([
+)
+export const DeploymentStatusSchema: Schema.Schema<DeploymentStatus> = Schema.Union(
   Schema.Literal('BLOCKED'),
   Schema.Literal('CANCELED'),
   Schema.Literal('CREATED'),
@@ -1010,30 +1010,30 @@ export const DeploymentStatusSchema: Schema.Codec<DeploymentStatus> = Schema.Uni
   Schema.Literal('RUNNING'),
   Schema.Literal('SKIPPED'),
   Schema.Literal('SUCCESS')
-])
-export const DeploymentTierSchema: Schema.Codec<DeploymentTier> = Schema.Union([
+)
+export const DeploymentTierSchema: Schema.Schema<DeploymentTier> = Schema.Union(
   Schema.Literal('DEVELOPMENT'),
   Schema.Literal('OTHER'),
   Schema.Literal('PRODUCTION'),
   Schema.Literal('STAGING'),
   Schema.Literal('TESTING')
-])
-export const DeploymentsApprovalStatusSchema: Schema.Codec<DeploymentsApprovalStatus> = Schema.Union([
+)
+export const DeploymentsApprovalStatusSchema: Schema.Schema<DeploymentsApprovalStatus> = Schema.Union(
   Schema.Literal('APPROVED'),
   Schema.Literal('REJECTED')
-])
-export const DesignCollectionCopyStateSchema: Schema.Codec<DesignCollectionCopyState> = Schema.Union([
+)
+export const DesignCollectionCopyStateSchema: Schema.Schema<DesignCollectionCopyState> = Schema.Union(
   Schema.Literal('ERROR'),
   Schema.Literal('IN_PROGRESS'),
   Schema.Literal('READY')
-])
-export const DesignVersionEventSchema: Schema.Codec<DesignVersionEvent> = Schema.Union([
+)
+export const DesignVersionEventSchema: Schema.Schema<DesignVersionEvent> = Schema.Union(
   Schema.Literal('CREATION'),
   Schema.Literal('DELETION'),
   Schema.Literal('MODIFICATION'),
   Schema.Literal('NONE')
-])
-export const DetailedMergeStatusSchema: Schema.Codec<DetailedMergeStatus> = Schema.Union([
+)
+export const DetailedMergeStatusSchema: Schema.Schema<DetailedMergeStatus> = Schema.Union(
   Schema.Literal('APPROVALS_SYNCING'),
   Schema.Literal('BLOCKED_STATUS'),
   Schema.Literal('CHECKING'),
@@ -1057,24 +1057,24 @@ export const DetailedMergeStatusSchema: Schema.Codec<DetailedMergeStatus> = Sche
   Schema.Literal('SECURITY_POLICIES_VIOLATIONS'),
   Schema.Literal('TITLE_NOT_MATCHING'),
   Schema.Literal('UNCHECKED')
-])
-export const DiffPositionTypeSchema: Schema.Codec<DiffPositionType> = Schema.Union([
+)
+export const DiffPositionTypeSchema: Schema.Schema<DiffPositionType> = Schema.Union(
   Schema.Literal('file'),
   Schema.Literal('image'),
   Schema.Literal('text')
-])
-export const DismissalTypeSchema: Schema.Codec<DismissalType> = Schema.Union([
+)
+export const DismissalTypeSchema: Schema.Schema<DismissalType> = Schema.Union(
   Schema.Literal('EMERGENCY_HOT_FIX'),
   Schema.Literal('OTHER'),
   Schema.Literal('POLICY_FALSE_POSITIVE'),
   Schema.Literal('SCANNER_FALSE_POSITIVE')
-])
-export const DoraMetricBucketingIntervalSchema: Schema.Codec<DoraMetricBucketingInterval> = Schema.Union([
+)
+export const DoraMetricBucketingIntervalSchema: Schema.Schema<DoraMetricBucketingInterval> = Schema.Union(
   Schema.Literal('ALL'),
   Schema.Literal('DAILY'),
   Schema.Literal('MONTHLY')
-])
-export const DuoWorkflowStatusSchema: Schema.Codec<DuoWorkflowStatus> = Schema.Union([
+)
+export const DuoWorkflowStatusSchema: Schema.Schema<DuoWorkflowStatus> = Schema.Union(
   Schema.Literal('CREATED'),
   Schema.Literal('FAILED'),
   Schema.Literal('FINISHED'),
@@ -1084,16 +1084,16 @@ export const DuoWorkflowStatusSchema: Schema.Codec<DuoWorkflowStatus> = Schema.U
   Schema.Literal('RUNNING'),
   Schema.Literal('STOPPED'),
   Schema.Literal('TOOL_CALL_APPROVAL_REQUIRED')
-])
-export const DuoWorkflowStatusGroupSchema: Schema.Codec<DuoWorkflowStatusGroup> = Schema.Union([
+)
+export const DuoWorkflowStatusGroupSchema: Schema.Schema<DuoWorkflowStatusGroup> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('AWAITING_INPUT'),
   Schema.Literal('CANCELED'),
   Schema.Literal('COMPLETED'),
   Schema.Literal('FAILED'),
   Schema.Literal('PAUSED')
-])
-export const DuoWorkflowsWorkflowSortSchema: Schema.Codec<DuoWorkflowsWorkflowSort> = Schema.Union([
+)
+export const DuoWorkflowsWorkflowSortSchema: Schema.Schema<DuoWorkflowsWorkflowSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('STATUS_ASC'),
@@ -1104,13 +1104,13 @@ export const DuoWorkflowsWorkflowSortSchema: Schema.Codec<DuoWorkflowsWorkflowSo
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const EntryTypeSchema: Schema.Codec<EntryType> = Schema.Union([
+)
+export const EntryTypeSchema: Schema.Schema<EntryType> = Schema.Union(
   Schema.Literal('blob'),
   Schema.Literal('commit'),
   Schema.Literal('tree')
-])
-export const EpicSortSchema: Schema.Codec<EpicSort> = Schema.Union([
+)
+export const EpicSortSchema: Schema.Schema<EpicSort> = Schema.Union(
   Schema.Literal('CREATED_AT_ASC'),
   Schema.Literal('CREATED_AT_DESC'),
   Schema.Literal('END_DATE_ASC'),
@@ -1125,31 +1125,31 @@ export const EpicSortSchema: Schema.Codec<EpicSort> = Schema.Union([
   Schema.Literal('end_date_desc'),
   Schema.Literal('start_date_asc'),
   Schema.Literal('start_date_desc')
-])
-export const EpicStateSchema: Schema.Codec<EpicState> = Schema.Union([
+)
+export const EpicStateSchema: Schema.Schema<EpicState> = Schema.Union(
   Schema.Literal('all'),
   Schema.Literal('closed'),
   Schema.Literal('opened')
-])
-export const EpicStateEventSchema: Schema.Codec<EpicStateEvent> = Schema.Union([
+)
+export const EpicStateEventSchema: Schema.Schema<EpicStateEvent> = Schema.Union(
   Schema.Literal('CLOSE'),
   Schema.Literal('REOPEN')
-])
-export const EpicWildcardIdSchema: Schema.Codec<EpicWildcardId> = Schema.Union([
+)
+export const EpicWildcardIdSchema: Schema.Schema<EpicWildcardId> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('NONE')
-])
-export const ErrorTrackingStatusSchema: Schema.Codec<ErrorTrackingStatus> = Schema.Union([
+)
+export const ErrorTrackingStatusSchema: Schema.Schema<ErrorTrackingStatus> = Schema.Union(
   Schema.Literal('ERROR'),
   Schema.Literal('NOT_FOUND'),
   Schema.Literal('RETRY'),
   Schema.Literal('SUCCESS')
-])
-export const EscalationRuleStatusSchema: Schema.Codec<EscalationRuleStatus> = Schema.Union([
+)
+export const EscalationRuleStatusSchema: Schema.Schema<EscalationRuleStatus> = Schema.Union(
   Schema.Literal('ACKNOWLEDGED'),
   Schema.Literal('RESOLVED')
-])
-export const EventActionSchema: Schema.Codec<EventAction> = Schema.Union([
+)
+export const EventActionSchema: Schema.Schema<EventAction> = Schema.Union(
   Schema.Literal('APPROVED'),
   Schema.Literal('CLOSED'),
   Schema.Literal('COMMENTED'),
@@ -1162,43 +1162,43 @@ export const EventActionSchema: Schema.Codec<EventAction> = Schema.Union([
   Schema.Literal('PUSHED'),
   Schema.Literal('REOPENED'),
   Schema.Literal('UPDATED')
-])
-export const ExclusionScannerEnumSchema: Schema.Codec<ExclusionScannerEnum> = Schema.Union([
+)
+export const ExclusionScannerEnumSchema: Schema.Schema<ExclusionScannerEnum> = Schema.Union(
   Schema.Literal('SECRET_PUSH_PROTECTION')
-])
-export const ExclusionTypeEnumSchema: Schema.Codec<ExclusionTypeEnum> = Schema.Union([
+)
+export const ExclusionTypeEnumSchema: Schema.Schema<ExclusionTypeEnum> = Schema.Union(
   Schema.Literal('PATH'),
   Schema.Literal('RAW_VALUE'),
   Schema.Literal('REGEX_PATTERN'),
   Schema.Literal('RULE')
-])
-export const ExtensionsMarketplaceOptInStatusSchema: Schema.Codec<ExtensionsMarketplaceOptInStatus> = Schema.Union([
+)
+export const ExtensionsMarketplaceOptInStatusSchema: Schema.Schema<ExtensionsMarketplaceOptInStatus> = Schema.Union(
   Schema.Literal('DISABLED'),
   Schema.Literal('ENABLED'),
   Schema.Literal('UNSET')
-])
-export const FindingReportsComparerStatusSchema: Schema.Codec<FindingReportsComparerStatus> = Schema.Union([
+)
+export const FindingReportsComparerStatusSchema: Schema.Schema<FindingReportsComparerStatus> = Schema.Union(
   Schema.Literal('ERROR'),
   Schema.Literal('PARSED'),
   Schema.Literal('PARSING')
-])
-export const FlowTypeSortSchema: Schema.Codec<FlowTypeSort> = Schema.Union([
+)
+export const FlowTypeSortSchema: Schema.Schema<FlowTypeSort> = Schema.Union(
   Schema.Literal('MEDIAN_TIME_ASC'),
   Schema.Literal('MEDIAN_TIME_DESC'),
   Schema.Literal('SESSIONS_COUNT_ASC'),
   Schema.Literal('SESSIONS_COUNT_DESC'),
   Schema.Literal('USERS_COUNT_ASC'),
   Schema.Literal('USERS_COUNT_DESC')
-])
-export const GeoRegistriesBulkActionSchema: Schema.Codec<GeoRegistriesBulkAction> = Schema.Union([
+)
+export const GeoRegistriesBulkActionSchema: Schema.Schema<GeoRegistriesBulkAction> = Schema.Union(
   Schema.Literal('RESYNC_ALL'),
   Schema.Literal('REVERIFY_ALL')
-])
-export const GeoRegistryActionSchema: Schema.Codec<GeoRegistryAction> = Schema.Union([
+)
+export const GeoRegistryActionSchema: Schema.Schema<GeoRegistryAction> = Schema.Union(
   Schema.Literal('RESYNC'),
   Schema.Literal('REVERIFY')
-])
-export const GeoRegistryClassSchema: Schema.Codec<GeoRegistryClass> = Schema.Union([
+)
+export const GeoRegistryClassSchema: Schema.Schema<GeoRegistryClass> = Schema.Union(
   Schema.Literal('CI_SECURE_FILE_REGISTRY'),
   Schema.Literal('CONTAINER_REPOSITORY_REGISTRY'),
   Schema.Literal('DEPENDENCY_PROXY_BLOB_REGISTRY'),
@@ -1219,38 +1219,38 @@ export const GeoRegistryClassSchema: Schema.Codec<GeoRegistryClass> = Schema.Uni
   Schema.Literal('SUPPLY_CHAIN_ATTESTATION_REGISTRY'),
   Schema.Literal('TERRAFORM_STATE_VERSION_REGISTRY'),
   Schema.Literal('UPLOAD_REGISTRY')
-])
-export const GeoRegistrySortSchema: Schema.Codec<GeoRegistrySort> = Schema.Union([
+)
+export const GeoRegistrySortSchema: Schema.Schema<GeoRegistrySort> = Schema.Union(
   Schema.Literal('ID_ASC'),
   Schema.Literal('ID_DESC'),
   Schema.Literal('LAST_SYNCED_AT_ASC'),
   Schema.Literal('LAST_SYNCED_AT_DESC'),
   Schema.Literal('VERIFIED_AT_ASC'),
   Schema.Literal('VERIFIED_AT_DESC')
-])
-export const GitlabSubscriptionsAddOnTypeSchema: Schema.Codec<GitlabSubscriptionsAddOnType> = Schema.Union([
+)
+export const GitlabSubscriptionsAddOnTypeSchema: Schema.Schema<GitlabSubscriptionsAddOnType> = Schema.Union(
   Schema.Literal('CODE_SUGGESTIONS'),
   Schema.Literal('DUO_AMAZON_Q'),
   Schema.Literal('DUO_CORE'),
   Schema.Literal('DUO_ENTERPRISE')
-])
-export const GitlabSubscriptionsUserRoleSchema: Schema.Codec<GitlabSubscriptionsUserRole> = Schema.Union([
+)
+export const GitlabSubscriptionsUserRoleSchema: Schema.Schema<GitlabSubscriptionsUserRole> = Schema.Union(
   Schema.Literal('DEVELOPER'),
   Schema.Literal('GUEST'),
   Schema.Literal('MAINTAINER'),
   Schema.Literal('OWNER'),
   Schema.Literal('PLANNER'),
   Schema.Literal('REPORTER')
-])
-export const GitlabSubscriptionsUserSortSchema: Schema.Codec<GitlabSubscriptionsUserSort> = Schema.Union([
+)
+export const GitlabSubscriptionsUserSortSchema: Schema.Schema<GitlabSubscriptionsUserSort> = Schema.Union(
   Schema.Literal('ID_ASC'),
   Schema.Literal('ID_DESC'),
   Schema.Literal('LAST_ACTIVITY_ON_ASC'),
   Schema.Literal('LAST_ACTIVITY_ON_DESC'),
   Schema.Literal('NAME_ASC'),
   Schema.Literal('NAME_DESC')
-])
-export const GoogleCloudArtifactRegistryArtifactsSortSchema: Schema.Codec<GoogleCloudArtifactRegistryArtifactsSort> = Schema.Union([
+)
+export const GoogleCloudArtifactRegistryArtifactsSortSchema: Schema.Schema<GoogleCloudArtifactRegistryArtifactsSort> = Schema.Union(
   Schema.Literal('BUILD_TIME_ASC'),
   Schema.Literal('BUILD_TIME_DESC'),
   Schema.Literal('IMAGE_SIZE_BYTES_ASC'),
@@ -1263,28 +1263,28 @@ export const GoogleCloudArtifactRegistryArtifactsSortSchema: Schema.Codec<Google
   Schema.Literal('UPDATE_TIME_DESC'),
   Schema.Literal('UPLOAD_TIME_ASC'),
   Schema.Literal('UPLOAD_TIME_DESC')
-])
-export const GroupMemberRelationSchema: Schema.Codec<GroupMemberRelation> = Schema.Union([
+)
+export const GroupMemberRelationSchema: Schema.Schema<GroupMemberRelation> = Schema.Union(
   Schema.Literal('DESCENDANTS'),
   Schema.Literal('DIRECT'),
   Schema.Literal('INHERITED'),
   Schema.Literal('SHARED_FROM_GROUPS')
-])
-export const GroupPermissionSchema: Schema.Codec<GroupPermission> = Schema.Union([
+)
+export const GroupPermissionSchema: Schema.Schema<GroupPermission> = Schema.Union(
   Schema.Literal('CREATE_PROJECTS'),
   Schema.Literal('IMPORT_PROJECTS'),
   Schema.Literal('TRANSFER_PROJECTS')
-])
-export const GroupReleaseSortSchema: Schema.Codec<GroupReleaseSort> = Schema.Union([
+)
+export const GroupReleaseSortSchema: Schema.Schema<GroupReleaseSort> = Schema.Union(
   Schema.Literal('RELEASED_AT_ASC'),
   Schema.Literal('RELEASED_AT_DESC')
-])
-export const GroupSecretsManagerStatusSchema: Schema.Codec<GroupSecretsManagerStatus> = Schema.Union([
+)
+export const GroupSecretsManagerStatusSchema: Schema.Schema<GroupSecretsManagerStatus> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('DEPROVISIONING'),
   Schema.Literal('PROVISIONING')
-])
-export const GroupSortSchema: Schema.Codec<GroupSort> = Schema.Union([
+)
+export const GroupSortSchema: Schema.Schema<GroupSort> = Schema.Union(
   Schema.Literal('CREATED_AT_ASC'),
   Schema.Literal('CREATED_AT_DESC'),
   Schema.Literal('ID_ASC'),
@@ -1296,24 +1296,24 @@ export const GroupSortSchema: Schema.Codec<GroupSort> = Schema.Union([
   Schema.Literal('SIMILARITY'),
   Schema.Literal('UPDATED_AT_ASC'),
   Schema.Literal('UPDATED_AT_DESC')
-])
-export const GroupingEnumSchema: Schema.Codec<GroupingEnum> = Schema.Union([
+)
+export const GroupingEnumSchema: Schema.Schema<GroupingEnum> = Schema.Union(
   Schema.Literal('INSTANCE_AGGREGATE'),
   Schema.Literal('PER_ROOT_NAMESPACE')
-])
-export const HealthStatusSchema: Schema.Codec<HealthStatus> = Schema.Union([
+)
+export const HealthStatusSchema: Schema.Schema<HealthStatus> = Schema.Union(
   Schema.Literal('atRisk'),
   Schema.Literal('needsAttention'),
   Schema.Literal('onTrack')
-])
-export const HealthStatusFilterSchema: Schema.Codec<HealthStatusFilter> = Schema.Union([
+)
+export const HealthStatusFilterSchema: Schema.Schema<HealthStatusFilter> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('NONE'),
   Schema.Literal('atRisk'),
   Schema.Literal('needsAttention'),
   Schema.Literal('onTrack')
-])
-export const ImportSourceSchema: Schema.Codec<ImportSource> = Schema.Union([
+)
+export const ImportSourceSchema: Schema.Schema<ImportSource> = Schema.Union(
   Schema.Literal('BITBUCKET'),
   Schema.Literal('BITBUCKET_SERVER'),
   Schema.Literal('CUSTOM_TEMPLATE'),
@@ -1327,8 +1327,8 @@ export const ImportSourceSchema: Schema.Codec<ImportSource> = Schema.Union([
   Schema.Literal('JIRA'),
   Schema.Literal('MANIFEST'),
   Schema.Literal('NONE')
-])
-export const ImportSourceUserStatusSchema: Schema.Codec<ImportSourceUserStatus> = Schema.Union([
+)
+export const ImportSourceUserStatusSchema: Schema.Schema<ImportSourceUserStatus> = Schema.Union(
   Schema.Literal('AWAITING_APPROVAL'),
   Schema.Literal('COMPLETED'),
   Schema.Literal('FAILED'),
@@ -1336,43 +1336,43 @@ export const ImportSourceUserStatusSchema: Schema.Codec<ImportSourceUserStatus> 
   Schema.Literal('PENDING_REASSIGNMENT'),
   Schema.Literal('REASSIGNMENT_IN_PROGRESS'),
   Schema.Literal('REJECTED')
-])
-export const IntegrationTypeSchema: Schema.Codec<IntegrationType> = Schema.Union([
+)
+export const IntegrationTypeSchema: Schema.Schema<IntegrationType> = Schema.Union(
   Schema.Literal('BEYOND_IDENTITY')
-])
-export const IssuableResourceLinkTypeSchema: Schema.Codec<IssuableResourceLinkType> = Schema.Union([
+)
+export const IssuableResourceLinkTypeSchema: Schema.Schema<IssuableResourceLinkType> = Schema.Union(
   Schema.Literal('general'),
   Schema.Literal('pagerduty'),
   Schema.Literal('slack'),
   Schema.Literal('zoom')
-])
-export const IssuableSearchableFieldSchema: Schema.Codec<IssuableSearchableField> = Schema.Union([
+)
+export const IssuableSearchableFieldSchema: Schema.Schema<IssuableSearchableField> = Schema.Union(
   Schema.Literal('DESCRIPTION'),
   Schema.Literal('TITLE')
-])
-export const IssuableSeveritySchema: Schema.Codec<IssuableSeverity> = Schema.Union([
+)
+export const IssuableSeveritySchema: Schema.Schema<IssuableSeverity> = Schema.Union(
   Schema.Literal('CRITICAL'),
   Schema.Literal('HIGH'),
   Schema.Literal('LOW'),
   Schema.Literal('MEDIUM'),
   Schema.Literal('UNKNOWN')
-])
-export const IssuableStateSchema: Schema.Codec<IssuableState> = Schema.Union([
+)
+export const IssuableStateSchema: Schema.Schema<IssuableState> = Schema.Union(
   Schema.Literal('all'),
   Schema.Literal('closed'),
   Schema.Literal('locked'),
   Schema.Literal('opened')
-])
-export const IssueCreationIterationWildcardIdSchema: Schema.Codec<IssueCreationIterationWildcardId> = Schema.Union([
+)
+export const IssueCreationIterationWildcardIdSchema: Schema.Schema<IssueCreationIterationWildcardId> = Schema.Union(
   Schema.Literal('CURRENT')
-])
-export const IssueEscalationStatusSchema: Schema.Codec<IssueEscalationStatus> = Schema.Union([
+)
+export const IssueEscalationStatusSchema: Schema.Schema<IssueEscalationStatus> = Schema.Union(
   Schema.Literal('ACKNOWLEDGED'),
   Schema.Literal('IGNORED'),
   Schema.Literal('RESOLVED'),
   Schema.Literal('TRIGGERED')
-])
-export const IssueSortSchema: Schema.Codec<IssueSort> = Schema.Union([
+)
+export const IssueSortSchema: Schema.Schema<IssueSort> = Schema.Union(
   Schema.Literal('BLOCKING_ISSUES_ASC'),
   Schema.Literal('BLOCKING_ISSUES_DESC'),
   Schema.Literal('CLOSED_AT_ASC'),
@@ -1412,18 +1412,18 @@ export const IssueSortSchema: Schema.Codec<IssueSort> = Schema.Union([
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const IssueStateSchema: Schema.Codec<IssueState> = Schema.Union([
+)
+export const IssueStateSchema: Schema.Schema<IssueState> = Schema.Union(
   Schema.Literal('all'),
   Schema.Literal('closed'),
   Schema.Literal('locked'),
   Schema.Literal('opened')
-])
-export const IssueStateEventSchema: Schema.Codec<IssueStateEvent> = Schema.Union([
+)
+export const IssueStateEventSchema: Schema.Schema<IssueStateEvent> = Schema.Union(
   Schema.Literal('CLOSE'),
   Schema.Literal('REOPEN')
-])
-export const IssueTypeSchema: Schema.Codec<IssueType> = Schema.Union([
+)
+export const IssueTypeSchema: Schema.Schema<IssueType> = Schema.Union(
   Schema.Literal('EPIC'),
   Schema.Literal('INCIDENT'),
   Schema.Literal('ISSUE'),
@@ -1433,28 +1433,28 @@ export const IssueTypeSchema: Schema.Codec<IssueType> = Schema.Union([
   Schema.Literal('TASK'),
   Schema.Literal('TEST_CASE'),
   Schema.Literal('TICKET')
-])
-export const IterationSearchableFieldSchema: Schema.Codec<IterationSearchableField> = Schema.Union([
+)
+export const IterationSearchableFieldSchema: Schema.Schema<IterationSearchableField> = Schema.Union(
   Schema.Literal('CADENCE_TITLE'),
   Schema.Literal('TITLE')
-])
-export const IterationSortSchema: Schema.Codec<IterationSort> = Schema.Union([
+)
+export const IterationSortSchema: Schema.Schema<IterationSort> = Schema.Union(
   Schema.Literal('CADENCE_AND_DUE_DATE_ASC'),
   Schema.Literal('CADENCE_AND_DUE_DATE_DESC')
-])
-export const IterationStateSchema: Schema.Codec<IterationState> = Schema.Union([
+)
+export const IterationStateSchema: Schema.Schema<IterationState> = Schema.Union(
   Schema.Literal('all'),
   Schema.Literal('closed'),
   Schema.Literal('current'),
   Schema.Literal('opened'),
   Schema.Literal('upcoming')
-])
-export const IterationWildcardIdSchema: Schema.Codec<IterationWildcardId> = Schema.Union([
+)
+export const IterationWildcardIdSchema: Schema.Schema<IterationWildcardId> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('CURRENT'),
   Schema.Literal('NONE')
-])
-export const JobArtifactFileTypeSchema: Schema.Codec<JobArtifactFileType> = Schema.Union([
+)
+export const JobArtifactFileTypeSchema: Schema.Schema<JobArtifactFileType> = Schema.Union(
   Schema.Literal('ACCESSIBILITY'),
   Schema.Literal('ANNOTATIONS'),
   Schema.Literal('API_FUZZING'),
@@ -1488,24 +1488,24 @@ export const JobArtifactFileTypeSchema: Schema.Codec<JobArtifactFileType> = Sche
   Schema.Literal('SECRET_DETECTION'),
   Schema.Literal('TERRAFORM'),
   Schema.Literal('TRACE')
-])
-export const LabelSearchFieldListSchema: Schema.Codec<LabelSearchFieldList> = Schema.Union([
+)
+export const LabelSearchFieldListSchema: Schema.Schema<LabelSearchFieldList> = Schema.Union(
   Schema.Literal('DESCRIPTION'),
   Schema.Literal('TITLE')
-])
-export const LdapAdminRoleSyncStatusSchema: Schema.Codec<LdapAdminRoleSyncStatus> = Schema.Union([
+)
+export const LdapAdminRoleSyncStatusSchema: Schema.Schema<LdapAdminRoleSyncStatus> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('NEVER_SYNCED'),
   Schema.Literal('QUEUED'),
   Schema.Literal('RUNNING'),
   Schema.Literal('SUCCESSFUL')
-])
-export const ListLimitMetricSchema: Schema.Codec<ListLimitMetric> = Schema.Union([
+)
+export const ListLimitMetricSchema: Schema.Schema<ListLimitMetric> = Schema.Union(
   Schema.Literal('all_metrics'),
   Schema.Literal('issue_count'),
   Schema.Literal('issue_weights')
-])
-export const MeasurementIdentifierSchema: Schema.Codec<MeasurementIdentifier> = Schema.Union([
+)
+export const MeasurementIdentifierSchema: Schema.Schema<MeasurementIdentifier> = Schema.Union(
   Schema.Literal('GROUPS'),
   Schema.Literal('ISSUES'),
   Schema.Literal('MERGE_REQUESTS'),
@@ -1516,8 +1516,8 @@ export const MeasurementIdentifierSchema: Schema.Codec<MeasurementIdentifier> = 
   Schema.Literal('PIPELINES_SUCCEEDED'),
   Schema.Literal('PROJECTS'),
   Schema.Literal('USERS')
-])
-export const MemberAccessLevelSchema: Schema.Codec<MemberAccessLevel> = Schema.Union([
+)
+export const MemberAccessLevelSchema: Schema.Schema<MemberAccessLevel> = Schema.Union(
   Schema.Literal('DEVELOPER'),
   Schema.Literal('GUEST'),
   Schema.Literal('MAINTAINER'),
@@ -1525,29 +1525,29 @@ export const MemberAccessLevelSchema: Schema.Codec<MemberAccessLevel> = Schema.U
   Schema.Literal('OWNER'),
   Schema.Literal('PLANNER'),
   Schema.Literal('REPORTER')
-])
-export const MemberAccessLevelNameSchema: Schema.Codec<MemberAccessLevelName> = Schema.Union([
+)
+export const MemberAccessLevelNameSchema: Schema.Schema<MemberAccessLevelName> = Schema.Union(
   Schema.Literal('DEVELOPER'),
   Schema.Literal('GUEST'),
   Schema.Literal('MAINTAINER'),
   Schema.Literal('OWNER'),
   Schema.Literal('PLANNER'),
   Schema.Literal('REPORTER')
-])
-export const MemberApprovalStatusTypeSchema: Schema.Codec<MemberApprovalStatusType> = Schema.Union([
+)
+export const MemberApprovalStatusTypeSchema: Schema.Schema<MemberApprovalStatusType> = Schema.Union(
   Schema.Literal('APPROVED'),
   Schema.Literal('DENIED'),
   Schema.Literal('PENDING')
-])
-export const MemberRoleAdminPermissionSchema: Schema.Codec<MemberRoleAdminPermission> = Schema.Union([
+)
+export const MemberRoleAdminPermissionSchema: Schema.Schema<MemberRoleAdminPermission> = Schema.Union(
   Schema.Literal('READ_ADMIN_CICD'),
   Schema.Literal('READ_ADMIN_GROUPS'),
   Schema.Literal('READ_ADMIN_MONITORING'),
   Schema.Literal('READ_ADMIN_PROJECTS'),
   Schema.Literal('READ_ADMIN_SUBSCRIPTION'),
   Schema.Literal('READ_ADMIN_USERS')
-])
-export const MemberRolePermissionSchema: Schema.Codec<MemberRolePermission> = Schema.Union([
+)
+export const MemberRolePermissionSchema: Schema.Schema<MemberRolePermission> = Schema.Union(
   Schema.Literal('ADMIN_CICD_VARIABLES'),
   Schema.Literal('ADMIN_COMPLIANCE_FRAMEWORK'),
   Schema.Literal('ADMIN_GROUP_MEMBER'),
@@ -1586,8 +1586,8 @@ export const MemberRolePermissionSchema: Schema.Codec<MemberRolePermission> = Sc
   Schema.Literal('READ_VULNERABILITY'),
   Schema.Literal('REMOVE_GROUP'),
   Schema.Literal('REMOVE_PROJECT')
-])
-export const MemberRoleStandardPermissionSchema: Schema.Codec<MemberRoleStandardPermission> = Schema.Union([
+)
+export const MemberRoleStandardPermissionSchema: Schema.Schema<MemberRoleStandardPermission> = Schema.Union(
   Schema.Literal('ADMIN_CICD_VARIABLES'),
   Schema.Literal('ADMIN_COMPLIANCE_FRAMEWORK'),
   Schema.Literal('ADMIN_GROUP_MEMBER'),
@@ -1620,21 +1620,21 @@ export const MemberRoleStandardPermissionSchema: Schema.Codec<MemberRoleStandard
   Schema.Literal('READ_VULNERABILITY'),
   Schema.Literal('REMOVE_GROUP'),
   Schema.Literal('REMOVE_PROJECT')
-])
-export const MemberRolesAccessLevelSchema: Schema.Codec<MemberRolesAccessLevel> = Schema.Union([
+)
+export const MemberRolesAccessLevelSchema: Schema.Schema<MemberRolesAccessLevel> = Schema.Union(
   Schema.Literal('DEVELOPER'),
   Schema.Literal('GUEST'),
   Schema.Literal('MAINTAINER'),
   Schema.Literal('MINIMAL_ACCESS'),
   Schema.Literal('PLANNER'),
   Schema.Literal('REPORTER')
-])
-export const MemberRolesOrderBySchema: Schema.Codec<MemberRolesOrderBy> = Schema.Union([
+)
+export const MemberRolesOrderBySchema: Schema.Schema<MemberRolesOrderBy> = Schema.Union(
   Schema.Literal('CREATED_AT'),
   Schema.Literal('ID'),
   Schema.Literal('NAME')
-])
-export const MemberSortSchema: Schema.Codec<MemberSort> = Schema.Union([
+)
+export const MemberSortSchema: Schema.Schema<MemberSort> = Schema.Union(
   Schema.Literal('ACCESS_LEVEL_ASC'),
   Schema.Literal('ACCESS_LEVEL_DESC'),
   Schema.Literal('CREATED_ASC'),
@@ -1647,20 +1647,20 @@ export const MemberSortSchema: Schema.Codec<MemberSort> = Schema.Union([
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const MergeRequestNewStateSchema: Schema.Codec<MergeRequestNewState> = Schema.Union([
+)
+export const MergeRequestNewStateSchema: Schema.Schema<MergeRequestNewState> = Schema.Union(
   Schema.Literal('CLOSED'),
   Schema.Literal('OPEN')
-])
-export const MergeRequestReviewStateSchema: Schema.Codec<MergeRequestReviewState> = Schema.Union([
+)
+export const MergeRequestReviewStateSchema: Schema.Schema<MergeRequestReviewState> = Schema.Union(
   Schema.Literal('APPROVED'),
   Schema.Literal('REQUESTED_CHANGES'),
   Schema.Literal('REVIEWED'),
   Schema.Literal('REVIEW_STARTED'),
   Schema.Literal('UNAPPROVED'),
   Schema.Literal('UNREVIEWED')
-])
-export const MergeRequestSortSchema: Schema.Codec<MergeRequestSort> = Schema.Union([
+)
+export const MergeRequestSortSchema: Schema.Schema<MergeRequestSort> = Schema.Union(
   Schema.Literal('CLOSED_AT_ASC'),
   Schema.Literal('CLOSED_AT_DESC'),
   Schema.Literal('CREATED_ASC'),
@@ -1683,35 +1683,35 @@ export const MergeRequestSortSchema: Schema.Codec<MergeRequestSort> = Schema.Uni
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const MergeRequestStateSchema: Schema.Codec<MergeRequestState> = Schema.Union([
+)
+export const MergeRequestStateSchema: Schema.Schema<MergeRequestState> = Schema.Union(
   Schema.Literal('all'),
   Schema.Literal('closed'),
   Schema.Literal('locked'),
   Schema.Literal('merged'),
   Schema.Literal('opened')
-])
-export const MergeRequestsDashboardListTypeSchema: Schema.Codec<MergeRequestsDashboardListType> = Schema.Union([
+)
+export const MergeRequestsDashboardListTypeSchema: Schema.Schema<MergeRequestsDashboardListType> = Schema.Union(
   Schema.Literal('ACTION_BASED'),
   Schema.Literal('ROLE_BASED')
-])
-export const MergeStatusSchema: Schema.Codec<MergeStatus> = Schema.Union([
+)
+export const MergeStatusSchema: Schema.Schema<MergeStatus> = Schema.Union(
   Schema.Literal('CANNOT_BE_MERGED'),
   Schema.Literal('CANNOT_BE_MERGED_RECHECK'),
   Schema.Literal('CAN_BE_MERGED'),
   Schema.Literal('CHECKING'),
   Schema.Literal('UNCHECKED')
-])
-export const MergeStrategyEnumSchema: Schema.Codec<MergeStrategyEnum> = Schema.Union([
+)
+export const MergeStrategyEnumSchema: Schema.Schema<MergeStrategyEnum> = Schema.Union(
   Schema.Literal('ADD_TO_MERGE_TRAIN_WHEN_CHECKS_PASS'),
   Schema.Literal('MERGE_TRAIN'),
   Schema.Literal('MERGE_WHEN_CHECKS_PASS')
-])
-export const MergeTrainStatusSchema: Schema.Codec<MergeTrainStatus> = Schema.Union([
+)
+export const MergeTrainStatusSchema: Schema.Schema<MergeTrainStatus> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('COMPLETED')
-])
-export const MergeabilityCheckIdentifierSchema: Schema.Codec<MergeabilityCheckIdentifier> = Schema.Union([
+)
+export const MergeabilityCheckIdentifierSchema: Schema.Schema<MergeabilityCheckIdentifier> = Schema.Union(
   Schema.Literal('CI_MUST_PASS'),
   Schema.Literal('COMMITS_STATUS'),
   Schema.Literal('CONFLICT'),
@@ -1729,15 +1729,15 @@ export const MergeabilityCheckIdentifierSchema: Schema.Codec<MergeabilityCheckId
   Schema.Literal('SECURITY_POLICY_VIOLATIONS'),
   Schema.Literal('STATUS_CHECKS_MUST_PASS'),
   Schema.Literal('TITLE_REGEX')
-])
-export const MergeabilityCheckStatusSchema: Schema.Codec<MergeabilityCheckStatus> = Schema.Union([
+)
+export const MergeabilityCheckStatusSchema: Schema.Schema<MergeabilityCheckStatus> = Schema.Union(
   Schema.Literal('CHECKING'),
   Schema.Literal('FAILED'),
   Schema.Literal('INACTIVE'),
   Schema.Literal('SUCCESS'),
   Schema.Literal('WARNING')
-])
-export const MilestoneSortSchema: Schema.Codec<MilestoneSort> = Schema.Union([
+)
+export const MilestoneSortSchema: Schema.Schema<MilestoneSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('DUE_DATE_ASC'),
@@ -1750,44 +1750,44 @@ export const MilestoneSortSchema: Schema.Codec<MilestoneSort> = Schema.Union([
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const MilestoneStateEnumSchema: Schema.Codec<MilestoneStateEnum> = Schema.Union([
+)
+export const MilestoneStateEnumSchema: Schema.Schema<MilestoneStateEnum> = Schema.Union(
   Schema.Literal('active'),
   Schema.Literal('closed')
-])
-export const MilestoneWildcardIdSchema: Schema.Codec<MilestoneWildcardId> = Schema.Union([
+)
+export const MilestoneWildcardIdSchema: Schema.Schema<MilestoneWildcardId> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('NONE'),
   Schema.Literal('STARTED'),
   Schema.Literal('UPCOMING')
-])
-export const MlModelVersionsOrderBySchema: Schema.Codec<MlModelVersionsOrderBy> = Schema.Union([
+)
+export const MlModelVersionsOrderBySchema: Schema.Schema<MlModelVersionsOrderBy> = Schema.Union(
   Schema.Literal('CREATED_AT'),
   Schema.Literal('ID'),
   Schema.Literal('VERSION')
-])
-export const MlModelsOrderBySchema: Schema.Codec<MlModelsOrderBy> = Schema.Union([
+)
+export const MlModelsOrderBySchema: Schema.Schema<MlModelsOrderBy> = Schema.Union(
   Schema.Literal('CREATED_AT'),
   Schema.Literal('ID'),
   Schema.Literal('NAME'),
   Schema.Literal('UPDATED_AT')
-])
-export const MoveTypeSchema: Schema.Codec<MoveType> = Schema.Union([
+)
+export const MoveTypeSchema: Schema.Schema<MoveType> = Schema.Union(
   Schema.Literal('after'),
   Schema.Literal('before')
-])
-export const MutationOperationModeSchema: Schema.Codec<MutationOperationMode> = Schema.Union([
+)
+export const MutationOperationModeSchema: Schema.Schema<MutationOperationMode> = Schema.Union(
   Schema.Literal('APPEND'),
   Schema.Literal('REMOVE'),
   Schema.Literal('REPLACE')
-])
-export const NamespaceClusterAgentFilterSchema: Schema.Codec<NamespaceClusterAgentFilter> = Schema.Union([
+)
+export const NamespaceClusterAgentFilterSchema: Schema.Schema<NamespaceClusterAgentFilter> = Schema.Union(
   Schema.Literal('ALL'),
   Schema.Literal('AVAILABLE'),
   Schema.Literal('DIRECTLY_MAPPED'),
   Schema.Literal('UNMAPPED')
-])
-export const NamespaceProjectSortSchema: Schema.Codec<NamespaceProjectSort> = Schema.Union([
+)
+export const NamespaceProjectSortSchema: Schema.Schema<NamespaceProjectSort> = Schema.Union(
   Schema.Literal('ACTIVITY_DESC'),
   Schema.Literal('BUILD_ARTIFACTS_SIZE_ASC'),
   Schema.Literal('BUILD_ARTIFACTS_SIZE_DESC'),
@@ -1811,39 +1811,39 @@ export const NamespaceProjectSortSchema: Schema.Codec<NamespaceProjectSort> = Sc
   Schema.Literal('STORAGE_SIZE_DESC'),
   Schema.Literal('WIKI_SIZE_ASC'),
   Schema.Literal('WIKI_SIZE_DESC')
-])
-export const NegatedIterationWildcardIdSchema: Schema.Codec<NegatedIterationWildcardId> = Schema.Union([
+)
+export const NegatedIterationWildcardIdSchema: Schema.Schema<NegatedIterationWildcardId> = Schema.Union(
   Schema.Literal('CURRENT')
-])
-export const NegatedMilestoneWildcardIdSchema: Schema.Codec<NegatedMilestoneWildcardId> = Schema.Union([
+)
+export const NegatedMilestoneWildcardIdSchema: Schema.Schema<NegatedMilestoneWildcardId> = Schema.Union(
   Schema.Literal('STARTED'),
   Schema.Literal('UPCOMING')
-])
-export const NotesFilterTypeSchema: Schema.Codec<NotesFilterType> = Schema.Union([
+)
+export const NotesFilterTypeSchema: Schema.Schema<NotesFilterType> = Schema.Union(
   Schema.Literal('ALL_NOTES'),
   Schema.Literal('ONLY_ACTIVITY'),
   Schema.Literal('ONLY_COMMENTS')
-])
-export const OncallRotationUnitEnumSchema: Schema.Codec<OncallRotationUnitEnum> = Schema.Union([
+)
+export const OncallRotationUnitEnumSchema: Schema.Schema<OncallRotationUnitEnum> = Schema.Union(
   Schema.Literal('DAYS'),
   Schema.Literal('HOURS'),
   Schema.Literal('WEEKS')
-])
-export const OpenTelemetryMetricTypeSchema: Schema.Codec<OpenTelemetryMetricType> = Schema.Union([
+)
+export const OpenTelemetryMetricTypeSchema: Schema.Schema<OpenTelemetryMetricType> = Schema.Union(
   Schema.Literal('EXPONENTIAL_HISTOGRAM_TYPE'),
   Schema.Literal('GAUGE_TYPE'),
   Schema.Literal('HISTOGRAM_TYPE'),
   Schema.Literal('SUM_TYPE')
-])
-export const OrganizationClusterAgentFilterSchema: Schema.Codec<OrganizationClusterAgentFilter> = Schema.Union([
+)
+export const OrganizationClusterAgentFilterSchema: Schema.Schema<OrganizationClusterAgentFilter> = Schema.Union(
   Schema.Literal('ALL'),
   Schema.Literal('DIRECTLY_MAPPED')
-])
-export const OrganizationGroupProjectDisplaySchema: Schema.Codec<OrganizationGroupProjectDisplay> = Schema.Union([
+)
+export const OrganizationGroupProjectDisplaySchema: Schema.Schema<OrganizationGroupProjectDisplay> = Schema.Union(
   Schema.Literal('GROUPS'),
   Schema.Literal('PROJECTS')
-])
-export const OrganizationGroupProjectSortSchema: Schema.Codec<OrganizationGroupProjectSort> = Schema.Union([
+)
+export const OrganizationGroupProjectSortSchema: Schema.Schema<OrganizationGroupProjectSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('NAME_ASC'),
@@ -1854,8 +1854,8 @@ export const OrganizationGroupProjectSortSchema: Schema.Codec<OrganizationGroupP
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const OrganizationSortSchema: Schema.Codec<OrganizationSort> = Schema.Union([
+)
+export const OrganizationSortSchema: Schema.Schema<OrganizationSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('DEFAULT_RATE_ASC'),
@@ -1870,18 +1870,18 @@ export const OrganizationSortSchema: Schema.Codec<OrganizationSort> = Schema.Uni
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const OrganizationUserAccessLevelSchema: Schema.Codec<OrganizationUserAccessLevel> = Schema.Union([
+)
+export const OrganizationUserAccessLevelSchema: Schema.Schema<OrganizationUserAccessLevel> = Schema.Union(
   Schema.Literal('DEFAULT'),
   Schema.Literal('OWNER')
-])
-export const PackageDependencyTypeSchema: Schema.Codec<PackageDependencyType> = Schema.Union([
+)
+export const PackageDependencyTypeSchema: Schema.Schema<PackageDependencyType> = Schema.Union(
   Schema.Literal('BUNDLE_DEPENDENCIES'),
   Schema.Literal('DEPENDENCIES'),
   Schema.Literal('DEV_DEPENDENCIES'),
   Schema.Literal('PEER_DEPENDENCIES')
-])
-export const PackageGroupSortSchema: Schema.Codec<PackageGroupSort> = Schema.Union([
+)
+export const PackageGroupSortSchema: Schema.Schema<PackageGroupSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('NAME_ASC'),
@@ -1892,8 +1892,8 @@ export const PackageGroupSortSchema: Schema.Codec<PackageGroupSort> = Schema.Uni
   Schema.Literal('TYPE_DESC'),
   Schema.Literal('VERSION_ASC'),
   Schema.Literal('VERSION_DESC')
-])
-export const PackageManagerSchema: Schema.Codec<PackageManager> = Schema.Union([
+)
+export const PackageManagerSchema: Schema.Schema<PackageManager> = Schema.Union(
   Schema.Literal('APK'),
   Schema.Literal('BUNDLER'),
   Schema.Literal('CARGO'),
@@ -1913,8 +1913,8 @@ export const PackageManagerSchema: Schema.Codec<PackageManager> = Schema.Union([
   Schema.Literal('SBT'),
   Schema.Literal('SETUPTOOLS'),
   Schema.Literal('YARN')
-])
-export const PackageSortSchema: Schema.Codec<PackageSort> = Schema.Union([
+)
+export const PackageSortSchema: Schema.Schema<PackageSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('NAME_ASC'),
@@ -1923,16 +1923,16 @@ export const PackageSortSchema: Schema.Codec<PackageSort> = Schema.Union([
   Schema.Literal('TYPE_DESC'),
   Schema.Literal('VERSION_ASC'),
   Schema.Literal('VERSION_DESC')
-])
-export const PackageStatusSchema: Schema.Codec<PackageStatus> = Schema.Union([
+)
+export const PackageStatusSchema: Schema.Schema<PackageStatus> = Schema.Union(
   Schema.Literal('DEFAULT'),
   Schema.Literal('DEPRECATED'),
   Schema.Literal('ERROR'),
   Schema.Literal('HIDDEN'),
   Schema.Literal('PENDING_DESTRUCTION'),
   Schema.Literal('PROCESSING')
-])
-export const PackageTypeEnumSchema: Schema.Codec<PackageTypeEnum> = Schema.Union([
+)
+export const PackageTypeEnumSchema: Schema.Schema<PackageTypeEnum> = Schema.Union(
   Schema.Literal('CARGO'),
   Schema.Literal('COMPOSER'),
   Schema.Literal('CONAN'),
@@ -1948,8 +1948,8 @@ export const PackageTypeEnumSchema: Schema.Codec<PackageTypeEnum> = Schema.Union
   Schema.Literal('RPM'),
   Schema.Literal('RUBYGEMS'),
   Schema.Literal('TERRAFORM_MODULE')
-])
-export const PackagesCleanupKeepDuplicatedPackageFilesEnumSchema: Schema.Codec<PackagesCleanupKeepDuplicatedPackageFilesEnum> = Schema.Union([
+)
+export const PackagesCleanupKeepDuplicatedPackageFilesEnumSchema: Schema.Schema<PackagesCleanupKeepDuplicatedPackageFilesEnum> = Schema.Union(
   Schema.Literal('ALL_PACKAGE_FILES'),
   Schema.Literal('FIFTY_PACKAGE_FILES'),
   Schema.Literal('FORTY_PACKAGE_FILES'),
@@ -1957,17 +1957,17 @@ export const PackagesCleanupKeepDuplicatedPackageFilesEnumSchema: Schema.Codec<P
   Schema.Literal('TEN_PACKAGE_FILES'),
   Schema.Literal('THIRTY_PACKAGE_FILES'),
   Schema.Literal('TWENTY_PACKAGE_FILES')
-])
-export const PackagesProtectionRuleAccessLevelSchema: Schema.Codec<PackagesProtectionRuleAccessLevel> = Schema.Union([
+)
+export const PackagesProtectionRuleAccessLevelSchema: Schema.Schema<PackagesProtectionRuleAccessLevel> = Schema.Union(
   Schema.Literal('ADMIN'),
   Schema.Literal('MAINTAINER'),
   Schema.Literal('OWNER')
-])
-export const PackagesProtectionRuleAccessLevelForDeleteSchema: Schema.Codec<PackagesProtectionRuleAccessLevelForDelete> = Schema.Union([
+)
+export const PackagesProtectionRuleAccessLevelForDeleteSchema: Schema.Schema<PackagesProtectionRuleAccessLevelForDelete> = Schema.Union(
   Schema.Literal('ADMIN'),
   Schema.Literal('OWNER')
-])
-export const PackagesProtectionRulePackageTypeSchema: Schema.Codec<PackagesProtectionRulePackageType> = Schema.Union([
+)
+export const PackagesProtectionRulePackageTypeSchema: Schema.Schema<PackagesProtectionRulePackageType> = Schema.Union(
   Schema.Literal('CONAN'),
   Schema.Literal('GENERIC'),
   Schema.Literal('HELM'),
@@ -1975,20 +1975,20 @@ export const PackagesProtectionRulePackageTypeSchema: Schema.Codec<PackagesProte
   Schema.Literal('NPM'),
   Schema.Literal('NUGET'),
   Schema.Literal('PYPI')
-])
-export const PermissionBoundarySchema: Schema.Codec<PermissionBoundary> = Schema.Union([
+)
+export const PermissionBoundarySchema: Schema.Schema<PermissionBoundary> = Schema.Union(
   Schema.Literal('GROUP'),
   Schema.Literal('INSTANCE'),
   Schema.Literal('PROJECT'),
   Schema.Literal('USER')
-])
-export const PipelineAnalyticsJobStatusSchema: Schema.Codec<PipelineAnalyticsJobStatus> = Schema.Union([
+)
+export const PipelineAnalyticsJobStatusSchema: Schema.Schema<PipelineAnalyticsJobStatus> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('FAILED'),
   Schema.Literal('OTHER'),
   Schema.Literal('SUCCESS')
-])
-export const PipelineConfigSourceEnumSchema: Schema.Codec<PipelineConfigSourceEnum> = Schema.Union([
+)
+export const PipelineConfigSourceEnumSchema: Schema.Schema<PipelineConfigSourceEnum> = Schema.Union(
   Schema.Literal('AUTO_DEVOPS_SOURCE'),
   Schema.Literal('BRIDGE_SOURCE'),
   Schema.Literal('COMPLIANCE_SOURCE'),
@@ -2000,13 +2000,13 @@ export const PipelineConfigSourceEnumSchema: Schema.Codec<PipelineConfigSourceEn
   Schema.Literal('SECURITY_POLICIES_DEFAULT_SOURCE'),
   Schema.Literal('UNKNOWN_SOURCE'),
   Schema.Literal('WEBIDE_SOURCE')
-])
-export const PipelineMergeRequestEventTypeSchema: Schema.Codec<PipelineMergeRequestEventType> = Schema.Union([
+)
+export const PipelineMergeRequestEventTypeSchema: Schema.Schema<PipelineMergeRequestEventType> = Schema.Union(
   Schema.Literal('DETACHED'),
   Schema.Literal('MERGED_RESULT'),
   Schema.Literal('MERGE_TRAIN')
-])
-export const PipelineScheduleSortSchema: Schema.Codec<PipelineScheduleSort> = Schema.Union([
+)
+export const PipelineScheduleSortSchema: Schema.Schema<PipelineScheduleSort> = Schema.Union(
   Schema.Literal('CREATED_AT_ASC'),
   Schema.Literal('CREATED_AT_DESC'),
   Schema.Literal('DESCRIPTION_ASC'),
@@ -2019,23 +2019,23 @@ export const PipelineScheduleSortSchema: Schema.Codec<PipelineScheduleSort> = Sc
   Schema.Literal('REF_DESC'),
   Schema.Literal('UPDATED_AT_ASC'),
   Schema.Literal('UPDATED_AT_DESC')
-])
-export const PipelineScheduleStatusSchema: Schema.Codec<PipelineScheduleStatus> = Schema.Union([
+)
+export const PipelineScheduleStatusSchema: Schema.Schema<PipelineScheduleStatus> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('INACTIVE')
-])
-export const PipelineScopeEnumSchema: Schema.Codec<PipelineScopeEnum> = Schema.Union([
+)
+export const PipelineScopeEnumSchema: Schema.Schema<PipelineScopeEnum> = Schema.Union(
   Schema.Literal('BRANCHES'),
   Schema.Literal('FINISHED'),
   Schema.Literal('PENDING'),
   Schema.Literal('RUNNING'),
   Schema.Literal('TAGS')
-])
-export const PipelineSecurityReportFindingSortSchema: Schema.Codec<PipelineSecurityReportFindingSort> = Schema.Union([
+)
+export const PipelineSecurityReportFindingSortSchema: Schema.Schema<PipelineSecurityReportFindingSort> = Schema.Union(
   Schema.Literal('severity_asc'),
   Schema.Literal('severity_desc')
-])
-export const PipelineStatusEnumSchema: Schema.Codec<PipelineStatusEnum> = Schema.Union([
+)
+export const PipelineStatusEnumSchema: Schema.Schema<PipelineStatusEnum> = Schema.Union(
   Schema.Literal('CANCELED'),
   Schema.Literal('CANCELING'),
   Schema.Literal('CREATED'),
@@ -2049,91 +2049,91 @@ export const PipelineStatusEnumSchema: Schema.Codec<PipelineStatusEnum> = Schema
   Schema.Literal('SUCCESS'),
   Schema.Literal('WAITING_FOR_CALLBACK'),
   Schema.Literal('WAITING_FOR_RESOURCE')
-])
-export const PipelineVariablesDefaultRoleTypeSchema: Schema.Codec<PipelineVariablesDefaultRoleType> = Schema.Union([
+)
+export const PipelineVariablesDefaultRoleTypeSchema: Schema.Schema<PipelineVariablesDefaultRoleType> = Schema.Union(
   Schema.Literal('DEVELOPER'),
   Schema.Literal('MAINTAINER'),
   Schema.Literal('NO_ONE_ALLOWED'),
   Schema.Literal('OWNER')
-])
-export const PolicyEnforcementTypeSchema: Schema.Codec<PolicyEnforcementType> = Schema.Union([
+)
+export const PolicyEnforcementTypeSchema: Schema.Schema<PolicyEnforcementType> = Schema.Union(
   Schema.Literal('ENFORCE'),
   Schema.Literal('WARN')
-])
-export const PolicyProjectCreatedStatusSchema: Schema.Codec<PolicyProjectCreatedStatus> = Schema.Union([
+)
+export const PolicyProjectCreatedStatusSchema: Schema.Schema<PolicyProjectCreatedStatus> = Schema.Union(
   Schema.Literal('ERROR'),
   Schema.Literal('SUCCESS')
-])
-export const PolicyStatusSchema: Schema.Codec<PolicyStatus> = Schema.Union([
+)
+export const PolicyStatusSchema: Schema.Schema<PolicyStatus> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('RUNNING'),
   Schema.Literal('SCHEDULED')
-])
-export const PolicyTypeSchema: Schema.Codec<PolicyType> = Schema.Union([
+)
+export const PolicyTypeSchema: Schema.Schema<PolicyType> = Schema.Union(
   Schema.Literal('APPROVAL_POLICY'),
   Schema.Literal('PIPELINE_EXECUTION_POLICY'),
   Schema.Literal('PIPELINE_EXECUTION_SCHEDULE_POLICY'),
   Schema.Literal('SCAN_EXECUTION_POLICY'),
   Schema.Literal('VULNERABILITY_MANAGEMENT_POLICY')
-])
-export const PolicyViolationErrorTypeSchema: Schema.Codec<PolicyViolationErrorType> = Schema.Union([
+)
+export const PolicyViolationErrorTypeSchema: Schema.Schema<PolicyViolationErrorType> = Schema.Union(
   Schema.Literal('ARTIFACTS_MISSING'),
   Schema.Literal('SCAN_REMOVED'),
   Schema.Literal('UNKNOWN')
-])
-export const PolicyViolationStatusSchema: Schema.Codec<PolicyViolationStatus> = Schema.Union([
+)
+export const PolicyViolationStatusSchema: Schema.Schema<PolicyViolationStatus> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('RUNNING'),
   Schema.Literal('WARNING')
-])
-export const PolicyViolationsSchema: Schema.Codec<PolicyViolations> = Schema.Union([
+)
+export const PolicyViolationsSchema: Schema.Schema<PolicyViolations> = Schema.Union(
   Schema.Literal('DISMISSED_IN_MR')
-])
-export const PrincipalTypeSchema: Schema.Codec<PrincipalType> = Schema.Union([
+)
+export const PrincipalTypeSchema: Schema.Schema<PrincipalType> = Schema.Union(
   Schema.Literal('GROUP'),
   Schema.Literal('MEMBER_ROLE'),
   Schema.Literal('ROLE'),
   Schema.Literal('USER')
-])
-export const ProductAnalyticsStateSchema: Schema.Codec<ProductAnalyticsState> = Schema.Union([
+)
+export const ProductAnalyticsStateSchema: Schema.Schema<ProductAnalyticsState> = Schema.Union(
   Schema.Literal('COMPLETE'),
   Schema.Literal('CREATE_INSTANCE'),
   Schema.Literal('LOADING_INSTANCE'),
   Schema.Literal('WAITING_FOR_EVENTS')
-])
-export const ProjectArchivedSchema: Schema.Codec<ProjectArchived> = Schema.Union([
+)
+export const ProjectArchivedSchema: Schema.Schema<ProjectArchived> = Schema.Union(
   Schema.Literal('EXCLUDE'),
   Schema.Literal('INCLUDE'),
   Schema.Literal('ONLY')
-])
-export const ProjectComplianceControlStatusSchema: Schema.Codec<ProjectComplianceControlStatus> = Schema.Union([
+)
+export const ProjectComplianceControlStatusSchema: Schema.Schema<ProjectComplianceControlStatus> = Schema.Union(
   Schema.Literal('FAIL'),
   Schema.Literal('PASS'),
   Schema.Literal('PENDING')
-])
-export const ProjectComplianceRequirementStatusOrderBySchema: Schema.Codec<ProjectComplianceRequirementStatusOrderBy> = Schema.Union([
+)
+export const ProjectComplianceRequirementStatusOrderBySchema: Schema.Schema<ProjectComplianceRequirementStatusOrderBy> = Schema.Union(
   Schema.Literal('FRAMEWORK'),
   Schema.Literal('PROJECT'),
   Schema.Literal('REQUIREMENT')
-])
-export const ProjectFeatureAccessLevelSchema: Schema.Codec<ProjectFeatureAccessLevel> = Schema.Union([
+)
+export const ProjectFeatureAccessLevelSchema: Schema.Schema<ProjectFeatureAccessLevel> = Schema.Union(
   Schema.Literal('DISABLED'),
   Schema.Literal('ENABLED'),
   Schema.Literal('PRIVATE')
-])
-export const ProjectMemberRelationSchema: Schema.Codec<ProjectMemberRelation> = Schema.Union([
+)
+export const ProjectMemberRelationSchema: Schema.Schema<ProjectMemberRelation> = Schema.Union(
   Schema.Literal('DESCENDANTS'),
   Schema.Literal('DIRECT'),
   Schema.Literal('INHERITED'),
   Schema.Literal('INVITED_GROUPS'),
   Schema.Literal('SHARED_INTO_ANCESTORS')
-])
-export const ProjectSecretsManagerStatusSchema: Schema.Codec<ProjectSecretsManagerStatus> = Schema.Union([
+)
+export const ProjectSecretsManagerStatusSchema: Schema.Schema<ProjectSecretsManagerStatus> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('DEPROVISIONING'),
   Schema.Literal('PROVISIONING')
-])
-export const ProjectSortSchema: Schema.Codec<ProjectSort> = Schema.Union([
+)
+export const ProjectSortSchema: Schema.Schema<ProjectSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('ID_ASC'),
@@ -2154,104 +2154,104 @@ export const ProjectSortSchema: Schema.Codec<ProjectSort> = Schema.Union([
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const ProjectTrackedContextSchema: Schema.Codec<ProjectTrackedContext> = Schema.Union([
+)
+export const ProjectTrackedContextSchema: Schema.Schema<ProjectTrackedContext> = Schema.Union(
   Schema.Literal('BRANCH'),
   Schema.Literal('TAG')
-])
-export const PromptInjectionProtectionLevelSchema: Schema.Codec<PromptInjectionProtectionLevel> = Schema.Union([
+)
+export const PromptInjectionProtectionLevelSchema: Schema.Schema<PromptInjectionProtectionLevel> = Schema.Union(
   Schema.Literal('INTERRUPT'),
   Schema.Literal('LOG_ONLY'),
   Schema.Literal('NO_CHECKS')
-])
-export const ReachabilityTypeSchema: Schema.Codec<ReachabilityType> = Schema.Union([
+)
+export const ReachabilityTypeSchema: Schema.Schema<ReachabilityType> = Schema.Union(
   Schema.Literal('IN_USE'),
   Schema.Literal('NOT_FOUND'),
   Schema.Literal('UNKNOWN')
-])
-export const RefTypeSchema: Schema.Codec<RefType> = Schema.Union([
+)
+export const RefTypeSchema: Schema.Schema<RefType> = Schema.Union(
   Schema.Literal('HEADS'),
   Schema.Literal('TAGS')
-])
-export const RegistryStateSchema: Schema.Codec<RegistryState> = Schema.Union([
+)
+export const RegistryStateSchema: Schema.Schema<RegistryState> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('PENDING'),
   Schema.Literal('STARTED'),
   Schema.Literal('SYNCED')
-])
-export const RelationshipTypeSchema: Schema.Codec<RelationshipType> = Schema.Union([
+)
+export const RelationshipTypeSchema: Schema.Schema<RelationshipType> = Schema.Union(
   Schema.Literal('DIRECT'),
   Schema.Literal('INHERITED')
-])
-export const RelativePositionTypeSchema: Schema.Codec<RelativePositionType> = Schema.Union([
+)
+export const RelativePositionTypeSchema: Schema.Schema<RelativePositionType> = Schema.Union(
   Schema.Literal('AFTER'),
   Schema.Literal('BEFORE')
-])
-export const ReleaseAssetLinkTypeSchema: Schema.Codec<ReleaseAssetLinkType> = Schema.Union([
+)
+export const ReleaseAssetLinkTypeSchema: Schema.Schema<ReleaseAssetLinkType> = Schema.Union(
   Schema.Literal('IMAGE'),
   Schema.Literal('OTHER'),
   Schema.Literal('PACKAGE'),
   Schema.Literal('RUNBOOK')
-])
-export const ReleaseSortSchema: Schema.Codec<ReleaseSort> = Schema.Union([
+)
+export const ReleaseSortSchema: Schema.Schema<ReleaseSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('RELEASED_AT_ASC'),
   Schema.Literal('RELEASED_AT_DESC')
-])
-export const ReleaseTagWildcardIdSchema: Schema.Codec<ReleaseTagWildcardId> = Schema.Union([
+)
+export const ReleaseTagWildcardIdSchema: Schema.Schema<ReleaseTagWildcardId> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('NONE')
-])
-export const ReplicationStateEnumSchema: Schema.Codec<ReplicationStateEnum> = Schema.Union([
+)
+export const ReplicationStateEnumSchema: Schema.Schema<ReplicationStateEnum> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('PENDING'),
   Schema.Literal('STARTED'),
   Schema.Literal('SYNCED')
-])
-export const RequirementStateSchema: Schema.Codec<RequirementState> = Schema.Union([
+)
+export const RequirementStateSchema: Schema.Schema<RequirementState> = Schema.Union(
   Schema.Literal('ARCHIVED'),
   Schema.Literal('OPENED')
-])
-export const RequirementStatusFilterSchema: Schema.Codec<RequirementStatusFilter> = Schema.Union([
+)
+export const RequirementStatusFilterSchema: Schema.Schema<RequirementStatusFilter> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('MISSING'),
   Schema.Literal('PASSED')
-])
-export const ResourceGroupsProcessModeSchema: Schema.Codec<ResourceGroupsProcessMode> = Schema.Union([
+)
+export const ResourceGroupsProcessModeSchema: Schema.Schema<ResourceGroupsProcessMode> = Schema.Union(
   Schema.Literal('NEWEST_FIRST'),
   Schema.Literal('NEWEST_READY_FIRST'),
   Schema.Literal('OLDEST_FIRST'),
   Schema.Literal('UNORDERED')
-])
-export const ReviewerWildcardIdSchema: Schema.Codec<ReviewerWildcardId> = Schema.Union([
+)
+export const ReviewerWildcardIdSchema: Schema.Schema<ReviewerWildcardId> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('NONE')
-])
-export const RiskRatingSchema: Schema.Codec<RiskRating> = Schema.Union([
+)
+export const RiskRatingSchema: Schema.Schema<RiskRating> = Schema.Union(
   Schema.Literal('CRITICAL'),
   Schema.Literal('HIGH'),
   Schema.Literal('LOW'),
   Schema.Literal('MEDIUM'),
   Schema.Literal('UNKNOWN')
-])
-export const SastUiComponentSizeSchema: Schema.Codec<SastUiComponentSize> = Schema.Union([
+)
+export const SastUiComponentSizeSchema: Schema.Schema<SastUiComponentSize> = Schema.Union(
   Schema.Literal('LARGE'),
   Schema.Literal('MEDIUM'),
   Schema.Literal('SMALL')
-])
-export const SbomSourceTypeSchema: Schema.Codec<SbomSourceType> = Schema.Union([
+)
+export const SbomSourceTypeSchema: Schema.Schema<SbomSourceType> = Schema.Union(
   Schema.Literal('CONTAINER_SCANNING'),
   Schema.Literal('CONTAINER_SCANNING_FOR_REGISTRY'),
   Schema.Literal('DEPENDENCY_SCANNING'),
   Schema.Literal('NIL_SOURCE')
-])
-export const ScanModeEnumSchema: Schema.Codec<ScanModeEnum> = Schema.Union([
+)
+export const ScanModeEnumSchema: Schema.Schema<ScanModeEnum> = Schema.Union(
   Schema.Literal('ALL'),
   Schema.Literal('FULL'),
   Schema.Literal('PARTIAL')
-])
-export const ScanStatusSchema: Schema.Codec<ScanStatus> = Schema.Union([
+)
+export const ScanStatusSchema: Schema.Schema<ScanStatus> = Schema.Union(
   Schema.Literal('CREATED'),
   Schema.Literal('JOB_FAILED'),
   Schema.Literal('PREPARATION_FAILED'),
@@ -2259,61 +2259,61 @@ export const ScanStatusSchema: Schema.Codec<ScanStatus> = Schema.Union([
   Schema.Literal('PURGED'),
   Schema.Literal('REPORT_ERROR'),
   Schema.Literal('SUCCEEDED')
-])
-export const SearchLevelSchema: Schema.Codec<SearchLevel> = Schema.Union([
+)
+export const SearchLevelSchema: Schema.Schema<SearchLevel> = Schema.Union(
   Schema.Literal('GLOBAL'),
   Schema.Literal('GROUP'),
   Schema.Literal('PROJECT')
-])
-export const SearchTypeSchema: Schema.Codec<SearchType> = Schema.Union([
+)
+export const SearchTypeSchema: Schema.Schema<SearchType> = Schema.Union(
   Schema.Literal('ADVANCED'),
   Schema.Literal('BASIC'),
   Schema.Literal('ZOEKT')
-])
-export const SecretRotationStatusSchema: Schema.Codec<SecretRotationStatus> = Schema.Union([
+)
+export const SecretRotationStatusSchema: Schema.Schema<SecretRotationStatus> = Schema.Union(
   Schema.Literal('APPROACHING'),
   Schema.Literal('OK'),
   Schema.Literal('OVERDUE')
-])
-export const SecretStatusSchema: Schema.Codec<SecretStatus> = Schema.Union([
+)
+export const SecretStatusSchema: Schema.Schema<SecretStatus> = Schema.Union(
   Schema.Literal('COMPLETED'),
   Schema.Literal('CREATE_IN_PROGRESS'),
   Schema.Literal('CREATE_STALE'),
   Schema.Literal('UPDATE_IN_PROGRESS'),
   Schema.Literal('UPDATE_STALE')
-])
-export const SecretsManagementActionSchema: Schema.Codec<SecretsManagementAction> = Schema.Union([
+)
+export const SecretsManagementActionSchema: Schema.Schema<SecretsManagementAction> = Schema.Union(
   Schema.Literal('DELETE'),
   Schema.Literal('READ'),
   Schema.Literal('WRITE')
-])
-export const SecurityAttributeBulkUpdateModeSchema: Schema.Codec<SecurityAttributeBulkUpdateMode> = Schema.Union([
+)
+export const SecurityAttributeBulkUpdateModeSchema: Schema.Schema<SecurityAttributeBulkUpdateMode> = Schema.Union(
   Schema.Literal('ADD'),
   Schema.Literal('REMOVE'),
   Schema.Literal('REPLACE')
-])
-export const SecurityCategoryEditableStateSchema: Schema.Codec<SecurityCategoryEditableState> = Schema.Union([
+)
+export const SecurityCategoryEditableStateSchema: Schema.Schema<SecurityCategoryEditableState> = Schema.Union(
   Schema.Literal('EDITABLE'),
   Schema.Literal('EDITABLE_ATTRIBUTES'),
   Schema.Literal('LOCKED')
-])
-export const SecurityCategoryTemplateTypeSchema: Schema.Codec<SecurityCategoryTemplateType> = Schema.Union([
+)
+export const SecurityCategoryTemplateTypeSchema: Schema.Schema<SecurityCategoryTemplateType> = Schema.Union(
   Schema.Literal('APPLICATION'),
   Schema.Literal('BUSINESS_IMPACT'),
   Schema.Literal('BUSINESS_UNIT'),
   Schema.Literal('EXPOSURE')
-])
-export const SecurityPolicyRelationTypeSchema: Schema.Codec<SecurityPolicyRelationType> = Schema.Union([
+)
+export const SecurityPolicyRelationTypeSchema: Schema.Schema<SecurityPolicyRelationType> = Schema.Union(
   Schema.Literal('DESCENDANT'),
   Schema.Literal('DIRECT'),
   Schema.Literal('INHERITED'),
   Schema.Literal('INHERITED_ONLY')
-])
-export const SecurityPreferredLicenseSourceConfigurationSchema: Schema.Codec<SecurityPreferredLicenseSourceConfiguration> = Schema.Union([
+)
+export const SecurityPreferredLicenseSourceConfigurationSchema: Schema.Schema<SecurityPreferredLicenseSourceConfiguration> = Schema.Union(
   Schema.Literal('PMDB'),
   Schema.Literal('SBOM')
-])
-export const SecurityReportTypeEnumSchema: Schema.Codec<SecurityReportTypeEnum> = Schema.Union([
+)
+export const SecurityReportTypeEnumSchema: Schema.Schema<SecurityReportTypeEnum> = Schema.Union(
   Schema.Literal('API_FUZZING'),
   Schema.Literal('CLUSTER_IMAGE_SCANNING'),
   Schema.Literal('CONTAINER_SCANNING'),
@@ -2324,14 +2324,14 @@ export const SecurityReportTypeEnumSchema: Schema.Codec<SecurityReportTypeEnum> 
   Schema.Literal('SAST_ADVANCED'),
   Schema.Literal('SAST_IAC'),
   Schema.Literal('SECRET_DETECTION')
-])
-export const SecurityScanProfileTypeSchema: Schema.Codec<SecurityScanProfileType> = Schema.Union([
+)
+export const SecurityScanProfileTypeSchema: Schema.Schema<SecurityScanProfileType> = Schema.Union(
   Schema.Literal('CONTAINER_SCANNING'),
   Schema.Literal('DEPENDENCY_SCANNING'),
   Schema.Literal('SAST'),
   Schema.Literal('SECRET_DETECTION')
-])
-export const SecurityScannerTypeSchema: Schema.Codec<SecurityScannerType> = Schema.Union([
+)
+export const SecurityScannerTypeSchema: Schema.Schema<SecurityScannerType> = Schema.Union(
   Schema.Literal('API_FUZZING'),
   Schema.Literal('CLUSTER_IMAGE_SCANNING'),
   Schema.Literal('CONTAINER_SCANNING'),
@@ -2342,26 +2342,26 @@ export const SecurityScannerTypeSchema: Schema.Codec<SecurityScannerType> = Sche
   Schema.Literal('SAST_ADVANCED'),
   Schema.Literal('SAST_IAC'),
   Schema.Literal('SECRET_DETECTION')
-])
-export const SecurityTrackedRefScopeSchema: Schema.Codec<SecurityTrackedRefScope> = Schema.Union([
+)
+export const SecurityTrackedRefScopeSchema: Schema.Schema<SecurityTrackedRefScope> = Schema.Union(
   Schema.Literal('ALL_REFS'),
   Schema.Literal('DEFAULT_BRANCHES')
-])
-export const SecurityTrackedRefStateSchema: Schema.Codec<SecurityTrackedRefState> = Schema.Union([
+)
+export const SecurityTrackedRefStateSchema: Schema.Schema<SecurityTrackedRefState> = Schema.Union(
   Schema.Literal('TRACKED'),
   Schema.Literal('UNTRACKED')
-])
-export const SecurityTrackedRefTypeSchema: Schema.Codec<SecurityTrackedRefType> = Schema.Union([
+)
+export const SecurityTrackedRefTypeSchema: Schema.Schema<SecurityTrackedRefType> = Schema.Union(
   Schema.Literal('BRANCH'),
   Schema.Literal('TAG')
-])
-export const SentryErrorStatusSchema: Schema.Codec<SentryErrorStatus> = Schema.Union([
+)
+export const SentryErrorStatusSchema: Schema.Schema<SentryErrorStatus> = Schema.Union(
   Schema.Literal('IGNORED'),
   Schema.Literal('RESOLVED'),
   Schema.Literal('RESOLVED_IN_NEXT_RELEASE'),
   Schema.Literal('UNRESOLVED')
-])
-export const ServiceTypeSchema: Schema.Codec<ServiceType> = Schema.Union([
+)
+export const ServiceTypeSchema: Schema.Schema<ServiceType> = Schema.Union(
   Schema.Literal('APPLE_APP_STORE_SERVICE'),
   Schema.Literal('ASANA_SERVICE'),
   Schema.Literal('ASSEMBLA_SERVICE'),
@@ -2412,23 +2412,23 @@ export const ServiceTypeSchema: Schema.Codec<ServiceType> = Schema.Union([
   Schema.Literal('WEBEX_TEAMS_SERVICE'),
   Schema.Literal('YOUTRACK_SERVICE'),
   Schema.Literal('ZENTAO_SERVICE')
-])
-export const ShaFormatSchema: Schema.Codec<ShaFormat> = Schema.Union([
+)
+export const ShaFormatSchema: Schema.Schema<ShaFormat> = Schema.Union(
   Schema.Literal('LONG'),
   Schema.Literal('SHORT')
-])
-export const SharedRunnersSettingSchema: Schema.Codec<SharedRunnersSetting> = Schema.Union([
+)
+export const SharedRunnersSettingSchema: Schema.Schema<SharedRunnersSetting> = Schema.Union(
   Schema.Literal('DISABLED_AND_OVERRIDABLE'),
   Schema.Literal('DISABLED_AND_UNOVERRIDABLE'),
   Schema.Literal('ENABLED')
-])
-export const SnippetBlobActionEnumSchema: Schema.Codec<SnippetBlobActionEnum> = Schema.Union([
+)
+export const SnippetBlobActionEnumSchema: Schema.Schema<SnippetBlobActionEnum> = Schema.Union(
   Schema.Literal('create'),
   Schema.Literal('delete'),
   Schema.Literal('move'),
   Schema.Literal('update')
-])
-export const SortSchema: Schema.Codec<Sort> = Schema.Union([
+)
+export const SortSchema: Schema.Schema<Sort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('UPDATED_ASC'),
@@ -2437,44 +2437,44 @@ export const SortSchema: Schema.Codec<Sort> = Schema.Union([
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const SortDirectionEnumSchema: Schema.Codec<SortDirectionEnum> = Schema.Union([
+)
+export const SortDirectionEnumSchema: Schema.Schema<SortDirectionEnum> = Schema.Union(
   Schema.Literal('ASC'),
   Schema.Literal('DESC')
-])
-export const SourceUserSortSchema: Schema.Codec<SourceUserSort> = Schema.Union([
+)
+export const SourceUserSortSchema: Schema.Schema<SourceUserSort> = Schema.Union(
   Schema.Literal('ID_ASC'),
   Schema.Literal('ID_DESC'),
   Schema.Literal('SOURCE_NAME_ASC'),
   Schema.Literal('SOURCE_NAME_DESC'),
   Schema.Literal('STATUS_ASC'),
   Schema.Literal('STATUS_DESC')
-])
-export const SquashOptionSettingSchema: Schema.Codec<SquashOptionSetting> = Schema.Union([
+)
+export const SquashOptionSettingSchema: Schema.Schema<SquashOptionSetting> = Schema.Union(
   Schema.Literal('ALLOWED'),
   Schema.Literal('ALWAYS'),
   Schema.Literal('ENCOURAGED'),
   Schema.Literal('NEVER')
-])
-export const SubscriptionHistoryChangeTypeSchema: Schema.Codec<SubscriptionHistoryChangeType> = Schema.Union([
+)
+export const SubscriptionHistoryChangeTypeSchema: Schema.Schema<SubscriptionHistoryChangeType> = Schema.Union(
   Schema.Literal('GITLAB_SUBSCRIPTION_DESTROYED'),
   Schema.Literal('GITLAB_SUBSCRIPTION_UPDATED')
-])
-export const SubscriptionStatusSchema: Schema.Codec<SubscriptionStatus> = Schema.Union([
+)
+export const SubscriptionStatusSchema: Schema.Schema<SubscriptionStatus> = Schema.Union(
   Schema.Literal('EXPLICITLY_SUBSCRIBED'),
   Schema.Literal('EXPLICITLY_UNSUBSCRIBED')
-])
-export const TestCaseStatusSchema: Schema.Codec<TestCaseStatus> = Schema.Union([
+)
+export const TestCaseStatusSchema: Schema.Schema<TestCaseStatus> = Schema.Union(
   Schema.Literal('error'),
   Schema.Literal('failed'),
   Schema.Literal('skipped'),
   Schema.Literal('success')
-])
-export const TestReportStateSchema: Schema.Codec<TestReportState> = Schema.Union([
+)
+export const TestReportStateSchema: Schema.Schema<TestReportState> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('PASSED')
-])
-export const TimeboxReportErrorReasonSchema: Schema.Codec<TimeboxReportErrorReason> = Schema.Union([
+)
+export const TimeboxReportErrorReasonSchema: Schema.Schema<TimeboxReportErrorReason> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('LABEL_PRIORITY_ASC'),
@@ -2492,8 +2492,8 @@ export const TimeboxReportErrorReasonSchema: Schema.Codec<TimeboxReportErrorReas
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const TimelogSortSchema: Schema.Codec<TimelogSort> = Schema.Union([
+)
+export const TimelogSortSchema: Schema.Schema<TimelogSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('SPENT_AT_ASC'),
@@ -2506,8 +2506,8 @@ export const TimelogSortSchema: Schema.Codec<TimelogSort> = Schema.Union([
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const TodoActionEnumSchema: Schema.Codec<TodoActionEnum> = Schema.Union([
+)
+export const TodoActionEnumSchema: Schema.Schema<TodoActionEnum> = Schema.Union(
   Schema.Literal('added_approver'),
   Schema.Literal('approval_required'),
   Schema.Literal('assigned'),
@@ -2526,8 +2526,8 @@ export const TodoActionEnumSchema: Schema.Codec<TodoActionEnum> = Schema.Union([
   Schema.Literal('ssh_key_expired'),
   Schema.Literal('ssh_key_expiring_soon'),
   Schema.Literal('unmergeable')
-])
-export const TodoSortSchema: Schema.Codec<TodoSort> = Schema.Union([
+)
+export const TodoSortSchema: Schema.Schema<TodoSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('LABEL_PRIORITY_ASC'),
@@ -2538,12 +2538,12 @@ export const TodoSortSchema: Schema.Codec<TodoSort> = Schema.Union([
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const TodoStateEnumSchema: Schema.Codec<TodoStateEnum> = Schema.Union([
+)
+export const TodoStateEnumSchema: Schema.Schema<TodoStateEnum> = Schema.Union(
   Schema.Literal('done'),
   Schema.Literal('pending')
-])
-export const TodoTargetEnumSchema: Schema.Codec<TodoTargetEnum> = Schema.Union([
+)
+export const TodoTargetEnumSchema: Schema.Schema<TodoTargetEnum> = Schema.Union(
   Schema.Literal('ALERT'),
   Schema.Literal('COMMIT'),
   Schema.Literal('COMPLIANCE_VIOLATION'),
@@ -2558,16 +2558,16 @@ export const TodoTargetEnumSchema: Schema.Codec<TodoTargetEnum> = Schema.Union([
   Schema.Literal('VULNERABILITY'),
   Schema.Literal('WIKIPAGEMETA'),
   Schema.Literal('WORKITEM')
-])
-export const TrainingUrlRequestStatusSchema: Schema.Codec<TrainingUrlRequestStatus> = Schema.Union([
+)
+export const TrainingUrlRequestStatusSchema: Schema.Schema<TrainingUrlRequestStatus> = Schema.Union(
   Schema.Literal('COMPLETED'),
   Schema.Literal('PENDING')
-])
-export const TypeEnumSchema: Schema.Codec<TypeEnum> = Schema.Union([
+)
+export const TypeEnumSchema: Schema.Schema<TypeEnum> = Schema.Union(
   Schema.Literal('personal'),
   Schema.Literal('project')
-])
-export const UserCalloutFeatureNameEnumSchema: Schema.Codec<UserCalloutFeatureNameEnum> = Schema.Union([
+)
+export const UserCalloutFeatureNameEnumSchema: Schema.Schema<UserCalloutFeatureNameEnum> = Schema.Union(
   Schema.Literal('ACTIVE_USER_COUNT_THRESHOLD'),
   Schema.Literal('BRANCH_RULES_TIP_CALLOUT'),
   Schema.Literal('BUY_PIPELINE_MINUTES_NOTIFICATION_DOT'),
@@ -2638,8 +2638,8 @@ export const UserCalloutFeatureNameEnumSchema: Schema.Codec<UserCalloutFeatureNa
   Schema.Literal('WORK_ITEMS_ONBOARDING_MODAL'),
   Schema.Literal('WORK_ITEM_CONSOLIDATED_LIST_FEEDBACK'),
   Schema.Literal('WORK_ITEM_EPIC_FEEDBACK')
-])
-export const UserGroupCalloutFeatureNameSchema: Schema.Codec<UserGroupCalloutFeatureName> = Schema.Union([
+)
+export const UserGroupCalloutFeatureNameSchema: Schema.Schema<UserGroupCalloutFeatureName> = Schema.Union(
   Schema.Literal('ALL_SEATS_USED_ALERT'),
   Schema.Literal('APPROACHING_SEAT_COUNT_THRESHOLD'),
   Schema.Literal('CI_MINUTES_LIMIT_ALERT_DANGER_STAGE'),
@@ -2666,21 +2666,21 @@ export const UserGroupCalloutFeatureNameSchema: Schema.Codec<UserGroupCalloutFea
   Schema.Literal('USAGE_QUOTA_TRIAL_ALERT'),
   Schema.Literal('USER_REACHED_LIMIT_FREE_PLAN_ALERT'),
   Schema.Literal('WEB_HOOK_DISABLED')
-])
-export const UserPromotionStatusTypeSchema: Schema.Codec<UserPromotionStatusType> = Schema.Union([
+)
+export const UserPromotionStatusTypeSchema: Schema.Schema<UserPromotionStatusType> = Schema.Union(
   Schema.Literal('FAILED'),
   Schema.Literal('PARTIAL_SUCCESS'),
   Schema.Literal('SUCCESS')
-])
-export const UserStateSchema: Schema.Codec<UserState> = Schema.Union([
+)
+export const UserStateSchema: Schema.Schema<UserState> = Schema.Union(
   Schema.Literal('active'),
   Schema.Literal('banned'),
   Schema.Literal('blocked'),
   Schema.Literal('blocked_pending_approval'),
   Schema.Literal('deactivated'),
   Schema.Literal('ldap_blocked')
-])
-export const UserTypeSchema: Schema.Codec<UserType> = Schema.Union([
+)
+export const UserTypeSchema: Schema.Schema<UserType> = Schema.Union(
   Schema.Literal('ADMIN_BOT'),
   Schema.Literal('ALERT_BOT'),
   Schema.Literal('AUTOMATION_BOT'),
@@ -2696,8 +2696,8 @@ export const UserTypeSchema: Schema.Codec<UserType> = Schema.Union([
   Schema.Literal('SERVICE_USER'),
   Schema.Literal('SUPPORT_BOT'),
   Schema.Literal('VISUAL_REVIEW_BOT')
-])
-export const ValueStreamDashboardMetricSchema: Schema.Codec<ValueStreamDashboardMetric> = Schema.Union([
+)
+export const ValueStreamDashboardMetricSchema: Schema.Schema<ValueStreamDashboardMetric> = Schema.Union(
   Schema.Literal('CONTRIBUTORS'),
   Schema.Literal('GROUPS'),
   Schema.Literal('ISSUES'),
@@ -2705,14 +2705,14 @@ export const ValueStreamDashboardMetricSchema: Schema.Codec<ValueStreamDashboard
   Schema.Literal('PIPELINES'),
   Schema.Literal('PROJECTS'),
   Schema.Literal('USERS')
-])
-export const ValueStreamDashboardProjectLevelMetricSchema: Schema.Codec<ValueStreamDashboardProjectLevelMetric> = Schema.Union([
+)
+export const ValueStreamDashboardProjectLevelMetricSchema: Schema.Schema<ValueStreamDashboardProjectLevelMetric> = Schema.Union(
   Schema.Literal('CONTRIBUTORS'),
   Schema.Literal('ISSUES'),
   Schema.Literal('MERGE_REQUESTS'),
   Schema.Literal('PIPELINES')
-])
-export const ValueStreamStageEventSchema: Schema.Codec<ValueStreamStageEvent> = Schema.Union([
+)
+export const ValueStreamStageEventSchema: Schema.Schema<ValueStreamStageEvent> = Schema.Union(
   Schema.Literal('CODE_STAGE_START'),
   Schema.Literal('ISSUE_CLOSED'),
   Schema.Literal('ISSUE_CREATED'),
@@ -2740,21 +2740,21 @@ export const ValueStreamStageEventSchema: Schema.Codec<ValueStreamStageEvent> = 
   Schema.Literal('MERGE_REQUEST_MERGED'),
   Schema.Literal('MERGE_REQUEST_REVIEWER_FIRST_ASSIGNED'),
   Schema.Literal('PLAN_STAGE_START')
-])
-export const ValueStreamStageItemSortSchema: Schema.Codec<ValueStreamStageItemSort> = Schema.Union([
+)
+export const ValueStreamStageItemSortSchema: Schema.Schema<ValueStreamStageItemSort> = Schema.Union(
   Schema.Literal('DURATION_ASC'),
   Schema.Literal('DURATION_DESC'),
   Schema.Literal('END_EVENT_ASC'),
   Schema.Literal('END_EVENT_DESC')
-])
-export const VerificationStateEnumSchema: Schema.Codec<VerificationStateEnum> = Schema.Union([
+)
+export const VerificationStateEnumSchema: Schema.Schema<VerificationStateEnum> = Schema.Union(
   Schema.Literal('DISABLED'),
   Schema.Literal('FAILED'),
   Schema.Literal('PENDING'),
   Schema.Literal('STARTED'),
   Schema.Literal('SUCCEEDED')
-])
-export const VerificationStatusSchema: Schema.Codec<VerificationStatus> = Schema.Union([
+)
+export const VerificationStatusSchema: Schema.Schema<VerificationStatus> = Schema.Union(
   Schema.Literal('MULTIPLE_SIGNATURES'),
   Schema.Literal('OTHER_USER'),
   Schema.Literal('REVOKED_KEY'),
@@ -2766,58 +2766,58 @@ export const VerificationStatusSchema: Schema.Codec<VerificationStatus> = Schema
   Schema.Literal('VERIFIED'),
   Schema.Literal('VERIFIED_CA'),
   Schema.Literal('VERIFIED_SYSTEM')
-])
-export const VisibilityLevelsEnumSchema: Schema.Codec<VisibilityLevelsEnum> = Schema.Union([
+)
+export const VisibilityLevelsEnumSchema: Schema.Schema<VisibilityLevelsEnum> = Schema.Union(
   Schema.Literal('internal'),
   Schema.Literal('private'),
   Schema.Literal('public')
-])
-export const VisibilityPipelineIdTypeSchema: Schema.Codec<VisibilityPipelineIdType> = Schema.Union([
+)
+export const VisibilityPipelineIdTypeSchema: Schema.Schema<VisibilityPipelineIdType> = Schema.Union(
   Schema.Literal('ID'),
   Schema.Literal('IID')
-])
-export const VisibilityScopesEnumSchema: Schema.Codec<VisibilityScopesEnum> = Schema.Union([
+)
+export const VisibilityScopesEnumSchema: Schema.Schema<VisibilityScopesEnum> = Schema.Union(
   Schema.Literal('internal'),
   Schema.Literal('private'),
   Schema.Literal('public')
-])
-export const VulnerabilityDismissalReasonSchema: Schema.Codec<VulnerabilityDismissalReason> = Schema.Union([
+)
+export const VulnerabilityDismissalReasonSchema: Schema.Schema<VulnerabilityDismissalReason> = Schema.Union(
   Schema.Literal('ACCEPTABLE_RISK'),
   Schema.Literal('FALSE_POSITIVE'),
   Schema.Literal('MITIGATING_CONTROL'),
   Schema.Literal('NOT_APPLICABLE'),
   Schema.Literal('USED_IN_TESTS')
-])
-export const VulnerabilityExternalIssueLinkExternalTrackerSchema: Schema.Codec<VulnerabilityExternalIssueLinkExternalTracker> = Schema.Union([
+)
+export const VulnerabilityExternalIssueLinkExternalTrackerSchema: Schema.Schema<VulnerabilityExternalIssueLinkExternalTracker> = Schema.Union(
   Schema.Literal('JIRA')
-])
-export const VulnerabilityExternalIssueLinkTypeSchema: Schema.Codec<VulnerabilityExternalIssueLinkType> = Schema.Union([
+)
+export const VulnerabilityExternalIssueLinkTypeSchema: Schema.Schema<VulnerabilityExternalIssueLinkType> = Schema.Union(
   Schema.Literal('CREATED')
-])
-export const VulnerabilityFalsePositiveDetectionStatusSchema: Schema.Codec<VulnerabilityFalsePositiveDetectionStatus> = Schema.Union([
+)
+export const VulnerabilityFalsePositiveDetectionStatusSchema: Schema.Schema<VulnerabilityFalsePositiveDetectionStatus> = Schema.Union(
   Schema.Literal('DETECTED_AS_FP'),
   Schema.Literal('DETECTED_AS_NOT_FP'),
   Schema.Literal('FAILED'),
   Schema.Literal('IN_PROGRESS'),
   Schema.Literal('NOT_STARTED')
-])
-export const VulnerabilityFindingTokenStatusStateSchema: Schema.Codec<VulnerabilityFindingTokenStatusState> = Schema.Union([
+)
+export const VulnerabilityFindingTokenStatusStateSchema: Schema.Schema<VulnerabilityFindingTokenStatusState> = Schema.Union(
   Schema.Literal('ACTIVE'),
   Schema.Literal('INACTIVE'),
   Schema.Literal('UNKNOWN')
-])
-export const VulnerabilityGradeSchema: Schema.Codec<VulnerabilityGrade> = Schema.Union([
+)
+export const VulnerabilityGradeSchema: Schema.Schema<VulnerabilityGrade> = Schema.Union(
   Schema.Literal('A'),
   Schema.Literal('B'),
   Schema.Literal('C'),
   Schema.Literal('D'),
   Schema.Literal('F')
-])
-export const VulnerabilityIssueLinkTypeSchema: Schema.Codec<VulnerabilityIssueLinkType> = Schema.Union([
+)
+export const VulnerabilityIssueLinkTypeSchema: Schema.Schema<VulnerabilityIssueLinkType> = Schema.Union(
   Schema.Literal('CREATED'),
   Schema.Literal('RELATED')
-])
-export const VulnerabilityOwasp2021Top10Schema: Schema.Codec<VulnerabilityOwasp2021Top10> = Schema.Union([
+)
+export const VulnerabilityOwasp2021Top10Schema: Schema.Schema<VulnerabilityOwasp2021Top10> = Schema.Union(
   Schema.Literal('A01_2021'),
   Schema.Literal('A02_2021'),
   Schema.Literal('A03_2021'),
@@ -2838,8 +2838,8 @@ export const VulnerabilityOwasp2021Top10Schema: Schema.Codec<VulnerabilityOwasp2
   Schema.Literal('A9_2021'),
   Schema.Literal('A10_2021'),
   Schema.Literal('NONE')
-])
-export const VulnerabilityOwaspTop10Schema: Schema.Codec<VulnerabilityOwaspTop10> = Schema.Union([
+)
+export const VulnerabilityOwaspTop10Schema: Schema.Schema<VulnerabilityOwaspTop10> = Schema.Union(
   Schema.Literal('A1_2017'),
   Schema.Literal('A2_2017'),
   Schema.Literal('A3_2017'),
@@ -2851,8 +2851,8 @@ export const VulnerabilityOwaspTop10Schema: Schema.Codec<VulnerabilityOwaspTop10
   Schema.Literal('A9_2017'),
   Schema.Literal('A10_2017'),
   Schema.Literal('NONE')
-])
-export const VulnerabilityReportTypeSchema: Schema.Codec<VulnerabilityReportType> = Schema.Union([
+)
+export const VulnerabilityReportTypeSchema: Schema.Schema<VulnerabilityReportType> = Schema.Union(
   Schema.Literal('API_FUZZING'),
   Schema.Literal('CLUSTER_IMAGE_SCANNING'),
   Schema.Literal('CONTAINER_SCANNING'),
@@ -2863,65 +2863,65 @@ export const VulnerabilityReportTypeSchema: Schema.Codec<VulnerabilityReportType
   Schema.Literal('GENERIC'),
   Schema.Literal('SAST'),
   Schema.Literal('SECRET_DETECTION')
-])
-export const VulnerabilitySeveritySchema: Schema.Codec<VulnerabilitySeverity> = Schema.Union([
+)
+export const VulnerabilitySeveritySchema: Schema.Schema<VulnerabilitySeverity> = Schema.Union(
   Schema.Literal('CRITICAL'),
   Schema.Literal('HIGH'),
   Schema.Literal('INFO'),
   Schema.Literal('LOW'),
   Schema.Literal('MEDIUM'),
   Schema.Literal('UNKNOWN')
-])
-export const VulnerabilitySortSchema: Schema.Codec<VulnerabilitySort> = Schema.Union([
+)
+export const VulnerabilitySortSchema: Schema.Schema<VulnerabilitySort> = Schema.Union(
   Schema.Literal('detected_asc'),
   Schema.Literal('detected_desc'),
   Schema.Literal('severity_asc'),
   Schema.Literal('severity_desc')
-])
-export const VulnerabilityStateSchema: Schema.Codec<VulnerabilityState> = Schema.Union([
+)
+export const VulnerabilityStateSchema: Schema.Schema<VulnerabilityState> = Schema.Union(
   Schema.Literal('CONFIRMED'),
   Schema.Literal('DETECTED'),
   Schema.Literal('DISMISSED'),
   Schema.Literal('RESOLVED')
-])
-export const VulnerabilityWorkflowNameSchema: Schema.Codec<VulnerabilityWorkflowName> = Schema.Union([
+)
+export const VulnerabilityWorkflowNameSchema: Schema.Schema<VulnerabilityWorkflowName> = Schema.Union(
   Schema.Literal('RESOLVE_SAST_VULNERABILITY'),
   Schema.Literal('SAST_FP_DETECTION'),
   Schema.Literal('SECRETS_FP_DETECTION')
-])
-export const WebhookAlertStatusSchema: Schema.Codec<WebhookAlertStatus> = Schema.Union([
+)
+export const WebhookAlertStatusSchema: Schema.Schema<WebhookAlertStatus> = Schema.Union(
   Schema.Literal('DISABLED'),
   Schema.Literal('EXECUTABLE'),
   Schema.Literal('TEMPORARILY_DISABLED')
-])
-export const WebhookBranchFilterStrategySchema: Schema.Codec<WebhookBranchFilterStrategy> = Schema.Union([
+)
+export const WebhookBranchFilterStrategySchema: Schema.Schema<WebhookBranchFilterStrategy> = Schema.Union(
   Schema.Literal('ALL_BRANCHES'),
   Schema.Literal('REGEX'),
   Schema.Literal('WILDCARD')
-])
-export const WeightWildcardIdSchema: Schema.Codec<WeightWildcardId> = Schema.Union([
+)
+export const WeightWildcardIdSchema: Schema.Schema<WeightWildcardId> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('NONE')
-])
-export const WorkItemAwardEmojiUpdateActionSchema: Schema.Codec<WorkItemAwardEmojiUpdateAction> = Schema.Union([
+)
+export const WorkItemAwardEmojiUpdateActionSchema: Schema.Schema<WorkItemAwardEmojiUpdateAction> = Schema.Union(
   Schema.Literal('ADD'),
   Schema.Literal('REMOVE'),
   Schema.Literal('TOGGLE')
-])
-export const WorkItemDiscussionsSortSchema: Schema.Codec<WorkItemDiscussionsSort> = Schema.Union([
+)
+export const WorkItemDiscussionsSortSchema: Schema.Schema<WorkItemDiscussionsSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC')
-])
-export const WorkItemParentWildcardIdSchema: Schema.Codec<WorkItemParentWildcardId> = Schema.Union([
+)
+export const WorkItemParentWildcardIdSchema: Schema.Schema<WorkItemParentWildcardId> = Schema.Union(
   Schema.Literal('ANY'),
   Schema.Literal('NONE')
-])
-export const WorkItemRelatedLinkTypeSchema: Schema.Codec<WorkItemRelatedLinkType> = Schema.Union([
+)
+export const WorkItemRelatedLinkTypeSchema: Schema.Schema<WorkItemRelatedLinkType> = Schema.Union(
   Schema.Literal('BLOCKED_BY'),
   Schema.Literal('BLOCKS'),
   Schema.Literal('RELATED')
-])
-export const WorkItemSortSchema: Schema.Codec<WorkItemSort> = Schema.Union([
+)
+export const WorkItemSortSchema: Schema.Schema<WorkItemSort> = Schema.Union(
   Schema.Literal('BLOCKING_ISSUES_ASC'),
   Schema.Literal('BLOCKING_ISSUES_DESC'),
   Schema.Literal('CLOSED_AT_ASC'),
@@ -2959,31 +2959,31 @@ export const WorkItemSortSchema: Schema.Codec<WorkItemSort> = Schema.Union([
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const WorkItemStateSchema: Schema.Codec<WorkItemState> = Schema.Union([
+)
+export const WorkItemStateSchema: Schema.Schema<WorkItemState> = Schema.Union(
   Schema.Literal('CLOSED'),
   Schema.Literal('OPEN')
-])
-export const WorkItemStateEventSchema: Schema.Codec<WorkItemStateEvent> = Schema.Union([
+)
+export const WorkItemStateEventSchema: Schema.Schema<WorkItemStateEvent> = Schema.Union(
   Schema.Literal('CLOSE'),
   Schema.Literal('REOPEN')
-])
-export const WorkItemStatusCategoryEnumSchema: Schema.Codec<WorkItemStatusCategoryEnum> = Schema.Union([
+)
+export const WorkItemStatusCategoryEnumSchema: Schema.Schema<WorkItemStatusCategoryEnum> = Schema.Union(
   Schema.Literal('CANCELED'),
   Schema.Literal('DONE'),
   Schema.Literal('IN_PROGRESS'),
   Schema.Literal('TO_DO'),
   Schema.Literal('TRIAGE')
-])
-export const WorkItemSubscriptionEventSchema: Schema.Codec<WorkItemSubscriptionEvent> = Schema.Union([
+)
+export const WorkItemSubscriptionEventSchema: Schema.Schema<WorkItemSubscriptionEvent> = Schema.Union(
   Schema.Literal('SUBSCRIBE'),
   Schema.Literal('UNSUBSCRIBE')
-])
-export const WorkItemTodoUpdateActionSchema: Schema.Codec<WorkItemTodoUpdateAction> = Schema.Union([
+)
+export const WorkItemTodoUpdateActionSchema: Schema.Schema<WorkItemTodoUpdateAction> = Schema.Union(
   Schema.Literal('ADD'),
   Schema.Literal('MARK_AS_DONE')
-])
-export const WorkItemWidgetTypeSchema: Schema.Codec<WorkItemWidgetType> = Schema.Union([
+)
+export const WorkItemWidgetTypeSchema: Schema.Schema<WorkItemWidgetType> = Schema.Union(
   Schema.Literal('ASSIGNEES'),
   Schema.Literal('AWARD_EMOJI'),
   Schema.Literal('COLOR'),
@@ -3014,8 +3014,8 @@ export const WorkItemWidgetTypeSchema: Schema.Codec<WorkItemWidgetType> = Schema
   Schema.Literal('VERIFICATION_STATUS'),
   Schema.Literal('VULNERABILITIES'),
   Schema.Literal('WEIGHT')
-])
-export const WorkItemsSavedViewsSortSchema: Schema.Codec<WorkItemsSavedViewsSort> = Schema.Union([
+)
+export const WorkItemsSavedViewsSortSchema: Schema.Schema<WorkItemsSavedViewsSort> = Schema.Union(
   Schema.Literal('CREATED_ASC'),
   Schema.Literal('CREATED_DESC'),
   Schema.Literal('ID'),
@@ -3026,17 +3026,17 @@ export const WorkItemsSavedViewsSortSchema: Schema.Codec<WorkItemsSavedViewsSort
   Schema.Literal('created_desc'),
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
-])
-export const WorkflowEnvironmentSchema: Schema.Codec<WorkflowEnvironment> = Schema.Union([
+)
+export const WorkflowEnvironmentSchema: Schema.Schema<WorkflowEnvironment> = Schema.Union(
   Schema.Literal('AMBIENT'),
   Schema.Literal('CHAT'),
   Schema.Literal('CHAT_PARTIAL'),
   Schema.Literal('IDE'),
   Schema.Literal('WEB')
-])
-export const WorkspaceVariableInputTypeSchema: Schema.Codec<WorkspaceVariableInputType> = Schema.Union([
+)
+export const WorkspaceVariableInputTypeSchema: Schema.Schema<WorkspaceVariableInputType> = Schema.Union(
   Schema.Literal('ENVIRONMENT')
-])
-export const WorkspaceVariableTypeSchema: Schema.Codec<WorkspaceVariableType> = Schema.Union([
+)
+export const WorkspaceVariableTypeSchema: Schema.Schema<WorkspaceVariableType> = Schema.Union(
   Schema.Literal('ENVIRONMENT')
-])
+)

@@ -36,6 +36,9 @@ export const selectedMrIndexAtom = Atom.make<number>(0);
 // Transient repo filter for MR display (empty = show all synced repos)
 export const repoFilterAtom = Atom.make<readonly string[]>([]);
 
+// MR GIDs temporarily pinned into the current view (bypasses filters)
+export const pinnedMrGidsAtom = Atom.make<ReadonlySet<MrGid>>(new Set<MrGid>() satisfies ReadonlySet<MrGid>);
+
 export const selectedMrAtom = Atom.make(get =>  {
     const selectedMrIndex = get(selectedMrIndexAtom);
     const mergeRequestsResult = get(mergeRequestsAtom);
@@ -175,10 +178,23 @@ export const filteredMrsAtom = Atom.make((get) => {
   const userFilter = get(effectiveUserFilterAtom);
   const sprintIssueKeys = get(sprintFilterIssueKeysAtom);
   const allMrsResult = get(allMrsAtom);
+  const pinnedGids = get(pinnedMrGidsAtom);
 
   return AsyncResult.match(allMrsResult, {
     onInitial: () => [] as readonly MergeRequest[],
-    onSuccess: (state) => filterMrs(state.value.mrsByGid, filterMrState, repoFilter, userFilter, sortOrder, sprintIssueKeys),
+    onSuccess: (state) => {
+      const filtered = filterMrs(state.value.mrsByGid, filterMrState, repoFilter, userFilter, sortOrder, sprintIssueKeys);
+      if (pinnedGids.size === 0) return filtered;
+      const filteredGids = new Set(filtered.map(mr => mr.id));
+      const pinned = [...pinnedGids]
+        .filter(gid => !filteredGids.has(gid))
+        .flatMap(gid => {
+          const mr = state.value.mrsByGid.get(gid);
+          return mr ? [mr] : [];
+        })
+        .sort((a, b) => b[sortOrder].getTime() - a[sortOrder].getTime());
+      return [...filtered, ...pinned];
+    },
     onFailure: () => [] as readonly MergeRequest[]
   });
 });

@@ -30,6 +30,7 @@ import EpicLegend from './EpicLegend';
 import { transformToBoard, flattenBoard, mapStatus, mapPriority, sortStories, type CollapseState } from '../board-utils';
 import { selectMrByIdAtom } from '../../mergerequests/mergerequests-atom';
 import type { MergeRequest } from '../../mergerequests/mergerequest-schema';
+import { projectBranchMapAtom } from '../../mergerequests/hooks/useRepositoryBranches';
 
 interface JiraBoardPageProps {
   onClose: () => void;
@@ -93,6 +94,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const setSprintFilter = useAtomSet(setSprintFilterAtom);
 
   const mrsByJiraKey = useAtomValue(mrsByJiraKeyAtom);
+  const projectBranchMap = useAtomValue(projectBranchMapAtom);
 
   const sprintsResult = useAtomValue(sprintsStateAtom);
   const sprints = AsyncResult.builder(sprintsResult)
@@ -478,6 +480,9 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     const rowColor = isRowDim ? dimColor : flatItem.statusColor;
 
     const mr = flatItem.mr;
+    const branchInfo = projectBranchMap.get(mr.project.fullPath);
+    const worktreeMatch = branchInfo?.worktreeBranches.get(mr.sourcebranch) ?? null;
+    const isCheckedOut = worktreeMatch !== null;
     const approvalIcon = mr.approvedBy.length > 0 ? '☒' : '☐';
     const approvalCount = mr.approvedBy.length > 0 ? mr.approvedBy.length : 1;
     const discussions = mr.resolvableDiscussions > 0
@@ -499,7 +504,17 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, ...dimAttrStyle }} wrapMode="none">{'mr:'.padEnd(8)}</text>
         <text style={{ fg: rowColor, ...dimAttrStyle }} wrapMode="none">!{mr.iid}</text>
         <text style={{ fg: rowColor, flexShrink: 1, ...dimAttrStyle }} wrapMode="none">{mr.sourcebranch}</text>
-        <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, ...dimAttrStyle }} wrapMode="none">{approvalIcon}{approvalCount}{discussions} ({mr.project.name})</text>
+        <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, ...dimAttrStyle }} wrapMode="none">{approvalIcon}{approvalCount}{discussions}</text>
+        <box style={{ backgroundColor: isCheckedOut ? Colors.SUCCESS : 'transparent', flexShrink: 0, flexDirection: 'row' }}>
+          <text style={{ fg: isCheckedOut ? Colors.BACKGROUND : (isRowDim ? dimColor : Colors.NEUTRAL), ...(isCheckedOut ? {} : dimAttrStyle) }} wrapMode="none">
+            ({mr.project.name})
+          </text>
+          {worktreeMatch && (
+            <text style={{ fg: isCheckedOut ? Colors.BACKGROUND : Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode="none">
+              {` [${worktreeMatch.index}]`}
+            </text>
+          )}
+        </box>
       </box>
     );
   };

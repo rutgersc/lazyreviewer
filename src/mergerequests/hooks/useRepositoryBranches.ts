@@ -75,7 +75,7 @@ export const projectBranchMapAtom = Atom.make((get) => {
         {
           currentBranch: repo.currentBranch,
           worktreeBranches: new Map(
-            additionalWorktrees
+            [...mainWorktree, ...additionalWorktrees]
               .filter(wt => wt.branch !== null)
               .map(wt => [wt.branch!, { index: wt.index, folderName: wt.folderName }])
           ),
