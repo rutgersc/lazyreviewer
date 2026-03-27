@@ -9,7 +9,7 @@ import MrSortModal from "./components/MrSortModal";
 import MrStateModal from "./components/MrStateModal";
 import RepoFilterModal from "./components/RepoFilterModal";
 import FChooserModal from "./components/FChooserModal";
-import UserFilterModal from "./components/UserFilterModal";
+import PresetPickerModal from "./components/PresetPickerModal";
 import UserFilterBar from "./components/UserFilterBar";
 import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal from "./components/HelpModal";
@@ -20,7 +20,6 @@ import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage"
 import NotificationsPage from "./components/NotificationsPage";
 import FailedJobPickerModal from "./components/FailedJobPickerModal";
 import JobPickerModal from "./components/JobPickerModal";
-import GroupPickerModal from "./components/GroupPickerModal";
 import RefreshPickerModal from "./components/RefreshPickerModal";
 import ConfigurationPage from "./components/ConfigurationPage";
 import OnboardingPage from "./onboarding/OnboardingPage";
@@ -33,7 +32,7 @@ import { type MergeRequestState } from "./domain/merge-request-state";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
-import { toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
+import { toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Effect } from 'effect';
@@ -85,7 +84,6 @@ export default function App() {
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
   const [factsViewStyle, setFactsViewStyle] = useAtom(factsViewStyleAtom);
-  const setUserFilter = useAtomSet(setUserFilterAtom);
   const jiraBoardId = useAtomValue(jiraBoardIdAtom);
   const setJiraBoardFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
 
@@ -297,7 +295,7 @@ export default function App() {
   useKeyboard((key: ParsedKey) => {
     // Handle escape - close any active modal (except self-managing ones)
     if (key.name === 'escape') {
-      if (activeModal !== 'none' && activeModal !== 'groupPicker' && activeModal !== 'refreshPicker') {
+      if (activeModal !== 'none' && activeModal !== 'presetPicker' && activeModal !== 'refreshPicker') {
         setActiveModal('none');
         return;
       }
@@ -448,21 +446,10 @@ export default function App() {
         onClose={() => setActiveModal('none')}
       />
 
-      {/* User Filter Modal - toggle user filter */}
-      <UserFilterModal
-        isVisible={activeModal === 'userFilter'}
-        onConfirm={(usernames, groupIds) => {
-          setUserFilter({ usernames, groupIds });
-          setActiveModal('none');
-        }}
+      {/* Preset Picker Modal */}
+      <PresetPickerModal
+        isVisible={activeModal === 'presetPicker'}
         onClose={() => setActiveModal('none')}
-      />
-
-      {/* Group Picker Modal */}
-      <GroupPickerModal
-        isVisible={activeModal === 'groupPicker'}
-        onClose={() => setActiveModal('none')}
-        onEditFilter={() => setActiveModal('userFilter')}
       />
 
       {/* Refresh Picker Modal */}

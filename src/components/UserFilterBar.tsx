@@ -24,7 +24,7 @@ export default function UserFilterBar() {
         {groupNames.map(name => (
           <box
             key={`g-${name}`}
-            onMouseDown={() => setActiveModal('userFilter')}
+            onMouseDown={() => setActiveModal('presetPicker')}
             style={{ backgroundColor: Colors.TRACK, paddingLeft: 1, paddingRight: 1 }}
           >
             <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
@@ -35,7 +35,7 @@ export default function UserFilterBar() {
         {userFilter.map(username => (
           <box
             key={`u-${username}`}
-            onMouseDown={() => setActiveModal('userFilter')}
+            onMouseDown={() => setActiveModal('presetPicker')}
             style={{ backgroundColor: Colors.TRACK, paddingLeft: 1, paddingRight: 1 }}
           >
             <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
@@ -44,7 +44,7 @@ export default function UserFilterBar() {
           </box>
         ))}
         <text
-          onMouseDown={() => setActiveModal('userFilter')}
+          onMouseDown={() => setActiveModal('presetPicker')}
           style={{ fg: Colors.INFO }}
           wrapMode='none'
         >

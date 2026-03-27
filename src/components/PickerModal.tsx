@@ -173,10 +173,8 @@ export default function PickerModal({
               return (
                 <box
                   key={item.id}
-                  onMouseDown={() => {
-                    if (idx === highlightIndex) onSelect(item);
-                    else setHighlightIndex(idx);
-                  }}
+                  onMouseOver={() => setHighlightIndex(idx)}
+                  onMouseDown={() => onSelect(item)}
                   style={{
                     flexDirection: 'column',
                     backgroundColor: isHighlighted ? Colors.SELECTED : 'transparent',

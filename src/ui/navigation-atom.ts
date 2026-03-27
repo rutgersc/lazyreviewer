@@ -14,13 +14,12 @@ export type ActiveModal =
   | 'monitoredMrs'
   | 'notifications'
   | 'fChooser'
-  | 'userFilter'
+  | 'presetPicker'
   | 'mrState'
   | 'repoFilter'
   | 'onboarding'
   | 'failedJobPicker'
   | 'jobPicker'
-  | 'groupPicker'
   | 'refreshPicker';
 
 export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);

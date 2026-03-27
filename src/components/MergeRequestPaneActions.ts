@@ -46,11 +46,11 @@ export const mrActionsAtom = Atom.make((get) => {
       handler: () => registry.set(activeModalAtom, 'fChooser'),
     },
     {
-      id: 'mr:group-picker',
+      id: 'mr:preset-picker',
       keys: [parseKeyString('/')],
       displayKey: '/',
-      description: 'Pick group',
-      handler: () => registry.set(activeModalAtom, 'groupPicker'),
+      description: 'Users & Presets',
+      handler: () => registry.set(activeModalAtom, 'presetPicker'),
     },
     {
       id: 'mr:nav-down',

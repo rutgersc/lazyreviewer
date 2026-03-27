@@ -463,26 +463,27 @@ export const userGroupsAtom = selectFromUserSettings(
   groupsEquals
 );
 
-export const saveGroupFromFilterAtom = appAtomRuntime.fn(
-  ({ name }: { name: string }) =>
-    Effect.gen(function* () {
-      const settings = yield* SettingsService.load;
-      const userSettings = yield* UserSettingsService.load;
-      const reverseMap = new Map(userSettings.users.map(u => [u.gitlab, u.userId]));
-      const users = settings.userFilterUsernames
-        .map(gitlab => reverseMap.get(gitlab))
-        .filter((id): id is string => id !== undefined);
-      const group: SettingsGroup = {
+export const saveGroupAtom = appAtomRuntime.fn(
+  ({ name, users, groups }: { name: string; users: readonly string[]; groups: readonly string[] }) =>
+    UserSettingsService.modify(s => ({
+      ...s,
+      userGroups: [...s.userGroups, {
         id: `group-${Date.now()}`,
         name,
-        users,
-        groups: [...settings.userFilterGroupIds],
-      };
-      yield* UserSettingsService.modify(s => ({
-        ...s,
-        userGroups: [...s.userGroups, group],
-      }));
-    })
+        users: [...users],
+        groups: [...groups],
+      }],
+    }))
+);
+
+export const updateGroupAtom = appAtomRuntime.fn(
+  ({ id, name, users, groups }: { id: string; name: string; users: readonly string[]; groups: readonly string[] }) =>
+    UserSettingsService.modify(s => ({
+      ...s,
+      userGroups: s.userGroups.map(g =>
+        g.id === id ? { id, name, users: [...users], groups: [...groups] } : g
+      ),
+    }))
 );
 
 export const deleteGroupAtom = appAtomRuntime.fn(

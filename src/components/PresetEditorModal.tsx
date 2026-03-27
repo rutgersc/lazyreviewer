@@ -4,36 +4,34 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { Colors } from '../colors';
 import { useAtomValue } from '@effect-atom/atom-react';
 import { knownAuthorsAtom } from '../mergerequests/mergerequests-atom';
-import { userFilterUsernamesAtom, userFilterGroupIdsAtom } from '../settings/settings-atom';
 import { groupsAtom } from '../data/data-atom';
 import { resolveGroupIds } from '../userselection/userSelection';
 import type { UserId, UserGroup } from '../userselection/userSelection';
 
 type Column = 'left' | 'right'
 
-interface UserFilterModalProps {
+interface PresetEditorModalProps {
   isVisible: boolean;
-  onConfirm: (usernames: readonly string[], groupIds: readonly string[]) => void;
+  initialName?: string;
+  initialUserIds?: readonly string[];
+  initialGroupIds?: readonly string[];
+  onSave: (name: string, userIds: readonly string[], groupIds: readonly string[]) => void;
   onClose: () => void;
 }
 
-export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserFilterModalProps) {
+export default function PresetEditorModal({ isVisible, initialName, initialUserIds, initialGroupIds, onSave, onClose }: PresetEditorModalProps) {
   const knownAuthors = useAtomValue(knownAuthorsAtom);
-  const currentUsernames = useAtomValue(userFilterUsernamesAtom);
-  const currentGroupIds = useAtomValue(userFilterGroupIdsAtom);
   const groups = useAtomValue(groupsAtom);
 
+  const [name, setName] = React.useState('');
+  const [nameInputFocused, setNameInputFocused] = React.useState(false);
   const [activeColumn, setActiveColumn] = React.useState<Column>('left');
   const [leftIndex, setLeftIndex] = React.useState(0);
   const [rightIndex, setRightIndex] = React.useState(0);
-  const [checkedUsernames, setCheckedUsernames] = React.useState<ReadonlySet<string>>(new Set());
+  const [checkedUserIds, setCheckedUserIds] = React.useState<ReadonlySet<string>>(new Set());
   const [checkedGroupIds, setCheckedGroupIds] = React.useState<ReadonlySet<string>>(new Set());
 
-  const leftItems: readonly ('all' | UserGroup)[] = React.useMemo(() => [
-    'all' as const,
-    ...groups,
-  ], [groups]);
-
+  const leftItems: readonly UserGroup[] = groups;
   const rightItems: readonly UserId[] = knownAuthors;
 
   const groupMemberUserIds = React.useMemo(() => {
@@ -44,66 +42,69 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
   const highlightedGroupMemberIds = React.useMemo(() => {
     if (activeColumn !== 'left') return new Set<string>();
     const item = leftItems[leftIndex];
-    if (!item || item === 'all') return new Set<string>();
+    if (!item) return new Set<string>();
     const resolved = resolveGroupIds([item.id.id], groups);
     return new Set(resolved.map(u => u.userId));
   }, [activeColumn, leftIndex, leftItems, groups]);
 
   React.useEffect(() => {
     if (isVisible) {
-      setCheckedUsernames(new Set(currentUsernames));
-      setCheckedGroupIds(new Set(currentGroupIds));
+      setName(initialName ?? '');
+      setNameInputFocused(!initialName);
+      setCheckedUserIds(new Set(initialUserIds ?? []));
+      setCheckedGroupIds(new Set(initialGroupIds ?? []));
       setActiveColumn('left');
       setLeftIndex(0);
       setRightIndex(0);
     }
-  }, [isVisible, currentUsernames, currentGroupIds]);
+  }, [isVisible]);
 
-  const toggleLeftItem = React.useCallback((item: 'all' | UserGroup) => {
-    if (item === 'all') {
-      setCheckedUsernames(new Set());
-      setCheckedGroupIds(new Set());
-    } else {
-      const id = item.id.id;
-      setCheckedGroupIds(prev => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-    }
-  }, []);
-
-  const toggleRightItem = React.useCallback((author: UserId) => {
-    const name = author.userId;
-    setCheckedUsernames(prev => {
+  const toggleGroup = React.useCallback((group: UserGroup) => {
+    const id = group.id.id;
+    setCheckedGroupIds(prev => {
       const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
 
-  const handleConfirm = React.useCallback(() => {
-    onConfirm([...checkedUsernames], [...checkedGroupIds]);
-  }, [onConfirm, checkedUsernames, checkedGroupIds]);
+  const toggleUser = React.useCallback((author: UserId) => {
+    const id = author.userId;
+    setCheckedUserIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
-  const handleCancel = React.useCallback(() => {
-    onClose();
-  }, [onClose]);
+  const handleSave = React.useCallback(() => {
+    const trimmed = name.trim();
+    if (trimmed) {
+      onSave(trimmed, [...checkedUserIds], [...checkedGroupIds]);
+    }
+  }, [onSave, name, checkedUserIds, checkedGroupIds]);
 
   const toggleCurrentItem = React.useCallback(() => {
     if (activeColumn === 'left') {
       const item = leftItems[leftIndex];
-      if (item) toggleLeftItem(item);
+      if (item) toggleGroup(item);
     } else {
       const item = rightItems[rightIndex];
-      if (item) toggleRightItem(item);
+      if (item) toggleUser(item);
     }
-  }, [activeColumn, leftIndex, rightIndex, leftItems, rightItems, toggleLeftItem, toggleRightItem]);
+  }, [activeColumn, leftIndex, rightIndex, leftItems, rightItems, toggleGroup, toggleUser]);
 
   useKeyboard((key: ParsedKey) => {
     if (!isVisible) return;
+
+    if (nameInputFocused) {
+      if (key.name === 'escape') {
+        onClose();
+      }
+      return;
+    }
 
     switch (key.name) {
       case 'h':
@@ -135,24 +136,21 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
         break;
       case 'o':
       case 'return':
-        handleConfirm();
+        handleSave();
         break;
-      case 'c':
       case 'escape':
-        handleCancel();
+        onClose();
         break;
     }
   });
 
   if (!isVisible) return null;
 
-  const isAllChecked = checkedUsernames.size === 0 && checkedGroupIds.size === 0;
-  const totalSelected = checkedUsernames.size + checkedGroupIds.size;
-  const hasGroups = groups.length > 0;
-  const hasUsers = knownAuthors.length > 0;
+  const isEditing = !!initialName;
+  const totalSelected = checkedUserIds.size + checkedGroupIds.size;
 
   const getUserColor = (author: UserId): string => {
-    const isIndividual = checkedUsernames.has(author.userId);
+    const isIndividual = checkedUserIds.has(author.userId);
     const isGroupMember = groupMemberUserIds.has(author.userId);
     const isHighlightedMember = highlightedGroupMemberIds.has(author.userId);
     if (isIndividual && isGroupMember) return Colors.WARNING;
@@ -186,14 +184,31 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
           padding: 1,
         }}
       >
-        <box>
-          <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrapMode='none'>
-            Filter by user {isAllChecked ? '(all)' : `(${totalSelected} selected)`}
-          </text>
+        <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrapMode='none'>
+          {isEditing ? 'Edit Preset' : 'New Preset'} ({totalSelected} selected)
+        </text>
+
+        <box style={{ flexDirection: 'row', gap: 1, marginTop: 1 }}>
+          <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>Name:</text>
+          <input
+            focused={nameInputFocused}
+            value={name}
+            placeholder="preset name"
+            style={{ width: 35 }}
+            backgroundColor={Colors.TRACK}
+            textColor={Colors.PRIMARY}
+            focusedBackgroundColor={Colors.SELECTED}
+            focusedTextColor={Colors.PRIMARY}
+            placeholderColor={Colors.SUPPORTING}
+            cursorColor={Colors.INFO}
+            onInput={(v: string) => setName(v)}
+            onSubmit={() => setNameInputFocused(false)}
+          />
         </box>
+
         <box>
           <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
-            h/l columns  j/k navigate  Space toggle
+            {nameInputFocused ? 'Enter to continue  Esc cancel' : 'h/l columns  j/k navigate  Space toggle'}
           </text>
         </box>
 
@@ -206,44 +221,39 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
           }
         }}>
           <box style={{ flexDirection: "row" }}>
-            {/* Left column: All + Groups */}
+            {/* Left column: Groups */}
             <box style={{ flexDirection: "column", minWidth: 25 }}>
               <text style={{ fg: Colors.SUPPORTING, attributes: TextAttributes.DIM }} wrapMode='none'>
-                Groups
+                Presets
               </text>
-              {leftItems.map((item, idx) => {
-                const isAll = item === 'all';
-                const isHighlighted = activeColumn === 'left' && idx === leftIndex;
-                const isChecked = isAll ? isAllChecked : checkedGroupIds.has(item.id.id);
+              {leftItems.map((group, idx) => {
+                const isHighlighted = !nameInputFocused && activeColumn === 'left' && idx === leftIndex;
+                const isChecked = checkedGroupIds.has(group.id.id);
                 const checkbox = isChecked ? '[x]' : '[ ]';
-                const label = isAll ? 'All (no filter)' : item.name;
-                const color = isAll
-                  ? (isAllChecked ? Colors.INFO : Colors.PRIMARY)
-                  : (isChecked ? Colors.NEUTRAL : Colors.PRIMARY);
 
                 return (
                   <box
-                    key={isAll ? '__all__' : `group-${item.id.id}`}
+                    key={`group-${group.id.id}`}
                     onMouseOver={() => {
                       setActiveColumn('left');
                       setLeftIndex(idx);
                     }}
                     onMouseDown={() => {
+                      setNameInputFocused(false);
                       setActiveColumn('left');
                       setLeftIndex(idx);
-                      if (isAll) toggleLeftItem('all');
-                      else toggleLeftItem(item);
+                      toggleGroup(group);
                     }}
                     style={{ backgroundColor: isHighlighted ? Colors.TRACK : undefined }}
                   >
                     <text
                       style={{
-                        fg: color,
+                        fg: isChecked ? Colors.NEUTRAL : Colors.PRIMARY,
                         attributes: isHighlighted ? TextAttributes.BOLD : undefined,
                       }}
                       wrapMode='none'
                     >
-                      {`${checkbox} ${label}`}
+                      {`${checkbox} ${group.name}`}
                     </text>
                   </box>
                 );
@@ -252,14 +262,14 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
 
             {/* Right column: Users */}
             <box style={{ flexDirection: "column", minWidth: 25 }}>
-              {hasUsers && (
+              {knownAuthors.length > 0 && (
                 <text style={{ fg: Colors.SUPPORTING, attributes: TextAttributes.DIM }} wrapMode='none'>
                   Users
                 </text>
               )}
               {rightItems.map((author, idx) => {
-                const isHighlighted = activeColumn === 'right' && idx === rightIndex;
-                const isChecked = checkedUsernames.has(author.userId);
+                const isHighlighted = !nameInputFocused && activeColumn === 'right' && idx === rightIndex;
+                const isChecked = checkedUserIds.has(author.userId);
                 const checkbox = isChecked ? '[x]' : '[ ]';
                 const color = getUserColor(author);
 
@@ -271,9 +281,10 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
                       setRightIndex(idx);
                     }}
                     onMouseDown={() => {
+                      setNameInputFocused(false);
                       setActiveColumn('right');
                       setRightIndex(idx);
-                      toggleRightItem(author);
+                      toggleUser(author);
                     }}
                     style={{ backgroundColor: isHighlighted ? Colors.TRACK : undefined }}
                   >
@@ -293,18 +304,12 @@ export default function UserFilterModal({ isVisible, onConfirm, onClose }: UserF
           </box>
         </scrollbox>
 
-        {!hasGroups && !hasUsers && (
-          <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
-            No authors known yet - fetch some MRs first
-          </text>
-        )}
-
         <box style={{ flexDirection: "row", gap: 2, marginTop: 1, justifyContent: "flex-end" }}>
-          <text onMouseDown={handleConfirm} style={{ fg: Colors.SUCCESS }}>
-            [o]k
+          <text onMouseDown={handleSave} style={{ fg: Colors.SUCCESS }}>
+            [o] save
           </text>
-          <text onMouseDown={handleCancel} style={{ fg: Colors.ERROR }}>
-            [c]ancel
+          <text onMouseDown={onClose} style={{ fg: Colors.ERROR }}>
+            [Esc] cancel
           </text>
         </box>
       </box>

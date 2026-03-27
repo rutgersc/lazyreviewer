@@ -15,7 +15,7 @@ export default function FChooserModal({ isVisible, onChoose, onClose }: FChooser
 
     switch (key.name) {
       case 'f':
-        onChoose('userFilter');
+        onChoose('presetPicker');
         break;
       case 's':
         onChoose('mrSort');
@@ -25,9 +25,6 @@ export default function FChooserModal({ isVisible, onChoose, onClose }: FChooser
         break;
       case 'r':
         onChoose('repoFilter');
-        break;
-      case 'p':
-        onChoose('groupPicker');
         break;
       case 'escape':
         onClose();
@@ -64,7 +61,7 @@ export default function FChooserModal({ isVisible, onChoose, onClose }: FChooser
           Filter / Sort
         </text>
         <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
-          f  Filter users
+          f  Users & Presets
         </text>
         <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
           s  Sort MRs
@@ -74,9 +71,6 @@ export default function FChooserModal({ isVisible, onChoose, onClose }: FChooser
         </text>
         <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
           r  Repositories
-        </text>
-        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
-          p  Pick group
         </text>
         <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
           Esc  Cancel
