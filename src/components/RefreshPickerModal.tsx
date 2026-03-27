@@ -1,6 +1,6 @@
 import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { Colors } from '../colors';
-import { userGroupsAtom, setUserFilterAtom, repoSelectionAtom } from '../settings/settings-atom';
+import { userGroupsAtom, repoSelectionAtom } from '../settings/settings-atom';
 import { knownProjectsAtom, refreshMergeRequestsAtom } from '../mergerequests/mergerequests-atom';
 import { refreshSingleRepoAtom } from './RepositoriesPaneActions';
 import { repositoryFullPath, resolveGroupIds } from '../userselection/userSelection';
@@ -23,7 +23,6 @@ export default function RefreshPickerModal({ isVisible, onClose }: RefreshPicker
   const knownProjects = useAtomValue(knownProjectsAtom);
   const customRepos = useAtomValue(repoSelectionAtom);
 
-  const setUserFilter = useAtomSet(setUserFilterAtom);
   const refreshMergeRequests = useAtomSet(refreshMergeRequestsAtom, { mode: 'promiseExit' });
   const refreshSingleRepo = useAtomSet(refreshSingleRepoAtom, { mode: 'promiseExit' });
 
@@ -53,7 +52,6 @@ export default function RefreshPickerModal({ isVisible, onClose }: RefreshPicker
     if (item.id.startsWith('group:')) {
       const groupId = item.id.slice('group:'.length);
       const resolvedUsers = resolveGroupIds([groupId], resolvedGroups);
-      setUserFilter({ usernames: [], groupIds: [groupId] });
       refreshMergeRequests(resolvedUsers);
     } else {
       const repoPath = item.id.slice('repo:'.length);
