@@ -79,7 +79,7 @@ export const sendBatchNotification = Effect.fn("sendBatchNotification")(function
   }
 
   yield* sendSystemNotification({
-    title: '🔔 LazyGitLab Update',
+    title: '🔔 LazyReviewer Update',
     body: parts.join(', ')
   });
 });

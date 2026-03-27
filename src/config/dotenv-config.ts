@@ -84,9 +84,9 @@ export const deriveMissingCredentials = (envVars: Record<string, string>): Missi
 export const getEnvFilePath = (): string =>
   path.join(process.cwd(), '.env');
 
-const ENV_TEMPLATE = `# Lazygitlab Configuration
+const ENV_TEMPLATE = `# LazyReviewer Configuration
 # Fill in the credentials for the services you want to use.
-# After editing, restart Lazygitlab to pick up changes.
+# After editing, restart LazyReviewer to pick up changes.
 
 # ── GitLab ────────────────────────────────────────────────
 # Personal access token for the GitLab API.

@@ -2,7 +2,7 @@ import { Effect, Schema, Stream, Console } from 'effect';
 import { FileSystem } from '@effect/platform';
 import { DEFAULT_USERS, DEFAULT_GROUPS } from '../data/default-users-and-groups';
 
-const USER_SETTINGS_FILE = 'lazygitlab-settings-users.json';
+const USER_SETTINGS_FILE = 'lazyreviewer-settings-users.json';
 
 const SettingsUserSchema = Schema.mutable(Schema.Struct({
   userId: Schema.String,

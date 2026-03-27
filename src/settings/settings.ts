@@ -4,7 +4,7 @@ import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { MrGid } from '../domain/identifiers';
 import { PipelineJobSchema } from '../domain/merge-request-schema';
 
-const SETTINGS_FILE = 'lazygitlab-settings.json';
+const SETTINGS_FILE = 'lazyreviewer-settings.json';
 const DEFAULT_SETTINGS_FILE = 'default-settings.json';
 
 // Schema for coercing string|number to number (for user-edited JSON)

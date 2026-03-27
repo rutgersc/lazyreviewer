@@ -253,7 +253,7 @@ export default function App() {
       description: 'Open settings JSON',
       handler: async () => {
         await Effect.runPromise(
-          openFileInEditor('lazygitlab-settings.json').pipe(Effect.provide(appLayer))
+          openFileInEditor('lazyreviewer-settings.json').pipe(Effect.provide(appLayer))
         );
       },
     },

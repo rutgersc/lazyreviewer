@@ -29,9 +29,9 @@ The currently applied filter that determines which merge requests are visible. W
 
 ## Storage
 
-Users and groups live in `lazygitlab-settings-users.json`. This keeps team/identity data isolated from application preferences.
+Users and groups live in `lazyreviewer-settings-users.json`. This keeps team/identity data isolated from application preferences.
 
-The active filter lives in `lazygitlab-settings.json` alongside other app state.
+The active filter lives in `lazyreviewer-settings.json` alongside other app state.
 
 ## Relations
 

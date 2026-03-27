@@ -1,4 +1,4 @@
-const DEFAULT_TITLE = 'LazyGitLab';
+const DEFAULT_TITLE = 'LazyReviewer';
 
 let unreadCount = 0;
 

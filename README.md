@@ -39,7 +39,7 @@ bun start
 
 ### Bitbucket Support
 
-Lazygitlab supports both GitLab and Bitbucket repositories. To use a Bitbucket repository:
+LazyReviewer supports both GitLab and Bitbucket repositories. To use a Bitbucket repository:
 
 1. Configure your Bitbucket credentials in `.env` (see above)
 2. Add a Bitbucket repository using the format: `bitbucket:workspace/repo-slug`

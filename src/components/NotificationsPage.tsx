@@ -45,7 +45,7 @@ export default function NotificationsPage({ onClose }: NotificationsPageProps) {
         break;
       case 'e':
         Effect.runPromise(
-          openFileInEditor('lazygitlab-settings.json').pipe(Effect.provide(appLayer))
+          openFileInEditor('lazyreviewer-settings.json').pipe(Effect.provide(appLayer))
         );
         break;
     }
