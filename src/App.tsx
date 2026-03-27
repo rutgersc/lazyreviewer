@@ -15,7 +15,6 @@ import GitSwitchModal from "./components/GitSwitchModal";
 import HelpModal from "./components/HelpModal";
 import JobHistoryModal from "./components/JobHistoryModal";
 import JobHistoryInputModal from "./components/JobHistoryInputModal";
-import EventLogPane from "./components/EventLogPane";
 import { JiraBoardPage } from "./jiraboard";
 import MonitoredMergeRequestsPage from "./components/MonitoredMergeRequestsPage";
 import NotificationsPage from "./components/NotificationsPage";
@@ -108,17 +107,6 @@ export default function App() {
       displayKey: '~ / z',
       description: 'Toggle debug console',
       handler: () => renderer.console.toggle(),
-    },
-    {
-      id: 'global:event-log',
-      keys: [parseKeyString('o')],
-      displayKey: 'o',
-      description: 'Open event log',
-      handler: () => {
-        if (mergeRequests.length > 0) {
-          setActiveModal('eventLog');
-        }
-      },
     },
     {
       id: 'global:refresh',
@@ -537,14 +525,6 @@ export default function App() {
       {/* Job History Modal - rendered at app level to cover entire screen */}
       {activeModal === 'jobHistory' && (
         <JobHistoryModal
-          onClose={() => setActiveModal('none')}
-        />
-      )}
-
-      {/* Event Log Pane - fullscreen overlay */}
-      {activeModal === 'eventLog' && (
-        <EventLogPane
-          mergeRequests={[...mergeRequests]}
           onClose={() => setActiveModal('none')}
         />
       )}

@@ -4,7 +4,8 @@ import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
 import { appLayer } from "../appLayerRuntime";
 import { allEventsAtom } from "../events/events-atom";
-import { EventStorage } from "../eventstore/eventStorage";
+import { EventStorage } from "../eventstore/eventStorage"
+
 import { activePaneAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
 import { openFileInEditor } from "../utils/open-file";
@@ -43,31 +44,6 @@ const selectionAction = (registry: Registry.Registry): Action => ({
   },
 });
 
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
-const cleanupAction = (registry: Registry.Registry): Action => ({
-  id: 'facts:cleanup-events',
-  keys: [parseKeyString('shift+d')],
-  displayKey: 'D',
-  description: 'Delete events older than 24h',
-  handler: async () => {
-    registry.set(statusMessageAtom, 'Cleaning up old events...');
-    try {
-      const deletedCount = await Effect.runPromise(
-        EventStorage.deleteEventsOlderThan(ONE_DAY_MS).pipe(
-          Effect.provide(appLayer)
-        )
-      );
-      registry.set(statusMessageAtom, deletedCount > 0
-        ? `Deleted ${deletedCount} events. Restart to apply.`
-        : 'No old events to delete.'
-      );
-    } catch {
-      registry.set(statusMessageAtom, 'Cleanup failed.');
-    }
-    setTimeout(() => registry.set(statusMessageAtom, null), 4000);
-  },
-});
 
 const chronologicalActions = (registry: Registry.Registry): Action[] => [
   {
@@ -137,7 +113,6 @@ const chronologicalActions = (registry: Registry.Registry): Action[] => [
     },
   },
   selectionAction(registry),
-  cleanupAction(registry),
 ];
 
 const eventGroupedSublistActions = (registry: Registry.Registry): Action[] => [
@@ -194,7 +169,6 @@ const eventGroupedSublistActions = (registry: Registry.Registry): Action[] => [
     },
   },
   selectionAction(registry),
-  cleanupAction(registry),
 ];
 
 const eventGroupedActions = (registry: Registry.Registry): Action[] => [
@@ -328,7 +302,6 @@ const eventGroupedActions = (registry: Registry.Registry): Action[] => [
     },
   },
   selectionAction(registry),
-  cleanupAction(registry),
 ];
 
 export const factsPaneActionsAtom: Atom.Atom<Action[]> = Atom.make(get => {

@@ -10,7 +10,6 @@ export type ActiveModal =
   | 'help'
   | 'jobHistory'
   | 'jobHistoryInput'
-  | 'eventLog'
   | 'jiraBoard'
   | 'monitoredMrs'
   | 'notifications'

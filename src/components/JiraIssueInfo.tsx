@@ -73,17 +73,6 @@ export default function JiraIssueInfo({ issue, selectedCommentIndex, commentFocu
 
   return (
     <box style={{ flexDirection: "column", gap: 1, width: "100%" }}>
-      <box style={{ flexDirection: "column", marginBottom: 1, width: "100%" }}>
-        {issue.fields.assignee && (
-          <text
-            style={{ fg: Colors.INFO, marginBottom: 1 }}
-            wrapMode='word'
-          >
-            {`Assignee: ${issue.fields.assignee.displayName}`}
-          </text>
-        )}
-      </box>
-
       <box style={{ marginBottom: 1, width: "100%" }}>
         {renderComments(issue.fields.comment.comments || [])}
       </box>
