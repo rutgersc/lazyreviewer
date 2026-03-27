@@ -4,7 +4,7 @@ import { appAtomRuntime } from './appLayerRuntime';
 import { ensureBackgroundSyncWorker } from './notifications/background-sync-service';
 import { ensureNotificationDaemon } from './notifications/notification-sync-atom';
 import { ensurePipelineJobPriorityInSettings } from './settings/settings-ensure-pipeline-jobnames-sink';
-import { ensureEventCleanupDaemon } from './eventstore/event-cleanup-daemon';
+import { ensureEventCleanupDaemon } from './eventstore/cleanup/event-cleanup-daemon';
 
 export const appInitAtom = appAtomRuntime.atom(get =>
   Effect.gen(function* () {

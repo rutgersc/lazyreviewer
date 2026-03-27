@@ -238,6 +238,33 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       return isNaN(date.getTime()) ? null : date
     }
 
+    const deleteEventsByIds = (eventIds: ReadonlyArray<string>) => Effect.gen(function* () {
+      if (eventIds.length === 0) return 0
+
+      const idsToDelete = new Set(eventIds)
+      const files = yield* fs.readDirectory(eventsDir).pipe(
+        Effect.catchAll(() => Effect.succeed([]))
+      )
+
+      const toDelete = files.filter(filename => {
+        const parsed = parseFilename(filename)
+        return parsed !== null && idsToDelete.has(parsed.eventId)
+      })
+
+      yield* Effect.all(
+        toDelete.map(filename =>
+          fs.remove(path.join(eventsDir, filename)).pipe(
+            Effect.catchAll(() => Effect.void)
+          )
+        ),
+        { concurrency: "unbounded" }
+      )
+
+      yield* Console.log(`[EventStorage] Cleanup: deleted ${toDelete.length} events by ID`)
+
+      return toDelete.length
+    })
+
     const deleteEventsOlderThan = (olderThanMs: number) => Effect.gen(function* () {
       const cutoff = new Date(Date.now() - olderThanMs)
       const files = yield* fs.readDirectory(eventsDir).pipe(
@@ -275,6 +302,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       combinedEventsStream,
       clearInMemoryEvents,
       getEventFilePath,
+      deleteEventsByIds,
       deleteEventsOlderThan
     } as const
   })
