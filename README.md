@@ -1,4 +1,4 @@
-# Lazygitlab
+# Lazyreviewer
 
 ### authorize build time calls
 

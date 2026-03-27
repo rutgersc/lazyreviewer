@@ -26,7 +26,7 @@ import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchS
 import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom";
 import { currentUserIdAtom } from "../settings/settings-atom";
 import type { JiraIssue } from "../jira/jira-schema";
-import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom, pipelineJobImportanceAtom, showBranchNamesAtom } from "../settings/settings-atom";
+import { ignoredMergeRequestsAtom, seenMergeRequestsAtom, toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, monitoredMergeRequestsAtom, pipelineJobImportanceAtom } from "../settings/settings-atom";
 
 export const scrollToItemRequestAtom = Atom.make<number | null>(null);
 export const copyNotificationRequestAtom = Atom.make<string | null>(null);
@@ -124,13 +124,11 @@ const TimeColumnAuthorTitle = ({
   isMyMr,
   relationType,
   now,
-  showBranchNames
 }: {
   mr: MergeRequest;
   isMyMr: boolean;
   relationType: RelationType | null;
   now: Date;
-  showBranchNames: boolean;
 }) => {
   const badge = relationType ? getRelationBadge(relationType._tag) : null;
   return (
@@ -165,13 +163,13 @@ const TimeColumnAuthorTitle = ({
         )}
         <text
           style={{
-            fg: showBranchNames ? Colors.INFO : Colors.PRIMARY,
+            fg: Colors.PRIMARY,
             attributes: TextAttributes.BOLD,
             ...(badge && { bg: badge.titleBg })
           }}
           wrapMode='none'
         >
-          {truncate(showBranchNames ? mr.sourcebranch : mr.title, 100)}
+          {truncate(mr.title, 100)}
         </text>
       </box>
     </box>
@@ -400,56 +398,6 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
   );
 };
 
-const BranchInformation = ({ mr, branchDifferenceMap, worktreeMatch }: { mr: MergeRequest; branchDifferenceMap: Map<string, { behind: number; ahead: number }>; worktreeMatch: WorktreeMatch | null }) => {
-  const difference = branchDifferenceMap.get(mr.id);
-
-  return (
-    <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-      <box style={{ width: 19 }}></box>
-
-      <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrapMode='none'
-        >
-          {mr.targetbranch}
-        </text>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrapMode='none'
-        >
-          ←
-        </text>
-        <text
-          style={{ fg: Colors.PRIMARY, attributes: TextAttributes.DIM }}
-          wrapMode='none'
-        >
-          {mr.sourcebranch}
-        </text>
-        {difference && (
-          <text
-            style={{
-              fg: difference.behind > 0 ? Colors.WARNING : Colors.SUCCESS,
-              attributes: TextAttributes.DIM
-            }}
-            wrapMode='none'
-          >
-            {difference.behind > 0 ? ` (-${difference.behind})` : ` (up to date)`}
-          </text>
-        )}
-        {worktreeMatch && (
-          <text
-            style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }}
-            wrapMode='none'
-          >
-            {` [${worktreeMatch.index}] ${worktreeMatch.folderName}`}
-          </text>
-        )}
-      </box>
-    </box>
-  );
-};
-
 const IgnoredMergeRequestRow = ({
   mr,
   isActiveInLocalRepo,
@@ -621,8 +569,6 @@ export default function MergeRequestPane() {
   const currentUser = useAtomValue(currentUserIdAtom);
 
   const jiraIssuesMap = useAtomValue(allJiraIssuesAtom);
-  const showBranchNames = useAtomValue(showBranchNamesAtom);
-
   const ignoredMergeRequests = useAtomValue(ignoredMergeRequestsAtom);
   const monitoredMergeRequests = useAtomValue(monitoredMergeRequestsAtom);
   const setActiveModal = useAtomSet(activeModalAtom);
@@ -920,9 +866,8 @@ export default function MergeRequestPane() {
                   <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} isMyMr={isMyMr} now={now} />
                 ) : (
                   <>
-                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} showBranchNames={showBranchNames} />
+                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} />
                     <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} createdAt={mr.createdAt} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
-                    {!showBranchNames && <BranchInformation mr={mr} branchDifferenceMap={branchDifferences} worktreeMatch={worktreeMatch} />}
                     {index === selectedIndex && <OutOfViewRelations relations={outOfViewRelations} />}
                   </>
                 )}

@@ -3,7 +3,7 @@ import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom } from '../ui/navigation-atom';
 import { useAutoScroll } from '../hooks/useAutoScroll';
-import { appViewAtom, factsViewStyleAtom, notificationSettingsAtom, toggleNotificationsAtom, showBranchNamesAtom, factsSelectionActiveAtom } from '../settings/settings-atom';
+import { appViewAtom, factsViewStyleAtom, factsSelectionActiveAtom } from '../settings/settings-atom';
 import { viewConfigs } from '../ui/view-config';
 import EventGroupedChangesView from './facts/EventGroupedChangesView';
 import ChronologicalChangesView from './facts/ChronologicalChangesView';
@@ -35,9 +35,7 @@ export default function FactsPane() {
   const [scrollToEventIdRequest, setScrollToEventIdRequest] = useAtom(scrollToEventIdRequestAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
   const [factsViewStyle, setFactsViewStyle] = useAtom(factsViewStyleAtom);
-  const notificationSettings = useAtomValue(notificationSettingsAtom);
-  const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
-  const [showBranchNames, setShowBranchNames] = useAtom(showBranchNamesAtom);
+
   const [factsSelectionActive, setFactsSelectionActive] = useAtom(factsSelectionActiveAtom);
 
   useEffect(() => {
@@ -50,16 +48,13 @@ export default function FactsPane() {
   const reviewColor = appView === 'review' ? viewConfigs.review.modeIndicator.labelColor : Colors.DIM;
   const focusColor = appView === 'focus' ? viewConfigs.focus.modeIndicator.labelColor : Colors.DIM;
 
-  const notifColor = notificationSettings.enabled ? Colors.SECONDARY : Colors.DIM;
   const chronoColor = factsViewStyle === 'chronological' ? Colors.SECONDARY : Colors.DIM;
   const eventsColor = factsViewStyle === 'grouped' ? Colors.SECONDARY : Colors.DIM;
-  const branchColor = showBranchNames ? Colors.SECONDARY : Colors.DIM;
-  const titleColor = showBranchNames ? Colors.DIM : Colors.SECONDARY;
   const filteredColor = factsSelectionActive ? Colors.SECONDARY : Colors.DIM;
   const allColor = factsSelectionActive ? Colors.DIM : Colors.SECONDARY;
 
   const modeIndicatorBox = () => (
-    <box key="mode-indicator" width="100%" height={6} flexDirection="column">
+    <box key="mode-indicator" width="100%" height={4} flexDirection="column">
       <box height={1} flexDirection="row"
            onMouseDown={() => setAppView(appView === 'review' ? 'focus' : 'review')}>
         <text fg={Colors.SUPPORTING} wrapMode="none">{' [v] '}</text>
@@ -73,18 +68,6 @@ export default function FactsPane() {
         <text fg={chronoColor} wrapMode="none">{'chronological'}</text>
         <text fg={Colors.SUPPORTING} wrapMode="none">{' / '}</text>
         <text fg={eventsColor} wrapMode="none">{'events'}</text>
-      </box>
-      <box height={1} flexDirection="row"
-           onMouseDown={() => toggleNotifications()}>
-        <text fg={Colors.SUPPORTING} wrapMode="none">{' [n] '}</text>
-        <text fg={notifColor} wrapMode="none">{notificationSettings.enabled ? 'notifications' : 'notifications off'}</text>
-      </box>
-      <box height={1} flexDirection="row"
-           onMouseDown={() => setShowBranchNames(!showBranchNames)}>
-        <text fg={Colors.SUPPORTING} wrapMode="none">{' [B] '}</text>
-        <text fg={titleColor} wrapMode="none">{'title'}</text>
-        <text fg={Colors.SUPPORTING} wrapMode="none">{' / '}</text>
-        <text fg={branchColor} wrapMode="none">{'branch'}</text>
       </box>
       <box height={1} flexDirection="row"
            onMouseDown={() => setFactsSelectionActive(!factsSelectionActive)}>

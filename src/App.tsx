@@ -34,7 +34,7 @@ import { type MergeRequestState } from "./domain/merge-request-state";
 import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
 import { filterMrStateAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
-import { toggleNotificationsAtom, notificationSettingsAtom, toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, showBranchNamesAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
+import { toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, setUserFilterAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Effect } from 'effect';
@@ -48,8 +48,6 @@ import { Colors, detectSchemeFromBackground, getColorScheme, setColorScheme } fr
 export default function App() {
   useAtomValue(appInitAtom);
 
-  const toggleNotifications = useAtomSet(toggleNotificationsAtom, { mode: 'promiseExit' });
-  const notificationSettings = useAtomValue(notificationSettingsAtom);
   const toggleBackgroundSync = useAtomSet(toggleBackgroundSyncAtom, { mode: 'promiseExit' });
   const backgroundSyncSettings = useAtomValue(backgroundSyncSettingsAtom);
 
@@ -88,7 +86,6 @@ export default function App() {
   const [sortOrder, setSortOrder] = useAtom(mrSortOrderAtom);
   const [appView, setAppView] = useAtom(appViewAtom);
   const [factsViewStyle, setFactsViewStyle] = useAtom(factsViewStyleAtom);
-  const [showBranchNames, setShowBranchNames] = useAtom(showBranchNamesAtom);
   const setUserFilter = useAtomSet(setUserFilterAtom);
   const jiraBoardId = useAtomValue(jiraBoardIdAtom);
   const setJiraBoardFocusKey = useAtomSet(jiraBoardFocusKeyAtom);
@@ -138,17 +135,6 @@ export default function App() {
       handler: () => setActiveModal('help'),
     },
     {
-      id: 'global:toggle-notifications',
-      keys: [parseKeyString('n')],
-      displayKey: 'n',
-      description: 'Toggle notifications',
-      handler: async () => {
-        await toggleNotifications();
-        setCopyNotification(notificationSettings.enabled ? 'Notifications disabled' : 'Notifications enabled');
-        setTimeout(() => setCopyNotification(null), 2000);
-      },
-    },
-    {
       id: 'global:toggle-background-sync',
       keys: [parseKeyString('S')],
       displayKey: 'S',
@@ -196,13 +182,6 @@ export default function App() {
       displayKey: 'c',
       description: 'Toggle facts view style',
       handler: () => setFactsViewStyle(factsViewStyle === 'grouped' ? 'chronological' : 'grouped'),
-    },
-    {
-      id: 'global:toggle-branch-names',
-      keys: [parseKeyString('B')],
-      displayKey: 'B',
-      description: 'Toggle branch/title display',
-      handler: () => setShowBranchNames(!showBranchNames),
     },
     {
       id: 'global:onboarding',
@@ -292,7 +271,7 @@ export default function App() {
         );
       },
     },
-  ], [activePane, mergeRequests.length, notificationSettings.enabled, backgroundSyncSettings.enabled, jiraBoardId, appView, factsViewStyle, showBranchNames]);
+  ], [activePane, mergeRequests.length, backgroundSyncSettings.enabled, jiraBoardId, appView, factsViewStyle]);
 
   // Force re-render on color scheme change
   const [, setSchemeVersion] = useState(0);

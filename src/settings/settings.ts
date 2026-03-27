@@ -122,7 +122,6 @@ export const SettingsSchema = Schema.mutable(Schema.Struct({
   factsViewStyle: Schema.optionalWith(Schema.Literal('chronological', 'grouped'), { default: () => 'chronological' as const }),
   sprintFilterId: Schema.optional(Schema.Number),
   sprintFilterName: Schema.optional(Schema.String),
-  showBranchNames: Schema.optionalWith(Schema.Boolean, { default: () => false }),
   factsSelectionActive: Schema.optionalWith(Schema.Boolean, { default: () => false }),
 }))
 export type Settings = Schema.Schema.Type<typeof SettingsSchema>

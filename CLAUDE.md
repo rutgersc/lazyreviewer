@@ -1,6 +1,8 @@
-# LazyGitLab
+# LazyReviewer
 
-Terminal-based TUI for viewing GitLab merge requests with Jira integration.
+Terminal-based TUI that aims to help keeping track of pull requests, their work related (jira) issue tracking, pipeline state, all in one place. 
+
+that provides an overview of mergerequests (gitlab/bitbucket) tracking and getting an overview of mergerquests viewing  GitLab merge requests with Jira integration.
 
 ## Development Commands
 
