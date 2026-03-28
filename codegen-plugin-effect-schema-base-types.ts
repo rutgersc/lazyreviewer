@@ -26,7 +26,7 @@ export const plugin: PluginFunction = (schema: GraphQLSchema) => {
         .join(',\n');
 
       enumSchemas.push(
-        `export const ${typeName}Schema: Schema.Schema<${typeName}> = Schema.Union(\n${literals}\n)`
+        `export const ${typeName}Schema: Schema.Schema<${typeName}> = Schema.Union([\n${literals}\n])`
       );
     }
   }
