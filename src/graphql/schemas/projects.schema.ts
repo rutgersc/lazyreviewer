@@ -1,7 +1,7 @@
 import { Schema } from "effect"
 import type { ProjectsQuery } from "../projects.generated"
 
-export const ProjectsQuerySchema: Schema.Schema<ProjectsQuery> = Schema.Struct({
+export const ProjectsQuerySchema = Schema.Struct({
   projects: Schema.NullOr(Schema.Struct({
     count: Schema.Number,
     nodes: Schema.NullOr(Schema.Array(

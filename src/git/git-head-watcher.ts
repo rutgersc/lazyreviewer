@@ -1,5 +1,4 @@
-import { Effect, Stream } from 'effect';
-import { FileSystem } from '@effect/platform';
+import { Effect, FileSystem, Stream } from 'effect';
 import { SettingsService } from '../settings/settings';
 import { getWorktrees } from './git-effects';
 import { join } from 'path';

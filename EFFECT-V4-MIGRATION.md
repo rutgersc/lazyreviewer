@@ -4,7 +4,7 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 
 **Branch:** `effect-v4`
 **Starting errors:** 1,479
-**Current errors:** 206
+**Current errors:** 114
 
 ## Completed
 
@@ -52,12 +52,13 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 - [x] `@effect/platform-node/NodeCommandExecutor` → `@effect/platform-node/NodeServices`
 - [x] `FileSystem`, `Path` from `@effect/platform` → from `effect`
 - [x] `Layer.Layer.Success` → `Layer.Success`
+- [x] `@effect/platform` → `effect` for FileSystem, Path imports (type mismatch with NodeServices.layer)
+- [x] `Schema.Schema<Type>` annotations removed from generated schemas (widens away DecodingServices)
+- [x] `Stream.groupedWithin` now returns `Array<A>` not `Chunk<A>` — replace Chunk.reduce/toArray/size with array ops
+- [x] `PlatformError` import from `effect/PlatformError` not `@effect/platform/Error`
+- [x] Layer composition `unknown` context leak fixed (root: Schema.Schema annotation + @effect/platform import mismatch)
 
 ## Remaining
-
-### Layer composition has `unknown` context leak (~40 errors, high priority)
-
-`appLayer` resolves with `RIn = unknown` instead of `never`, meaning some layer dependency is unsatisfied. This cascades to `appAtomRuntime` which then causes "Missing 'unknown' in the expected Effect context" in all consumer atoms. Root cause is likely one of the service `make:` effects having an unresolved dependency.
 
 ### Command/open-file API migration (~5 errors)
 

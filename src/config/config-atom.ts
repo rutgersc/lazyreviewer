@@ -1,6 +1,5 @@
 import { Atom } from "effect/unstable/reactivity";
-import { FileSystem } from '@effect/platform';
-import { Effect, Stream, Console } from 'effect';
+import { Effect, FileSystem, Stream, Console } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { getEnvFilePath, parseEnvContent, deriveMissingCredentials, type MissingCredential, dotEnvFileChanges } from './dotenv-config';
 

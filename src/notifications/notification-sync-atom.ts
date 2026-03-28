@@ -1,5 +1,5 @@
 import { Atom, AsyncResult } from "effect/unstable/reactivity";
-import { Effect, Stream, Console, Fiber, Chunk, Option } from 'effect';
+import { Effect, Stream, Console, Fiber } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserIdAtom } from '../settings/settings-atom';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
@@ -128,9 +128,7 @@ const createNotificationDaemon = (get: Atom.Context) =>
           return true; // stop drop
         }
 
-        const hasLastProcessedEvent = acc.pipe(
-          Chunk.findFirst(change => change.event?.eventId == lastProcessedTimestamp),
-          Option.isSome);
+        const hasLastProcessedEvent = acc.some(change => change.event?.eventId == lastProcessedTimestamp);
 
         return hasLastProcessedEvent; // if has the event, stop dropping
       }),
@@ -145,11 +143,11 @@ const createNotificationDaemon = (get: Atom.Context) =>
           });
 
           // The actual last event (for persisting lastProcessedEventId)
-          const actualLastState = acc.pipe(Chunk.last);
+          const actualLastState = acc.at(-1);
 
           // Persist the actual last event ID regardless of notification setting
-          if (Option.isSome(actualLastState) && actualLastState.value.event) {
-            const eventId = actualLastState.value.event.eventId;
+          if (actualLastState?.event) {
+            const eventId = actualLastState.event.eventId;
             yield* settingsService.modify(s => ({
               ...s,
               notifications: { ...s.notifications, lastProcessedEventId: eventId }
@@ -159,16 +157,15 @@ const createNotificationDaemon = (get: Atom.Context) =>
           if (!notificationsEnabled) return;
 
           // Single scan to find last event ID of each type
-          const { lastMrId, lastJiraId } = Chunk.reduce(
-            acc,
-            { lastMrId: undefined as string | undefined, lastJiraId: undefined as string | undefined },
+          const { lastMrId, lastJiraId } = acc.reduce(
             (tracker, state) => {
               if (!state.event) return tracker;
               return {
                 lastMrId: mrChangeTrackingProjection.isRelevantEvent(state.event) ? state.event.eventId : tracker.lastMrId,
                 lastJiraId: jiraChangeTrackingProjection.isRelevantEvent(state.event) ? state.event.eventId : tracker.lastJiraId
               };
-            }
+            },
+            { lastMrId: undefined as string | undefined, lastJiraId: undefined as string | undefined }
           );
 
           // Build target set (filters undefined, dedupes naturally)
@@ -176,7 +173,7 @@ const createNotificationDaemon = (get: Atom.Context) =>
 
           // Filter → map → filter pipeline
           const context = buildNotificationContext(get);
-          const payloads = Chunk.toArray(acc)
+          const payloads = acc
             .filter(state => state.event !== undefined && targetEventIds.has(state.event.eventId))
             .map(state => stateToNotificationPayload(state, context))
             .filter((p): p is NotificationPayload => p !== undefined);

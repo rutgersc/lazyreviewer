@@ -2,7 +2,7 @@ import { Schema } from "effect"
 import type { SingleMrQuery } from "../single-mr.generated"
 import { MergeRequestFieldsFragmentSchema } from "./mrs.schema"
 
-export const SingleMrQuerySchema: Schema.Schema<SingleMrQuery> = Schema.Struct({
+export const SingleMrQuerySchema = Schema.Struct({
   project: Schema.NullOr(Schema.Struct({
     id: Schema.Any,
     name: Schema.String,

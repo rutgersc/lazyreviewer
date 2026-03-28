@@ -40,7 +40,7 @@ export const BitbucketParticipantSchema = Schema.Struct({
   participated_on: Schema.optional(Schema.String),
 })
 
-export const BitbucketPullRequestSchema: Schema.Schema<BitbucketPullRequest> = Schema.Struct({
+export const BitbucketPullRequestSchema = Schema.Struct({
   id: Schema.Number,
   title: Schema.String,
   description: Schema.optional(Schema.String),

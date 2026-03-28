@@ -1,5 +1,4 @@
-import { Effect, ServiceMap, Stream, SubscriptionRef, Chunk } from "effect"
-
+import { Effect, ServiceMap, Stream, SubscriptionRef } from "effect"
 import { EventStorage } from "../events/events"
 import { allMrsProjection } from "./all-mergerequests-projection"
 
@@ -12,7 +11,7 @@ export class MrStateService extends ServiceMap.Service<MrStateService>()("MrStat
       Stream.filter(allMrsProjection.isRelevantEvent),
       Stream.groupedWithin(200, "0.33 seconds"),
       Stream.scan(allMrsProjection.initialState, (state, events) =>
-        Chunk.reduce(events, state, (s, e) => allMrsProjection.project(s, e))
+        events.reduce((s, e) => allMrsProjection.project(s, e), state)
       ),
       Stream.runForEach((state) => SubscriptionRef.set(stateRef, state)),
       Effect.forkScoped

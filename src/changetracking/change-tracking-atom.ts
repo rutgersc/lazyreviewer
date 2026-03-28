@@ -1,5 +1,5 @@
 import { Atom } from "effect/unstable/reactivity"
-import { Chunk, Effect, Stream } from 'effect'
+import { Effect, Stream } from 'effect'
 import { EventStorage } from '../events/events'
 import {
   jiraChangeTrackingProjection,
@@ -40,22 +40,22 @@ export const changesStream = Effect.fn(function* (_get: Atom.Context) {
     Stream.scan(
       initialAccumulator,
       (state: ChangeTrackingState, events) =>
-        Chunk.reduce(events, state, (state, event) => {
+        events.reduce<ChangeTrackingState>((acc, event) => {
           const { mrDeltas, mrStatesForDelta } = mrChangeTrackingProjection.isRelevantEvent(event)
-            ? mrChangeTrackingProjection.project({ mrStatesForDelta: state.mrStateForDeltaByMrId, mrDeltas: [] }, event)
-            : { mrDeltas: [], mrStatesForDelta: state.mrStateForDeltaByMrId };
+            ? mrChangeTrackingProjection.project({ mrStatesForDelta: acc.mrStateForDeltaByMrId, mrDeltas: [] }, event)
+            : { mrDeltas: [], mrStatesForDelta: acc.mrStateForDeltaByMrId };
 
           const { jiraDeltas, jiraStatesForDelta } = jiraChangeTrackingProjection.isRelevantEvent(event)
-            ? jiraChangeTrackingProjection.project({ jiraStatesForDelta: state.jiraStateForDeltaByIssueKey, jiraDeltas: [] }, event)
-            : { jiraDeltas: [], jiraStatesForDelta: state.jiraStateForDeltaByIssueKey };
+            ? jiraChangeTrackingProjection.project({ jiraStatesForDelta: acc.jiraStateForDeltaByIssueKey, jiraDeltas: [] }, event)
+            : { jiraDeltas: [], jiraStatesForDelta: acc.jiraStateForDeltaByIssueKey };
 
           const sortedDeltas = [...mrDeltas, ...jiraDeltas]
             .sort((a, b) => a.changedAt.getTime() - b.changedAt.getTime());
 
-          const newDeltasByEventId = new Map(state.deltasByEventId);
+          const newDeltasByEventId = new Map(acc.deltasByEventId);
           newDeltasByEventId.set(event.eventId, sortedDeltas);
 
-          const newGroupedDeltasByEventId = new Map(state.groupedDeltasByEventId);
+          const newGroupedDeltasByEventId = new Map(acc.groupedDeltasByEventId);
           newGroupedDeltasByEventId.set(
             event.eventId,
             groupChanges(sortedDeltas.filter(c => !isFilteredSystemNote(c)))
@@ -67,8 +67,8 @@ export const changesStream = Effect.fn(function* (_get: Atom.Context) {
             deltasByEventId: newDeltasByEventId,
             groupedDeltasByEventId: newGroupedDeltasByEventId,
             event: event,
-          } satisfies ChangeTrackingState;
-        })
+          };
+        }, state)
     )
   );
 });

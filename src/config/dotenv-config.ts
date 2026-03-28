@@ -1,7 +1,6 @@
-import { Effect, Stream, Console } from "effect";
+import { Effect, FileSystem, Stream, Console } from "effect";
 import * as fs from 'fs';
 import * as path from 'path';
-import { FileSystem } from '@effect/platform';
 // import { getEnvFilePath, parseEnvContent, deriveMissingCredentials, type MissingCredential } from './dotenv-config';
 
 export interface EnvCredential {

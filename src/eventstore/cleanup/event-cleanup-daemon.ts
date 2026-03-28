@@ -12,7 +12,7 @@ export const ensureEventCleanupDaemon = Effect.gen(function* () {
     Stream.filter(eventsToDeleteTodoList.isRelevantEvent),
     Stream.groupedWithin(200, "0.33 seconds"),
     Stream.scan(eventsToDeleteTodoList.initialState, (state, events) =>
-      Chunk.reduce(events, state, (s, e) => eventsToDeleteTodoList.project(s, e))
+      events.reduce((s, e) => eventsToDeleteTodoList.project(s, e), state)
     ),
     Stream.runForEach((state) =>
       Effect.gen(function* () {

@@ -1,4 +1,4 @@
-import { Data, Effect, ServiceMap, Stream, SubscriptionRef, Chunk } from "effect"
+import { Data, Effect, ServiceMap, Stream, SubscriptionRef } from "effect"
 import type { MrGid } from "../domain/identifiers"
 import type { MergeRequestState } from "../domain/merge-request-state"
 import type { RepositoryId } from "../userselection/userSelection"
@@ -82,12 +82,12 @@ export class BgSyncReadModelService extends ServiceMap.Service<BgSyncReadModelSe
     yield* eventStorage.eventsStream.pipe(
       Stream.groupedWithin(200, "0.33 seconds"),
       Stream.scan(bgSyncProjection.initialState, (state, events) => {
-        const relevant = Chunk.toArray(events).filter(bgSyncProjection.isRelevantEvent)
+        const relevant = events.filter(bgSyncProjection.isRelevantEvent)
         const projected = relevant.reduce((s, e) => bgSyncProjection.project(s, e), state)
         return new BgSyncReadModel({
           mrFreshnessById: projected.mrFreshnessById,
           knownProjects: projected.knownProjects,
-          seq: state.seq + Chunk.size(events),
+          seq: state.seq + events.length,
         })
       }),
       Stream.runForEach((state) => SubscriptionRef.set(stateRef, state)),

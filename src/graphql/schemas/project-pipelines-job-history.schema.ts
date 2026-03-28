@@ -2,7 +2,7 @@ import { Schema } from "effect"
 import type { ProjectPipelinesJobHistoryQuery } from "../project-pipelines-job-history.generated"
 import { PipelineStatusEnumSchema, CiJobStatusSchema } from "../generated/gitlab-base-types.schema"
 
-export const ProjectPipelinesJobHistoryQuerySchema: Schema.Schema<ProjectPipelinesJobHistoryQuery> = Schema.Struct({
+export const ProjectPipelinesJobHistoryQuerySchema = Schema.Struct({
   project: Schema.NullOr(Schema.Struct({
     id: Schema.Any,
     pipelines: Schema.NullOr(Schema.Struct({

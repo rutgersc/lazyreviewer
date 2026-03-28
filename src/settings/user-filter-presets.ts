@@ -1,6 +1,5 @@
-import { Effect, Schema, ServiceMap, Stream, Console } from 'effect';
+import { Effect, FileSystem, Schema, ServiceMap, Stream, Console } from 'effect';
 import type { Struct as Struct_ } from 'effect/Schema';
-import { FileSystem } from '@effect/platform';
 import { DEFAULT_USERS, DEFAULT_GROUPS } from '../data/default-users-and-groups';
 
 const USER_SETTINGS_FILE = 'lazyreviewer-settings-users.json';

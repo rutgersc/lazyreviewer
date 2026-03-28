@@ -2,7 +2,7 @@ import { Schema } from "effect"
 import type { GitlabMRsQuery } from "../gitlab-mrs.generated"
 import { MergeRequestFieldsFragmentSchema } from "./mrs.schema"
 
-export const GitlabMRsQuerySchema: Schema.Schema<GitlabMRsQuery> = Schema.Struct({
+export const GitlabMRsQuerySchema = Schema.Struct({
   project: Schema.NullOr(Schema.Struct({
     id: Schema.Any,
     name: Schema.String,

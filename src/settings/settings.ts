@@ -1,6 +1,5 @@
-import { Effect, Schema, SchemaGetter, ServiceMap, Stream, Console } from 'effect';
+import { Effect, FileSystem, Schema, SchemaGetter, ServiceMap, Stream, Console } from 'effect';
 import type { Struct as Struct_ } from 'effect/Schema';
-import { FileSystem } from '@effect/platform';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { MrGid } from '../domain/identifiers';
 import { PipelineJobSchema } from '../domain/merge-request-schema';
