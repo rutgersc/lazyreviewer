@@ -17,7 +17,7 @@
     "@graphql-codegen/introspection": "^4.0.3",
     "@graphql-codegen/near-operation-file-preset": "^3.1.0",
     "@graphql-codegen/typescript": "^4.1.6",
-    "@graphql-codegen/typescript-graphql-request": "^6.3.0",
+    "@graphql-codegen/typescript-graphql-request": "6.3.0",
     "@graphql-codegen/typescript-operations": "^4.6.1",
     "@types/bun": "latest",
     "@types/node-notifier": "^8.0.5",
@@ -32,6 +32,7 @@
     "@opentui/react": "^0.1.86",
     "dotenv": "^17.2.3",
     "effect": "4.0.0-beta.42",
+    "graphql-request": "6.1.0",
     "node-notifier": "^10.0.1",
     "react": "^19.0.0"
   }
