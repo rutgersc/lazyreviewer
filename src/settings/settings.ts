@@ -1,4 +1,5 @@
-import { Effect, Schema, Stream, Console } from 'effect';
+import { Effect, Schema, SchemaGetter, Stream, Console } from 'effect';
+import type { Struct as Struct_ } from 'effect/Schema';
 import { FileSystem } from '@effect/platform';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { MrGid } from '../domain/identifiers';
@@ -7,123 +8,102 @@ import { PipelineJobSchema } from '../domain/merge-request-schema';
 const SETTINGS_FILE = 'lazyreviewer-settings.json';
 const DEFAULT_SETTINGS_FILE = 'default-settings.json';
 
+// v4: Schema.mutable only works on arrays. For structs, use mapFields with mutableKey.
+const mutableStruct = <F extends Struct_.Fields>(fields: F) =>
+  Schema.Struct(fields).mapFields(
+    (fs) => Object.fromEntries(Object.entries(fs).map(([k, v]) => [k, Schema.mutableKey(v)])) as { [K in keyof F]: Schema.mutableKey<F[K]> }
+  );
+
 // Schema for coercing string|number to number (for user-edited JSON)
-const NumberFromStringOrNumber = Schema.transform(
-  Schema.Union(Schema.Number, Schema.String),
-  Schema.Number,
-  {
-    decode: (input) => typeof input === 'string' ? Number(input) : input,
-    encode: (n) => n
-  }
+const NumberFromStringOrNumber = Schema.Union([Schema.Number, Schema.String]).pipe(
+  Schema.decodeTo(Schema.Number, {
+    decode: SchemaGetter.transform((input) => typeof input === 'string' ? Number(input) : input),
+    encode: SchemaGetter.transform((n) => n)
+  })
 )
 
-const JobImportanceSchema = Schema.Literal('ignore', 'low', 'monitored')
+const JobImportanceSchema = Schema.Literals(['ignore', 'low', 'monitored'])
 export type JobImportance = Schema.Schema.Type<typeof JobImportanceSchema>
 
-const JobImportanceWithMigration = Schema.transform(
-  Schema.Union(Schema.Literal('ignore', 'low', 'monitored', 'high', 'hidden'), Schema.String),
-  JobImportanceSchema,
-  {
-    strict: true,
-    decode: (input) => {
-      if (input === 'high') return 'monitored';
-      if (input === 'hidden') return 'ignore';
+const JobImportanceWithMigration = Schema.Union([Schema.Literals(['ignore', 'low', 'monitored', 'high', 'hidden']), Schema.String]).pipe(
+  Schema.decodeTo(JobImportanceSchema, {
+    decode: SchemaGetter.transform((input) => {
+      if (input === 'high') return 'monitored' as const;
+      if (input === 'hidden') return 'ignore' as const;
       if (input === 'ignore' || input === 'low' || input === 'monitored') return input;
-      return 'low';
-    },
-    encode: (output) => output
-  }
+      return 'low' as const;
+    }),
+    encode: SchemaGetter.transform((output) => output)
+  })
 )
 
-const MrSortOrderSchema = Schema.Literal('updatedAt', 'createdAt')
+const MrSortOrderSchema = Schema.Literals(['updatedAt', 'createdAt'])
 export type MrSortOrder = Schema.Schema.Type<typeof MrSortOrderSchema>
 
-const NotificationSettingsSchema = Schema.mutable(Schema.Struct({
+const NotificationSettingsSchema = mutableStruct({
   enabled: Schema.Boolean,
   lastProcessedEventId: Schema.optional(Schema.String),
-}))
+})
 export type NotificationSettings = Schema.Schema.Type<typeof NotificationSettingsSchema>
 
-const BackgroundSyncSettingsSchema = Schema.mutable(Schema.Struct({
+const BackgroundSyncSettingsSchema = mutableStruct({
   enabled: Schema.Boolean,
   syncIntervalSeconds: Schema.Number,
-  scalingFactorHours: Schema.optionalWith(Schema.Number, { default: () => 24 }),
+  scalingFactorHours: Schema.Number.pipe(Schema.withDecodingDefaultKey(() => 24)),
   lastRefreshTimestamp: Schema.optional(Schema.String),
-  pageFetchTimestamps: Schema.optionalWith(
-    Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.mutable(Schema.Array(Schema.String)) })),
-    { default: () => ({}) }
+  pageFetchTimestamps: Schema.Record(Schema.String, Schema.mutable(Schema.Array(Schema.String))).pipe(
+    Schema.withDecodingDefaultKey(() => ({}))
   ),
-}))
+})
 export type BackgroundSyncSettings = Schema.Schema.Type<typeof BackgroundSyncSettingsSchema>
 
 // Repository path configuration schema
-const RepositoryPathConfigSchema = Schema.mutable(Schema.Struct({
+const RepositoryPathConfigSchema = mutableStruct({
   localPath: Schema.String,
-  remoteName: Schema.optionalWith(Schema.String, { default: () => 'origin' })
-}))
+  remoteName: Schema.String.pipe(Schema.withDecodingDefaultKey(() => 'origin'))
+})
 export type RepositoryPathConfig = Schema.Schema.Type<typeof RepositoryPathConfigSchema>
 
 // Transform for backward compatibility: string -> object, object -> object
-const RepositoryPathConfigWithMigration = Schema.transform(
-  Schema.Union(Schema.String, RepositoryPathConfigSchema),
-  RepositoryPathConfigSchema,
-  {
-    strict: true,
-    decode: (input) => typeof input === 'string'
+const RepositoryPathConfigWithMigration = Schema.Union([Schema.String, RepositoryPathConfigSchema]).pipe(
+  Schema.decodeTo(RepositoryPathConfigSchema, {
+    decode: SchemaGetter.transform((input) => typeof input === 'string'
       ? { localPath: input, remoteName: 'origin' }
-      : input,
-    encode: (output) => ({ localPath: output.localPath, remoteName: output.remoteName ?? 'origin' })
-  }
+      : input),
+    encode: SchemaGetter.transform((output) => ({ localPath: output.localPath, remoteName: output.remoteName ?? 'origin' }))
+  })
 )
 
-const MonitoredMrStateSchema = Schema.mutable(Schema.Struct({
+const MonitoredMrStateSchema = mutableStruct({
   pipelineIid: Schema.optional(Schema.String),
-  jobStates: Schema.optionalWith(
-    Schema.mutable(Schema.Record({
-      key: Schema.String,
-      value: PipelineJobSchema.fields.status
-    })),
-    { default: () => ({}) }
-  ),
+  jobStates: Schema.Record(Schema.String, PipelineJobSchema.fields.status).pipe(Schema.withDecodingDefaultKey(() => ({}))),
   lastCommit: Schema.optional(Schema.String),
-}))
+})
 export type MonitoredMrState = Schema.Schema.Type<typeof MonitoredMrStateSchema>
 
-export const SettingsSchema = Schema.mutable(Schema.Struct({
-  repositoryPaths: Schema.optionalWith(Schema.mutable(Schema.Record({ key: Schema.String, value: RepositoryPathConfigWithMigration })), { default: () => ({}) }),
-  repositoryColors: Schema.optionalWith(Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.String })), { default: () => ({}) }),
-  ignoredMergeRequests: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
-  seenMergeRequests: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
-  monitoredMergeRequests: Schema.optionalWith(
-    Schema.mutable(Schema.Record({
-      key: Schema.String.pipe(Schema.fromBrand(MrGid)),
-      value: MonitoredMrStateSchema
-    })),
-    { default: () => ({}) }
-  ),
-  projectMonitoredJobs: Schema.optionalWith(
-    Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.mutable(Schema.Array(Schema.String)) })),
-    { default: () => ({}) }
-  ),
-  pipelineJobImportance: Schema.optionalWith(
-    Schema.mutable(Schema.Record({ key: Schema.String, value: Schema.mutable(Schema.Record({ key: Schema.String, value: JobImportanceWithMigration })) })),
-    { default: () => ({}) }
-  ),
-  repoSelection: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
-  userFilterUsernames: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
-  userFilterGroupIds: Schema.optionalWith(Schema.mutable(Schema.Array(Schema.String)), { default: () => [] }),
+export const SettingsSchema = mutableStruct({
+  repositoryPaths: Schema.Record(Schema.String, RepositoryPathConfigWithMigration).pipe(Schema.withDecodingDefaultKey(() => ({}))),
+  repositoryColors: Schema.Record(Schema.String, Schema.String).pipe(Schema.withDecodingDefaultKey(() => ({}))),
+  ignoredMergeRequests: Schema.mutable(Schema.Array(Schema.String)).pipe(Schema.withDecodingDefaultKey(() => [])),
+  seenMergeRequests: Schema.mutable(Schema.Array(Schema.String)).pipe(Schema.withDecodingDefaultKey(() => [])),
+  monitoredMergeRequests: Schema.Record(Schema.String.pipe(Schema.fromBrand("MrGid", MrGid)), MonitoredMrStateSchema).pipe(Schema.withDecodingDefaultKey(() => ({}))),
+  projectMonitoredJobs: Schema.Record(Schema.String, Schema.mutable(Schema.Array(Schema.String))).pipe(Schema.withDecodingDefaultKey(() => ({}))),
+  pipelineJobImportance: Schema.Record(Schema.String, Schema.Record(Schema.String, JobImportanceWithMigration)).pipe(Schema.withDecodingDefaultKey(() => ({}))),
+  repoSelection: Schema.mutable(Schema.Array(Schema.String)).pipe(Schema.withDecodingDefaultKey(() => [])),
+  userFilterUsernames: Schema.mutable(Schema.Array(Schema.String)).pipe(Schema.withDecodingDefaultKey(() => [])),
+  userFilterGroupIds: Schema.mutable(Schema.Array(Schema.String)).pipe(Schema.withDecodingDefaultKey(() => [])),
   selectedUserSelectionEntryId: Schema.optional(Schema.String),
   currentUser: Schema.optional(Schema.String),
-  notifications: Schema.optionalWith(NotificationSettingsSchema, { default: () => ({ enabled: false }) }),
-  backgroundSync: Schema.optionalWith(BackgroundSyncSettingsSchema, { default: () => ({ enabled: false, syncIntervalSeconds: 500, scalingFactorHours: 24, pageFetchTimestamps: {} }) }),
+  notifications: NotificationSettingsSchema.pipe(Schema.withDecodingDefaultKey(() => ({ enabled: false }))),
+  backgroundSync: BackgroundSyncSettingsSchema.pipe(Schema.withDecodingDefaultKey(() => ({ enabled: false, syncIntervalSeconds: 500, scalingFactorHours: 24, pageFetchTimestamps: {} }))),
   jiraBoardId: Schema.optional(NumberFromStringOrNumber),
-  mrSortOrder: Schema.optionalWith(MrSortOrderSchema, { default: () => 'createdAt' as const }),
-  appView: Schema.optionalWith(Schema.Literal('review', 'focus'), { default: () => 'review' as const }),
-  factsViewStyle: Schema.optionalWith(Schema.Literal('chronological', 'grouped'), { default: () => 'chronological' as const }),
+  mrSortOrder: MrSortOrderSchema.pipe(Schema.withDecodingDefaultKey(() => 'createdAt' as const)),
+  appView: Schema.Literals(['review', 'focus']).pipe(Schema.withDecodingDefaultKey(() => 'review' as const)),
+  factsViewStyle: Schema.Literals(['chronological', 'grouped']).pipe(Schema.withDecodingDefaultKey(() => 'chronological' as const)),
   sprintFilterId: Schema.optional(Schema.Number),
   sprintFilterName: Schema.optional(Schema.String),
-  factsSelectionActive: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-}))
+  factsSelectionActive: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(() => false)),
+})
 export type Settings = Schema.Schema.Type<typeof SettingsSchema>
 
 const decodeSettings = Schema.decodeUnknownSync(SettingsSchema)

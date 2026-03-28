@@ -4,7 +4,7 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 
 **Branch:** `effect-v4`
 **Starting errors:** 1,479
-**Current errors:** 711
+**Current errors:** 450
 
 ## Completed
 
@@ -19,36 +19,44 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 - [x] `@effect-atom/atom-react` → `@effect/atom-react`
 - [x] `Atom`, `Result`, `Registry` → imports from `effect/unstable/reactivity`
 - [x] `Result` → `AsyncResult`, `Registry` → `AtomRegistry`
+- [x] `Schema.optionalWith(S, { default: () => X })` → `S.pipe(Schema.withDecodingDefaultKey(() => X))`
+- [x] `Schema.Record({ key, value })` → `Schema.Record(key, value)` (positional args)
+- [x] `Schema.transform(from, to, { decode, encode })` → `from.pipe(Schema.decodeTo(to, { decode: SchemaGetter.transform(fn), encode: SchemaGetter.transform(fn) }))`
+- [x] `Schema.decodeUnknown(S)` (Effect) → `Schema.decodeUnknownEffect(S)`
+- [x] `Schema.Literal('a', 'b', ...)` → `Schema.Literals(['a', 'b', ...])`
+- [x] `Schema.Union(A, B)` → `Schema.Union([A, B])`
+- [x] `Schema.mutable(Schema.Struct({...}))` → `mutableStruct({...})` via `mapFields` + `mutableKey`
+- [x] `.annotations({...})` → `.pipe(Schema.annotate({...}))`
+- [x] `Schema.fromBrand(Ctor)` → `Schema.fromBrand("id", Ctor)` (added identifier arg)
 
 ## Remaining
 
-### Service pattern rewrite (~125 errors, high priority)
+### Service pattern rewrite (~120 errors, high priority)
 
-`Effect.Service` and `Context.Tag` proxy accessors removed in v4. Services no longer expose static methods like `SettingsService.modify(...)` or `EventStorage.appendEvent(...)`. Need to migrate to `ServiceMap.Service` with explicit `yield*` access.
+`Effect.Service` → `Effect.service` (lowercase) in v4. Services no longer expose static `.Default` layer accessor. Proxy accessors on service tags removed. Need to migrate consumer code to `yield*` access pattern.
 
-Affected services: `EventStorage`, `SettingsService`, `UserSettingsService`, `MrStateService`, `BackgroundSyncService`, `DiscussionScrollService`, `JiraScrollService`
+Affected services: `EventStorage`, `SettingsService`, `UserSettingsService`, `MrStateService`, `BackgroundSyncService`, `DiscussionScrollService`, `JiraScrollService`, `PipelineJobMonitor`, `BgSyncReadModelService`
 
 Also: `yield*` on services/Ref/Deferred no longer auto-unwraps — need `Ref.get(ref)`, `Deferred.await(deferred)`, `Fiber.join(fiber)`.
-
-### Schema changes (~40 errors, medium priority)
-
-- `Schema.optionalWith` → `Schema.optional` (new API shape, 26 errors)
-- `Schema.Record({key, value})` → `Schema.Record(key, value)` (8 errors)
-- `Schema.transform` → `Schema.decodeTo()` (5 errors)
-- `Schema.decodeUnknown` / `Schema.annotations` renames
 
 ### Runtime changes (~7 errors, medium priority)
 
 - `Runtime.make` / `Runtime.defaultRuntime` / `Runtime.runPromise` restructured
 - `Effect.runtime<R>()` → `Effect.services<R>()`
 
-### Stream changes (~3 errors)
+### Other API renames (~10 errors)
 
-- `Stream.unwrapScoped` removed → `Stream.unwrap` (absorbs scope)
+- `Array.partitionMap` → `Array.partition`
+- `Effect.validateAll` → `Effect.validate`
+- `Stream.unwrapScoped` → `Stream.unwrap`
 
-### exactOptionalPropertyTypes mismatches (~37 errors, low priority)
+### Readonly Record mutation (2 errors, low priority)
 
-Likely from openTUI types being stricter with v4's Schema output types. May need upstream fix or type narrowing at call sites.
+`Schema.mutable()` in v4 only works on arrays/tuples. Records are readonly by default. Two sites in `settings.ts` mutate record contents in place — needs refactor to immutable update pattern.
+
+### exactOptionalPropertyTypes mismatches (~76 errors, low priority)
+
+From openTUI types, codegen plugins, and some internal code. May need upstream fix or type narrowing at call sites.
 
 ### Codegen plugin loading
 

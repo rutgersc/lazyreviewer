@@ -91,7 +91,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
               try: () => migrateEventJson(JSON.parse(content)),
               catch: (error) => new Error(`JSON parse error: ${error}`)
             })
-            const event = yield* Schema.decodeUnknown(EventSchema)(jsonData)
+            const event = yield* Schema.decodeUnknownEffect(EventSchema)(jsonData)
 
             return event as LazyReviewerEvent
           }).pipe(

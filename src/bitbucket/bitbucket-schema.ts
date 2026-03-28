@@ -44,12 +44,7 @@ export const BitbucketPullRequestSchema: Schema.Schema<BitbucketPullRequest> = S
   id: Schema.Number,
   title: Schema.String,
   description: Schema.optional(Schema.String),
-  state: Schema.Union(
-    Schema.Literal("OPEN"),
-    Schema.Literal("MERGED"),
-    Schema.Literal("DECLINED"),
-    Schema.Literal("SUPERSEDED")
-  ),
+  state: Schema.Literals(["OPEN", "MERGED", "DECLINED", "SUPERSEDED"]),
   author: BitbucketAccountSchema,
   source: BitbucketSourceSchema,
   destination: BitbucketDestinationSchema,

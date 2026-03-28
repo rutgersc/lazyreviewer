@@ -20,7 +20,7 @@ describe("Event Loading", () => {
 
       const program = Effect.gen(function* () {
         const jsonData = JSON.parse(content)
-        yield* Schema.decodeUnknown(EventSchema)(jsonData)
+        yield* Schema.decodeUnknownEffect(EventSchema)(jsonData)
         return { file: filename, success: true }
       }).pipe(
         Effect.catch((error) =>

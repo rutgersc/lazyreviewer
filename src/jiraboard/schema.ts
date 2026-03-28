@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Schema, SchemaGetter } from "effect";
 import type { JiraIssue } from "../jira/jira-schema";
 
 export const JiraBoardSchema = Schema.Struct({
@@ -54,11 +54,9 @@ const JiraCommentBodyStructSchema = Schema.Struct({
 
 type JiraCommentBody = Schema.Schema.Type<typeof JiraCommentBodyStructSchema>;
 
-const JiraCommentBodySchema = Schema.transform(
-  Schema.Union(JiraCommentBodyStructSchema, Schema.String),
-  JiraCommentBodyStructSchema,
-  {
-    decode: (input): JiraCommentBody => {
+const JiraCommentBodySchema = Schema.Union([JiraCommentBodyStructSchema, Schema.String]).pipe(
+  Schema.decodeTo(JiraCommentBodyStructSchema, {
+    decode: SchemaGetter.transform((input): JiraCommentBody => {
       if (typeof input === 'string') {
         return {
           type: 'doc',
@@ -66,9 +64,9 @@ const JiraCommentBodySchema = Schema.transform(
         };
       }
       return input;
-    },
-    encode: (body) => body
-  }
+    }),
+    encode: SchemaGetter.transform((body) => body)
+  })
 );
 
 const JiraSprintCommentSchema = Schema.Struct({
@@ -116,7 +114,7 @@ export const JiraSprintIssueFieldsSchema = Schema.Struct({
   created: Schema.optional(Schema.NullOr(Schema.String)),
   updated: Schema.optional(Schema.NullOr(Schema.String)),
   comment: Schema.optional(Schema.NullOr(Schema.Struct({
-    total: Schema.optionalWith(Schema.Number, { default: () => 0 }),
+    total: Schema.Number.pipe(Schema.withDecodingDefaultKey(() => 0)),
     comments: Schema.mutable(Schema.Array(JiraSprintCommentSchema))
   }))),
   subtasks: Schema.optional(Schema.NullOr(Schema.mutable(Schema.Array(Schema.Struct({

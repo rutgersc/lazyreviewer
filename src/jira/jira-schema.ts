@@ -1,6 +1,6 @@
 import { Schema} from "effect";
 
-export const JiraStatusNameSchema = Schema.Literal(
+export const JiraStatusNameSchema = Schema.Literals([
   "FINAL REVIEW",
   "TEST IN PROGRESS",
   "To Do",
@@ -9,7 +9,7 @@ export const JiraStatusNameSchema = Schema.Literal(
   "Merged",
   "Pending",
   "In Progress"
-);
+]);
 
 const JiraCommentContentTextSchema = Schema.Struct({
   text: Schema.optional(Schema.String),
@@ -72,7 +72,7 @@ export const JiraIssueSchema = Schema.Struct({
     created: Schema.String,
     updated: Schema.String,
     comment: Schema.Struct({
-      total: Schema.optionalWith(Schema.Number, { default: () => 0 }),
+      total: Schema.Number.pipe(Schema.withDecodingDefaultKey(() => 0)),
       comments: Schema.mutable(Schema.Array(JiraCommentSchema))
     }),
     subtasks: Schema.optional(Schema.mutable(Schema.Array(Schema.Struct({
@@ -89,12 +89,12 @@ export const JiraIssueSchema = Schema.Struct({
       }),
     }))))
   })
-}).annotations({ identifier: "JiraIssue" })
+}).pipe(Schema.annotate({ identifier: "JiraIssue" }))
 
 export const JiraSearchResponseSchema = Schema.Struct({
   issues: Schema.mutable(Schema.Array(JiraIssueSchema)),
-  total: Schema.optionalWith(Schema.Number, { default: () => 0 }),
-  maxResults: Schema.optionalWith(Schema.Number, { default: () => 0 })
+  total: Schema.Number.pipe(Schema.withDecodingDefaultKey(() => 0)),
+  maxResults: Schema.Number.pipe(Schema.withDecodingDefaultKey(() => 0))
 });
 
 export type JiraStatusName = Schema.Schema.Type<typeof JiraStatusNameSchema>;

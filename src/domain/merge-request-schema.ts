@@ -8,7 +8,7 @@ export const PipelineJobSchema = Schema.Struct({
   id: Schema.String,
   localId: Schema.Number,
   name: Schema.String,
-  status: Schema.Literal(
+  status: Schema.Literals([
     'CANCELED',
     'CANCELING',
     'CREATED',
@@ -22,7 +22,7 @@ export const PipelineJobSchema = Schema.Struct({
     'SUCCESS',
     'WAITING_FOR_CALLBACK',
     'WAITING_FOR_RESOURCE'
-  ),
+  ]),
   failureMessage: Schema.NullOr(Schema.String),
   webPath: Schema.NullOr(Schema.String),
   startedAt: Schema.String,
@@ -32,7 +32,7 @@ export const PipelineJobSchema = Schema.Struct({
 export const PipelineStageSchema = Schema.Struct({
   name: Schema.String,
   jobs: Schema.mutable(Schema.Array(PipelineJobSchema))
-}).annotations({ identifier: "PipelineStage" })
+}).pipe(Schema.annotate({ identifier: "PipelineStage" }))
 
 export const DiscussionNoteSchema = Schema.Struct({
   id: Schema.String,
@@ -50,19 +50,19 @@ export const DiscussionNoteSchema = Schema.Struct({
     oldLine: Schema.NullOr(Schema.Number),
     oldPath: Schema.NullOr(Schema.String)
   }))
-}).annotations({ identifier: "DiscussionNote" })
+}).pipe(Schema.annotate({ identifier: "DiscussionNote" }))
 
 export const DiscussionSchema = Schema.Struct({
   id: Schema.String,
   resolved: Schema.Boolean,
   resolvable: Schema.Boolean,
   notes: Schema.mutable(Schema.Array(DiscussionNoteSchema))
-}).annotations({ identifier: "Discussion" })
+}).pipe(Schema.annotate({ identifier: "Discussion" }))
 
 export const MergeRequestSchema = Schema.Struct({
-  id: Schema.String.pipe(Schema.fromBrand(MrGid)),
-  iid: Schema.String.pipe(Schema.fromBrand(MrIid)),
-  provider: Schema.Literal('gitlab', 'bitbucket'),
+  id: Schema.String.pipe(Schema.fromBrand("MrGid", MrGid)),
+  iid: Schema.String.pipe(Schema.fromBrand("MrIid", MrIid)),
+  provider: Schema.Literals(['gitlab', 'bitbucket']),
   title: Schema.String,
   description: Schema.NullOr(Schema.String),
   jiraIssueKeys: Schema.mutable(Schema.Array(Schema.String)),
@@ -93,7 +93,7 @@ export const MergeRequestSchema = Schema.Struct({
   pipeline: Schema.Struct({
     stage: Schema.mutable(Schema.Array(PipelineStageSchema))
   })
-}).annotations({ identifier: "MergeRequest" })
+}).pipe(Schema.annotate({ identifier: "MergeRequest" }))
 
 export interface JobHistoryEntry {
   readonly jobId: string;

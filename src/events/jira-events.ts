@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import { Schema, SchemaGetter } from "effect"
 import { JiraIssueSchema, JiraSearchResponseSchema } from "../jira/jira-schema";
 import { JiraSprintSchema } from "../jiraboard/schema";
 import { EventIdSchema } from "./event-id";
@@ -15,13 +15,11 @@ const JiraIssuesFetchedEventSchema = Schema.Struct({
 
 export type JiraIssuesFetchedEvent = Schema.Schema.Type<typeof JiraIssuesFetchedEventSchema>
 
-const NumberOrStringAsNumber = Schema.transform(
-  Schema.Union(Schema.Number, Schema.String),
-  Schema.Number,
-  {
-    decode: (input) => typeof input === 'string' ? Number(input) : input,
-    encode: (n) => n
-  }
+const NumberOrStringAsNumber = Schema.Union([Schema.Number, Schema.String]).pipe(
+  Schema.decodeTo(Schema.Number, {
+    decode: SchemaGetter.transform((input) => typeof input === 'string' ? Number(input) : input),
+    encode: SchemaGetter.transform((n) => n)
+  })
 )
 
 const JiraSprintIssuesFetchedEventSchema = Schema.Struct({
@@ -45,11 +43,11 @@ const JiraSprintsLoadedEventSchema = Schema.Struct({
 
 export type JiraSprintsLoadedEvent = Schema.Schema.Type<typeof JiraSprintsLoadedEventSchema>
 
-export const JiraEventSchema = Schema.Union(
+export const JiraEventSchema = Schema.Union([
   JiraIssuesFetchedEventSchema,
   JiraSprintIssuesFetchedEventSchema,
   JiraSprintsLoadedEventSchema
-)
+])
 
 export type JiraEvent = JiraIssuesFetchedEvent | JiraSprintIssuesFetchedEvent | JiraSprintsLoadedEvent
 

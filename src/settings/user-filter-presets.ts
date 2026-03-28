@@ -1,27 +1,33 @@
 import { Effect, Schema, Stream, Console } from 'effect';
+import type { Struct as Struct_ } from 'effect/Schema';
 import { FileSystem } from '@effect/platform';
 import { DEFAULT_USERS, DEFAULT_GROUPS } from '../data/default-users-and-groups';
 
 const USER_SETTINGS_FILE = 'lazyreviewer-settings-users.json';
 
-const SettingsUserSchema = Schema.mutable(Schema.Struct({
+const mutableStruct = <F extends Struct_.Fields>(fields: F) =>
+  Schema.Struct(fields).mapFields(
+    (fs) => Object.fromEntries(Object.entries(fs).map(([k, v]) => [k, Schema.mutableKey(v)])) as { [K in keyof F]: Schema.mutableKey<F[K]> }
+  );
+
+const SettingsUserSchema = mutableStruct({
   userId: Schema.String,
   gitlab: Schema.optional(Schema.String),
   bitbucket: Schema.optional(Schema.String),
   jira: Schema.optional(Schema.String),
-}))
+})
 
-const SettingsGroupSchema = Schema.mutable(Schema.Struct({
+const SettingsGroupSchema = mutableStruct({
   name: Schema.String,
   id: Schema.String,
   users: Schema.mutable(Schema.Array(Schema.String)),
   groups: Schema.mutable(Schema.Array(Schema.String)),
-}))
+})
 
-export const UserSettingsSchema = Schema.mutable(Schema.Struct({
-  users: Schema.optionalWith(Schema.mutable(Schema.Array(SettingsUserSchema)), { default: () => [...DEFAULT_USERS] }),
-  userGroups: Schema.optionalWith(Schema.mutable(Schema.Array(SettingsGroupSchema)), { default: () => [...DEFAULT_GROUPS] }),
-}))
+export const UserSettingsSchema = mutableStruct({
+  users: Schema.mutable(Schema.Array(SettingsUserSchema)).pipe(Schema.withDecodingDefaultKey(() => [...DEFAULT_USERS])),
+  userGroups: Schema.mutable(Schema.Array(SettingsGroupSchema)).pipe(Schema.withDecodingDefaultKey(() => [...DEFAULT_GROUPS])),
+})
 export type UserSettings = Schema.Schema.Type<typeof UserSettingsSchema>
 
 const decodeUserSettings = Schema.decodeUnknownSync(UserSettingsSchema)

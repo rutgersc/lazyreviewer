@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-export const CiJobStatusSchema = Schema.Literal(
+export const CiJobStatusSchema = Schema.Literals([
   'CANCELED',
   'CANCELING',
   'CREATED',
@@ -14,5 +14,5 @@ export const CiJobStatusSchema = Schema.Literal(
   'SUCCESS',
   'WAITING_FOR_CALLBACK',
   'WAITING_FOR_RESOURCE'
-)
+])
 export type CiJobStatus = Schema.Schema.Type<typeof CiJobStatusSchema>

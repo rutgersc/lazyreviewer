@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-export const DetailedMergeStatusSchema = Schema.Literal(
+export const DetailedMergeStatusSchema = Schema.Literals([
   'APPROVALS_SYNCING',
   'BLOCKED_STATUS',
   'CHECKING',
@@ -24,5 +24,5 @@ export const DetailedMergeStatusSchema = Schema.Literal(
   'SECURITY_POLICIES_VIOLATIONS',
   'TITLE_NOT_MATCHING',
   'UNCHECKED'
-)
+])
 export type DetailedMergeStatus = Schema.Schema.Type<typeof DetailedMergeStatusSchema>
