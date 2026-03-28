@@ -303,12 +303,12 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
   const schemaDefinitions: string[] = [];
 
   for (const { fragmentName, schemaBody } of targetFragments) {
-    schemaDefinitions.push(`export const ${fragmentName}FragmentSchema: Schema.Schema<${fragmentName}Fragment> = ${schemaBody}`);
+    schemaDefinitions.push(`export const ${fragmentName}FragmentSchema: Schema.Codec<${fragmentName}Fragment> = ${schemaBody}`);
   }
 
   for (const { queryType, schemaBody } of targetQueries) {
     const normalized = normalizeOperationName(queryType);
-    schemaDefinitions.push(`export const ${normalized}Schema: Schema.Schema<${normalized}> = ${schemaBody}`);
+    schemaDefinitions.push(`export const ${normalized}Schema: Schema.Codec<${normalized}> = ${schemaBody}`);
   }
 
   const output = schemaDefinitions.length > 0
