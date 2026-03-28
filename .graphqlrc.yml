@@ -1,4 +1,6 @@
-schema: https://git.elabnext.com/api/graphql
+# Set these to your GitLab instance URL
+# Used by IDE extensions for GraphQL autocomplete/validation
+schema: ${GITLAB_URL}/api/graphql
 documents:
   - src/graphql/**/*.graphql
 extensions:
@@ -6,7 +8,6 @@ extensions:
     configFile: codegen.yml
   endpoints:
     default:
-      url: https://git.elabnext.com/api/graphql
+      url: ${GITLAB_URL}/api/graphql
       headers:
-        Authorization: "glpat-TODO"
-
+        Authorization: "Bearer ${GITLAB_TOKEN}"

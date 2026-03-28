@@ -13,7 +13,10 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
     "noEmit": true,
+
+    "incremental": true,
 
     // Best practices
     "strict": true,
@@ -21,12 +24,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-
-    // Some stricter flags (disabled by default)
+    "exactOptionalPropertyTypes": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
 
+    // plugins
     "plugins": [
       {
         "name": "@effect/language-service"

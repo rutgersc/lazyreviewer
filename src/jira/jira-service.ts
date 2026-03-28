@@ -9,7 +9,7 @@ import {
 } from "./jira-schema";
 import type { JiraIssuesFetchedEvent } from "../events/jira-events";
 import { generateEventId } from "../events/event-id";
-import { JiraApiError, getAuthToken, getJiraBaseUrl, JIRA_ISSUE_FIELDS } from "./jira-common";
+import { JiraApiError, getAuthToken, JiraBaseUrl, JIRA_ISSUE_FIELDS } from "./jira-common";
 import { UnauthorizedError } from "../domain/unauthorized-error";
 
 export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
@@ -70,8 +70,8 @@ export const extractTextFromJiraComment = (comment: JiraComment): string => {
 };
 
 const searchIssues = Effect.fn("searchIssues")(function* (jql: string, maxResults: number = 100) {
-  const baseUrl = getJiraBaseUrl();
-  const authToken = getAuthToken();
+  const baseUrl = yield* JiraBaseUrl
+  const authToken = yield* getAuthToken
 
   const response = yield* Effect.tryPromise({
     try: () => fetch(

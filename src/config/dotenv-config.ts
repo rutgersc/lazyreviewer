@@ -15,6 +15,13 @@ export interface EnvCredential {
 
 export const ENV_CREDENTIALS: EnvCredential[] = [
   {
+    key: 'GITLAB_URL',
+    displayName: 'GitLab URL',
+    description: 'Base URL of your GitLab instance (e.g. https://gitlab.example.com)',
+    required: false,
+    type: 'token'
+  },
+  {
     key: 'GITLAB_TOKEN',
     displayName: 'GitLab Token',
     description: 'Personal access token for GitLab API',
@@ -53,6 +60,13 @@ export const ENV_CREDENTIALS: EnvCredential[] = [
     helpUrl: 'https://id.atlassian.com/manage-profile/security/api-tokens',
     required: false,
     type: 'token'
+  },
+  {
+    key: 'JIRA_BASE_URL',
+    displayName: 'Jira Base URL',
+    description: 'Base URL of your Jira instance (e.g. https://yourteam.atlassian.net)',
+    required: false,
+    type: 'token'
   }
 ];
 
@@ -89,6 +103,8 @@ const ENV_TEMPLATE = `# LazyReviewer Configuration
 # After editing, restart LazyReviewer to pick up changes.
 
 # ── GitLab ────────────────────────────────────────────────
+# Base URL of your GitLab instance (no trailing slash)
+GITLAB_URL=https://gitlab.example.com
 # Personal access token for the GitLab API.
 # Required scopes: read_api, read_user
 # Create one at: https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html
@@ -101,6 +117,8 @@ BITBUCKET_EMAIL=
 BITBUCKET_API_TOKEN=
 
 # ── Jira ──────────────────────────────────────────────────
+# Base URL of your Jira instance (e.g. https://yourteam.atlassian.net)
+JIRA_BASE_URL=
 # API token: https://id.atlassian.com/manage-profile/security/api-tokens
 JIRA_EMAIL=
 JIRA_API_TOKEN=

@@ -10,12 +10,12 @@ import {
 import type { JiraIssue } from "../jira/jira-schema";
 import type { JiraSprintIssuesFetchedEvent } from "../events/jira-events";
 import { generateEventId } from "../events/event-id";
-import { JiraApiError, getAuthToken, getJiraBaseUrl, JIRA_ISSUE_FIELDS } from "../jira/jira-common";
+import { JiraApiError, getAuthToken, JiraBaseUrl, JIRA_ISSUE_FIELDS } from "../jira/jira-common";
 import { UnauthorizedError } from "../domain/unauthorized-error";
 
 export const fetchActiveSprints = Effect.fn("fetchActiveSprints")(function* (boardId: number) {
-  const authToken = getAuthToken();
-  const baseUrl = getJiraBaseUrl();
+  const authToken = yield* getAuthToken
+  const baseUrl = yield* JiraBaseUrl
 
   const response = yield* Effect.tryPromise({
     try: () => fetch(
@@ -56,8 +56,8 @@ export const fetchActiveSprints = Effect.fn("fetchActiveSprints")(function* (boa
 });
 
 export const fetchBoards = Effect.fn("fetchBoards")(function* () {
-  const authToken = getAuthToken();
-  const baseUrl = getJiraBaseUrl();
+  const authToken = yield* getAuthToken
+  const baseUrl = yield* JiraBaseUrl
 
   const allBoards: JiraBoard[] = [];
   let startAt = 0;
@@ -111,8 +111,8 @@ export const fetchBoards = Effect.fn("fetchBoards")(function* () {
 });
 
 export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprintId: number) {
-  const authToken = getAuthToken();
-  const baseUrl = getJiraBaseUrl();
+  const authToken = yield* getAuthToken
+  const baseUrl = yield* JiraBaseUrl
   const fields = JIRA_ISSUE_FIELDS.join(',');
 
   const allIssues: JiraSprintIssue[] = [];

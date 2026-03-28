@@ -23,6 +23,7 @@ import {
 import { useAutoScroll } from '../../hooks/useAutoScroll';
 import { openUrl } from '../../system/open-url';
 import { copyToClipboard } from '../../system/clipboard';
+import { getJiraBaseUrl } from '../../jira/jira-common';
 import JiraBoardSetup from './JiraBoardSetup';
 import EpicLegend from './EpicLegend';
 import { transformToBoard, flattenBoard, mapStatus, mapPriority, sortStories, type CollapseState } from '../board-utils';
@@ -168,7 +169,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       if (clickedItem?.type === 'detail' && clickedItem.detailKind === 'mr') {
         openUrl(clickedItem.mr.webUrl);
       } else if (clickedItem?.type === 'issue') {
-        const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
+        const baseUrl = getJiraBaseUrl();
         openUrl(`${baseUrl}/browse/${clickedItem.item.key}`);
       }
       lastClickRef.current = { index: -1, time: 0 };
@@ -363,7 +364,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           if (oItem?.type === 'detail' && oItem.detailKind === 'mr') {
             openUrl(oItem.mr.webUrl);
           } else if (oItem?.type === 'issue') {
-            const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
+            const baseUrl = getJiraBaseUrl();
             openUrl(`${baseUrl}/browse/${oItem.item.key}`);
           }
         }
@@ -373,7 +374,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         if (iItem?.type === 'detail' && iItem.detailKind === 'mr') {
           openUrl(iItem.mr.webUrl);
         } else if (iItem?.type === 'issue') {
-          const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
+          const baseUrl = getJiraBaseUrl();
           openUrl(`${baseUrl}/browse/${iItem.item.key}`);
         }
         break;
@@ -383,7 +384,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         if (cItem?.type === 'detail' && cItem.detailKind === 'mr') {
           copyToClipboard(cItem.mr.webUrl);
         } else if (cItem?.type === 'issue') {
-          const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
+          const baseUrl = getJiraBaseUrl();
           copyToClipboard(`${baseUrl}/browse/${cItem.item.key}`);
         }
         break;

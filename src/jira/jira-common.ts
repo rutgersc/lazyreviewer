@@ -1,23 +1,27 @@
-import { Data } from "effect";
+import { Config, Data, Effect, Redacted } from "effect";
 
 export class JiraApiError extends Data.TaggedError("JiraApiError")<{
   cause: unknown;
   message: string;
 }> {}
 
-export const getAuthToken = (): string => {
-  if (process.env.JIRA_EMAIL && process.env.JIRA_API_TOKEN) {
-    const credentials = `${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`;
-    return Buffer.from(credentials).toString('base64');
-  } else if (process.env.JIRA_API_TOKEN_BASE64) {
-    return process.env.JIRA_API_TOKEN_BASE64;
-  }
-  throw new Error("Jira credentials not configured. Set JIRA_EMAIL and JIRA_API_TOKEN in .env");
-};
+export const getAuthToken = Effect.gen(function* () {
+  const base64 = Config.string("JIRA_API_TOKEN_BASE64")
+  const fromEmailAndToken = Effect.gen(function* () {
+    const email = yield* Config.string("JIRA_EMAIL")
+    const token = yield* Config.redacted("JIRA_API_TOKEN")
+    return Buffer.from(`${email}:${Redacted.value(token)}`).toString('base64')
+  })
+  return yield* Effect.orElse(fromEmailAndToken, () => base64)
+})
 
 export const getJiraBaseUrl = (): string => {
-  return process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
+  const url = process.env.JIRA_BASE_URL;
+  if (!url) throw new Error("JIRA_BASE_URL not configured. Set it in .env");
+  return url;
 };
+
+export const JiraBaseUrl = Config.string("JIRA_BASE_URL")
 
 export const JIRA_ISSUE_FIELDS = [
   'summary',

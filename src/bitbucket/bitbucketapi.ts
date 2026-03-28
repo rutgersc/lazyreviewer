@@ -1,4 +1,4 @@
-import { Console, Data, Effect } from "effect";
+import { Console, Config, Data, Effect, Redacted } from "effect";
 import type { MergeRequest } from "../domain/merge-request-schema";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import { projectBitbucketPrsFetchedEvent, projectBitbucketPrCommentsFetchedEvent, projectBitbucketSinglePrFetchedEvent } from "./bitbucket-projections";
@@ -148,6 +148,12 @@ export class BitbucketPrsJsonParseError extends Data.TaggedError("BitbucketPrsJs
   cause: unknown;
 }> { }
 
+const getBitbucketAuthToken = Effect.gen(function* () {
+  const email = yield* Config.string("BITBUCKET_EMAIL")
+  const token = yield* Config.redacted("BITBUCKET_API_TOKEN")
+  return Buffer.from(`${email}:${Redacted.value(token)}`).toString("base64")
+})
+
 const fetchBitbucketComments = Effect.fn("fetchBitbucketComments")(function* (workspace: string,
   repoSlug: string,
   prId: number,
@@ -213,8 +219,7 @@ export const getSingleBitbucketPr = Effect.fn("getSingleBitbucketPr")(function* 
 ) {
   const event = yield* getSingleBitbucketPrAsEvent(workspace, repoSlug, prId);
 
-  const credentials = `${process.env.BITBUCKET_EMAIL}:${process.env.BITBUCKET_API_TOKEN}`;
-  const authToken = Buffer.from(credentials).toString("base64");
+  const authToken = yield* getBitbucketAuthToken
 
   // Fetch comments for the PR
   const commentsEvent = yield* fetchBitbucketCommentsAsEvent(workspace, repoSlug, prId, authToken);
@@ -233,8 +238,7 @@ export const getBitbucketPrs = Effect.fn("getBitbucketPrs")(function* (
 ) {
   const event = yield* getBitbucketPrsAsEvent(workspace, repoSlug, state);
 
-  const credentials = `${process.env.BITBUCKET_EMAIL}:${process.env.BITBUCKET_API_TOKEN}`;
-  const authToken = Buffer.from(credentials).toString("base64");
+  const authToken = yield* getBitbucketAuthToken
 
   const commentCountsMap = yield* fetchCommentsForAllPrs(workspace, repoSlug, event.prsResponse.values, authToken);
 
@@ -265,14 +269,7 @@ export const getBitbucketPrsAsEvent = Effect.fn("getBitbucketPrsAsEvent")(functi
   repoSlug: string,
   state: 'opened' | 'merged' | 'closed' | 'all' | 'locked' = 'opened'
 ) {
-  if (!(process.env.BITBUCKET_EMAIL && process.env.BITBUCKET_API_TOKEN)) {
-    return yield* Effect.fail(new BitbucketCredentialsNotConfiguredError({
-      message: "BitBucket credentials not configured. Set BITBUCKET_EMAIL and BITBUCKET_API_TOKEN in .env"
-    }));
-  }
-
-  const credentials = `${process.env.BITBUCKET_EMAIL}:${process.env.BITBUCKET_API_TOKEN}`;
-  const authToken = Buffer.from(credentials).toString("base64");
+  const authToken = yield* getBitbucketAuthToken
 
   const bbState = mapStateTobitbucket(state);
   const url = bbState === 'ALL'
@@ -393,14 +390,7 @@ export const getSingleBitbucketPrAsEvent = Effect.fn("getSingleBitbucketPrAsEven
   repoSlug: string,
   prId: number
 ) {
-  if (!(process.env.BITBUCKET_EMAIL && process.env.BITBUCKET_API_TOKEN)) {
-    return yield* Effect.fail(new BitbucketCredentialsNotConfiguredError({
-      message: "BitBucket credentials not configured. Set BITBUCKET_EMAIL and BITBUCKET_API_TOKEN in .env"
-    }));
-  }
-
-  const credentials = `${process.env.BITBUCKET_EMAIL}:${process.env.BITBUCKET_API_TOKEN}`;
-  const authToken = Buffer.from(credentials).toString("base64");
+  const authToken = yield* getBitbucketAuthToken
 
   const url = `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/pullrequests/${prId}`;
 

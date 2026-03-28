@@ -7,7 +7,7 @@ dotenv.config();
 const config: CodegenConfig = {
   schema: [
     {
-      'https://git.elabnext.com/api/graphql': {
+      [`${process.env.GITLAB_URL}/api/graphql`]: {
         headers: {
           Authorization: `Bearer ${process.env.GITLAB_TOKEN}`,
         },

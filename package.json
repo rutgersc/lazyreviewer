@@ -9,7 +9,8 @@
     "watch2": "watchexec --debounce 2000 -- bun run src/index.tsx",
     "codegen": "graphql-codegen --config codegen.ts",
     "typecheck": "tsc --noEmit",
-    "migrate:add-eventid": "bun run scripts/migrate-add-eventid.ts"
+    "migrate:add-eventid": "bun run scripts/migrate-add-eventid.ts",
+    "prepare": "effect-language-service patch"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",

@@ -1,4 +1,4 @@
-import { Effect, Console } from 'effect'
+import { Effect, Console, Config, Redacted } from 'effect'
 import type { DiscoveredRepo, DiscoveredUser } from './onboarding-types'
 import type { UserId } from '../userselection/userSelection'
 import { EventStorage } from '../events/events'
@@ -32,14 +32,12 @@ export type RepoFetchResult = {
 }
 
 export const fetchGitlabProjects: Effect.Effect<RepoFetchResult> = Effect.gen(function* () {
-  const token = process.env.GITLAB_TOKEN
-  if (!token) {
-    return { repos: [], warnings: ['GitLab: GITLAB_TOKEN not configured in .env'] }
-  }
+  const token = yield* Config.redacted("GITLAB_TOKEN")
+  const baseUrl = yield* Config.string("GITLAB_URL")
 
   const response = yield* Effect.tryPromise({
-    try: () => fetch('https://git.elabnext.com/api/v4/projects?membership=true&per_page=100&simple=true', {
-      headers: { 'PRIVATE-TOKEN': token }
+    try: () => fetch(`${baseUrl}/api/v4/projects?membership=true&per_page=100&simple=true`, {
+      headers: { 'PRIVATE-TOKEN': Redacted.value(token) }
     }),
     catch: (cause) => `GitLab: network error - ${cause}`
   })
@@ -64,13 +62,10 @@ export const fetchGitlabProjects: Effect.Effect<RepoFetchResult> = Effect.gen(fu
 ))
 
 export const fetchBitbucketRepos = (workspace: string): Effect.Effect<RepoFetchResult> => Effect.gen(function* () {
-  const email = process.env.BITBUCKET_EMAIL
-  const token = process.env.BITBUCKET_API_TOKEN
-  if (!(email && token)) {
-    return { repos: [], warnings: ['Bitbucket: BITBUCKET_EMAIL and/or BITBUCKET_API_TOKEN not configured in .env'] }
-  }
+  const email = yield* Config.string("BITBUCKET_EMAIL")
+  const token = yield* Config.redacted("BITBUCKET_API_TOKEN")
 
-  const authToken = Buffer.from(`${email}:${token}`).toString('base64')
+  const authToken = Buffer.from(`${email}:${Redacted.value(token)}`).toString('base64')
   const headers = {
     'Authorization': `Basic ${authToken}`,
     'Accept': 'application/json',

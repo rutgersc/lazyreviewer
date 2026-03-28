@@ -7,7 +7,7 @@ import { getSdk as getMrPipelineSdk } from "../graphql/mr-pipeline.generated";
 import { getSdk as getProjectPipelinesJobHistorySdk } from "../graphql/project-pipelines-job-history.generated";
 import { getSdk as getJobSdk } from "../graphql/job.generated";
 import type { MergeRequestState } from "../domain/merge-request-state";
-import { Data, Effect, Console } from "effect";
+import { Data, Effect, Console, Config, Redacted } from "effect";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent, GitlabMrsFetchedEvent } from "../events/gitlab-events";
 import { projectGitlabJobHistoryFetchedEvent, projectGitlabJobTraceFetchedEvent, projectGitlabPipelineFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent } from "./gitlab-projections";
 import { generateEventId } from "../events/event-id";
@@ -16,14 +16,20 @@ export class FetchGitlabMrsError extends Data.TaggedError("FetchGitlabMrsError")
   cause: unknown;
 }> { }
 
-const getElabGitSdk = () => {
-  const endpoint = `https://git.elabnext.com/api/graphql`;
-  const token = process.env.GITLAB_TOKEN;
-  const client = new GraphQLClient(endpoint, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+export const getGitlabBaseUrl = (): string => {
+  const url = process.env.GITLAB_URL;
+  if (!url) throw new Error("GITLAB_URL not configured. Set it in .env");
+  return url;
+};
 
-  // Combine all SDKs into one unified SDK
+const getGitlabSdk = Effect.gen(function* () {
+  const baseUrl = yield* Config.string("GITLAB_URL")
+  const token = yield* Config.redacted("GITLAB_TOKEN")
+  const endpoint = `${baseUrl}/api/graphql`
+  const client = new GraphQLClient(endpoint, {
+    headers: { Authorization: `Bearer ${Redacted.value(token)}` }
+  })
+
   return {
     ...GitlabMRs(client),
     ...getMRsSdk(client),
@@ -32,8 +38,8 @@ const getElabGitSdk = () => {
     ...getMrPipelineSdk(client),
     ...getProjectPipelinesJobHistorySdk(client),
     ...getJobSdk(client),
-  };
-};
+  }
+})
 
 export class FetchGitlabProjectMrsError extends Data.TaggedError("FetchGitlabProjectMrsError")<{
   projectPath: string;
@@ -50,16 +56,17 @@ export class FetchJobTraceError extends Data.TaggedError("FetchJobTraceError")<{
 }> { }
 
 export const getJobTraceRaw = Effect.fn("getJobTraceRaw")(function* (projectId: string, jobId: string) {
-  const token = process.env.GITLAB_TOKEN;
+  const token = yield* Config.redacted("GITLAB_TOKEN")
+  const baseUrl = yield* Config.string("GITLAB_URL")
   const encodedProjectId = encodeURIComponent(projectId);
   const realIdLol = jobId.split("/");
   const uhh = realIdLol[realIdLol.length-1];
-  const url = `https://git.elabnext.com/api/v4/projects/${encodedProjectId}/jobs/${uhh}/trace`;
+  const url = `${baseUrl}/api/v4/projects/${encodedProjectId}/jobs/${uhh}/trace`;
 
   const response = yield* Effect.tryPromise({
     try: () => fetch(url, {
       headers: {
-        'PRIVATE-TOKEN': token!
+        'PRIVATE-TOKEN': Redacted.value(token)
       }
     }),
     catch: cause => new FetchJobTraceError({ cause })
@@ -149,7 +156,7 @@ export const getSingleMr = Effect.fn("getSingleMr")(function* (projectPath: stri
 
 // Event-returning wrapper functions
 export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (usernames: string[], state: MergeRequestState = 'opened', first: number = 50) {
-  const sdk = getElabGitSdk();
+  const sdk = yield* getGitlabSdk
   const data = yield* Effect.tryPromise({
     try: () => sdk.MRs({
       usernames: usernames,
@@ -176,7 +183,7 @@ export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (u
 export const getGitlabMrsByProjectAsEvent = Effect.fn("getGitlabMrsByProjectAsEvent")(function* (projectPath: string, state: MergeRequestState = 'opened', after: string | null = null, first: number = 50) {
   yield* Console.log(`[GitLab] Fetching MRs for project: "${projectPath}", state: ${state}, after: ${after ?? 'null'}, first: ${first}`);
 
-  const sdk = getElabGitSdk();
+  const sdk = yield* getGitlabSdk
   const data = yield* Effect.tryPromise({
     try: () => sdk.ProjectMRs({
       projectPath: projectPath,
@@ -208,7 +215,7 @@ export const getAllGitlabMrsByProjectAsEvents = Effect.fn("getAllGitlabMrsByProj
   function* (projectPath: string, state: MergeRequestState = 'opened') {
     yield* Console.log(`[GitLab] Deep fetch: all MRs for "${projectPath}", state: ${state}`)
 
-    const sdk = getElabGitSdk()
+    const sdk = yield* getGitlabSdk
     let after: string | null = null
     const events: GitlabprojectMergeRequestsFetchedEvent[] = []
 
@@ -260,7 +267,7 @@ export const getJobTraceAsEvent = Effect.fn("getJobTraceAsEvent")(function* (pro
 });
 
 export const getMrPipelineAsEvent = Effect.fn("getMrPipelineAsEvent")(function* (projectPath: string, iid: string) {
-  const sdk = getElabGitSdk();
+  const sdk = yield* getGitlabSdk
   const data = yield* Effect.tryPromise({
     try: () => sdk.MRPipeline({ projectPath, iid }),
     catch: cause => new FetchMrPipelineError({ cause })
@@ -286,7 +293,7 @@ export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(functi
   limit: number = 50,
   after: string | null = null
 ) {
-  const sdk = getElabGitSdk();
+  const sdk = yield* getGitlabSdk
   const data = yield* Effect.tryPromise({
     try: () => sdk.ProjectPipelinesJobHistory({
       projectPath,
@@ -314,7 +321,7 @@ export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(functi
 export const getMrsAsEvent = Effect.fn("getSingleMrAsEvent")(function* (projectPath: string, mrIids: string[]) {
   yield* Console.log(`[GitLab] Fetching bulk MRs: [${mrIids}] in projects "${projectPath}"`);
 
-  const sdk = getElabGitSdk();
+  const sdk = yield* getGitlabSdk
 
   const mrs = yield* Effect.tryPromise({
     try: () => sdk.GitlabMRs({ projectPath: projectPath, iids: mrIids }),
@@ -338,7 +345,7 @@ export const getMrsAsEvent = Effect.fn("getSingleMrAsEvent")(function* (projectP
 export const getSingleMrAsEvent = Effect.fn("getSingleMrAsEvent")(function* (projectPath: string, iid: string) {
   yield* Console.log(`[GitLab] Fetching single MR: ${iid} in project "${projectPath}"`);
 
-  const sdk = getElabGitSdk();
+  const sdk = yield* getGitlabSdk
   const data = yield* Effect.tryPromise({
     try: () => sdk.SingleMR({
       projectPath: projectPath,
@@ -364,7 +371,7 @@ export const getSingleMrAsEvent = Effect.fn("getSingleMrAsEvent")(function* (pro
 // export const getHeadPipe = Effect.fn("getSingleMrAsEvent")(function* (projectPath: string, iid: string) {
 //   yield* Console.log(`[GitLab] Fetching single MR: ${iid} in project "${projectPath}"`);
 
-//   const sdk = getElabGitSdk();
+//   const sdk = yield* getGitlabSdk
 //   const data = yield* Effect.tryPromise({
 //     try: () => sdk.SingleMR({
 //       projectPath: projectPath,

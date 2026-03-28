@@ -7,7 +7,7 @@ import { useAtomValue, Atom, Registry, RegistryContext, useAtomSet } from '@effe
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { Console, Effect, Exit } from 'effect';
-import { fetchJobHistory } from '../gitlab/gitlab-graphql';
+import { fetchJobHistory, getGitlabBaseUrl } from '../gitlab/gitlab-graphql';
 import type { JobHistoryEntry } from '../domain/merge-request-schema';
 import { spawn } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
@@ -368,7 +368,7 @@ export default function JobHistoryModal({
       const selectedEntry = jobHistory[selectedIndex];
       if (selectedEntry?.webPath) {
         const { spawn } = require('child_process');
-        const url = `https://git.elabnext.com${selectedEntry.webPath}`;
+        const url = `${getGitlabBaseUrl()}${selectedEntry.webPath}`;
         const command = process.platform === 'win32' ? 'start' :
                        process.platform === 'darwin' ? 'open' : 'xdg-open';
         spawn(command, [url], { shell: true, detached: true, stdio: 'ignore' });
