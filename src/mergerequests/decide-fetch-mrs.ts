@@ -1,4 +1,4 @@
-import { Effect, Data, Console } from "effect"
+import { Effect, Data, Console, Config } from "effect"
 import type { PlatformError } from "effect/PlatformError"
 import type { SchemaError } from "effect/Schema"
 import type { MergeRequestState } from "../domain/merge-request-state"
@@ -39,6 +39,7 @@ export type MergeRequestsCacheError =
   | BitbucketPrsJsonParseError
   | PlatformError
   | SchemaError
+  | Config.ConfigError
 
 export type KnownMrInfo = { projectPath: string; iid: string; updatedAt: Date };
 

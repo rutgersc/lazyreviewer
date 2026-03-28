@@ -1,4 +1,4 @@
-import { Stream, Chunk, Effect } from "effect";
+import { Stream, Effect } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { EventStorage, type LazyReviewerEvent } from "./events";
 
@@ -11,7 +11,7 @@ export const allEventsAtom = appAtomRuntime.atom(
   Stream.unwrap(eventsStreamEffect).pipe(
     Stream.groupedWithin(300, "0.3 seconds"),
     Stream.scan([] as LazyReviewerEvent[], (acc, events) =>
-      acc.concat(Chunk.toReadonlyArray(events)).slice(-500)
+      acc.concat(events).slice(-500)
     )
   ),
   { initialValue: [] }

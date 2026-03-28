@@ -4,7 +4,7 @@ import type { ParsedKey } from '@opentui/core';
 import { Effect } from 'effect';
 import { ENV_CREDENTIALS, ensureEnvFile, getEnvFilePath, type MissingCredential } from '../config/dotenv-config';
 import { openFileInEditor } from '../utils/open-file';
-import { appLayer } from '../appLayerRuntime';
+import { runWithAppServices } from '../appLayerRuntime';
 import { useState } from 'react';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 import { Colors } from '../colors';
@@ -16,7 +16,7 @@ interface ConfigurationPageProps {
 
 const openEnvFile = async () => {
   await Effect.runPromise(ensureEnvFile());
-  await openFileInEditor('.env').pipe(Effect.provide(appLayer), Effect.runPromise);
+  await runWithAppServices(openFileInEditor('.env'));
 };
 
 export default function ConfigurationPage({ missingCredentials, onClose }: ConfigurationPageProps) {

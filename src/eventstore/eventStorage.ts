@@ -205,11 +205,11 @@ export class EventStorage extends ServiceMap.Service<EventStorage>()("EventStora
           ...memoryEvents
         ]
 
-        // Create streams from the queues
-        const newPersistedStream = Stream.fromQueue(persistedQueue).pipe(
+        // Create streams from the subscriptions
+        const newPersistedStream = Stream.fromSubscription(persistedQueue).pipe(
           Stream.map((e): AnyLazyReviewerEvent => e)
         )
-        const newInMemoryStream = Stream.fromQueue(inMemoryQueue).pipe(
+        const newInMemoryStream = Stream.fromSubscription(inMemoryQueue).pipe(
           Stream.map((e): AnyLazyReviewerEvent => e)
         )
 

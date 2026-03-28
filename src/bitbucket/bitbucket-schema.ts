@@ -1,5 +1,4 @@
 import { Schema } from "effect"
-import type { BitbucketPullRequest } from "./bitbucketapi"
 
 export const BitbucketAccountSchema = Schema.Struct({
   display_name: Schema.String,
@@ -40,7 +39,7 @@ export const BitbucketParticipantSchema = Schema.Struct({
   participated_on: Schema.optional(Schema.String),
 })
 
-export const BitbucketPullRequestSchema: Schema.Codec<BitbucketPullRequest> = Schema.Struct({
+export const BitbucketPullRequestSchema = Schema.Struct({
   id: Schema.Number,
   title: Schema.String,
   description: Schema.optional(Schema.String),

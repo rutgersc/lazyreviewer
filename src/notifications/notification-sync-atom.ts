@@ -15,7 +15,7 @@ import { BackgroundSyncService, type PageSlotSnapshot } from './background-sync-
 export type { PageSlotSnapshot } from './background-sync-service';
 
 // Module-level singleton state for notification daemon
-let notificationDaemonFiber: Fiber.RuntimeFiber<void, unknown> | undefined;
+let notificationDaemonFiber: Fiber.Fiber<void, unknown> | undefined;
 
 export const pageSlotsAtom = appAtomRuntime.atom(
   (_get) => BackgroundSyncService.useSync(
