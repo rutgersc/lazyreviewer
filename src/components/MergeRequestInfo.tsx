@@ -178,7 +178,7 @@ export default function MergeRequestInfo() {
           }}
           style={{
             marginBottom: 1,
-            backgroundColor: headerSelected ? Colors.SELECTED : undefined,
+            ...(headerSelected && { backgroundColor: Colors.SELECTED }),
           }}
         >
           <text
@@ -206,7 +206,7 @@ export default function MergeRequestInfo() {
                 backgroundColor: selected ? Colors.SELECTED : Colors.BACKGROUND_ALT,
                 padding: 1,
                 border: selected,
-                borderColor: selected ? Colors.SUCCESS : undefined
+                ...(selected && { borderColor: Colors.SUCCESS }),
               }}
             >
               {discussion.notes.map(renderDiscussionNote)}
@@ -235,7 +235,7 @@ export default function MergeRequestInfo() {
           }}
           style={{
             marginBottom: 1,
-            backgroundColor: headerSelected ? Colors.SELECTED : undefined,
+            ...(headerSelected && { backgroundColor: Colors.SELECTED }),
           }}
         >
           <text
@@ -263,7 +263,7 @@ export default function MergeRequestInfo() {
                 backgroundColor: selected ? Colors.SELECTED : Colors.BACKGROUND_ALT,
                 padding: 1,
                 border: selected,
-                borderColor: selected ? Colors.SUCCESS : undefined
+                ...(selected && { borderColor: Colors.SUCCESS }),
               }}
             >
               {discussion.notes.map(renderDiscussionNote)}

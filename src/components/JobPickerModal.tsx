@@ -106,7 +106,7 @@ export default function JobPickerModal({ onClose }: JobPickerModalProps) {
                 key={job.id}
                 onMouseOver={() => setSelectedIndex(i)}
                 onMouseDown={() => confirmSelection(i)}
-                style={{ backgroundColor: isSelected ? Colors.TRACK : undefined }}
+                style={{ ...(isSelected && { backgroundColor: Colors.TRACK }) }}
               >
                 <text
                   style={{

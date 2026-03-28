@@ -30,7 +30,7 @@ export default function MrStateTabs({ currentState, onStateChange, isActive }: M
               key={state.key}
               onMouseDown={() => onStateChange(state.key)}
               style={{
-                backgroundColor: isSelected ? Colors.TRACK : undefined,
+                ...(isSelected && { backgroundColor: Colors.TRACK }),
                 paddingLeft: 1,
                 paddingRight: 1,
               }}

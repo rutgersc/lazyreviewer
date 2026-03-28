@@ -319,9 +319,9 @@ export default function App() {
   const infoActive = activePane === ActivePane.InfoPane;
 
   const getWidths = (): {
-    left: RenderableOptions["width"];
-    middle: RenderableOptions["width"];
-    right: RenderableOptions["width"];
+    left: NonNullable<RenderableOptions["width"]>;
+    middle: NonNullable<RenderableOptions["width"]>;
+    right: NonNullable<RenderableOptions["width"]>;
   } => {
     switch (activePane) {
       case ActivePane.Facts:

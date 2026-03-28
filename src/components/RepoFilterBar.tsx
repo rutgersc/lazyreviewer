@@ -43,7 +43,7 @@ export default function RepoFilterBar() {
               key={path}
               onMouseDown={() => toggle(path)}
               style={{
-                backgroundColor: isActive ? Colors.TRACK : undefined,
+                ...(isActive && { backgroundColor: Colors.TRACK }),
                 paddingLeft: 1,
                 paddingRight: 1,
               }}

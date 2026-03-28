@@ -70,7 +70,7 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
               }}
               style={{
                 fg: tab === infoPaneTab ? Colors.PRIMARY : Colors.NEUTRAL,
-                attributes: tab === infoPaneTab ? TextAttributes.BOLD : undefined
+                ...(tab === infoPaneTab && { attributes: TextAttributes.BOLD }),
               }}
               wrapMode='none'
             >

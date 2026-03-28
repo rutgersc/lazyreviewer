@@ -244,12 +244,12 @@ export default function PresetEditorModal({ isVisible, initialName, initialUserI
                       setLeftIndex(idx);
                       toggleGroup(group);
                     }}
-                    style={{ backgroundColor: isHighlighted ? Colors.TRACK : undefined }}
+                    style={{ ...(isHighlighted && { backgroundColor: Colors.TRACK }) }}
                   >
                     <text
                       style={{
                         fg: isChecked ? Colors.NEUTRAL : Colors.PRIMARY,
-                        attributes: isHighlighted ? TextAttributes.BOLD : undefined,
+                        ...(isHighlighted && { attributes: TextAttributes.BOLD }),
                       }}
                       wrapMode='none'
                     >
@@ -286,12 +286,12 @@ export default function PresetEditorModal({ isVisible, initialName, initialUserI
                       setRightIndex(idx);
                       toggleUser(author);
                     }}
-                    style={{ backgroundColor: isHighlighted ? Colors.TRACK : undefined }}
+                    style={{ ...(isHighlighted && { backgroundColor: Colors.TRACK }) }}
                   >
                     <text
                       style={{
                         fg: color,
-                        attributes: isHighlighted ? TextAttributes.BOLD : undefined,
+                        ...(isHighlighted && { attributes: TextAttributes.BOLD }),
                       }}
                       wrapMode='none'
                     >

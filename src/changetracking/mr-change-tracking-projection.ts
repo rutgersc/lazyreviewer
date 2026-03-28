@@ -187,10 +187,11 @@ const calcDelta = (
     };
   }
 
+  const stateChanged = latestMr.mrStatus !== previousMr.mrStatus
   return {
     mrId,
     commentsDelta: latestMr.mrNoteIds.difference(previousMr.mrNoteIds),
-    stateDelta: latestMr.mrStatus !== previousMr.mrStatus ? latestMr.mrStatus : undefined
+    ...(stateChanged && { stateDelta: latestMr.mrStatus }),
   };
 };
 

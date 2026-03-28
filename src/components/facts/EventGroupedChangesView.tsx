@@ -121,10 +121,10 @@ export default function EventGroupedChangesView() {
         return (
           <box key={group.event.eventId} id={group.event.eventId} flexDirection="column" width="100%">
             <box height={1} width="100%" flexDirection="row" onMouseDown={handleEventClick}>
-              <text fg={color} bg={backgroundColor} style={headerAttributes ? { attributes: headerAttributes } : undefined} wrapMode="word">
+              <text fg={color} {...(backgroundColor !== undefined && { bg: backgroundColor })} {...(headerAttributes ? { style: { attributes: headerAttributes } } : {})} wrapMode="word">
                 {displayIndex}
               </text>
-              <text fg={color} bg={backgroundColor} style={headerAttributes ? { attributes: headerAttributes } : undefined} wrapMode="word">
+              <text fg={color} {...(backgroundColor !== undefined && { bg: backgroundColor })} {...(headerAttributes ? { style: { attributes: headerAttributes } } : {})} wrapMode="word">
                 {`>> ${event.type}`}
               </text>
             </box>
@@ -156,8 +156,7 @@ export default function EventGroupedChangesView() {
                   width="100%"
                   flexDirection='row'
                   onMouseDown={() => handleChangeClick(i, change)}
-                  style={isMrMatch ? { border: ['left'] } : undefined}
-                  borderColor={isMrMatch ? Colors.NEUTRAL : undefined}
+                  {...(isMrMatch ? { style: { border: ['left'] as const }, borderColor: Colors.NEUTRAL } : {})}
                 >
                   <box width={isMrMatch ? 3 : 4} flexShrink={0} height={1}>
                     <text
@@ -173,7 +172,7 @@ export default function EventGroupedChangesView() {
                     wrapMode='none'
                     fg={isSublistSelected ? Colors.SUCCESS :changeFg}
                     bg={isSublistSelected ? Colors.TRACK : style.bg}
-                    style={style.attributes ? { attributes: style.attributes } : undefined}
+                    {...(style.attributes ? { style: { attributes: style.attributes } } : {})}
                   >
                     {' '}{text}
                   </text>
@@ -219,7 +218,7 @@ function renderRangeGroup(
   return (
     <box key={group.event.eventId} id={group.event.eventId} flexDirection="column" width="100%">
       <box height={1} width="100%" flexDirection="row" onMouseDown={handleRangeClick}>
-        <text fg={color} bg={backgroundColor} wrapMode="word">
+        <text fg={color} {...(backgroundColor !== undefined && { bg: backgroundColor })} wrapMode="word">
           {`${group.startIndex.toString().padStart(4, ' ')}...${group.endIndex.toString().padEnd(4, ' ')} | (no changes)`}
         </text>
       </box>

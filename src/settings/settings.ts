@@ -169,21 +169,26 @@ export class SettingsService extends ServiceMap.Service<SettingsService>()("Sett
       Effect.gen(function* () {
         const settings = yield* load;
         const jobNamesByRepoPath = getRepoPathsAndJobnames(mergeRequests);
-        let settingsUpdated = false;
 
-        for (const [repoPath, jobNames] of jobNamesByRepoPath) {
-          const existingRecord = (settings.pipelineJobImportance[repoPath] ??= {});
-          const existingKeys = Object.keys(existingRecord);
-          for (const name of jobNames) {
-            if (!existingKeys.includes(name)) {
-              existingRecord[name] = 'low';
-              settingsUpdated = true;
-            }
-          }
-        }
+        const updatedImportance = Object.fromEntries(
+          Object.entries(settings.pipelineJobImportance).map(([repoPath, repoJobs]) => {
+            const newJobNames = jobNamesByRepoPath.get(repoPath);
+            if (!newJobNames) return [repoPath, repoJobs];
+            const existingKeys = new Set(Object.keys(repoJobs));
+            const additions = Object.fromEntries(
+              [...newJobNames].filter(name => !existingKeys.has(name)).map(name => [name, 'low' as const])
+            );
+            return [repoPath, Object.keys(additions).length > 0 ? { ...repoJobs, ...additions } : repoJobs];
+          }).concat(
+            [...jobNamesByRepoPath.entries()]
+              .filter(([repoPath]) => !(repoPath in settings.pipelineJobImportance))
+              .map(([repoPath, jobNames]) => [repoPath, Object.fromEntries([...jobNames].map(name => [name, 'low' as const]))])
+          )
+        );
 
+        const settingsUpdated = JSON.stringify(updatedImportance) !== JSON.stringify(settings.pipelineJobImportance);
         if (settingsUpdated) {
-          yield* save(settings);
+          yield* save({ ...settings, pipelineJobImportance: updatedImportance });
         }
       });
 

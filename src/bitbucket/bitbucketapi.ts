@@ -1,130 +1,26 @@
-import { Console, Config, Data, Effect, Redacted } from "effect";
+import { Console, Config, Data, Effect, Redacted, Schema } from "effect";
 import type { MergeRequest } from "../domain/merge-request-schema";
 import type { BitbucketPrsFetchedEvent, BitbucketSinglePrFetchedEvent, BitbucketPrCommentsFetchedEvent } from "../events/bitbucket-events";
 import { projectBitbucketPrsFetchedEvent, projectBitbucketPrCommentsFetchedEvent, projectBitbucketSinglePrFetchedEvent } from "./bitbucket-projections";
 import { generateEventId } from "../events/event-id";
 import { UnauthorizedError } from "../domain/unauthorized-error";
+import {
+  BitbucketAccountSchema,
+  BitbucketPullRequestSchema,
+  BitbucketPullRequestsResponseSchema,
+  BitbucketCommentResolutionSchema,
+  BitbucketCommentSchema,
+  BitbucketCommentsResponseSchema,
+} from "./bitbucket-schema";
 import * as fs from 'fs';
 import * as path from 'path';
 
-export interface BitbucketAccount {
-  display_name: string;
-  uuid: string;
-  account_id?: string;
-  nickname?: string;
-}
-
-export interface BitbucketBranch {
-  name: string;
-}
-
-export interface BitbucketCommit {
-  hash: string;
-}
-
-export interface BitbucketRepository {
-  name: string;
-  full_name: string;
-}
-
-export interface BitbucketSource {
-  branch: BitbucketBranch;
-  commit: BitbucketCommit;
-  repository: BitbucketRepository;
-}
-
-export interface BitbucketDestination {
-  branch: BitbucketBranch;
-  commit: BitbucketCommit;
-  repository: BitbucketRepository;
-}
-
-export interface BitbucketParticipant {
-  user: BitbucketAccount;
-  role: string;
-  approved: boolean;
-  participated_on?: string;
-}
-
-export interface BitbucketPullRequest {
-  id: number;
-  title: string;
-  description?: string;
-  state: "OPEN" | "MERGED" | "DECLINED" | "SUPERSEDED";
-  author: BitbucketAccount;
-  source: BitbucketSource;
-  destination: BitbucketDestination;
-  participants?: readonly BitbucketParticipant[];
-  reviewers?: readonly BitbucketAccount[];
-  created_on: string;
-  updated_on: string;
-  comment_count?: number;
-  task_count?: number;
-  links: {
-    html: {
-      href: string;
-    };
-    self: {
-      href: string;
-    };
-  };
-}
-
-export interface BitbucketPullRequestsResponse {
-  values: readonly BitbucketPullRequest[];
-  page?: number;
-  pagelen?: number;
-  size?: number;
-  next?: string;
-}
-
-export interface BitbucketCommentResolution {
-  type: string;
-  user: BitbucketAccount;
-  created_on: string;
-}
-
-export interface BitbucketComment {
-  id: number;
-  created_on: string;
-  updated_on: string;
-  content: {
-    raw: string;
-    markup?: string;
-    html?: string;
-  };
-  user: BitbucketAccount;
-  deleted?: boolean;
-  parent?: {
-    id: number;
-  };
-  inline?: {
-    from?: number;
-    to?: number;
-    path: string;
-  };
-  links: {
-    self: {
-      href: string;
-    };
-    html: {
-      href: string;
-    };
-  };
-  pullrequest?: {
-    type: string;
-    id: number;
-  };
-  resolution?: BitbucketCommentResolution | null;
-}
-
-export interface BitbucketCommentsResponse {
-  values: readonly BitbucketComment[];
-  page?: number;
-  pagelen?: number;
-  size?: number;
-  next?: string;
-}
+export type BitbucketAccount = Schema.Schema.Type<typeof BitbucketAccountSchema>
+export type BitbucketPullRequest = Schema.Schema.Type<typeof BitbucketPullRequestSchema>
+export type BitbucketPullRequestsResponse = Schema.Schema.Type<typeof BitbucketPullRequestsResponseSchema>
+export type BitbucketCommentResolution = Schema.Schema.Type<typeof BitbucketCommentResolutionSchema>
+export type BitbucketComment = Schema.Schema.Type<typeof BitbucketCommentSchema>
+export type BitbucketCommentsResponse = Schema.Schema.Type<typeof BitbucketCommentsResponseSchema>
 
 export class FetchBitbucketPrCommentsError extends Data.TaggedError("FetchBitbucketPrCommentsError")<{
   cause: unknown;

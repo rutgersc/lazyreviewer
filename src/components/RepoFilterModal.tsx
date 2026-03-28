@@ -134,12 +134,12 @@ export default function RepoFilterModal({ isVisible, currentFilter, onConfirm, o
             <box
               key={item}
               onMouseDown={() => { setSelectedIndex(index); toggle(index); }}
-              style={{ backgroundColor: isHighlighted ? Colors.TRACK : undefined }}
+              style={{ ...(isHighlighted && { backgroundColor: Colors.TRACK }) }}
             >
               <text
                 style={{
                   fg: color,
-                  attributes: isHighlighted ? TextAttributes.BOLD : undefined,
+                  ...(isHighlighted && { attributes: TextAttributes.BOLD }),
                 }}
                 wrapMode='none'
               >

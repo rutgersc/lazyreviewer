@@ -15,7 +15,7 @@ export function useJiraScroll() {
       runWithAppServices(
         Effect.gen(function* () {
           const svc = yield* JiraScrollService
-          yield* svc.scroll({ issueKey, commentId })
+          yield* svc.scroll({ issueKey, ...(commentId !== undefined && { commentId }) })
         })
       )
   }

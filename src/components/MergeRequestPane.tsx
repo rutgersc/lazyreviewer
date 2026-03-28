@@ -188,7 +188,7 @@ const PipelineStagesWithJobStatuses = ({ mr, pipelineJobImportance }: { mr: Merg
       <text
         style={{
           fg: statusDisplay.color,
-          attributes: statusDisplay.attributes,
+          ...(statusDisplay.attributes !== undefined && { attributes: statusDisplay.attributes }),
         }}
         wrapMode='none'
       >
@@ -295,11 +295,11 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
               fg: isSeen
                 ? Colors.ERROR
                 : mr.approvedBy.length > 0 ? Colors.SUCCESS : Colors.PRIMARY,
-              attributes: (isApprovedByMe || isMyMr || isSeen)
-                ? TextAttributes.BOLD
+              ...((isApprovedByMe || isMyMr || isSeen)
+                ? { attributes: TextAttributes.BOLD }
                 : mr.approvedBy.length > 0
-                ? undefined
-                : TextAttributes.DIM
+                ? {}
+                : { attributes: TextAttributes.DIM }),
             }}
             wrapMode='none'
           >
@@ -324,7 +324,7 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
               : mr.resolvableDiscussions > 0
               ? Colors.SUCCESS
               : Colors.PRIMARY,
-            attributes: mr.unresolvedDiscussions > 0 ? TextAttributes.BOLD : mr.resolvableDiscussions > 0 ? undefined : TextAttributes.DIM,
+            ...(mr.unresolvedDiscussions > 0 ? { attributes: TextAttributes.BOLD } : mr.resolvableDiscussions > 0 ? {} : { attributes: TextAttributes.DIM }),
           }}
           wrapMode='none'
         >
@@ -338,10 +338,9 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
             fg: jiraIssues.length > 0
               ? getJiraStatusColor(jiraIssues[0]?.fields.status.name, mr.state)
               : Colors.ERROR,
-            attributes:
-              jiraIssues.length > 0
-                ? (getJiraStatusColor(jiraIssues[0]?.fields.status.name, mr.state) === Colors.PRIMARY ? TextAttributes.DIM : undefined)
-                : undefined,
+            ...(jiraIssues.length > 0 && getJiraStatusColor(jiraIssues[0]?.fields.status.name, mr.state) === Colors.PRIMARY
+                ? { attributes: TextAttributes.DIM }
+                : {}),
           }}
           wrapMode='none'
         >
@@ -903,9 +902,9 @@ export default function MergeRequestPane() {
                     <box
                       key={wt.folderName}
                       height={1}
-                      onMouseDown={isCheckedOut && wt.branch
-                        ? () => selectMrByBranch({ projectPath: repo.projectPath, branch: wt.branch! })
-                        : undefined}
+                      {...(isCheckedOut && wt.branch
+                        ? { onMouseDown: () => selectMrByBranch({ projectPath: repo.projectPath, branch: wt.branch! }) }
+                        : {})}
                     >
                       <text
                         style={{

@@ -4,9 +4,9 @@ export type Provider = 'gitlab' | 'bitbucket'
 export type UserId = {
   type: 'userId'
   userId: string
-  gitlab?: string
-  bitbucket?: string
-  jira?: string // Jira accountId
+  gitlab?: string | undefined
+  bitbucket?: string | undefined
+  jira?: string | undefined // Jira accountId
 }
 
 export type AuthorIdentity =

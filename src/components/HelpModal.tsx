@@ -36,8 +36,8 @@ const KeyRow = ({
 }) => (
   <box
     id={id}
-    onMouseDown={onMouseDown}
-    onMouseOver={onMouseOver}
+    {...(onMouseDown !== undefined && { onMouseDown })}
+    {...(onMouseOver !== undefined && { onMouseOver })}
     style={{
       flexDirection: "row",
       backgroundColor: isSelected ? Colors.SELECTED : 'transparent',
@@ -50,7 +50,7 @@ const KeyRow = ({
       <text
         style={{
           fg: Colors.WARNING,
-          attributes: isSelected ? TextAttributes.BOLD : undefined
+          ...(isSelected && { attributes: TextAttributes.BOLD }),
         }}
         wrapMode='none'
       >
@@ -60,7 +60,7 @@ const KeyRow = ({
     <text
       style={{
         fg: Colors.PRIMARY,
-        attributes: isSelected ? TextAttributes.BOLD : undefined
+        ...(isSelected && { attributes: TextAttributes.BOLD }),
       }}
       wrapMode='none'
     >

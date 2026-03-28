@@ -164,7 +164,7 @@ const extractEvents = (mr: MergeRequest): Event[] => {
           hasFailures,
           failedJobs: failedJobs.map(j => j.name)
         },
-        actionData: hasFailures ? { job: failedJobs[0] } : undefined
+        ...(hasFailures && failedJobs[0] ? { actionData: { job: failedJobs[0] } } : {}),
       });
     }
   }

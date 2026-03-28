@@ -474,7 +474,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     const isDimmed = !itemMatchesSearch(flatItem);
     const isRowDim = isDimmed || !!flatItem.dimColor;
     const dimColor = isDimmed ? Colors.SUPPORTING : (flatItem.dimColor ?? Colors.SUPPORTING);
-    const dimAttr = isRowDim ? TextAttributes.DIM : undefined;
+    const dimAttrStyle = isRowDim ? { attributes: TextAttributes.DIM } as const : {};
     const rowColor = isRowDim ? dimColor : flatItem.statusColor;
 
     const mr = flatItem.mr;
@@ -496,10 +496,10 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         }}
       >
         <text wrapMode="none">{' '.repeat(DETAIL_INDENT)}</text>
-        <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, attributes: dimAttr }} wrapMode="none">{'mr:'.padEnd(8)}</text>
-        <text style={{ fg: rowColor, attributes: dimAttr }} wrapMode="none">!{mr.iid}</text>
-        <text style={{ fg: rowColor, flexShrink: 1, attributes: dimAttr }} wrapMode="none">{mr.sourcebranch}</text>
-        <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, attributes: dimAttr }} wrapMode="none">{approvalIcon}{approvalCount}{discussions} ({mr.project.name})</text>
+        <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, ...dimAttrStyle }} wrapMode="none">{'mr:'.padEnd(8)}</text>
+        <text style={{ fg: rowColor, ...dimAttrStyle }} wrapMode="none">!{mr.iid}</text>
+        <text style={{ fg: rowColor, flexShrink: 1, ...dimAttrStyle }} wrapMode="none">{mr.sourcebranch}</text>
+        <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, ...dimAttrStyle }} wrapMode="none">{approvalIcon}{approvalCount}{discussions} ({mr.project.name})</text>
       </box>
     );
   };
@@ -526,7 +526,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       const priority = isTopLevel ? mapPriority(item.fields.priority.name) : null;
       const isRowDim = isDimmed || !!status.dimColor;
       const dimColor = isDimmed ? Colors.SUPPORTING : (status.dimColor ?? Colors.SUPPORTING);
-      const dimAttr = isRowDim ? TextAttributes.DIM : undefined;
+      const dimAttrStyle = isRowDim ? { attributes: TextAttributes.DIM } as const : {};
 
       const showSeparator = flatItem.itemIndex === 0 && flatItem.storyIndex > 0;
 
@@ -545,19 +545,19 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           }}
         >
           {isTopLevel
-            ? <text style={{ fg: isRowDim ? dimColor : (epicName ? story.epicColor : Colors.SUPPORTING), attributes: dimAttr }} wrapMode="none">{epicLabel}</text>
-            : <text style={{ attributes: dimAttr }} wrapMode="none">{epicLabel}</text>
+            ? <text style={{ fg: isRowDim ? dimColor : (epicName ? story.epicColor : Colors.SUPPORTING), ...dimAttrStyle }} wrapMode="none">{epicLabel}</text>
+            : <text style={{ ...dimAttrStyle }} wrapMode="none">{epicLabel}</text>
           }
           {isTopLevel && priority && (
-            <text style={{ fg: isRowDim ? dimColor : priority.color, attributes: dimAttr }} wrapMode="none">●</text>
+            <text style={{ fg: isRowDim ? dimColor : priority.color, ...dimAttrStyle }} wrapMode="none">●</text>
           )}
-          {!isTopLevel && <text style={{ attributes: dimAttr }} wrapMode="none"> </text>}
-          <text style={{ fg: isRowDim ? dimColor : status.color, attributes: dimAttr }} wrapMode="none">{statusPadded}</text>
-          <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, attributes: dimAttr }} wrapMode="none">{icon}</text>
-          <text style={{ fg: isRowDim ? dimColor : status.color, attributes: isRowDim ? TextAttributes.DIM : (isTopLevel ? TextAttributes.BOLD : undefined) }} wrapMode="none">{keyPadded}</text>
-          <text style={{ fg: isRowDim ? dimColor : (isTopLevel ? Colors.SECONDARY : status.color), flexShrink: 1, attributes: isRowDim ? TextAttributes.DIM : (isTopLevel ? TextAttributes.BOLD : undefined) }} wrapMode="none">{item.fields.summary}</text>
+          {!isTopLevel && <text style={{ ...dimAttrStyle }} wrapMode="none"> </text>}
+          <text style={{ fg: isRowDim ? dimColor : status.color, ...dimAttrStyle }} wrapMode="none">{statusPadded}</text>
+          <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, ...dimAttrStyle }} wrapMode="none">{icon}</text>
+          <text style={{ fg: isRowDim ? dimColor : status.color, ...(isRowDim ? { attributes: TextAttributes.DIM } : isTopLevel ? { attributes: TextAttributes.BOLD } : {}) }} wrapMode="none">{keyPadded}</text>
+          <text style={{ fg: isRowDim ? dimColor : (isTopLevel ? Colors.SECONDARY : status.color), flexShrink: 1, ...(isRowDim ? { attributes: TextAttributes.DIM } : isTopLevel ? { attributes: TextAttributes.BOLD } : {}) }} wrapMode="none">{item.fields.summary}</text>
           {item.fields.assignee && (
-            <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, attributes: dimAttr }} wrapMode="none"> @{item.fields.assignee.displayName}</text>
+            <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, ...dimAttrStyle }} wrapMode="none"> @{item.fields.assignee.displayName}</text>
           )}
           {showInlineMrIndicator && (() => {
             const linkedMrs = mrsByJiraKey.get(item.key);
@@ -571,7 +571,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
               resolvable > 0 ? `💬 ${resolved}/${resolvable}` : null,
             ].filter(Boolean).join(' ');
             return (
-              <text style={{ fg: isRowDim ? dimColor : Colors.INFO, flexShrink: 0, attributes: dimAttr }} wrapMode="none"> {indicator}</text>
+              <text style={{ fg: isRowDim ? dimColor : Colors.INFO, flexShrink: 0, ...dimAttrStyle }} wrapMode="none"> {indicator}</text>
             );
           })()}
         </box>
@@ -595,7 +595,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
               key={sprint.id}
               style={{
                 fg: isActive ? Colors.SUCCESS : Colors.NEUTRAL,
-                attributes: isActive ? TextAttributes.BOLD : undefined,
+                ...(isActive && { attributes: TextAttributes.BOLD }),
               }}
               wrapMode="none"
             >
@@ -639,13 +639,13 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
             <box
               key={option.key}
               style={{
-                backgroundColor: index === sortSelectedIndex ? Colors.TRACK : undefined,
+                ...(index === sortSelectedIndex && { backgroundColor: Colors.TRACK }),
               }}
             >
               <text
                 style={{
                   fg: index === sortSelectedIndex ? Colors.PRIMARY : Colors.NEUTRAL,
-                  attributes: index === sortSelectedIndex ? TextAttributes.BOLD : undefined,
+                  ...(index === sortSelectedIndex && { attributes: TextAttributes.BOLD }),
                 }}
                 wrapMode="none"
               >
@@ -690,13 +690,13 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
             <box
               key={mr.id}
               style={{
-                backgroundColor: index === mrPickerIndex ? Colors.TRACK : undefined,
+                ...(index === mrPickerIndex && { backgroundColor: Colors.TRACK }),
               }}
             >
               <text
                 style={{
                   fg: index === mrPickerIndex ? Colors.PRIMARY : Colors.NEUTRAL,
-                  attributes: index === mrPickerIndex ? TextAttributes.BOLD : undefined,
+                  ...(index === mrPickerIndex && { attributes: TextAttributes.BOLD }),
                 }}
                 wrapMode="none"
               >
@@ -717,7 +717,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           setCurrentBoardId(id);
           setShowSetup(false);
         }}
-        currentBoardId={currentBoardId}
+        {...(currentBoardId !== undefined && { currentBoardId })}
       />
     );
   }

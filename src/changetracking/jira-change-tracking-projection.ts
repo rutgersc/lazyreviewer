@@ -66,12 +66,11 @@ const calcJiraDelta = (
     }
   }
 
+  const statusChanged = previousIssue.status !== latestIssue.status
   return {
     issueKey,
     commentsDelta: latestIssue.commentIds.difference(previousIssue.commentIds),
-    statusDelta: previousIssue.status !== latestIssue.status
-      ? { from: previousIssue.status, to: latestIssue.status }
-      : undefined,
+    ...(statusChanged && { statusDelta: { from: previousIssue.status, to: latestIssue.status } }),
   }
 }
 
@@ -100,7 +99,7 @@ const detectJiraIssueChanges = (
       jiraDeltas.push({
         type: 'jira-status-changed',
         issue: issueInfo,
-        fromStatus: delta.statusDelta.from,
+        ...(delta.statusDelta.from !== undefined && { fromStatus: delta.statusDelta.from }),
         toStatus: delta.statusDelta.to,
         changedAt: new Date(issue.fields.updated)
       })

@@ -153,9 +153,7 @@ export default function PresetPickerModal({ isVisible, onClose }: PresetPickerMo
     return (
       <PresetEditorModal
         isVisible={true}
-        initialName={editing?.name}
-        initialUserIds={editing?.users}
-        initialGroupIds={editing?.groups}
+        {...(editing && { initialName: editing.name, initialUserIds: editing.users, initialGroupIds: editing.groups })}
         onSave={handleEditorSave}
         onClose={handleEditorClose}
       />

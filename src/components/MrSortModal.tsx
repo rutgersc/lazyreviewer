@@ -80,8 +80,7 @@ export default function MrSortModal({
             key={option.key}
             style={{
               fg: index === selectedIndex ? Colors.PRIMARY : Colors.NEUTRAL,
-              bg: index === selectedIndex ? Colors.TRACK : undefined,
-              attributes: index === selectedIndex ? TextAttributes.BOLD : undefined
+              ...(index === selectedIndex && { bg: Colors.TRACK, attributes: TextAttributes.BOLD }),
             }}
             wrapMode='none'
           >

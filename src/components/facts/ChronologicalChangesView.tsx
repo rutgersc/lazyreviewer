@@ -68,8 +68,7 @@ export default function ChronologicalChangesView() {
             width="100%"
             flexDirection='row'
             onMouseDown={() => handleClick(i, change)}
-            style={isMrMatch ? { border: ['left'] } : undefined}
-            borderColor={isMrMatch ? Colors.NEUTRAL : undefined}
+            {...(isMrMatch ? { style: { border: ['left'] as const }, borderColor: Colors.NEUTRAL } : {})}
           >
             <box width={isMrMatch ? 3 : 4} flexShrink={0} height={1}>
               <text
@@ -85,7 +84,7 @@ export default function ChronologicalChangesView() {
               wrapMode='none'
               fg={isSelected ? Colors.SUCCESS :changeFg}
               bg={isSelected ? Colors.TRACK : style.bg}
-              style={style.attributes ? { attributes: style.attributes } : undefined}
+              {...(style.attributes ? { style: { attributes: style.attributes } } : {})}
             >
               {' '}{text}
             </text>

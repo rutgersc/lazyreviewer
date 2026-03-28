@@ -58,7 +58,7 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
     fragmentName: string;
     schemaBody: string;
     enumImports: string[];
-    sourceFileName?: string;
+    sourceFileName?: string | undefined;
   }> = [];
 
   const queries: Array<{
@@ -66,7 +66,7 @@ export const plugin: PluginFunction<EffectSchemaPluginConfig> = (
     schemaBody: string;
     enumImports: string[];
     fragmentImports: string[];
-    sourceFileName?: string;
+    sourceFileName?: string | undefined;
   }> = [];
 
   const indent = (level = ctx.indentLevel): string => '  '.repeat(level);
