@@ -1,4 +1,4 @@
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "effect/unstable/reactivity";
 import { selectedMrAtom } from "../mergerequests/mergerequests-atom";
 
 export const overviewCursorIndexAtom = Atom.make<number>(0);

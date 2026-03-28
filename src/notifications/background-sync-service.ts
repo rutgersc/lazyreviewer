@@ -1,5 +1,5 @@
 import { Context, Data, Effect, Layer, PubSub, Ref, Console } from 'effect';
-import { Atom, Result } from '@effect-atom/atom-react';
+import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { settingsAtom, repoSelectionAtom } from '../settings/settings-atom';
 import { resolveRepoPath } from '../userselection/userSelection';
 import { fetchRepoPage, type KnownMrInfo } from '../mergerequests/decide-fetch-mrs';
@@ -187,7 +187,7 @@ type SyncConfig = {
 
 const computeSyncConfig = (get: Atom.Context): SyncConfig => {
   const settingsResult = get.registry.get(settingsAtom);
-  const settings = Result.match(settingsResult, {
+  const settings = AsyncResult.match(settingsResult, {
     onInitial: () => null,
     onFailure: () => null,
     onSuccess: (s) => s.value
@@ -391,7 +391,7 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
       }).pipe(
         withFetchLock,
         Effect.catchTag("FetchLockBusy", () => Effect.void),
-        Effect.catchAllCause((cause) => Console.error('[BackgroundSync] Fetch failed:', cause))
+        Effect.catchCause((cause) => Console.error('[BackgroundSync] Fetch failed:', cause))
       );
 
       yield* Effect.sleep('5 seconds');
@@ -409,6 +409,6 @@ export const ensureBackgroundSyncWorker = (get: Atom.Context) =>
     workerStarted = true;
 
     const service = yield* BackgroundSyncService;
-    yield* Effect.forkDaemon(
+    yield* Effect.forkDetach(
       createBackgroundWorker(get, service.statusPubSub, service.slotsPubSub));
   });

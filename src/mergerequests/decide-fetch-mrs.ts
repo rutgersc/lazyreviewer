@@ -82,7 +82,7 @@ const fetchMissingMrs = (missingMrs: readonly KnownMrInfo[]) => Effect.gen(funct
       yield* EventStorage.appendEvent(event)
       return projectGitlabMrsFetchedEvent(event).flatMap(mr => mr.jiraIssueKeys)
     }).pipe(
-      Effect.catchAll(err =>
+      Effect.catch(err =>
         Console.error(`[Fetch] Failed to fetch MRs for ${projectPath}`, err).pipe(
           Effect.as([] as string[])
         )
@@ -111,12 +111,12 @@ const forkFetchMissingMrs = (
     .map(([, info]) => info)
 
   if (missingMrs.length > 0) {
-    yield* Effect.forkDaemon(
+    yield* Effect.forkDetach(
       Console.log(`[Fetch] ${missingMrs.length} known MRs not in response, fetching in background`).pipe(
         Effect.andThen(fetchMissingMrs(missingMrs)),
         Effect.tap(jiraKeys =>
           jiraKeys.length > 0
-            ? Effect.forkDaemon(fetchJiraForKeys(jiraKeys))
+            ? Effect.forkDetach(fetchJiraForKeys(jiraKeys))
             : Effect.void
         )
       )
@@ -250,7 +250,7 @@ export const fetchRepoPage = (
 
     // Fetch recent merged MRs to detect state changes (opened → merged)
     if (isPage1) {
-      yield* Effect.forkDaemon(
+      yield* Effect.forkDetach(
         Effect.gen(function* () {
           yield* Console.log(`[Fetch] Fetching recent merged MRs for project "${repository.id}" to detect state changes`)
           const mergedEvent = yield* getGitlabMrsByProjectAsEvent(repository.id, 'merged', null, 10)
@@ -259,10 +259,10 @@ export const fetchRepoPage = (
           const mergedMrs = projectGitlabProjectMrsFetchedEvent(mergedEvent)
           const mergedJiraKeys = Array.from(new Set(mergedMrs.flatMap(mr => mr.jiraIssueKeys)))
           if (mergedJiraKeys.length > 0) {
-            yield* Effect.forkDaemon(fetchJiraForKeys(mergedJiraKeys))
+            yield* Effect.forkDetach(fetchJiraForKeys(mergedJiraKeys))
           }
         }).pipe(
-          Effect.catchAllCause((cause) => Console.error(`[Fetch] Error fetching recent merged MRs for project "${repository.id}":`, cause))
+          Effect.catchCause((cause) => Console.error(`[Fetch] Error fetching recent merged MRs for project "${repository.id}":`, cause))
         )
       )
     }

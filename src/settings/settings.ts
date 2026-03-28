@@ -166,7 +166,7 @@ export class SettingsService extends Effect.Service<SettingsService>()("Settings
       const content = yield* fs.readFileString(DEFAULT_SETTINGS_FILE);
       return JSON.parse(content) as Record<string, unknown>;
     }).pipe(
-      Effect.catchAll(() => Effect.succeed({} as Record<string, unknown>))
+      Effect.catch(() => Effect.succeed({} as Record<string, unknown>))
     );
 
     const load = Effect.gen(function* () {
@@ -217,7 +217,7 @@ export class SettingsService extends Effect.Service<SettingsService>()("Settings
       fs.watch(SETTINGS_FILE).pipe(
         Stream.debounce("100 millis"),
         Stream.mapEffect(() => load.pipe(
-          Effect.catchAll((error) =>
+          Effect.catch((error) =>
             Console.error("Failed to read settings:", error).pipe(
               Effect.as(defaultSettings)
             )

@@ -57,7 +57,7 @@ export const fetchGitlabProjects: Effect.Effect<RepoFetchResult> = Effect.gen(fu
     name: p.name,
   }))
   return { repos, warnings: [] }
-}).pipe(Effect.catchAll((warning) =>
+}).pipe(Effect.catch((warning) =>
   Effect.succeed({ repos: [] as DiscoveredRepo[], warnings: [String(warning)] })
 ))
 
@@ -112,7 +112,7 @@ export const fetchBitbucketRepos = (workspace: string): Effect.Effect<RepoFetchR
   }
 
   return { repos: allRepos, warnings: allWarnings }
-}).pipe(Effect.catchAll((warning) =>
+}).pipe(Effect.catch((warning) =>
   Effect.succeed({ repos: [] as DiscoveredRepo[], warnings: [String(warning)] })
 ))
 
@@ -133,7 +133,7 @@ export const fetchMrsForRepos = (
         }),
       )
     }).pipe(
-      Effect.catchAll((err) =>
+      Effect.catch((err) =>
         Console.error(`[Onboarding] Error fetching MRs for ${repo.fullPath}: ${err}`).pipe(
           Effect.tap(() => {
             onProgress?.(repo.fullPath, 'error')
@@ -148,13 +148,13 @@ export const fetchMrsForRepos = (
 
   const jiraKeys = Array.from(new Set(results.flatMap(r => r.jiraKeys)))
   if (jiraKeys.length > 0) {
-    yield* Effect.forkDaemon(
+    yield* Effect.forkDetach(
       Effect.gen(function* () {
         yield* Console.log(`[Onboarding] Fetching ${jiraKeys.length} Jira tickets in background`)
         const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
         yield* EventStorage.appendEvent(jiraEvent)
       }).pipe(
-        Effect.catchAll((err) =>
+        Effect.catch((err) =>
           Console.error(`[Onboarding] Error fetching Jira tickets: ${err}`)
         )
       )

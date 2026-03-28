@@ -1,4 +1,4 @@
-import { Result } from "@effect-atom/atom-react";
+import { AsyncResult } from "effect/unstable/reactivity";
 
 /**
  * Converts a Result<A[], E> to A[], returning an empty array for Initial/Failure states.
@@ -7,14 +7,14 @@ import { Result } from "@effect-atom/atom-react";
  * @example
  * const events = resultToArray(eventsResult);
  * // Instead of:
- * // const events = Result.match(eventsResult, {
+ * // const events = AsyncResult.match(eventsResult, {
  * //   onInitial: () => [],
  * //   onSuccess: (success) => success.value,
  * //   onFailure: () => []
  * // });
  */
-export function resultToArray<A, E>(result: Result.Result<A[], E>): A[] {
-  return Result.match(result, {
+export function resultToArray<A, E>(result: AsyncResult.Result<A[], E>): A[] {
+  return AsyncResult.match(result, {
     onInitial: () => [] as A[],
     onSuccess: (success) => success.value,
     onFailure: () => [] as A[]
@@ -28,8 +28,8 @@ export function resultToArray<A, E>(result: Result.Result<A[], E>): A[] {
  * @example
  * const timestamp = resultOr(timestampResult, new Date());
  */
-export function resultOr<A, E>(result: Result.Result<A, E>, defaultValue: A): A {
-  return Result.match(result, {
+export function resultOr<A, E>(result: AsyncResult.Result<A, E>, defaultValue: A): A {
+  return AsyncResult.match(result, {
     onInitial: () => defaultValue,
     onSuccess: (success) => success.value,
     onFailure: () => defaultValue

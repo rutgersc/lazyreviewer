@@ -1,6 +1,7 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import { useAtomValue, useAtomSet, Result, Atom } from '@effect-atom/atom-react';
+import { AsyncResult, Atom } from "effect/unstable/reactivity"
+import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import { sprintFilterAtom, setSprintFilterAtom } from '../../settings/settings-atom';
 import { useMemo, useRef, useState } from 'react';
 import { Colors } from '../../colors';
@@ -49,7 +50,7 @@ const selectedSprintAtom = Atom.readable((get) => {
   const sprintsResult = get(sprintsStateAtom);
   const selectedId = get(selectedSprintIdAtom);
 
-  return Result.builder(sprintsResult)
+  return AsyncResult.builder(sprintsResult)
     .onSuccess((state) => {
       if (state._type === 'NoSprintsState') return null;
       return state.sprints.find((s) => s.id === selectedId) ?? null;
@@ -94,7 +95,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const mrsByJiraKey = useAtomValue(mrsByJiraKeyAtom);
 
   const sprintsResult = useAtomValue(sprintsStateAtom);
-  const sprints = Result.builder(sprintsResult)
+  const sprints = AsyncResult.builder(sprintsResult)
     .onSuccess((state) => state._type === 'SprintsState' ? state.sprints : [])
     .orElse(() => []);
 
@@ -142,12 +143,12 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     scrollToId(fi.type === 'detail' ? `board-detail-${idx}` : `board-item-${fi.storyIndex}-${fi.itemIndex}`);
   };
 
-  const isLoadingSprints = Result.isWaiting(loadSprintsResult);
-  const isLoadingIssues = Result.isWaiting(loadSprintIssuesResult);
-  const sprintsError = Result.isFailure(loadSprintsResult) ? String(loadSprintsResult.cause) : null;
-  const issuesError = Result.isFailure(loadSprintIssuesResult) ? String(loadSprintIssuesResult.cause) : null;
+  const isLoadingSprints = AsyncResult.isWaiting(loadSprintsResult);
+  const isLoadingIssues = AsyncResult.isWaiting(loadSprintIssuesResult);
+  const sprintsError = AsyncResult.isFailure(loadSprintsResult) ? String(loadSprintsResult.cause) : null;
+  const issuesError = AsyncResult.isFailure(loadSprintIssuesResult) ? String(loadSprintIssuesResult.cause) : null;
 
-  const noSprintsLoaded = Result.builder(sprintsResult)
+  const noSprintsLoaded = AsyncResult.builder(sprintsResult)
     .onSuccess((state) => state._type === 'NoSprintsState')
     .orElse(() => true);
 

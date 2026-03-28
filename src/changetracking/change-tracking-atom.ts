@@ -1,4 +1,4 @@
-import { Atom } from '@effect-atom/atom-react'
+import { Atom } from "effect/unstable/reactivity"
 import { Chunk, Effect, Stream } from 'effect'
 import { EventStorage } from '../events/events'
 import {

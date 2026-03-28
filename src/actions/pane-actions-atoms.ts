@@ -1,4 +1,4 @@
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "effect/unstable/reactivity";
 import { activePaneAtom, activeModalAtom, infoPaneTabAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
 import { mrActionsAtom } from "../components/MergeRequestPaneActions";

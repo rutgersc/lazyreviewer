@@ -1,4 +1,4 @@
-import { Atom, Registry, type Registry as RegistryNs } from "@effect-atom/atom-react";
+import { Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
@@ -13,7 +13,7 @@ import { loadJobLogAtom, jobLogDownloadSignalAtom } from "../mergerequests/open-
 import { failedJobPickerItemsAtom, failedJobPickerMrAtom } from "./FailedJobPickerModal";
 import { activeModalAtom } from "../ui/navigation-atom";
 
-const getSelectableContext = (registry: RegistryNs.Registry) => {
+const getSelectableContext = (registry: AtomRegistry.AtomRegistry) => {
   const selectedMr = registry.get(selectedMrAtom);
   const discussions = selectedMr?.discussions ?? [];
   const unresolvedDiscussions = discussions.filter(d => d.resolvable && !d.resolved);
@@ -146,7 +146,7 @@ export const overviewActionsAtom = Atom.make((get) => {
         if (failedJobs.length === 1) {
           registry.set(loadJobLogAtom, { mergeRequest: mr, job: failedJobs[0]!.job });
           Effect.runPromiseExit(
-            Registry.getResult(registry, loadJobLogAtom, { suspendOnWaiting: true })
+            AtomRegistry.getResult(registry, loadJobLogAtom, { suspendOnWaiting: true })
           ).then(() => {
             registry.set(jobLogDownloadSignalAtom, registry.get(jobLogDownloadSignalAtom) + 1);
           });

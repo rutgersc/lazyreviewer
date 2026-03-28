@@ -1,7 +1,7 @@
 import { parseKeyString } from '../actions/key-matcher';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
-import { Atom } from '@effect-atom/atom-react';
+import { Atom } from "effect/unstable/reactivity";
 import { selectedMergeRequestJiraIssuesAtom } from './InfoPane';
 import { jiraCommentFocusedAtom, scrollToJiraCommentIdInJiraIssuesListAtom as scrollToJiraCommentIdInJiraIssuesListAtom, selectedJiraCommentIndexAtom, selectedJiraIndexAtom, selectedJiraSubIndexAtom } from './JiraIssuesList';
 

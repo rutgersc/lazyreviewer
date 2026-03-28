@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue, useAtomSet } from "@effect/atom-react";
 import { TextAttributes } from '@opentui/core';
 import { Colors } from '../../colors';
 import { getAgeColor } from '../../utils/formatting';

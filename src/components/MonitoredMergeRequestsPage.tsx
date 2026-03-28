@@ -1,10 +1,11 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import { useAtomValue, useAtomSet, Atom } from '@effect-atom/atom-react';
+import { Atom, AsyncResult } from "effect/unstable/reactivity"
+import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import { Colors } from '../colors';
 import { monitoredMergeRequestsAtom, toggleMonitorMergeRequestAtom } from '../settings/settings-atom';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
-import { Result } from '@effect-atom/atom-react';
+;
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
@@ -22,7 +23,7 @@ const monitoredMrsListAtom = Atom.make((get) => {
   const allMrsResult = get(allMrsAtom);
   const monitoredIds = get(monitoredMergeRequestsAtom);
 
-  return Result.match(allMrsResult, {
+  return AsyncResult.match(allMrsResult, {
     onInitial: () => [] as MergeRequest[],
     onSuccess: (state) =>
       Array.from(state.value.mrsByGid.values())

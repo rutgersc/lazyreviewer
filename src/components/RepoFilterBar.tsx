@@ -1,6 +1,6 @@
 import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
-import { useAtom, useAtomValue } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue } from "@effect/atom-react";
 import { knownProjectsAtom, repoFilterAtom } from '../mergerequests/mergerequests-atom';
 import { repositoryFullPath } from '../userselection/userSelection';
 

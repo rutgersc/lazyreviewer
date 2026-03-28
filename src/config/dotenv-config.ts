@@ -164,7 +164,7 @@ export const dotEnvFileChanges = Effect.gen(function* () {
       }
       return deriveMissingCredentials(parsed);
     }),
-    Effect.catchAll(() => Effect.succeed(deriveMissingCredentials({})))
+    Effect.catch(() => Effect.succeed(deriveMissingCredentials({})))
   );
 
   const initial = yield* readAndDerive;

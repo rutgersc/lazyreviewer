@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ParsedKey } from '@opentui/core'
 import { useKeyboard, useRenderer } from '@opentui/react'
-import { useAtomSet } from '@effect-atom/atom-react'
+import { useAtomSet } from "@effect/atom-react"
 import { Colors } from '../colors'
 import type { OnboardingStep, DiscoveredRepo } from './onboarding-types'
 import type { UserId, UserSelectionEntry } from '../userselection/userSelection'

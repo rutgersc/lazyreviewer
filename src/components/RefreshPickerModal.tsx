@@ -1,4 +1,4 @@
-import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import { Colors } from '../colors';
 import { userGroupsAtom, repoSelectionAtom } from '../settings/settings-atom';
 import { knownProjectsAtom, refreshMergeRequestsAtom } from '../mergerequests/mergerequests-atom';

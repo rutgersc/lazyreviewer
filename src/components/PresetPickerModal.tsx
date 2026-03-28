@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ParsedKey } from '@opentui/core';
 import { Colors } from '../colors';
-import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import { userGroupsAtom, setUserFilterAtom, saveGroupAtom, updateGroupAtom, deleteGroupAtom, moveGroupAtom } from '../settings/settings-atom';
 import { knownAuthorsAtom } from '../mergerequests/mergerequests-atom';
 import { matchesAnyKey, parseKeyString } from '../actions/key-matcher';

@@ -2,7 +2,7 @@ import { Effect, Stream, Console, Option } from "effect"
 import { appAtomRuntime } from "../appLayerRuntime"
 import { type NotificationSettings, type BackgroundSyncSettings, type MrSortOrder, defaultSettings, type Settings, SettingsService } from "./settings"
 import { type UserSettings, defaultUserSettings, UserSettingsService } from "./user-filter-presets"
-import { Atom, Result } from "@effect-atom/atom-react"
+import { Atom, AsyncResult } from "effect/unstable/reactivity"
 import type { MrGid } from "../domain/identifiers"
 import type { UserId, User } from "../userselection/userSelection"
 import { settingsUsersToUserSelections } from "../userselection/userSelection"
@@ -35,7 +35,7 @@ const selectFromSettings = <T>(
 ): Atom.Atom<T> =>
   Atom.make(get => {
     const previous = get.self<T>();
-    const newValue = Result.match(get(settingsAtom), {
+    const newValue = AsyncResult.match(get(settingsAtom), {
       onInitial: () => defaultValue,
       onSuccess: ({ value }) => selector(value),
       onFailure: () => defaultValue
@@ -69,7 +69,7 @@ const selectFromUserSettings = <T>(
 ): Atom.Atom<T> =>
   Atom.make(get => {
     const previous = get.self<T>();
-    const newValue = Result.match(get(userSettingsAtom), {
+    const newValue = AsyncResult.match(get(userSettingsAtom), {
       onInitial: () => defaultValue,
       onSuccess: ({ value }) => selector(value),
       onFailure: () => defaultValue
@@ -190,7 +190,7 @@ export const selectedUserSelectionEntryIdAtom = Atom.writable(
 );
 
 export const isOnboardingCompleteAtom = Atom.make(get =>
-  Result.match(get(settingsAtom), {
+  AsyncResult.match(get(settingsAtom), {
     onInitial: () => true,
     onSuccess: ({ value }) => value.currentUser !== undefined,
     onFailure: () => true,
@@ -211,7 +211,7 @@ export const setCurrentUserAtom = Atom.writable(
 
 export const currentUserIdAtom = Atom.make((get): UserId => {
   const currentUserName = get(currentUserAtom) ?? '';
-  const userSettings = Result.match(get(userSettingsAtom), {
+  const userSettings = AsyncResult.match(get(userSettingsAtom), {
     onInitial: () => defaultUserSettings,
     onSuccess: ({ value }) => value,
     onFailure: () => defaultUserSettings,

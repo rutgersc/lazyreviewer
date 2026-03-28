@@ -3,7 +3,8 @@ import { useRef, useEffect } from 'react';
 import MergeRequestInfo from './MergeRequestInfo';
 import { Colors } from '../colors';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
-import { useAtom, Atom } from '@effect-atom/atom-react';
+import { Atom } from "effect/unstable/reactivity"
+import { useAtom } from "@effect/atom-react";
 import { useDiscussionScroll } from '../hooks/useDiscussionScroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { overviewCursorIndexAtom, unresolvedExpandedAtom, resolvedExpandedAtom, scrollToDiscussionRequestAtom, buildSelectableItems, findCursorForItem } from './overview-selection';

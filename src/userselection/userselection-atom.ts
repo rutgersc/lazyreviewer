@@ -1,4 +1,4 @@
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "effect/unstable/reactivity";
 import { groupToUserSelectionEntry } from "./userSelection";
 import { userGroupsAtom } from "../settings/settings-atom";
 

@@ -1,6 +1,6 @@
 import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
-import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import { sprintFilterAtom, setSprintFilterAtom } from '../settings/settings-atom';
 
 export default function SprintFilterBar() {

@@ -39,7 +39,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
     // Ensure events directory exists
     yield* fs.makeDirectory(eventsDir, { recursive: true }).pipe(
-      Effect.catchAll(() => Effect.void)
+      Effect.catch(() => Effect.void)
     )
 
     const parseFilename = (filename: string) => {
@@ -71,7 +71,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
     const loadEvents = Effect.gen(function* () {
       const files = yield* fs.readDirectory(eventsDir).pipe(
-        Effect.catchAll(() => Effect.succeed([]))
+        Effect.catch(() => Effect.succeed([]))
       )
 
       // Parse filenames and filter valid event files
@@ -95,7 +95,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
             return event as LazyReviewerEvent
           }).pipe(
-            Effect.catchAll((error) =>
+            Effect.catch((error) =>
               Effect.gen(function* () {
                 yield* Console.log(`Failed to load event file ${parsed.filename}: ${error}`)
                 return null
@@ -150,7 +150,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
     const getEventFilePath = (eventIndex: number) => Effect.gen(function* () {
       const files = yield* fs.readDirectory(eventsDir).pipe(
-        Effect.catchAll(() => Effect.succeed([]))
+        Effect.catch(() => Effect.succeed([]))
       )
 
       const parsedFiles = files
@@ -230,7 +230,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
 
       const idsToDelete = new Set(eventIds)
       const files = yield* fs.readDirectory(eventsDir).pipe(
-        Effect.catchAll(() => Effect.succeed([]))
+        Effect.catch(() => Effect.succeed([]))
       )
 
       const toDelete = files.filter(filename => {
@@ -241,7 +241,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       yield* Effect.all(
         toDelete.map(filename =>
           fs.remove(path.join(eventsDir, filename)).pipe(
-            Effect.catchAll(() => Effect.void)
+            Effect.catch(() => Effect.void)
           )
         ),
         { concurrency: "unbounded" }

@@ -23,7 +23,7 @@ describe("Event Loading", () => {
         yield* Schema.decodeUnknown(EventSchema)(jsonData)
         return { file: filename, success: true }
       }).pipe(
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.succeed({ file: filename, success: false, error: String(error) })
         )
       )

@@ -1,5 +1,5 @@
 import { Effect, Console } from 'effect';
-import { Atom } from '@effect-atom/atom-react';
+import { Atom } from "effect/unstable/reactivity";
 import { appAtomRuntime } from './appLayerRuntime';
 import { ensureBackgroundSyncWorker } from './notifications/background-sync-service';
 import { ensureNotificationDaemon } from './notifications/notification-sync-atom';

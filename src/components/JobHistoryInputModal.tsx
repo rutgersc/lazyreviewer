@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { TextAttributes, type ParsedKey, type InputRenderable } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { Colors } from '../colors';
-import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 import { activeModalAtom } from '../ui/navigation-atom';
 import { jobHistoryQueryAtom } from './JobHistoryModal';

@@ -4,7 +4,8 @@ import type { RepositoryId } from '../userselection/userSelection';
 import { repositoryFullPath } from '../userselection/userSelection';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { Colors } from '../colors';
-import { useAtom, useAtomValue, useAtomSet, Atom, Result } from '@effect-atom/atom-react';
+import { Atom, AsyncResult } from "effect/unstable/reactivity"
+import { useAtom, useAtomValue, useAtomSet } from "@effect/atom-react";
 import { repoSelectionAtom, backgroundSyncSettingsAtom, toggleBackgroundSyncAtom } from '../settings/settings-atom';
 import { knownProjectsAtom } from '../mergerequests/mergerequests-atom';
 import { pageSlotsAtom } from '../notifications/notification-sync-atom';
@@ -57,7 +58,7 @@ export default function RepositoriesPane() {
   const toggleBackgroundSync = useAtomSet(toggleBackgroundSyncAtom, { mode: 'promiseExit' });
   const items = buildItems(knownProjects, repos);
 
-  const slotsByRepo = Result.match(pageSlotsResult, {
+  const slotsByRepo = AsyncResult.match(pageSlotsResult, {
     onInitial: () => new Map<string, readonly PageSlotSnapshot[]>(),
     onFailure: () => new Map<string, readonly PageSlotSnapshot[]>(),
     onSuccess: (s) => {

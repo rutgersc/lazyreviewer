@@ -1,4 +1,4 @@
-import { Atom } from '@effect-atom/atom-react';
+import { Atom } from "effect/unstable/reactivity";
 import { FileSystem } from '@effect/platform';
 import { Effect, Stream, Console } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';

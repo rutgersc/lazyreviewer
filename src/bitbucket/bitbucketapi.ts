@@ -186,7 +186,7 @@ const fetchCommentsForAllPrs = Effect.fn("fetchCommentsForAllPrs")(function* (
     prs,
     (pr) => Effect.gen(function* () {
       const comments = yield* fetchBitbucketComments(workspace, repoSlug, pr.id, authToken).pipe(
-        Effect.catchAll((error) => Effect.gen(function* () {
+        Effect.catch((error) => Effect.gen(function* () {
           yield* Console.error(`[BitBucket] Failed to fetch comments for PR ${pr.id}, using empty array:`, error);
           return [];
         }))

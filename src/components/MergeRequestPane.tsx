@@ -20,8 +20,9 @@ import RepoFilterBar from "./RepoFilterBar";
 import SprintFilterBar from "./SprintFilterBar";
 import type { MergeRequestState } from "../domain/merge-request-state";
 import { filterPipelineJobs } from "../domain/display/pipelineJobFiltering";
-import { Atom, useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
-import { Result } from "@effect-atom/atom-react";
+import { Atom, AsyncResult } from "effect/unstable/reactivity"
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+;
 import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom, allMrSourceBranchesByProjectAtom, selectMrByBranchAtom } from "../mergerequests/mergerequests-atom";
 import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom";
 import { currentUserIdAtom } from "../settings/settings-atom";
@@ -56,8 +57,6 @@ const getMergeBlockedLabel = (status: string | null): string | null => {
     default: return null;
   }
 };
-
-
 
 const truncate = (text: string, max: number) =>
   text.length > max ? text.substring(0, max) + "..." : text;
@@ -633,7 +632,7 @@ export default function MergeRequestPane() {
     if (!selectedMrContext) return new Map();
 
     const visibleGids = new Set(mergeRequests.map(mr => mr.id));
-    const allMrsByGid = Result.match(allMrsResult, {
+    const allMrsByGid = AsyncResult.match(allMrsResult, {
       onInitial: () => new Map() as ReadonlyMap<string, MergeRequest>,
       onSuccess: (state) => state.value.mrsByGid,
       onFailure: () => new Map() as ReadonlyMap<string, MergeRequest>,
@@ -682,7 +681,6 @@ export default function MergeRequestPane() {
     // No more related highlighting (see git history)
     return { backgroundColor: "transparent", sharedTicket: null };
   };
-
 
   const scrollRequest = useAtomValue(scrollToItemRequestAtom);
   const setScrollRequest = useAtomSet(scrollToItemRequestAtom);

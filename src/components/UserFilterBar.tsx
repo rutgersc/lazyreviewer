@@ -1,6 +1,6 @@
 import { TextAttributes } from '@opentui/core';
 import { Colors } from '../colors';
-import { useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import { userFilterUsernamesAtom, userFilterGroupIdsAtom } from '../settings/settings-atom';
 import { groupsAtom } from '../data/data-atom';
 import { activeModalAtom } from '../ui/navigation-atom';

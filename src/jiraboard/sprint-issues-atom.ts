@@ -1,4 +1,4 @@
-import { Atom, Result } from "@effect-atom/atom-react";
+import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { EventStorage } from "../events/events";
 import { makeProjectedAtomFromProjection } from "../appLayerRuntime";
 import { defineProjection } from "../utils/define-projection";
@@ -21,7 +21,7 @@ export const sprintIssuesByIdAtom = makeProjectedAtomFromProjection(
   sprintIssuesProjection
 ).pipe(
   Atom.map((result) =>
-    result.pipe(Result.getOrElse(() => sprintIssuesProjection.initialState))
+    result.pipe(AsyncResult.getOrElse(() => sprintIssuesProjection.initialState))
   )
 );
 

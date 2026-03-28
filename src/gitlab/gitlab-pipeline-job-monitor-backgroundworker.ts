@@ -59,7 +59,7 @@ const backgroundWorker =
       if (isFetchNeeded(repo.localPath!, FETCH_HEAD_MAX_AGE_MINUTES)) {
         yield* Console.log(`[PipelineJobMonitor] Fetching remote for ${repo.localPath}`)
         yield* fetchRemote(repo.localPath!, repo.remoteName!).pipe(
-          Effect.catchAll(e => Console.log("[PipelineJobMonitor] Fetch failed, continuing with cached data:", e))
+          Effect.catch(e => Console.log("[PipelineJobMonitor] Fetch failed, continuing with cached data:", e))
         )
       }
     }
@@ -100,7 +100,7 @@ const backgroundWorker =
         // Branch was likely deleted (squash-merge + delete branch).
         // Refetch the MR to update local state so the next poll sees it as merged/closed.
         yield* decideFetchSingleMr(mr.project.fullPath, mr.iid).pipe(
-          Effect.catchAll(() => Effect.void)
+          Effect.catch(() => Effect.void)
         )
         yield* SettingsService.modify(s => {
           const { [mr.id]: _, ...rest } = s.monitoredMergeRequests
@@ -265,7 +265,7 @@ export class PipelineJobMonitor extends Effect.Service<PipelineJobMonitor>()("Pi
     yield* Effect.sleep('10 seconds').pipe(
       Effect.andThen(
         backgroundWorker.pipe(
-          Effect.catchAllCause((cause) => Console.log('[PipelineJobMonitor] Unhandled error during poll:', cause)),
+          Effect.catchCause((cause) => Console.log('[PipelineJobMonitor] Unhandled error during poll:', cause)),
           Effect.andThen(Effect.sleep('30 seconds')),
           Effect.forever
         )

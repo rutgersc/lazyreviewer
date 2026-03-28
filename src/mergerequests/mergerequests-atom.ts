@@ -1,4 +1,4 @@
-import { Atom, Result } from "@effect-atom/atom-react";
+import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import type { MergeRequest } from "./mergerequest-schema";
 import { repositoryFullPath, resolveRepoPath, type RepositoryId, type UserId, type User, isCurrentUser, mrProviderAuthor } from "../userselection/userSelection";
 import {
@@ -40,8 +40,8 @@ export const selectedMrAtom = Atom.make(get =>  {
     const selectedMrIndex = get(selectedMrIndexAtom);
     const mergeRequestsResult = get(mergeRequestsAtom);
 
-    if (Result.isResult(mergeRequestsResult)) {
-        return Result.match(mergeRequestsResult, {
+    if (AsyncResult.isResult(mergeRequestsResult)) {
+        return AsyncResult.match(mergeRequestsResult, {
             onInitial: () => undefined,
             onSuccess: (success) => success.value[selectedMrIndex],
             onFailure: () => undefined
@@ -66,7 +66,7 @@ export const allMrsAtom = appAtomRuntime.atom(
 export const allMrSourceBranchesByProjectAtom = Atom.map(
   allMrsAtom,
   (result) =>
-    Result.match(result, {
+    AsyncResult.match(result, {
       onInitial: () => new Map<string, ReadonlySet<string>>(),
       onSuccess: (success) => {
         const map = new Map<string, Set<string>>();
@@ -84,7 +84,7 @@ export const allMrSourceBranchesByProjectAtom = Atom.map(
 export const allJiraIssuesAtom = Atom.map(
   allMrsAtom,
   (result) =>
-    Result.match(result, {
+    AsyncResult.match(result, {
       onInitial: () => new Map<string, JiraIssue>(),
       onSuccess: (success) => success.value.jiraIssuesByKey,
       onFailure: () => new Map<string, JiraIssue>()
@@ -97,7 +97,7 @@ export const knownAuthorsAtom = Atom.make((get): readonly UserId[] => {
   const settingsUsers = get(usersAtom);
   const gitlabToUser = new Map(settingsUsers.filter((u): u is User => u.type === 'user').map(u => [u.id.gitlab, u.id]));
   const bitbucketToUser = new Map(settingsUsers.filter((u): u is User => u.type === 'user').map(u => [u.id.bitbucket, u.id]));
-  return Result.match(allMrsResult, {
+  return AsyncResult.match(allMrsResult, {
     onInitial: () => [] as UserId[],
     onSuccess: (state) => {
       const seen = new Map<string, UserId>();
@@ -117,7 +117,7 @@ export const knownAuthorsAtom = Atom.make((get): readonly UserId[] => {
 // Unique project paths across all fetched MRs + configured repos from settings
 export const knownProjectsAtom = Atom.make((get): readonly RepositoryId[] => {
   const allMrsResult = get(allMrsAtom);
-  const mrProjects = Result.match(allMrsResult, {
+  const mrProjects = AsyncResult.match(allMrsResult, {
     onInitial: () => [] as RepositoryId[],
     onSuccess: (state) => [...extractKnownProjects(state.value.mrsByGid)],
     onFailure: () => [] as RepositoryId[]
@@ -176,7 +176,7 @@ export const filteredMrsAtom = Atom.make((get) => {
   const sprintIssueKeys = get(sprintFilterIssueKeysAtom);
   const allMrsResult = get(allMrsAtom);
 
-  return Result.match(allMrsResult, {
+  return AsyncResult.match(allMrsResult, {
     onInitial: () => [] as readonly MergeRequest[],
     onSuccess: (state) => filterMrs(state.value.mrsByGid, filterMrState, repoFilter, userFilter, sortOrder, sprintIssueKeys),
     onFailure: () => [] as readonly MergeRequest[]
@@ -184,13 +184,13 @@ export const filteredMrsAtom = Atom.make((get) => {
 });
 
 // Alias for backwards compatibility
-export const mergeRequestsAtom = Atom.make((get) => Result.success(get(filteredMrsAtom)));
+export const mergeRequestsAtom = Atom.make((get) => AsyncResult.success(get(filteredMrsAtom)));
 export const unwrappedMergeRequestsAtom = filteredMrsAtom;
 
 // Find the last refresh timestamp for the current selection + state
 export const lastRefreshTimestampAtom = Atom.make((get): Date | null => {
   const filterMrState = get(filterMrStateAtom);
-  const events = Result.match(get(allEventsAtom), {
+  const events = AsyncResult.match(get(allEventsAtom), {
     onInitial: () => [] as LazyReviewerEvent[],
     onSuccess: (e) => e.value,
     onFailure: () => [] as LazyReviewerEvent[]
@@ -215,7 +215,7 @@ export const unwrappedLastRefreshTimestampAtom = lastRefreshTimestampAtom;
 // Derived: compute loading state
 export const isMergeRequestsLoadingAtom = Atom.make((get): boolean => {
   const refreshResult = get(refreshMergeRequestsAtom);
-  return Result.isWaiting(refreshResult);
+  return AsyncResult.isWaiting(refreshResult);
 });
 
 export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: readonly UserId[] | undefined, get) => {
@@ -227,7 +227,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
       const filterMrState = get(filterMrStateAtom);
 
       const allMrsResult = get(allMrsAtom);
-      const allMrs = Result.match(allMrsResult, {
+      const allMrs = AsyncResult.match(allMrsResult, {
         onInitial: () => new Map<MrGid, MergeRequest>(),
         onSuccess: (state) => state.value.mrsByGid,
         onFailure: () => new Map<MrGid, MergeRequest>()
@@ -249,7 +249,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
         const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
         const discoveredPaths = yield* decideFetchUserMrs([...userFilter], filterMrState, knownMrs).pipe(
           Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
-          Effect.catchAllCause((cause) => Console.error("Error fetching user MRs:", cause).pipe(Effect.as([] as readonly string[])))
+          Effect.catchCause((cause) => Console.error("Error fetching user MRs:", cause).pipe(Effect.as([] as readonly string[])))
         );
         if (discoveredPaths.length > 0) {
           yield* SettingsService.modify(s => {
@@ -277,7 +277,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
           { concurrency: 3 }
         ).pipe(
           Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
-          Effect.catchAllCause((cause) => Console.error("Error fetching GitLab project MRs:", cause))
+          Effect.catchCause((cause) => Console.error("Error fetching GitLab project MRs:", cause))
         );
       }
 
@@ -293,7 +293,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
         { concurrency: 3 }
       ).pipe(
         Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
-        Effect.catchAllCause((cause) => Console.error("Error fetching Bitbucket project MRs:", cause))
+        Effect.catchCause((cause) => Console.error("Error fetching Bitbucket project MRs:", cause))
       );
     });
   }
@@ -301,7 +301,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
 
 export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
   Effect.gen(function* () {
-    const mergeRequests = yield* Result.toExit(get(mergeRequestsAtom));
+    const mergeRequests = yield* AsyncResult.toExit(get(mergeRequestsAtom));
 
     const selectedMrIndex = get(selectedMrIndexAtom);
     const selectedMr = mergeRequests[selectedMrIndex];
@@ -324,7 +324,7 @@ export const refetchSelectedMrPipelineAtom = appAtomRuntime.fn((_, get) =>
 
 export const refetchSelectedMrAtom = appAtomRuntime.fn((_, get) =>
   Effect.gen(function* () {
-    const mergeRequests = yield* Result.toExit(get(mergeRequestsAtom));
+    const mergeRequests = yield* AsyncResult.toExit(get(mergeRequestsAtom));
     const selectedMrIndex = get(selectedMrIndexAtom);
     const selectedMr = mergeRequests[selectedMrIndex];
 
@@ -404,7 +404,7 @@ export const selectMrByIdAtom = Atom.writable(
     }
 
     const allMrsResult = ctx.get(allMrsAtom);
-    const allMrsState = Result.match(allMrsResult, {
+    const allMrsState = AsyncResult.match(allMrsResult, {
       onInitial: () => null,
       onFailure: () => null,
       onSuccess: (state) => state.value
@@ -434,7 +434,7 @@ export const selectMrByBranchAtom = Atom.writable(
   () => undefined,
   (ctx, params: { projectPath: string; branch: string }) => {
     const allMrsResult = ctx.get(allMrsAtom);
-    const mr = Result.match(allMrsResult, {
+    const mr = AsyncResult.match(allMrsResult, {
       onInitial: () => undefined,
       onFailure: () => undefined,
       onSuccess: (state) =>

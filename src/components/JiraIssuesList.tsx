@@ -3,7 +3,8 @@ import JiraIssueInfo from './JiraIssueInfo';
 import { Colors } from '../colors';
 import type { JiraIssue } from '../jira/jira-schema';
 import { openUrl } from '../system/open-url';
-import { Atom, useAtom, useAtomValue } from '@effect-atom/atom-react';
+import { Atom } from "effect/unstable/reactivity"
+import { useAtom, useAtomValue } from "@effect/atom-react";
 
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useDoubleClick } from '../hooks/useDoubleClick';

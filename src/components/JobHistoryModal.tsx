@@ -3,7 +3,8 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import { getJobStatusDisplay } from '../domain/display/jobStatus';
 import { Colors } from '../colors';
-import { useAtomValue, Atom, Registry, RegistryContext, useAtomSet } from '@effect-atom/atom-react';
+import { Atom, AtomRegistry } from "effect/unstable/reactivity"
+import { useAtomValue, RegistryContext, useAtomSet } from "@effect/atom-react";
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { Console, Effect, Exit } from 'effect';
@@ -100,7 +101,7 @@ const loadMoreJobHistoryAtom = appAtomRuntime.fn((args: LoadMoreArgs, get) =>
   })
 );
 
-const resolveQueryFromContext = (registry: Registry.Registry): JobHistoryQuery | null => {
+const resolveQueryFromContext = (registry: AtomRegistry.AtomRegistry): JobHistoryQuery | null => {
   const currentMr = registry.get(selectedMrAtom);
   const jobs = getPipelineJobsFromMr(currentMr);
   const currentIndex = registry.get(selectedPipelineJobIndexAtom);
@@ -110,7 +111,7 @@ const resolveQueryFromContext = (registry: Registry.Registry): JobHistoryQuery |
 };
 
 const applyFetchResult = (
-  registry: Registry.Registry,
+  registry: AtomRegistry.AtomRegistry,
   result: { history: JobHistoryEntry[]; pipelinesScanned: number; pageInfo: { hasNextPage: boolean; endCursor: string | null } }
 ) => {
   registry.set(jobHistoryDataAtom, result.history);
@@ -122,10 +123,10 @@ const applyFetchResult = (
   });
 };
 
-const triggerInitialFetch = (registry: Registry.Registry) => {
+const triggerInitialFetch = (registry: AtomRegistry.AtomRegistry) => {
   registry.set(fetchJobHistoryAtom, 0);
   Effect.runPromiseExit(
-    Registry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
+    AtomRegistry.getResult(registry, fetchJobHistoryAtom, { suspendOnWaiting: true })
   ).then((exit) => {
     if (Exit.isSuccess(exit)) {
       applyFetchResult(registry, exit.value);
@@ -341,7 +342,7 @@ export default function JobHistoryModal({
         registry.set(jobHistoryPageStateAtom, { ...pageState, isLoadingMore: true });
         registry.set(loadMoreJobHistoryAtom, { query, endCursor: pageState.endCursor, currentHistory: jobHistory });
         Effect.runPromiseExit(
-          Registry.getResult(registry, loadMoreJobHistoryAtom, { suspendOnWaiting: true })
+          AtomRegistry.getResult(registry, loadMoreJobHistoryAtom, { suspendOnWaiting: true })
         ).then((exit) => {
           if (Exit.isSuccess(exit)) {
             const currentPageState = registry.get(jobHistoryPageStateAtom);

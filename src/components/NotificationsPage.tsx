@@ -1,6 +1,6 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import { useAtomValue } from '@effect-atom/atom-react';
+import { useAtomValue } from "@effect/atom-react";
 import { Effect } from 'effect';
 import { Colors } from '../colors';
 import { notificationSettingsAtom, backgroundSyncSettingsAtom } from '../settings/settings-atom';

@@ -3,7 +3,8 @@ import { Colors } from '../colors';
 import { getJobStatusDisplay } from '../domain/display/jobStatus';
 import type { PipelineJob, PipelineStage } from '../domain/merge-request-schema';
 import { ActivePane } from '../userselection/userSelection';
-import { useAtom, useAtomValue, useAtomSet, Atom } from '@effect-atom/atom-react';
+import { Atom } from "effect/unstable/reactivity"
+import { useAtom, useAtomValue, useAtomSet } from "@effect/atom-react";
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
 import { useAutoScroll } from '../hooks/useAutoScroll';

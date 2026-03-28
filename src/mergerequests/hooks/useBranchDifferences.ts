@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAtomValue } from '@effect-atom/atom-react';
+import { useAtomValue } from "@effect/atom-react";
 import { getBranchDifference } from '../../git/git-effects';
 import { repositoryPathsAtom } from '../../settings/settings-atom';
 import type { MergeRequest } from '../mergerequest-schema';

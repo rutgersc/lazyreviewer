@@ -2,7 +2,8 @@ import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
 import { Colors } from "../colors";
 import { useState } from "react";
-import { Atom, useAtomValue, useAtomSet } from "@effect-atom/atom-react";
+import { Atom } from "effect/unstable/reactivity"
+import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import type { PipelineJob, PipelineStage } from "../domain/merge-request-schema";
 import type { MergeRequest } from "./MergeRequestPane";
 import { loadJobLogAtom, jobLogDownloadSignalAtom } from "../mergerequests/open-pipelinejob-log-atom";

@@ -30,7 +30,7 @@ import { parseKeyString, matchesAnyKey } from './actions/key-matcher';
 import { activePaneActionsAtom } from './actions/pane-actions-atoms';
 import { type MergeRequestState } from "./domain/merge-request-state";
 import { getScroller } from "./hooks/useScrollBox";
-import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue, useAtomSet } from "@effect/atom-react";
 import { filterMrStateAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
 import { toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
 import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';

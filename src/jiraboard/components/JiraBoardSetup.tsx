@@ -1,6 +1,7 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
-import { useAtomValue, useAtomSet, Result } from '@effect-atom/atom-react';
+import { AsyncResult } from "effect/unstable/reactivity"
+import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import { useState, useEffect } from 'react';
 import { Effect } from 'effect';
 import { Colors } from '../../colors';
@@ -28,16 +29,16 @@ export default function JiraBoardSetup({ onClose, onBoardSelected, currentBoardI
 
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const boards: JiraBoard[] = Result.match(loadBoardsResult, {
+  const boards: JiraBoard[] = AsyncResult.match(loadBoardsResult, {
     onInitial: () => [],
     onSuccess: ({ value }) => value,
     onFailure: () => [],
   });
 
-  const isLoading = Result.isWaiting(loadBoardsResult);
-  const hasError = Result.isFailure(loadBoardsResult);
+  const isLoading = AsyncResult.isWaiting(loadBoardsResult);
+  const hasError = AsyncResult.isFailure(loadBoardsResult);
   const errorMessage = hasError ? String(loadBoardsResult.cause) : null;
-  const notLoaded = Result.isInitial(loadBoardsResult);
+  const notLoaded = AsyncResult.isInitial(loadBoardsResult);
 
   useEffect(() => {
     if (currentBoardId && boards.length > 0) {

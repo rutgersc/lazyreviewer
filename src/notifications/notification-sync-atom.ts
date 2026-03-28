@@ -1,4 +1,4 @@
-import { Atom, Result } from '@effect-atom/atom-react';
+import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { Effect, Stream, Console, Fiber, Chunk, Option } from 'effect';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserIdAtom } from '../settings/settings-atom';
@@ -29,7 +29,7 @@ const buildNotificationContext = (get: Atom.Context): NotificationContext => {
   const currentUser = get.registry.get(currentUserIdAtom);
   const allMrsResult = get.registry.get(allMrsAtom);
 
-  const mrs = Result.match(allMrsResult, {
+  const mrs = AsyncResult.match(allMrsResult, {
     onInitial: () => [] as const,
     onFailure: () => [] as const,
     onSuccess: (state) => [...state.value.mrsByGid.values()]
@@ -138,7 +138,7 @@ const createNotificationDaemon = (get: Atom.Context) =>
         return Effect.gen(function* () {
           // Check if notifications are enabled
           const settingsResult = get.registry.get(settingsAtom);
-          const notificationsEnabled = Result.match(settingsResult, {
+          const notificationsEnabled = AsyncResult.match(settingsResult, {
             onInitial: () => false,
             onFailure: () => false,
             onSuccess: (s) => s.value.notifications.enabled
@@ -197,5 +197,5 @@ export const ensureNotificationDaemon = (get: Atom.Context) =>
       return;
     }
 
-    notificationDaemonFiber = yield* Effect.forkDaemon(createNotificationDaemon(get));
+    notificationDaemonFiber = yield* Effect.forkDetach(createNotificationDaemon(get));
   });

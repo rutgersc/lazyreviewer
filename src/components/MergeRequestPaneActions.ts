@@ -1,4 +1,4 @@
-import { Atom, Registry } from "@effect-atom/atom-react";
+import { Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
@@ -13,7 +13,7 @@ import { getPipelineJobsFromMr } from "./PipelineJobsList";
 import { loadJobLogAtom, jobLogDownloadSignalAtom } from "../mergerequests/open-pipelinejob-log-atom";
 import { jobPickerItemsAtom, jobPickerMrAtom } from "./JobPickerModal";
 
-const getSelectedMr = (registry: Registry.Registry) => {
+const getSelectedMr = (registry: AtomRegistry.AtomRegistry) => {
   const mergeRequests = registry.get(unwrappedMergeRequestsAtom);
   const selectedIndex = registry.get(selectedMrIndexAtom);
   return mergeRequests[selectedIndex];
@@ -164,7 +164,7 @@ export const mrActionsAtom = Atom.make((get) => {
           registry.set(copyNotificationRequestAtom, `Refreshing MR...`);
           registry.set(refetchSelectedMrAtom, undefined);
           Effect.runPromiseExit(
-            Registry.getResult(registry, refetchSelectedMrAtom, { suspendOnWaiting: true })
+            AtomRegistry.getResult(registry, refetchSelectedMrAtom, { suspendOnWaiting: true })
           ).then((exit) => {
             if (exit._tag === 'Success' && exit.value) {
               registry.set(copyNotificationRequestAtom, `MR refreshed: ${exit.value.title}`);
@@ -206,7 +206,7 @@ export const mrActionsAtom = Atom.make((get) => {
         if (jobs.length === 1) {
           registry.set(loadJobLogAtom, { mergeRequest: mr, job: jobs[0]!.job });
           Effect.runPromiseExit(
-            Registry.getResult(registry, loadJobLogAtom, { suspendOnWaiting: true })
+            AtomRegistry.getResult(registry, loadJobLogAtom, { suspendOnWaiting: true })
           ).then(() => {
             registry.set(jobLogDownloadSignalAtom, registry.get(jobLogDownloadSignalAtom) + 1);
           });

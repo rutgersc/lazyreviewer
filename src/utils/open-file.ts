@@ -31,10 +31,10 @@ export const openFileInEditor = (filePath: string) => Effect.gen(function* () {
 
       // Capture stdout and stderr as strings
       const stdoutChunks = yield* Stream.runCollect(process.stdout).pipe(
-        Effect.catchAll(() => Effect.succeed([]))
+        Effect.catch(() => Effect.succeed([]))
       )
       const stderrChunks = yield* Stream.runCollect(process.stderr).pipe(
-        Effect.catchAll(() => Effect.succeed([]))
+        Effect.catch(() => Effect.succeed([]))
       )
 
       const stdout = new TextDecoder().decode(

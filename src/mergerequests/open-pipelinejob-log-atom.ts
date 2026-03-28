@@ -2,7 +2,7 @@ import type { MergeRequest } from "./mergerequest-schema";
 import type { PipelineJob } from "../domain/merge-request-schema";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { loadJobLogInternal, downloadJobTrace } from "./open-pipelinejob-log";
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "effect/unstable/reactivity";
 
 export const jobLogDownloadSignalAtom = Atom.make(0);
 

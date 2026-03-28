@@ -6,7 +6,7 @@ import { Colors } from '../colors';
 import type { Action } from '../actions/action-types';
 import { infoPaneTabAtom, activePaneAtom, activeModalAtom, type InfoPaneTab } from '../ui/navigation-atom';
 import { paneActionsForDisplayAtom } from '../actions/pane-actions-atoms';
-import { useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useAutoScroll } from '../hooks/useAutoScroll';
 
 interface HelpModalProps {

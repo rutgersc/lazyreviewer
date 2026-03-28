@@ -1,4 +1,4 @@
-import { Atom, Result } from '@effect-atom/atom-react';
+import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { allEventsAtom } from '../../events/events-atom';
 import { resultToArray } from '../../utils/result-helpers';
 import { eventChangesReadmodelAtom } from '../../changetracking/change-tracking-atom';
@@ -146,7 +146,7 @@ export const groupClassifiedEvents = (events: ClassifiedEvent[]): EventGroup[] =
 export const myJiraIssueKeysAtom = Atom.readable<Set<string>>((get) => {
   const currentUser = get(currentUserIdAtom);
   const allMrsResult = get(allMrsAtom);
-  return Result.match(allMrsResult, {
+  return AsyncResult.match(allMrsResult, {
     onInitial: () => new Set<string>(),
     onSuccess: (state) => new Set(
       Array.from(state.value.mrsByGid.values())
@@ -187,8 +187,8 @@ export const groupedDeltasByEventIdAtom = Atom.readable((get) => {
   const eventChangesReadmodel = get(eventChangesReadmodelAtom);
 
   return eventChangesReadmodel.pipe(
-    Result.map(v => v.groupedDeltasByEventId),
-    Result.getOrElse(() => emptyDeltasByEventId)
+    AsyncResult.map(v => v.groupedDeltasByEventId),
+    AsyncResult.getOrElse(() => emptyDeltasByEventId)
   );
 });
 
@@ -298,7 +298,7 @@ export const selectMrForChangeAtom = Atom.fnSync((change: Change, get) => {
     const filteredMrs = get(unwrappedMergeRequestsAtom);
     const allMrsResult = get(allMrsAtom);
 
-    const allMrsState = Result.match(allMrsResult, {
+    const allMrsState = AsyncResult.match(allMrsResult, {
       onInitial: () => null,
       onFailure: () => null,
       onSuccess: (state) => state.value

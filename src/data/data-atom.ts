@@ -1,10 +1,10 @@
-import { Atom, Result } from "@effect-atom/atom-react";
+import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { settingsUsersToUserSelections, settingsGroupsToUserGroups } from "../userselection/userSelection";
 import { userSettingsAtom } from "../settings/settings-atom";
 import { defaultUserSettings } from "../settings/user-filter-presets";
 
 export const groupsAtom = Atom.make(get => {
-  const settings = Result.match(get(userSettingsAtom), {
+  const settings = AsyncResult.match(get(userSettingsAtom), {
     onInitial: () => defaultUserSettings,
     onSuccess: ({ value }) => value,
     onFailure: () => defaultUserSettings,
@@ -13,7 +13,7 @@ export const groupsAtom = Atom.make(get => {
 });
 
 export const usersAtom = Atom.make(get => {
-  const settings = Result.match(get(userSettingsAtom), {
+  const settings = AsyncResult.match(get(userSettingsAtom), {
     onInitial: () => defaultUserSettings,
     onSuccess: ({ value }) => value,
     onFailure: () => defaultUserSettings,

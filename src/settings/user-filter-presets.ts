@@ -60,7 +60,7 @@ export class UserSettingsService extends Effect.Service<UserSettingsService>()("
       fs.watch(USER_SETTINGS_FILE).pipe(
         Stream.debounce("100 millis"),
         Stream.mapEffect(() => load.pipe(
-          Effect.catchAll((error) =>
+          Effect.catch((error) =>
             Console.error("Failed to read user settings:", error).pipe(
               Effect.as(defaultUserSettings)
             )

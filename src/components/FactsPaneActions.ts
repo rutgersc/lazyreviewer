@@ -1,4 +1,4 @@
-import { Atom, Registry } from "@effect-atom/atom-react";
+import { Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
@@ -25,7 +25,7 @@ import {
   myJiraIssueKeysAtom,
 } from "./facts/facts-shared";
 
-const getVisibleChronologicalChanges = (registry: Registry.Registry) => {
+const getVisibleChronologicalChanges = (registry: AtomRegistry.AtomRegistry) => {
   const allChanges = registry.get(chronologicalChangesAtom);
   const config = viewConfigs[registry.get(appViewAtom)];
   const currentUser = registry.get(currentUserIdAtom);
@@ -33,7 +33,7 @@ const getVisibleChronologicalChanges = (registry: Registry.Registry) => {
   return allChanges.filter(change => config.classify(change, currentUser, myJiraIssueKeys) !== 'hidden');
 };
 
-const selectionAction = (registry: Registry.Registry): Action => ({
+const selectionAction = (registry: AtomRegistry.AtomRegistry): Action => ({
   id: 'facts:toggle-selection',
   keys: [parseKeyString('s')],
   displayKey: 's',
@@ -45,7 +45,7 @@ const selectionAction = (registry: Registry.Registry): Action => ({
 });
 
 
-const chronologicalActions = (registry: Registry.Registry): Action[] => [
+const chronologicalActions = (registry: AtomRegistry.AtomRegistry): Action[] => [
   {
     id: 'facts:chrono-nav-down',
     keys: [parseKeyString('j'), parseKeyString('down')],
@@ -115,7 +115,7 @@ const chronologicalActions = (registry: Registry.Registry): Action[] => [
   selectionAction(registry),
 ];
 
-const eventGroupedSublistActions = (registry: Registry.Registry): Action[] => [
+const eventGroupedSublistActions = (registry: AtomRegistry.AtomRegistry): Action[] => [
   {
     id: 'facts:sublist-nav-down',
     keys: [parseKeyString('j'), parseKeyString('down')],
@@ -171,7 +171,7 @@ const eventGroupedSublistActions = (registry: Registry.Registry): Action[] => [
   selectionAction(registry),
 ];
 
-const eventGroupedActions = (registry: Registry.Registry): Action[] => [
+const eventGroupedActions = (registry: AtomRegistry.AtomRegistry): Action[] => [
   {
     id: 'facts:nav-down',
     keys: [parseKeyString('j'), parseKeyString('down')],

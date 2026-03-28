@@ -1,4 +1,4 @@
-import { Atom, Result } from "@effect-atom/atom-react";
+import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 import { EventStorage } from "../events/events";
 import { generateEventId } from "../events/event-id";
@@ -74,7 +74,7 @@ export const jiraBoardFocusKeyAtom = Atom.make<string | null>(null);
 export const mrsByJiraKeyAtom = Atom.map(
   allMrsAtom,
   (result): ReadonlyMap<string, readonly MergeRequest[]> =>
-    Result.match(result, {
+    AsyncResult.match(result, {
       onInitial: () => new Map(),
       onSuccess: (state) =>
         Array.from(state.value.mrsByGid.values()).reduce<Map<string, MergeRequest[]>>(

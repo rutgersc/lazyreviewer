@@ -1,4 +1,4 @@
-import { Atom, Result } from "@effect-atom/atom-react";
+import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { Console, Effect } from "effect";
 import { parseKeyString } from "../actions/key-matcher";
 import { repoSelectionAtom } from "../settings/settings-atom";
@@ -30,7 +30,7 @@ export const refreshSingleRepoAtom = appAtomRuntime.fn(({ repoPath, deep }: { re
     const knownProjects = get(knownProjectsAtom);
     const repo = resolveRepoPath(repoPath, knownProjects);
     const allMrsResult = get(allMrsAtom);
-    const mrsByGid = Result.match(allMrsResult, {
+    const mrsByGid = AsyncResult.match(allMrsResult, {
       onInitial: () => new Map<MrGid, MergeRequest>(),
       onSuccess: (s) => s.value.mrsByGid,
       onFailure: () => new Map<MrGid, MergeRequest>(),
@@ -44,7 +44,7 @@ export const refreshSingleRepoAtom = appAtomRuntime.fn(({ repoPath, deep }: { re
   }).pipe(
     withFetchLock,
     Effect.catchTag("FetchLockBusy", () => Console.log("[ManualRefresh] Skipped: sync in progress")),
-    Effect.catchAllCause((cause) => Console.error("Error refreshing single repo:", cause)),
+    Effect.catchCause((cause) => Console.error("Error refreshing single repo:", cause)),
   )
 );
 

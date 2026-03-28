@@ -1,5 +1,6 @@
 import { parseKeyString } from '../actions/key-matcher';
-import { Atom, Registry, useAtomSet } from '@effect-atom/atom-react';
+import { Atom, AtomRegistry } from "effect/unstable/reactivity"
+import { useAtomSet } from "@effect/atom-react";
 import { activeModalAtom } from '../ui/navigation-atom';
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 
@@ -52,7 +53,7 @@ export const pipelineJobsListActionsAtom = Atom.make((get) => {
         if (selectedJob && currentMr) {
           registry.set(loadJobLogAtom, { mergeRequest: currentMr, job: selectedJob.job });
           Effect.runPromiseExit(
-            Registry.getResult(registry, loadJobLogAtom, { suspendOnWaiting: true })
+            AtomRegistry.getResult(registry, loadJobLogAtom, { suspendOnWaiting: true })
           ).then(() => {
             registry.set(jobLogDownloadSignalAtom, registry.get(jobLogDownloadSignalAtom) + 1);
           });

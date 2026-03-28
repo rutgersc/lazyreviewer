@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAtom, useAtomValue, useAtomSet } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue, useAtomSet } from "@effect/atom-react";
 import { ActivePane } from '../userselection/userSelection';
 import { activePaneAtom } from '../ui/navigation-atom';
 import { useAutoScroll } from '../hooks/useAutoScroll';

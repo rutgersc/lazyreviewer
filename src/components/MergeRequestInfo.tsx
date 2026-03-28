@@ -4,7 +4,7 @@ import type { Discussion, DiscussionNote } from '../domain/merge-request-schema'
 import { formatCompactTime } from '../utils/formatting';
 import { Colors } from '../colors';
 import { useDoubleClick } from '../hooks/useDoubleClick';
-import { useAtom, useAtomValue } from '@effect-atom/atom-react';
+import { useAtom, useAtomValue } from "@effect/atom-react";
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 import { openUrl } from '../system/open-url';
 import {

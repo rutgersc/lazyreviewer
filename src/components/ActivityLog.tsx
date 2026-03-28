@@ -8,7 +8,8 @@ import type { PipelineJob } from "../domain/merge-request-schema";
 import { ActivePane } from '../userselection/userSelection';
 import { openUrl } from '../system/open-url';
 import { copyToClipboard } from '../system/clipboard';
-import { useAtom, useAtomValue, useAtomSet, Result, Atom } from "@effect-atom/atom-react";
+import { AsyncResult, Atom } from "effect/unstable/reactivity"
+import { useAtom, useAtomValue, useAtomSet } from "@effect/atom-react";
 import { infoPaneTabAtom, activeModalAtom } from "../ui/navigation-atom";
 import { allJiraIssuesAtom } from "../mergerequests/mergerequests-atom";
 import { useAutoScroll } from '../hooks/useAutoScroll';

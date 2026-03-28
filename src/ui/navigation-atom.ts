@@ -1,4 +1,4 @@
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "effect/unstable/reactivity";
 import { ActivePane } from "../userselection/userSelection";
 
 export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';

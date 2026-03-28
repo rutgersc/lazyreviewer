@@ -2,7 +2,7 @@ import React from 'react';
 import { useKeyboard } from '@opentui/react';
 import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { Colors } from '../colors';
-import { useAtomValue } from '@effect-atom/atom-react';
+import { useAtomValue } from "@effect/atom-react";
 import { knownAuthorsAtom } from '../mergerequests/mergerequests-atom';
 import { groupsAtom } from '../data/data-atom';
 import { resolveGroupIds } from '../userselection/userSelection';

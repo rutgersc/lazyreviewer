@@ -7,7 +7,8 @@ import PipelineJobsList from './PipelineJobsList';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../domain/merge-request-schema';
-import { Atom, useAtom, useAtomSet, useAtomValue } from '@effect-atom/atom-react';
+import { Atom } from "effect/unstable/reactivity"
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { activePaneAtom, activeModalAtom, infoPaneTabAtom, type InfoPaneTab } from '../ui/navigation-atom';
 import { selectedMrAtom, allJiraIssuesAtom } from '../mergerequests/mergerequests-atom';
 import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
