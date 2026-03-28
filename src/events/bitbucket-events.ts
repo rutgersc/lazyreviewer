@@ -9,13 +9,7 @@ const BitbucketPrsFetchedEventSchema = Schema.Struct({
   prsResponse: BitbucketPullRequestsResponseSchema,
   forWorkspace: Schema.String,
   forRepoSlug: Schema.String,
-  forState: Schema.Union(
-    Schema.Literal('opened'),
-    Schema.Literal('merged'),
-    Schema.Literal('closed'),
-    Schema.Literal('all'),
-    Schema.Literal('locked')
-  ),
+  forState: Schema.Literals(['opened', 'merged', 'closed', 'all', 'locked']),
   timestamp: Schema.String
 })
 
@@ -45,10 +39,10 @@ const BitbucketPrCommentsFetchedEventSchema = Schema.Struct({
 
 export type BitbucketPrCommentsFetchedEvent = Schema.Schema.Type<typeof BitbucketPrCommentsFetchedEventSchema>
 
-export const BitbucketEventSchema = Schema.Union(
+export const BitbucketEventSchema = Schema.Union([
   BitbucketPrsFetchedEventSchema,
   BitbucketSinglePrFetchedEventSchema,
   BitbucketPrCommentsFetchedEventSchema
-)
+])
 
 export type BitbucketEvent = Schema.Schema.Type<typeof BitbucketEventSchema>

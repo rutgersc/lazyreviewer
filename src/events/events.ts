@@ -9,11 +9,11 @@ export type LazyReviewerEvent =
     | JiraEvent
     | BitbucketEvent
 
-export const EventSchema = Schema.Union(
+export const EventSchema = Schema.Union([
   GitlabEventSchema,
   BitbucketEventSchema,
   JiraEventSchema,
-)
+])
 
 // In-memory events - not persisted, transient state
 // Currently unused but kept for future transient UI state

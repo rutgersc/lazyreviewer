@@ -34,7 +34,7 @@ export const gitHeadFileChanges = Effect.gen(function* () {
 
   const watchStreams = headPaths.map(path =>
     fs.watch(path).pipe(
-      Stream.catchAll(() => Stream.empty)
+      Stream.catch(() => Stream.empty)
     )
   );
 

@@ -6,13 +6,14 @@ export class JiraApiError extends Data.TaggedError("JiraApiError")<{
 }> {}
 
 export const getAuthToken = Effect.gen(function* () {
-  const base64 = Config.string("JIRA_API_TOKEN_BASE64")
   const fromEmailAndToken = Effect.gen(function* () {
     const email = yield* Config.string("JIRA_EMAIL")
     const token = yield* Config.redacted("JIRA_API_TOKEN")
     return Buffer.from(`${email}:${Redacted.value(token)}`).toString('base64')
   })
-  return yield* Effect.orElse(fromEmailAndToken, () => base64)
+  return yield* Effect.catch(fromEmailAndToken, () => Effect.gen(function* () {
+    return yield* Config.string("JIRA_API_TOKEN_BASE64")
+  }))
 })
 
 export const getJiraBaseUrl = (): string => {

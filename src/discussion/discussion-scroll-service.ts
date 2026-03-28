@@ -37,9 +37,10 @@ export class DiscussionScrollService extends ServiceMap.Service<DiscussionScroll
         // Retry with short delay, up to ~500ms total
         yield* tryScroll.pipe(
           Effect.repeat(
-            Schedule.recurWhile((success: boolean) => !success).pipe(
-              Schedule.intersect(Schedule.recurs(30)),
-              Schedule.addDelay(() => Duration.millis(16))
+            Schedule.identity<boolean>().pipe(
+              Schedule.while(m => !m.output),
+              Schedule.both(Schedule.recurs(30)),
+              Schedule.addDelay(() => Effect.succeed(Duration.millis(16)))
             )
           )
         );

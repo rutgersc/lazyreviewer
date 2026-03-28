@@ -1,6 +1,6 @@
 import { Effect, Data, Console } from "effect"
 import type { PlatformError } from "@effect/platform/Error"
-import type { ParseError } from "effect/ParseResult"
+import type { SchemaError } from "effect/Schema"
 import type { MergeRequestState } from "../domain/merge-request-state"
 import { EventStorage } from "../events/events"
 import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
@@ -38,7 +38,7 @@ export type MergeRequestsCacheError =
   | FetchBitbucketPrsError
   | BitbucketPrsJsonParseError
   | PlatformError
-  | ParseError
+  | SchemaError
 
 export type KnownMrInfo = { projectPath: string; iid: string; updatedAt: Date };
 

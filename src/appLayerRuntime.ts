@@ -1,7 +1,5 @@
-import { Path } from "@effect/platform"
 import { Layer, Effect, Scope, Stream, ServiceMap } from "effect"
-import * as FileSystem from "@effect/platform-node/NodeFileSystem"
-import * as CommandExecutor from "@effect/platform-node/NodeCommandExecutor"
+import * as NodeServices from "@effect/platform-node/NodeServices"
 import { Atom } from "effect/unstable/reactivity"
 import { EventStorage, type AnyLazyReviewerEvent } from "./events/events"
 import { JiraScrollService } from "./jira/jira-scroll-service"
@@ -14,21 +12,18 @@ import { SettingsService } from "./settings/settings"
 import { UserSettingsService } from "./settings/user-filter-presets"
 import { type Projection, project } from "./utils/define-projection"
 
-const fileSystemLayer = Layer.merge(FileSystem.layer, Path.layer)
-const commandExecutorLayer = CommandExecutor.layer.pipe(
-  Layer.provide(fileSystemLayer)
-)
+const nodeServicesLayer = NodeServices.layer
 
 const settingsServiceLayer = Layer.effect(SettingsService)(SettingsService.make).pipe(
-  Layer.provide(fileSystemLayer)
+  Layer.provide(nodeServicesLayer)
 )
 
 const userSettingsServiceLayer = Layer.effect(UserSettingsService)(UserSettingsService.make).pipe(
-  Layer.provide(fileSystemLayer)
+  Layer.provide(nodeServicesLayer)
 )
 
 const eventStorageLayer = Layer.effect(EventStorage)(EventStorage.make).pipe(
-  Layer.provide(fileSystemLayer)
+  Layer.provide(nodeServicesLayer)
 )
 
 const mrStateServiceLayer = Layer.effect(MrStateService)(MrStateService.make).pipe(
@@ -48,8 +43,7 @@ const pipelineJobMonitorLayer = Layer.effect(PipelineJobMonitor)(PipelineJobMoni
 export const appLayer = Layer.mergeAll(
   pipelineJobMonitorLayer,
   eventStorageLayer,
-  fileSystemLayer,
-  commandExecutorLayer,
+  nodeServicesLayer,
   settingsServiceLayer,
   userSettingsServiceLayer,
   Layer.effect(JiraScrollService)(JiraScrollService.make),
@@ -61,7 +55,7 @@ export const appLayer = Layer.mergeAll(
 
 // Build a shared runtime using the atom system's memoMap
 // This ensures services are shared between atoms and standalone effects
-type AppLayerContext = Layer.Layer.Success<typeof appLayer>
+type AppLayerContext = Layer.Success<typeof appLayer>
 let _appServiceMapPromise: Promise<ServiceMap.ServiceMap<AppLayerContext>> | undefined
 const buildServiceMap = Effect.gen(function* () {
   const scope = yield* Scope.make()

@@ -97,7 +97,7 @@ const GitlabJobHistoryFetchedEventSchema = Schema.Struct({
 
 export interface GitlabJobHistoryFetchedEvent extends Schema.Schema.Type<typeof GitlabJobHistoryFetchedEventSchema> { }
 
-export const GitlabEventSchema = Schema.Union(
+export const GitlabEventSchema = Schema.Union([
   GitlabUserMergeRequestsFetchedEventSchema,
   GitlabProjectMergeRequestsFetchedEventSchema,
   GitlabSingleMrFetchedEventSchema,
@@ -105,7 +105,7 @@ export const GitlabEventSchema = Schema.Union(
   GitlabJobTraceFetchedEventSchema,
   GitlabPipelineFetchedEventSchema,
   GitlabJobHistoryFetchedEventSchema
-)
+])
 
 // Use manually refined interfaces (with proper types) instead of schema-inferred types
 export type GitlabEvent =

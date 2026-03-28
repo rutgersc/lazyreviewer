@@ -171,7 +171,7 @@ export const dotEnvFileChanges = Effect.gen(function* () {
   yield* Console.log(`[Config] Initial check: ${initial.length} missing credentials`);
 
   const watchStream = effectFs.watch(envPath).pipe(
-    Stream.catchAll(() => Stream.empty),
+    Stream.catch(() => Stream.empty),
     Stream.debounce("200 millis"),
     Stream.mapEffect(() => readAndDerive),
     Stream.changes

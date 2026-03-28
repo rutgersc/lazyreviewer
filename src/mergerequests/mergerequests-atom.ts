@@ -40,7 +40,7 @@ export const selectedMrAtom = Atom.make(get =>  {
     const selectedMrIndex = get(selectedMrIndexAtom);
     const mergeRequestsResult = get(mergeRequestsAtom);
 
-    if (AsyncResult.isResult(mergeRequestsResult)) {
+    if (AsyncResult.isAsyncResult(mergeRequestsResult)) {
         return AsyncResult.match(mergeRequestsResult, {
             onInitial: () => undefined,
             onSuccess: (success) => success.value[selectedMrIndex],

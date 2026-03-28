@@ -4,7 +4,7 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 
 **Branch:** `effect-v4`
 **Starting errors:** 1,479
-**Current errors:** 281
+**Current errors:** 206
 
 ## Completed
 
@@ -41,12 +41,27 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 - [x] `Either` → `Result` (Either removed in v4)
 - [x] `Effect.fork` → `Effect.forkChild`
 - [x] `stateRef.changes` → `SubscriptionRef.changes(stateRef)`
+- [x] `Schema.Union` multi-arg calls in event schemas (gitlab, bitbucket, jira)
+- [x] `AsyncResult.Result<A, E>` → `AsyncResult.AsyncResult<A, E>`
+- [x] `Stream.catchAll` → `Stream.catch`
+- [x] `Schedule.recurWhile` → `Schedule.while`, `Schedule.intersect` → `Schedule.both`
+- [x] `Chunk.unsafeGet` → `Chunk.headUnsafe`
+- [x] `Effect.orElse` → `Effect.catch`
+- [x] `AsyncResult.isResult` → `AsyncResult.isAsyncResult`
+- [x] `ParseError` (from `effect/ParseResult`) → `SchemaError` (from `effect/Schema`)
+- [x] `@effect/platform-node/NodeCommandExecutor` → `@effect/platform-node/NodeServices`
+- [x] `FileSystem`, `Path` from `@effect/platform` → from `effect`
+- [x] `Layer.Layer.Success` → `Layer.Success`
 
 ## Remaining
 
-### Type inference / unknown cascading (~89 errors)
+### Layer composition has `unknown` context leak (~40 errors, high priority)
 
-Many files have `unknown` type errors cascading from generic type parameters in projection utilities, AsyncResult types, and atom type inference. Likely fixable by updating `define-projection.ts` types and a few other root causes.
+`appLayer` resolves with `RIn = unknown` instead of `never`, meaning some layer dependency is unsatisfied. This cascades to `appAtomRuntime` which then causes "Missing 'unknown' in the expected Effect context" in all consumer atoms. Root cause is likely one of the service `make:` effects having an unresolved dependency.
+
+### Command/open-file API migration (~5 errors)
+
+`@effect/platform` `Command` API replaced by `ChildProcess.make` tagged template literal in v4. `src/utils/open-file.ts` needs rewrite.
 
 ### Readonly Record mutation (2 errors, low priority)
 

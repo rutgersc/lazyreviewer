@@ -61,7 +61,7 @@ const trackEvent = (state: EventsToDeleteState, key: string, eventId: string): E
   }
 
   // Group is full — evict the oldest, replace with new
-  const evicted = Chunk.unsafeGet(existing, 0)
+  const evicted = Chunk.headUnsafe(existing)
   const kept = Chunk.append(Chunk.drop(existing, 1), eventId)
   return {
     eventIdsByGroup: HashMap.set(state.eventIdsByGroup, key, kept),
