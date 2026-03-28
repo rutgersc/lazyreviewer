@@ -4,7 +4,7 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 
 **Branch:** `effect-v4`
 **Starting errors:** 1,479
-**Current errors:** 114
+**Current errors:** 97 (83 pre-existing exactOptionalPropertyTypes, 14 v4-related)
 
 ## Completed
 
@@ -68,9 +68,9 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 
 `Schema.mutable()` in v4 only works on arrays/tuples. Records are readonly by default. Two sites in `settings.ts` mutate record contents in place — needs refactor to immutable update pattern.
 
-### exactOptionalPropertyTypes mismatches (~76 errors, low priority)
+### exactOptionalPropertyTypes mismatches (~83 errors, PRE-EXISTING)
 
-From openTUI types, codegen plugins, and some internal code. May need upstream fix or type narrowing at call sites.
+Not caused by v4 migration. These existed on master before the upgrade. From openTUI prop types and internal code where `| undefined` values are passed to exact optional properties.
 
 ### Codegen plugin loading
 
