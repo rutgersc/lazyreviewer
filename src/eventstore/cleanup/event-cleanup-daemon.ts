@@ -8,7 +8,7 @@ export const ensureEventCleanupDaemon = Effect.gen(function* () {
 
   let deletedSoFar = 0
 
-  yield* (yield* EventStorage.eventsStream).pipe(
+  yield* eventStorage.eventsStream.pipe(
     Stream.filter(eventsToDeleteTodoList.isRelevantEvent),
     Stream.groupedWithin(200, "0.33 seconds"),
     Stream.scan(eventsToDeleteTodoList.initialState, (state, events) =>

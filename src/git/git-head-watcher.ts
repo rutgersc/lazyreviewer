@@ -27,7 +27,8 @@ const getGitHeadPaths = (repositoryPaths: Record<string, RepositoryPathConfig>):
 
 export const gitHeadFileChanges = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
-  const settings = yield* SettingsService.load;
+  const settingsService = yield* SettingsService;
+  const settings = yield* settingsService.load;
 
   const headPaths = getGitHeadPaths(settings.repositoryPaths);
 

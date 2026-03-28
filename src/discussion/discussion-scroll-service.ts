@@ -1,12 +1,11 @@
-import { Effect, Option, Ref, Deferred, Duration, Schedule } from "effect";
+import { Effect, ServiceMap, Option, Ref, Deferred, Duration, Schedule } from "effect";
 
 type ScrollRequest = { noteId: string };
 // Handler returns true if it successfully found and scrolled to the discussion
 type Handler = (req: ScrollRequest) => boolean;
 
-export class DiscussionScrollService extends Effect.Service<DiscussionScrollService>()("DiscussionScrollService", {
-  accessors: true,
-  effect: Effect.gen(function* () {
+export class DiscussionScrollService extends ServiceMap.Service<DiscussionScrollService>()("DiscussionScrollService", {
+  make: Effect.gen(function* () {
     const handlerRef = yield* Ref.make<Option.Option<Handler>>(Option.none());
     const handlerReady = yield* Deferred.make<void>();
 

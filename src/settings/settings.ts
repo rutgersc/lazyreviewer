@@ -1,4 +1,4 @@
-import { Effect, Schema, SchemaGetter, Stream, Console } from 'effect';
+import { Effect, Schema, SchemaGetter, ServiceMap, Stream, Console } from 'effect';
 import type { Struct as Struct_ } from 'effect/Schema';
 import { FileSystem } from '@effect/platform';
 import type { MergeRequest } from '../mergerequests/mergerequest-schema';
@@ -135,9 +135,8 @@ const getRepoPathsAndJobnames = (mrs: MergeRequest[]) => {
   return result;
 };
 
-export class SettingsService extends Effect.Service<SettingsService>()("SettingsService", {
-  accessors: true,
-  effect: Effect.gen(function* () {
+export class SettingsService extends ServiceMap.Service<SettingsService>()("SettingsService", {
+  make: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
 
     const loadDefaultOverrides = Effect.gen(function* () {

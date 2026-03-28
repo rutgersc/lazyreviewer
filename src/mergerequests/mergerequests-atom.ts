@@ -59,7 +59,7 @@ export { mrSortOrderAtom } from "../settings/settings-atom";
 export type { MrSortOrder } from "../settings/settings";
 
 export const allMrsAtom = appAtomRuntime.atom(
-  (get) => MrStateService.changes.pipe(Stream.unwrap),
+  Stream.unwrap(MrStateService.useSync(svc => svc.changes)),
   { initialValue: allMrsProjection.initialState }
 ).pipe(Atom.keepAlive);
 
@@ -224,6 +224,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
       const repoPaths = repoFilter.length > 0 ? repoFilter : get(repoSelectionAtom);
       if (repoPaths.length === 0) return;
 
+      const settingsService = yield* SettingsService;
       const filterMrState = get(filterMrStateAtom);
 
       const allMrsResult = get(allMrsAtom);
@@ -252,7 +253,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
           Effect.catchCause((cause) => Console.error("Error fetching user MRs:", cause).pipe(Effect.as([] as readonly string[])))
         );
         if (discoveredPaths.length > 0) {
-          yield* SettingsService.modify(s => {
+          yield* settingsService.modify(s => {
             const updated = { ...s.repositoryPaths };
             let changed = false;
             for (const path of discoveredPaths) {
@@ -337,8 +338,9 @@ export const refetchSelectedMrAtom = appAtomRuntime.fn((_, get) =>
     if (gitlabMr) {
       const jiraKeys = gitlabMr.jiraIssueKeys;
       if (jiraKeys.length > 0) {
+        const eventStorage = yield* EventStorage
         const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys);
-        yield* EventStorage.appendEvent(jiraEvent);
+        yield* eventStorage.appendEvent(jiraEvent);
       }
     }
 

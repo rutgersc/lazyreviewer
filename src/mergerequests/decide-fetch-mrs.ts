@@ -77,9 +77,10 @@ const fetchMissingMrs = (missingMrs: readonly KnownMrInfo[]) => Effect.gen(funct
   const jiraKeysByProject = yield* Effect.forEach(
     [...byProject.entries()],
     ([projectPath, iids]) => Effect.gen(function* () {
+      const eventStorage = yield* EventStorage
       yield* Console.log(`[Fetch] Fetching ${iids.length} missing MRs for ${projectPath}`)
       const event = yield* getMrsAsEvent(projectPath, iids)
-      yield* EventStorage.appendEvent(event)
+      yield* eventStorage.appendEvent(event)
       return projectGitlabMrsFetchedEvent(event).flatMap(mr => mr.jiraIssueKeys)
     }).pipe(
       Effect.catch(err =>
@@ -95,9 +96,10 @@ const fetchMissingMrs = (missingMrs: readonly KnownMrInfo[]) => Effect.gen(funct
 })
 
 const fetchJiraForKeys = (jiraKeys: readonly string[]) => Effect.gen(function* () {
+  const eventStorage = yield* EventStorage
   yield* Console.log(`[Fetch] Fetching ${jiraKeys.length} Jira tickets for reconciled MRs`)
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys as string[])
-  yield* EventStorage.appendEvent(jiraEvent)
+  yield* eventStorage.appendEvent(jiraEvent)
 })
 
 const forkFetchMissingMrs = (
@@ -133,12 +135,13 @@ export const decideFetchUserMrs = (
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
+  const eventStorage = yield* EventStorage
   const gitlabUsernames = users.map(u => u.gitlab).filter((g): g is string => g !== undefined)
 
   const fetchAndAppend = (fetchState: MergeRequestState, first?: number) =>
     Effect.gen(function* () {
       const event = yield* getGitlabMrsAsEvent(gitlabUsernames, fetchState, first)
-      yield* EventStorage.appendEvent(event)
+      yield* eventStorage.appendEvent(event)
       return event
     })
 
@@ -149,7 +152,7 @@ export const decideFetchUserMrs = (
   const gitlabMrs = projectGitlabUserMrsFetchedEvent(mrEvent)
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-  yield* EventStorage.appendEvent(jiraEvent)
+  yield* eventStorage.appendEvent(jiraEvent)
 
   return [...new Set(gitlabMrs.map(mr => mr.project.fullPath))]
 })
@@ -189,11 +192,12 @@ export const fetchRepoPage = (
   MergeRequestsCacheError,
   EventStorage
 > => Effect.gen(function* () {
+  const eventStorage = yield* EventStorage
   const isPage1 = afterCursor === null
 
   if (repository.provider === 'bitbucket') {
     const bbEvent = yield* getBitbucketPrsAsEvent(repository.workspace, repository.repo, state)
-    yield* EventStorage.appendEvent(bbEvent)
+    yield* eventStorage.appendEvent(bbEvent)
     const mrs = projectBitbucketPrsFetchedEvent(bbEvent, new Map())
     const fetchedGids = new Set(mrs.map(mr => mr.id))
     const oldestUpdatedAt = mrs.length > 0 ? mrs.reduce((oldest, mr) => mr.updatedAt < oldest ? mr.updatedAt : oldest, mrs[0]!.updatedAt) : undefined
@@ -206,14 +210,14 @@ export const fetchRepoPage = (
     const jiraKeys = Array.from(new Set(mrs.flatMap(mr => mr.jiraIssueKeys)))
     if (jiraKeys.length > 0) {
       const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-      yield* EventStorage.appendEvent(jiraEvent)
+      yield* eventStorage.appendEvent(jiraEvent)
     }
 
     return { hasNextPage: false, endCursor: null, oldestUpdatedAt, newestUpdatedAt, mrCount: mrs.length, fetchedGids }
   }
 
   const mrEvent = yield* getGitlabMrsByProjectAsEvent(repository.id, state, afterCursor, pageSize)
-  yield* EventStorage.appendEvent(mrEvent)
+  yield* eventStorage.appendEvent(mrEvent)
   const gitlabMrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
   const pageInfo = mrEvent.mrs.project?.mergeRequests?.pageInfo
   const hasNextPage = pageInfo?.hasNextPage ?? false
@@ -254,7 +258,7 @@ export const fetchRepoPage = (
         Effect.gen(function* () {
           yield* Console.log(`[Fetch] Fetching recent merged MRs for project "${repository.id}" to detect state changes`)
           const mergedEvent = yield* getGitlabMrsByProjectAsEvent(repository.id, 'merged', null, 10)
-          yield* EventStorage.appendEvent(mergedEvent)
+          yield* eventStorage.appendEvent(mergedEvent)
 
           const mergedMrs = projectGitlabProjectMrsFetchedEvent(mergedEvent)
           const mergedJiraKeys = Array.from(new Set(mergedMrs.flatMap(mr => mr.jiraIssueKeys)))
@@ -271,7 +275,7 @@ export const fetchRepoPage = (
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
   if (jiraKeys.length > 0) {
     const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-    yield* EventStorage.appendEvent(jiraEvent)
+    yield* eventStorage.appendEvent(jiraEvent)
   }
 
   return { hasNextPage, endCursor, oldestUpdatedAt, newestUpdatedAt, mrCount: gitlabMrs.length, fetchedGids }
@@ -283,6 +287,7 @@ export const deepFetchProjectMrs = (
   knownMrs: ReadonlyMap<MrGid, KnownMrInfo>
 ): Effect.Effect<void, MergeRequestsCacheError, EventStorage> =>
   Effect.gen(function* () {
+    const eventStorage = yield* EventStorage
     if (repository.provider === 'bitbucket') {
       yield* fetchRepoPage(repository, state, knownMrs, null)
       return
@@ -291,7 +296,7 @@ export const deepFetchProjectMrs = (
     const events = yield* getAllGitlabMrsByProjectAsEvents(repository.id, state)
     const allMrs = events.flatMap(event => projectGitlabProjectMrsFetchedEvent(event))
 
-    yield* Effect.forEach(events, event => EventStorage.appendEvent(event))
+    yield* Effect.forEach(events, event => eventStorage.appendEvent(event))
 
     if (state === 'opened') {
       const fetchedGids = new Set(allMrs.map(mr => mr.id))
@@ -301,13 +306,14 @@ export const deepFetchProjectMrs = (
     const jiraKeys = Array.from(new Set(allMrs.flatMap(mr => mr.jiraIssueKeys)))
     if (jiraKeys.length > 0) {
       const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-      yield* EventStorage.appendEvent(jiraEvent)
+      yield* eventStorage.appendEvent(jiraEvent)
     }
   })
 
 export const decideFetchSingleMr = Effect.fn(function* (projectFullPath: string, mrIid) {
+  const eventStorage = yield* EventStorage
   const mrEvent = yield* getSingleMrAsEvent(projectFullPath, mrIid);
-  yield* EventStorage.appendEvent(mrEvent);
+  yield* eventStorage.appendEvent(mrEvent);
   const gitlabMr = projectGitlabSingleMrFetchedEvent(mrEvent);
   return gitlabMr;
 });

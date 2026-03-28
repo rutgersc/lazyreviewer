@@ -6,7 +6,8 @@ import type { BranchDifference } from './hooks/useRepositoryBranches';
 
 export const fetchBranchDifferences = (mergeRequests: MergeRequest[]) =>
   Effect.gen(function* () {
-    const settings = yield* SettingsService.load;
+    const settingsService = yield* SettingsService;
+    const settings = yield* settingsService.load;
     const differenceMap = new Map<string, BranchDifference>();
 
     for (const mr of mergeRequests) {

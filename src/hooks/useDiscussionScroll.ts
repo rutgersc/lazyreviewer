@@ -1,12 +1,22 @@
-import { Runtime } from 'effect';
+import { Effect } from 'effect';
 import { DiscussionScrollService } from '../discussion/discussion-scroll-service';
-import { getAppRuntime } from '../appLayerRuntime';
+import { runWithAppServices } from '../appLayerRuntime';
 
 export function useDiscussionScroll() {
   return {
     registerHandler: (handler: (req: { noteId: string }) => boolean) =>
-      getAppRuntime().then(runtime => Runtime.runPromise(runtime)(DiscussionScrollService.register(handler))),
+      runWithAppServices(
+        Effect.gen(function* () {
+          const svc = yield* DiscussionScrollService
+          yield* svc.register(handler)
+        })
+      ),
     scroll: (noteId: string) =>
-      getAppRuntime().then(runtime => Runtime.runPromise(runtime)(DiscussionScrollService.scroll({ noteId })))
+      runWithAppServices(
+        Effect.gen(function* () {
+          const svc = yield* DiscussionScrollService
+          yield* svc.scroll({ noteId })
+        })
+      )
   };
 }

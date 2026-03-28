@@ -4,7 +4,7 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 
 **Branch:** `effect-v4`
 **Starting errors:** 1,479
-**Current errors:** 450
+**Current errors:** 281
 
 ## Completed
 
@@ -28,27 +28,25 @@ Tracking progress upgrading from Effect v3 to v4.0.0-beta.42.
 - [x] `Schema.mutable(Schema.Struct({...}))` → `mutableStruct({...})` via `mapFields` + `mutableKey`
 - [x] `.annotations({...})` → `.pipe(Schema.annotate({...}))`
 - [x] `Schema.fromBrand(Ctor)` → `Schema.fromBrand("id", Ctor)` (added identifier arg)
+- [x] `Effect.Service<Self>()("id", { accessors: true, effect: ... })` → `ServiceMap.Service<Self>()("id", { make: ... })`
+- [x] `Context.Tag("id")<Self, Shape>()` → `ServiceMap.Service<Self, Shape>()("id", { make: ... })`
+- [x] Service static accessors (`ServiceClass.method()`) → bind with `yield* ServiceClass` then call on instance
+- [x] `.Default` layer accessor → `Layer.effect(ServiceClass)(ServiceClass.make)`
+- [x] `Runtime.make` / `Runtime.defaultRuntime` / `Runtime.runPromise(runtime)` → `Effect.runPromiseWith(serviceMap)`
+- [x] `getAppRuntime()` → `getAppServiceMap()` / `runWithAppServices()`
+- [x] `Stream.unwrapScoped` → `Stream.unwrap`
+- [x] `Array.partitionMap` → `Array.partition` (uses `Result` instead of `Either`)
+- [x] `Effect.validateAll` → `Effect.validate`
+- [x] `Effect.either` → `Effect.exit`, `Either.match` → `Exit.match`
+- [x] `Either` → `Result` (Either removed in v4)
+- [x] `Effect.fork` → `Effect.forkChild`
+- [x] `stateRef.changes` → `SubscriptionRef.changes(stateRef)`
 
 ## Remaining
 
-### Service pattern rewrite (~120 errors, high priority)
+### Type inference / unknown cascading (~89 errors)
 
-`Effect.Service` → `Effect.service` (lowercase) in v4. Services no longer expose static `.Default` layer accessor. Proxy accessors on service tags removed. Need to migrate consumer code to `yield*` access pattern.
-
-Affected services: `EventStorage`, `SettingsService`, `UserSettingsService`, `MrStateService`, `BackgroundSyncService`, `DiscussionScrollService`, `JiraScrollService`, `PipelineJobMonitor`, `BgSyncReadModelService`
-
-Also: `yield*` on services/Ref/Deferred no longer auto-unwraps — need `Ref.get(ref)`, `Deferred.await(deferred)`, `Fiber.join(fiber)`.
-
-### Runtime changes (~7 errors, medium priority)
-
-- `Runtime.make` / `Runtime.defaultRuntime` / `Runtime.runPromise` restructured
-- `Effect.runtime<R>()` → `Effect.services<R>()`
-
-### Other API renames (~10 errors)
-
-- `Array.partitionMap` → `Array.partition`
-- `Effect.validateAll` → `Effect.validate`
-- `Stream.unwrapScoped` → `Stream.unwrap`
+Many files have `unknown` type errors cascading from generic type parameters in projection utilities, AsyncResult types, and atom type inference. Likely fixable by updating `define-projection.ts` types and a few other root causes.
 
 ### Readonly Record mutation (2 errors, low priority)
 

@@ -1,4 +1,4 @@
-import { Console, Effect, Option, Array, Either } from 'effect'
+import { Console, Effect, Exit, ServiceMap, Option, Array, Result } from 'effect'
 import { SettingsService } from '../settings/settings'
 import { getMrPipeline, getSingleMrAsEvent } from './gitlab-graphql'
 import { EventStorage } from '../events/events'
@@ -32,7 +32,8 @@ const FETCH_HEAD_MAX_AGE_MINUTES = 5;
 
 const backgroundWorker =
   Effect.gen(function* () {
-    const settings = yield* SettingsService.load
+    const settingsService = yield* SettingsService
+    const settings = yield* settingsService.load
     const monitoredMrs = Object.keys(settings.monitoredMergeRequests)
       .filter(key => key !== null)
       .map(key => MrGid(key))
@@ -41,7 +42,8 @@ const backgroundWorker =
       return
     }
 
-    const allMrsState = yield* MrStateService.get
+    const mrStateService = yield* MrStateService
+    const allMrsState = yield* mrStateService.get
 
     // Git-fetch unique repos once before processing MRs concurrently
     const uniqueRepos = [
@@ -71,7 +73,7 @@ const backgroundWorker =
       }
 
       if (isMrDone(mr.state)) {
-        yield* SettingsService.modify(s => {
+        yield* settingsService.modify(s => {
           const { [mr.id]: _, ...rest } = s.monitoredMergeRequests
           return { ...s, monitoredMergeRequests: rest as typeof s.monitoredMergeRequests }
         })
@@ -102,7 +104,7 @@ const backgroundWorker =
         yield* decideFetchSingleMr(mr.project.fullPath, mr.iid).pipe(
           Effect.catch(() => Effect.void)
         )
-        yield* SettingsService.modify(s => {
+        yield* settingsService.modify(s => {
           const { [mr.id]: _, ...rest } = s.monitoredMergeRequests
           return { ...s, monitoredMergeRequests: rest as typeof s.monitoredMergeRequests }
         })
@@ -137,7 +139,7 @@ const backgroundWorker =
         : true;
 
       const allJobs = headPipeline.stage.flatMap(stage => stage.jobs);
-      const [missingJobNames, relevantJobs] = Array.partitionMap(
+      const [missingJobNames, relevantJobs] = Array.partition(
         jobNamesToMonitor,
         (jobName) =>
           Array.findFirst(allJobs, (job) => job.name === jobName).pipe(
@@ -147,7 +149,7 @@ const backgroundWorker =
                 : existingMrPipelineState?.jobStates[job.name],
               currentJob: job,
             })),
-            Either.fromOption(() => jobName)
+            Result.fromOption(() => jobName)
           )
       );
 
@@ -181,7 +183,7 @@ const backgroundWorker =
         yield* sendSystemNotification({
           title: `${currentJob.name}: FAILED`,
           body: `${mr.title}`
-        }).pipe(Effect.fork)
+        }).pipe(Effect.forkChild)
 
         yield* loadJobLogInternal(
           { project: { path: mr.project.path, fullPath: mr.project.fullPath }, sourcebranch: mr.sourcebranch },
@@ -199,7 +201,7 @@ const backgroundWorker =
         yield* sendSystemNotification({
           title: `Pipeline SUCCESS`,
           body: `${mr.project.path}!${mr.iid} - all ${jobCounts.total} jobs passed`
-        }).pipe(Effect.fork)
+        }).pipe(Effect.forkChild)
       }
 
       const shouldRefreshMr = isNewPipeline || newlyFinishedJobs.length > 0;
@@ -212,7 +214,7 @@ const backgroundWorker =
         yield* Console.log(`[PipelineJobMonitor] Refreshed MR state for !${mr.title} (${reason})`);
       }
 
-      yield* SettingsService.modify(s => ({
+      yield* settingsService.modify(s => ({
         ...s,
         monitoredMergeRequests: {
           ...s.monitoredMergeRequests,
@@ -234,20 +236,20 @@ const backgroundWorker =
         : { type: 'noChange' as const })
     });
 
-    const pollResults = yield* Effect.validateAll(
+    const pollResults = yield* Effect.validate(
       monitoredMrs,
       (mrKey) => monitorMr(mrKey))
       .pipe(
-        Effect.either
+        Effect.exit
       )
 
     const formatResult = (r: { type?: string; _tag?: string; message?: string; reason?: string }) =>
       `${r.type ?? r._tag ?? '?'}${r.message ? `: ${r.message}` : ''}${r.reason ? `: ${r.reason}` : ''}`
 
-    yield* Either.match(pollResults, {
-      onLeft: (errors) =>
-        Console.log(`[PipelineJobMonitor] Failed to poll MRs:\n${errors.map(e => `  - ${formatResult(e)}`).join('\n')}`),
-      onRight: (polls) => Effect.gen(function* () {
+    yield* Exit.match(pollResults, {
+      onFailure: (cause) =>
+        Console.log(`[PipelineJobMonitor] Failed to poll MRs: ${cause}`),
+      onSuccess: (polls) => Effect.gen(function* () {
         const nonSkipped = polls
           .filter(p => p.type !== 'skipped' && p.type !== 'noChange');
 
@@ -259,9 +261,8 @@ const backgroundWorker =
 
   })
 
-export class PipelineJobMonitor extends Effect.Service<PipelineJobMonitor>()("PipelineJobMonitor", {
-  accessors: true,
-  scoped: Effect.gen(function* () {
+export class PipelineJobMonitor extends ServiceMap.Service<PipelineJobMonitor>()("PipelineJobMonitor", {
+  make: Effect.gen(function* () {
     yield* Effect.sleep('10 seconds').pipe(
       Effect.andThen(
         backgroundWorker.pipe(

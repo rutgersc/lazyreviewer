@@ -26,7 +26,12 @@ export const sortPopupVisibleAtom = Atom.make<boolean>(false);
 export const goalVisibleAtom = Atom.make<boolean>(false);
 
 // Projected Atoms
-export const sprintsStateAtom = makeProjectedAtomFromProjection(EventStorage.eventsStream, sprintsProjection);
+const eventsStreamEffect = Effect.gen(function* () {
+  const eventStorage = yield* EventStorage
+  return eventStorage.eventsStream
+})
+
+export const sprintsStateAtom = makeProjectedAtomFromProjection(eventsStreamEffect, sprintsProjection);
 
 export const selectedSprintIssuesAtom = Atom.readable((get) => {
   const selectedSprintId = get(selectedSprintIdAtom);
@@ -42,10 +47,11 @@ export const selectedSprintIssuesAtom = Atom.readable((get) => {
 // Action Atoms
 export const loadSprintsAtom = appAtomRuntime.fn((boardId: number) =>
   Effect.gen(function* () {
+    const eventStorage = yield* EventStorage
     const sprints = yield* fetchActiveSprints(boardId);
     const timestamp = new Date().toISOString();
     const type = "jira-sprints-loaded-event";
-    yield* EventStorage.appendEvent({
+    yield* eventStorage.appendEvent({
       eventId: generateEventId(timestamp, type),
       type,
       boardId,
@@ -57,13 +63,14 @@ export const loadSprintsAtom = appAtomRuntime.fn((boardId: number) =>
 
 export const loadSprintIssuesAtom = appAtomRuntime.fn((args: { sprintId: number; boardId: number }) =>
   Effect.gen(function* () {
+    const eventStorage = yield* EventStorage
     const { tree: _, event } = yield* loadSprintTreeAsEvent(
       args.sprintId,
       args.boardId
     );
 
     if (event) {
-      yield* EventStorage.appendEvent(event);
+      yield* eventStorage.appendEvent(event);
     }
   })
 );

@@ -1,5 +1,5 @@
 import { FileSystem, Path } from "@effect/platform"
-import { Effect, Schema, Stream, PubSub, Console, Ref } from "effect"
+import { Effect, Schema, ServiceMap, Stream, PubSub, Console, Ref } from "effect"
 import { EventSchema, type LazyReviewerEvent, type InMemoryLazyReviewerEvent, type AnyLazyReviewerEvent } from "../events/events"
 
 const EVENTS_DIR = "storage/events"
@@ -22,9 +22,8 @@ const migrateEventJson = (data: unknown): unknown => {
   return migrated
 }
 
-export class EventStorage extends Effect.Service<EventStorage>()("EventStorage", {
-  accessors: true,
-  effect: Effect.gen(function* () {
+export class EventStorage extends ServiceMap.Service<EventStorage>()("EventStorage", {
+  make: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem
     const path = yield* Path.Path
 
@@ -135,7 +134,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       return nextNumber
     })
 
-    const eventsStream = Stream.unwrapScoped(
+    const eventsStream = Stream.unwrap(
       Effect.gen(function* () {
         const historicalEvents = yield* loadEvents
 
@@ -178,7 +177,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
       })
 
     // Stream of just in-memory events
-    const inMemoryEventsStream = Stream.unwrapScoped(
+    const inMemoryEventsStream = Stream.unwrap(
       Effect.gen(function* () {
         const historicalEvents = yield* Ref.get(inMemoryEventsRef)
         const newEventsStream = Stream.fromPubSub(inMemoryEventsPubSub)
@@ -191,7 +190,7 @@ export class EventStorage extends Effect.Service<EventStorage>()("EventStorage",
     )
 
     // Combined stream of both persisted and in-memory events
-    const combinedEventsStream = Stream.unwrapScoped(
+    const combinedEventsStream = Stream.unwrap(
       Effect.gen(function* () {
         // Subscribe to pubsubs BEFORE loading historical events
         // This ensures no events are lost between loading and subscribing

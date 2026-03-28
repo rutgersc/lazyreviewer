@@ -18,8 +18,7 @@ export type { PageSlotSnapshot } from './background-sync-service';
 let notificationDaemonFiber: Fiber.RuntimeFiber<void, unknown> | undefined;
 
 export const pageSlotsAtom = appAtomRuntime.atom(
-  (_get) => Effect.map(
-    BackgroundSyncService,
+  (_get) => BackgroundSyncService.useSync(
     (service) => Stream.fromPubSub(service.slotsPubSub)
   ).pipe(Stream.unwrap),
   { initialValue: [] as readonly PageSlotSnapshot[] }
@@ -118,7 +117,8 @@ const createNotificationDaemon = (get: Atom.Context) =>
   Effect.gen(function* () {
     yield* Console.log('[NotificationDaemon] Starting');
 
-    const settings = yield* SettingsService.load;
+    const settingsService = yield* SettingsService;
+    const settings = yield* settingsService.load;
     const lastProcessedTimestamp = settings.notifications.lastProcessedEventId;
 
     const stream = (yield* changesStream(get)).pipe(
@@ -150,7 +150,7 @@ const createNotificationDaemon = (get: Atom.Context) =>
           // Persist the actual last event ID regardless of notification setting
           if (Option.isSome(actualLastState) && actualLastState.value.event) {
             const eventId = actualLastState.value.event.eventId;
-            yield* SettingsService.modify(s => ({
+            yield* settingsService.modify(s => ({
               ...s,
               notifications: { ...s.notifications, lastProcessedEventId: eventId }
             }));

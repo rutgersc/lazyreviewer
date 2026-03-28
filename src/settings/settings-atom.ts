@@ -47,18 +47,18 @@ const selectFromSettings = <T>(
   });
 
 export const settingsAtom = appAtomRuntime.atom(
-  Stream.unwrap(SettingsService.watchStream),
+  Stream.unwrap(SettingsService.useSync(s => s.watchStream)),
   { initialValue: defaultSettings }
 ).pipe(Atom.setLazy(false), Atom.keepAlive)
 
 // Private fn atom for Atom.writable setters to delegate settings writes
 const modifySettingsFn = appAtomRuntime.fn((f: (s: Settings) => Settings) =>
-  SettingsService.modify(f)
+  SettingsService.use(s => s.modify(f))
 );
 
 // User settings (users, groups, presets) — separate file
 export const userSettingsAtom = appAtomRuntime.atom(
-  Stream.unwrap(UserSettingsService.watchStream),
+  Stream.unwrap(UserSettingsService.useSync(s => s.watchStream)),
   { initialValue: defaultUserSettings }
 ).pipe(Atom.setLazy(false), Atom.keepAlive)
 
@@ -93,7 +93,7 @@ export const ignoredMergeRequestsAtom = Atom.make(get =>
 );
 
 export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string) =>
-  SettingsService.modify(settings => {
+  SettingsService.use(s => s.modify(settings => {
     const newIgnored = new Set(settings.ignoredMergeRequests);
     if (newIgnored.has(mrId)) {
       newIgnored.delete(mrId);
@@ -101,7 +101,7 @@ export const toggleIgnoreMergeRequestAtom = appAtomRuntime.fn((mrId: string) =>
       newIgnored.add(mrId);
     }
     return { ...settings, ignoredMergeRequests: Array.from(newIgnored) };
-  })
+  }))
 );
 
 const seenMergeRequestsRawAtom = selectFromSettings(
@@ -115,7 +115,7 @@ export const seenMergeRequestsAtom = Atom.make(get =>
 );
 
 export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string) =>
-  SettingsService.modify(settings => {
+  SettingsService.use(s => s.modify(settings => {
     const newSeen = new Set(settings.seenMergeRequests);
     if (newSeen.has(mrId)) {
       newSeen.delete(mrId);
@@ -123,7 +123,7 @@ export const toggleSeenMergeRequestAtom = appAtomRuntime.fn((mrId: string) =>
       newSeen.add(mrId);
     }
     return { ...settings, seenMergeRequests: Array.from(newSeen) };
-  })
+  }))
 );
 
 // Selected repo paths for syncing
@@ -170,11 +170,11 @@ export const userFilterGroupIdsAtom = Atom.writable(
 
 export const setUserFilterAtom = appAtomRuntime.fn(
   ({ usernames, groupIds }: { usernames: readonly string[]; groupIds: readonly string[] }) =>
-    SettingsService.modify(s => ({
+    SettingsService.use(svc => svc.modify(s => ({
       ...s,
       userFilterUsernames: [...usernames],
       userFilterGroupIds: [...groupIds]
-    }))
+    })))
 );
 
 const selectedUserSelectionEntryIdRawAtom = selectFromSettings(
@@ -237,9 +237,10 @@ export const backgroundSyncSettingsAtom = selectFromSettings(
 
 export const toggleNotificationsAtom = appAtomRuntime.fn((_: void) =>
   Effect.gen(function* () {
-    const settings = yield* SettingsService.load;
+    const settingsService = yield* SettingsService;
+    const settings = yield* settingsService.load;
     const enabled = !(settings.notifications?.enabled ?? false);
-    yield* SettingsService.modify(s => ({
+    yield* settingsService.modify(s => ({
       ...s,
       notifications: { ...s.notifications, enabled }
     }));
@@ -249,9 +250,10 @@ export const toggleNotificationsAtom = appAtomRuntime.fn((_: void) =>
 
 export const toggleBackgroundSyncAtom = appAtomRuntime.fn((_: void) =>
   Effect.gen(function* () {
-    const settings = yield* SettingsService.load;
+    const settingsService = yield* SettingsService;
+    const settings = yield* settingsService.load;
     const enabled = !(settings.backgroundSync?.enabled ?? false);
-    yield* SettingsService.modify(s => ({
+    yield* settingsService.modify(s => ({
       ...s,
       backgroundSync: { ...s.backgroundSync!, enabled }
     }));
@@ -265,7 +267,7 @@ export const jiraBoardIdAtom = selectFromSettings(
 );
 
 export const setJiraBoardIdAtom = appAtomRuntime.fn((boardId: number | undefined) =>
-  SettingsService.modify(s => ({ ...s, jiraBoardId: boardId }))
+  SettingsService.use(svc => svc.modify(s => ({ ...s, jiraBoardId: boardId })))
 );
 
 const monitoredMergeRequestsRawAtom = selectFromSettings(
@@ -279,7 +281,7 @@ export const monitoredMergeRequestsAtom = Atom.make(get =>
 );
 
 export const toggleMonitorMergeRequestAtom = appAtomRuntime.fn((mrGid: MrGid) =>
-  SettingsService.modify(settings => {
+  SettingsService.use(svc => svc.modify(settings => {
     const current = { ...settings.monitoredMergeRequests };
     if (mrGid in current) {
       delete current[mrGid];
@@ -287,7 +289,7 @@ export const toggleMonitorMergeRequestAtom = appAtomRuntime.fn((mrGid: MrGid) =>
       current[mrGid] = { jobStates: {} };
     }
     return { ...settings, monitoredMergeRequests: current };
-  })
+  }))
 );
 
 const cycleJobImportance = (current: string): 'low' | 'monitored' | 'ignore' => {
@@ -300,13 +302,13 @@ const cycleJobImportance = (current: string): 'low' | 'monitored' | 'ignore' => 
 
 export const toggleJobImportanceAtom = appAtomRuntime.fn(
   ({ projectFullPath, jobName }: { projectFullPath: string; jobName: string }) =>
-    SettingsService.modify(settings => {
+    SettingsService.use(svc => svc.modify(settings => {
       const projectJobs = { ...settings.pipelineJobImportance };
       const jobs = { ...(projectJobs[projectFullPath] ?? {}) };
       jobs[jobName] = cycleJobImportance(jobs[jobName] ?? 'low');
       projectJobs[projectFullPath] = jobs;
       return { ...settings, pipelineJobImportance: projectJobs };
-    })
+    }))
 );
 
 const pipelineJobImportanceRawAtom = selectFromSettings(
@@ -335,7 +337,7 @@ export const repositoryPathsAtom = selectFromSettings(
 );
 
 export const ensureRepositoryPathsAtom = appAtomRuntime.fn((repoPaths: readonly string[]) =>
-  SettingsService.modify(s => {
+  SettingsService.use(svc => svc.modify(s => {
     const updated = { ...s.repositoryPaths }
     let changed = false
     for (const path of repoPaths) {
@@ -345,7 +347,7 @@ export const ensureRepositoryPathsAtom = appAtomRuntime.fn((repoPaths: readonly 
       }
     }
     return changed ? { ...s, repositoryPaths: updated } : s
-  })
+  }))
 );
 
 export type CompleteOnboardingParams = {
@@ -356,7 +358,7 @@ export type CompleteOnboardingParams = {
 }
 
 export const completeOnboardingAtom = appAtomRuntime.fn((params: CompleteOnboardingParams) =>
-  SettingsService.modify(s => {
+  SettingsService.use(svc => svc.modify(s => {
     const repositoryPaths = { ...s.repositoryPaths }
     for (const path of params.repoPaths) {
       const localPath = params.repositoryLocalPaths.get(path) ?? ''
@@ -372,7 +374,7 @@ export const completeOnboardingAtom = appAtomRuntime.fn((params: CompleteOnboard
       currentUser: params.currentUser,
       selectedUserSelectionEntryId: params.selectedUserSelectionEntryId,
     }
-  })
+  }))
 );
 
 const mrSortOrderRawAtom = selectFromSettings(
@@ -402,11 +404,11 @@ export const sprintFilterAtom = selectFromSettings(
 );
 
 export const setSprintFilterAtom = appAtomRuntime.fn((filter: SprintFilter | null) =>
-  SettingsService.modify(s => ({
+  SettingsService.use(svc => svc.modify(s => ({
     ...s,
     sprintFilterId: filter?.id,
     sprintFilterName: filter?.name,
-  }))
+  })))
 );
 
 export type AppView = 'review' | 'focus'
@@ -465,7 +467,7 @@ export const userGroupsAtom = selectFromUserSettings(
 
 export const saveGroupAtom = appAtomRuntime.fn(
   ({ name, users, groups }: { name: string; users: readonly string[]; groups: readonly string[] }) =>
-    UserSettingsService.modify(s => ({
+    UserSettingsService.use(svc => svc.modify(s => ({
       ...s,
       userGroups: [...s.userGroups, {
         id: `group-${Date.now()}`,
@@ -473,30 +475,30 @@ export const saveGroupAtom = appAtomRuntime.fn(
         users: [...users],
         groups: [...groups],
       }],
-    }))
+    })))
 );
 
 export const updateGroupAtom = appAtomRuntime.fn(
   ({ id, name, users, groups }: { id: string; name: string; users: readonly string[]; groups: readonly string[] }) =>
-    UserSettingsService.modify(s => ({
+    UserSettingsService.use(svc => svc.modify(s => ({
       ...s,
       userGroups: s.userGroups.map(g =>
         g.id === id ? { id, name, users: [...users], groups: [...groups] } : g
       ),
-    }))
+    })))
 );
 
 export const deleteGroupAtom = appAtomRuntime.fn(
   (groupId: string) =>
-    UserSettingsService.modify(s => ({
+    UserSettingsService.use(svc => svc.modify(s => ({
       ...s,
       userGroups: s.userGroups.filter(g => g.id !== groupId),
-    }))
+    })))
 );
 
 export const moveGroupAtom = appAtomRuntime.fn(
   ({ groupId, direction }: { groupId: string; direction: 'up' | 'down' }) =>
-    UserSettingsService.modify(s => {
+    UserSettingsService.use(svc => svc.modify(s => {
       const idx = s.userGroups.findIndex(g => g.id === groupId);
       if (idx < 0) return s;
       const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
@@ -504,14 +506,14 @@ export const moveGroupAtom = appAtomRuntime.fn(
       const reordered = [...s.userGroups];
       [reordered[idx], reordered[targetIdx]] = [reordered[targetIdx]!, reordered[idx]!];
       return { ...s, userGroups: reordered };
-    })
+    }))
 );
 
 export const saveGroupsFromOnboardingAtom = appAtomRuntime.fn(
   (groups: readonly SettingsGroup[]) =>
-    UserSettingsService.modify(s => ({
+    UserSettingsService.use(svc => svc.modify(s => ({
       ...s,
       userGroups: [...groups],
-    }))
+    })))
 );
 

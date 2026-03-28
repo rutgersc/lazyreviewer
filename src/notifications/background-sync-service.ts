@@ -1,4 +1,4 @@
-import { Context, Data, Effect, Layer, PubSub, Ref, Console } from 'effect';
+import { Data, Effect, Layer, ServiceMap, PubSub, Ref, Console } from 'effect';
 import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { settingsAtom, repoSelectionAtom } from '../settings/settings-atom';
 import { resolveRepoPath } from '../userselection/userSelection';
@@ -21,24 +21,18 @@ export type PageSlotSnapshot = {
   readonly minutesUntilRefresh: number
 }
 
-export class BackgroundSyncService extends Context.Tag("BackgroundSyncService")<
-  BackgroundSyncService,
-  {
-    readonly statusPubSub: PubSub.PubSub<BackgroundSyncStatus>;
-    readonly slotsPubSub: PubSub.PubSub<readonly PageSlotSnapshot[]>;
-    readonly fetchLock: Ref.Ref<boolean>;
-  }
->() {
-  static Default = Layer.scoped(
-    BackgroundSyncService,
-    Effect.gen(function* () {
-      const pubsub = yield* PubSub.unbounded<BackgroundSyncStatus>();
-      const slotsPubSub = yield* PubSub.unbounded<readonly PageSlotSnapshot[]>();
-      const fetchLock = yield* Ref.make(false);
-      return { statusPubSub: pubsub, slotsPubSub, fetchLock };
-    })
-  );
-}
+export class BackgroundSyncService extends ServiceMap.Service<BackgroundSyncService, {
+  readonly statusPubSub: PubSub.PubSub<BackgroundSyncStatus>;
+  readonly slotsPubSub: PubSub.PubSub<readonly PageSlotSnapshot[]>;
+  readonly fetchLock: Ref.Ref<boolean>;
+}>()("BackgroundSyncService", {
+  make: Effect.gen(function* () {
+    const pubsub = yield* PubSub.unbounded<BackgroundSyncStatus>();
+    const slotsPubSub = yield* PubSub.unbounded<readonly PageSlotSnapshot[]>();
+    const fetchLock = yield* Ref.make(false);
+    return { statusPubSub: pubsub, slotsPubSub, fetchLock };
+  })
+}) {}
 
 export class FetchLockBusy extends Data.TaggedError("FetchLockBusy")<{}> {}
 
@@ -267,7 +261,9 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
   Effect.gen(function* () {
     yield* Console.log('[BackgroundSync] Daemon worker STARTED');
 
-    const initialSettings = yield* SettingsService.load;
+    const settingsService = yield* SettingsService;
+    const bgSyncReadModel = yield* BgSyncReadModelService;
+    const initialSettings = yield* settingsService.load;
     let seedTimestamps: Readonly<Record<string, readonly string[]>> = initialSettings.backgroundSync?.pageFetchTimestamps ?? {};
 
     const slots = new Map<string, PageSlot>()
@@ -283,7 +279,7 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
         continue;
       }
 
-      const bgState = yield* BgSyncReadModelService.get
+      const bgState = yield* bgSyncReadModel.get
       syncSlotsWithSelection(slots, config.repoPaths, config.baseIntervalMs, config.scalingFactorHours, seedTimestamps, bgState.mrFreshnessById, 20)
       yield* PubSub.publish(slotsPub, snapshotSlots(slots))
 
@@ -313,7 +309,7 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
       } as BackgroundSyncStatus);
 
       yield* Effect.gen(function* () {
-        const currentBgState = yield* BgSyncReadModelService.get
+        const currentBgState = yield* bgSyncReadModel.get
         const knownProjects = [...currentBgState.knownProjects.values()]
         const repo = resolveRepoPath(overdueSlot.repo, knownProjects)
 
@@ -372,7 +368,7 @@ const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<Backgro
 
         const updatedTimestamps = snapshotPageFetchTimestamps(slots)
         seedTimestamps = updatedTimestamps
-        yield* SettingsService.modify(s => ({
+        yield* settingsService.modify(s => ({
           ...s,
           backgroundSync: {
             ...s.backgroundSync!,

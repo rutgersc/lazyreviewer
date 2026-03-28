@@ -9,9 +9,11 @@ import { EventStorage } from "../events/events";
 import { projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections";
 
 const processMrs = (mrs: MergeRequest[]) =>
-  SettingsService.ensurePipelineJobsInSettings(mrs).pipe(
-    Effect.as(mrs.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()))
-  );
+  Effect.gen(function* () {
+    const settingsService = yield* SettingsService;
+    yield* settingsService.ensurePipelineJobsInSettings(mrs);
+    return mrs.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  });
 
 export const fetchMergeRequests = Effect.fn("getGitlabMrs")(function* (
   selectedUsernames: readonly string[],
@@ -53,7 +55,8 @@ export const refetchMrPipeline = Effect.fn("refetchMrPipeline")(function* (
 ) {
   yield* Console.log(`[Pipeline] Refetching pipeline for MR ${iid} (${mrId})`);
 
+  const eventStorage = yield* EventStorage
   const pipelineEvent = yield* getMrPipelineAsEvent(projectPath, iid);
-  yield* EventStorage.appendEvent(pipelineEvent);
+  yield* eventStorage.appendEvent(pipelineEvent);
 })
 

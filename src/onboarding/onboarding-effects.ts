@@ -122,6 +122,7 @@ export const fetchMrsForRepos = (
   repos: readonly DiscoveredRepo[],
   onProgress?: (repoPath: string, status: RepoFetchStatus) => void
 ) => Effect.gen(function* () {
+  const eventStorage = yield* EventStorage
   const results = yield* Effect.forEach(
     repos,
     (repo) => Effect.gen(function* () {
@@ -152,7 +153,7 @@ export const fetchMrsForRepos = (
       Effect.gen(function* () {
         yield* Console.log(`[Onboarding] Fetching ${jiraKeys.length} Jira tickets in background`)
         const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
-        yield* EventStorage.appendEvent(jiraEvent)
+        yield* eventStorage.appendEvent(jiraEvent)
       }).pipe(
         Effect.catch((err) =>
           Console.error(`[Onboarding] Error fetching Jira tickets: ${err}`)
@@ -172,9 +173,10 @@ export const fetchMrsForRepos = (
 })
 
 const fetchMrsForRepo = (repo: DiscoveredRepo) => Effect.gen(function* () {
+  const eventStorage = yield* EventStorage
   if (repo.provider === 'gitlab') {
     const mrEvent = yield* getGitlabMrsByProjectAsEvent(repo.fullPath, 'opened')
-    yield* EventStorage.appendEvent(mrEvent)
+    yield* eventStorage.appendEvent(mrEvent)
     const mrs = projectGitlabProjectMrsFetchedEvent(mrEvent)
     return {
       users: mrs.map((mr): DiscoveredUser => ({
@@ -189,7 +191,7 @@ const fetchMrsForRepo = (repo: DiscoveredRepo) => Effect.gen(function* () {
   const workspace = repo.workspace ?? repo.fullPath.split('/')[0] ?? ''
   const repoSlug = repo.repoSlug ?? repo.fullPath.split('/')[1] ?? ''
   const bbEvent = yield* getBitbucketPrsAsEvent(workspace, repoSlug, 'opened')
-  yield* EventStorage.appendEvent(bbEvent)
+  yield* eventStorage.appendEvent(bbEvent)
   const prs = projectBitbucketPrsFetchedEvent(bbEvent, new Map())
   return {
     users: prs.map((pr): DiscoveredUser => ({

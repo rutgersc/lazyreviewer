@@ -1,5 +1,5 @@
 import { Path } from "@effect/platform"
-import { Layer, Effect, Runtime, Scope, Stream } from "effect"
+import { Layer, Effect, Scope, Stream, ServiceMap } from "effect"
 import * as FileSystem from "@effect/platform-node/NodeFileSystem"
 import * as CommandExecutor from "@effect/platform-node/NodeCommandExecutor"
 import { Atom } from "effect/unstable/reactivity"
@@ -19,27 +19,27 @@ const commandExecutorLayer = CommandExecutor.layer.pipe(
   Layer.provide(fileSystemLayer)
 )
 
-const settingsServiceLayer = SettingsService.Default.pipe(
+const settingsServiceLayer = Layer.effect(SettingsService)(SettingsService.make).pipe(
   Layer.provide(fileSystemLayer)
 )
 
-const userSettingsServiceLayer = UserSettingsService.Default.pipe(
+const userSettingsServiceLayer = Layer.effect(UserSettingsService)(UserSettingsService.make).pipe(
   Layer.provide(fileSystemLayer)
 )
 
-const eventStorageLayer = EventStorage.Default.pipe(
+const eventStorageLayer = Layer.effect(EventStorage)(EventStorage.make).pipe(
   Layer.provide(fileSystemLayer)
 )
 
-const mrStateServiceLayer = MrStateService.Default.pipe(
+const mrStateServiceLayer = Layer.effect(MrStateService)(MrStateService.make).pipe(
   Layer.provide(eventStorageLayer)
 )
 
-const bgSyncReadModelLayer = BgSyncReadModelService.Default.pipe(
+const bgSyncReadModelLayer = Layer.effect(BgSyncReadModelService)(BgSyncReadModelService.make).pipe(
   Layer.provide(eventStorageLayer)
 )
 
-const pipelineJobMonitorLayer = PipelineJobMonitor.Default.pipe(
+const pipelineJobMonitorLayer = Layer.effect(PipelineJobMonitor)(PipelineJobMonitor.make).pipe(
   Layer.provide(mrStateServiceLayer),
   Layer.provide(eventStorageLayer),
   Layer.provide(settingsServiceLayer),
@@ -52,9 +52,9 @@ export const appLayer = Layer.mergeAll(
   commandExecutorLayer,
   settingsServiceLayer,
   userSettingsServiceLayer,
-  JiraScrollService.Default,
-  DiscussionScrollService.Default,
-  BackgroundSyncService.Default,
+  Layer.effect(JiraScrollService)(JiraScrollService.make),
+  Layer.effect(DiscussionScrollService)(DiscussionScrollService.make),
+  Layer.effect(BackgroundSyncService)(BackgroundSyncService.make),
   mrStateServiceLayer,
   bgSyncReadModelLayer
 )
@@ -62,22 +62,22 @@ export const appLayer = Layer.mergeAll(
 // Build a shared runtime using the atom system's memoMap
 // This ensures services are shared between atoms and standalone effects
 type AppLayerContext = Layer.Layer.Success<typeof appLayer>
-let _appRuntimePromise: Promise<Runtime.Runtime<AppLayerContext>> | undefined
-const buildRuntime = Effect.gen(function* () {
+let _appServiceMapPromise: Promise<ServiceMap.ServiceMap<AppLayerContext>> | undefined
+const buildServiceMap = Effect.gen(function* () {
   const scope = yield* Scope.make()
-  const context = yield* Layer.buildWithMemoMap(appLayer, Atom.runtime.memoMap, scope)
-  return Runtime.make({
-    context,
-    fiberRefs: Runtime.defaultRuntime.fiberRefs,
-    runtimeFlags: Runtime.defaultRuntime.runtimeFlags
-  })
+  return yield* Layer.buildWithMemoMap(appLayer, Atom.runtime.memoMap, scope)
 })
 
-export const getAppRuntime = (): Promise<Runtime.Runtime<AppLayerContext>> => {
-  if (!_appRuntimePromise) {
-    _appRuntimePromise = Effect.runPromise(buildRuntime)
+export const getAppServiceMap = (): Promise<ServiceMap.ServiceMap<AppLayerContext>> => {
+  if (!_appServiceMapPromise) {
+    _appServiceMapPromise = Effect.runPromise(buildServiceMap)
   }
-  return _appRuntimePromise
+  return _appServiceMapPromise
+}
+
+export const runWithAppServices = async <A, E>(effect: Effect.Effect<A, E, AppLayerContext>): Promise<A> => {
+  const serviceMap = await getAppServiceMap()
+  return Effect.runPromiseWith(serviceMap)(effect)
 }
 
 // Atom runtime - shares services via the same memoMap

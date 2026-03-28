@@ -284,7 +284,10 @@ const eventGroupedActions = (registry: AtomRegistry.AtomRegistry): Action[] => [
       registry.set(statusMessageAtom, 'Opening event in editor...');
       try {
         const filePath = await Effect.runPromise(
-          EventStorage.getEventFilePath(eventIndex).pipe(
+          Effect.gen(function* () {
+            const eventStorage = yield* EventStorage
+            return yield* eventStorage.getEventFilePath(eventIndex)
+          }).pipe(
             Effect.provide(appLayer)
           )
         );

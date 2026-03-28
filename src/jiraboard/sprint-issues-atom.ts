@@ -1,4 +1,5 @@
 import { Atom, AsyncResult } from "effect/unstable/reactivity";
+import { Effect } from "effect";
 import { EventStorage } from "../events/events";
 import { makeProjectedAtomFromProjection } from "../appLayerRuntime";
 import { defineProjection } from "../utils/define-projection";
@@ -16,8 +17,13 @@ export const sprintIssuesProjection = defineProjection({
   },
 });
 
+const eventsStreamEffect = Effect.gen(function* () {
+  const eventStorage = yield* EventStorage
+  return eventStorage.eventsStream
+})
+
 export const sprintIssuesByIdAtom = makeProjectedAtomFromProjection(
-  EventStorage.eventsStream,
+  eventsStreamEffect,
   sprintIssuesProjection
 ).pipe(
   Atom.map((result) =>

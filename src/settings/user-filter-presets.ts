@@ -1,4 +1,4 @@
-import { Effect, Schema, Stream, Console } from 'effect';
+import { Effect, Schema, ServiceMap, Stream, Console } from 'effect';
 import type { Struct as Struct_ } from 'effect/Schema';
 import { FileSystem } from '@effect/platform';
 import { DEFAULT_USERS, DEFAULT_GROUPS } from '../data/default-users-and-groups';
@@ -37,9 +37,8 @@ export const defaultUserSettings: UserSettings = decodeUserSettings({})
 const serializeUserSettings = (settings: UserSettings): string =>
   JSON.stringify(encodeUserSettings(settings), null, 2)
 
-export class UserSettingsService extends Effect.Service<UserSettingsService>()("UserSettingsService", {
-  accessors: true,
-  effect: Effect.gen(function* () {
+export class UserSettingsService extends ServiceMap.Service<UserSettingsService>()("UserSettingsService", {
+  make: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
 
     const load = Effect.gen(function* () {

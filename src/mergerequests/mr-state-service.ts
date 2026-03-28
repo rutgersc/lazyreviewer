@@ -1,13 +1,14 @@
-import { Effect, Stream, SubscriptionRef, Chunk } from "effect"
+import { Effect, ServiceMap, Stream, SubscriptionRef, Chunk } from "effect"
+
 import { EventStorage } from "../events/events"
 import { allMrsProjection } from "./all-mergerequests-projection"
 
-export class MrStateService extends Effect.Service<MrStateService>()("MrStateService", {
-  accessors: true,
-  scoped: Effect.gen(function* () {
+export class MrStateService extends ServiceMap.Service<MrStateService>()("MrStateService", {
+  make: Effect.gen(function* () {
     const stateRef = yield* SubscriptionRef.make(allMrsProjection.initialState)
+    const eventStorage = yield* EventStorage
 
-    yield* (yield* EventStorage.eventsStream).pipe(
+    yield* eventStorage.eventsStream.pipe(
       Stream.filter(allMrsProjection.isRelevantEvent),
       Stream.groupedWithin(200, "0.33 seconds"),
       Stream.scan(allMrsProjection.initialState, (state, events) =>
@@ -19,7 +20,7 @@ export class MrStateService extends Effect.Service<MrStateService>()("MrStateSer
 
     return {
       get: SubscriptionRef.get(stateRef),
-      changes: stateRef.changes
+      changes: SubscriptionRef.changes(stateRef)
     }
   })
 }) {}

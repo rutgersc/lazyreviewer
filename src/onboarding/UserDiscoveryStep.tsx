@@ -1,9 +1,9 @@
 import { TextAttributes, type ParsedKey } from '@opentui/core'
 import { useKeyboard } from '@opentui/react'
 import { useState, useEffect } from 'react'
-import { Effect, Runtime } from 'effect'
+import { Effect } from 'effect'
 import { Colors } from '../colors'
-import { getAppRuntime } from '../appLayerRuntime'
+import { runWithAppServices } from '../appLayerRuntime'
 import type { DiscoveredRepo, DiscoveredUser } from './onboarding-types'
 import type { RepoFetchStatus } from './onboarding-effects'
 import type { UserSelectionEntry, UserId } from '../userselection/userSelection'
@@ -33,8 +33,7 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
 
     const load = async () => {
       try {
-        const runtime = await getAppRuntime()
-        const discovered: DiscoveredUser[] = await Runtime.runPromise(runtime)(
+        const discovered: DiscoveredUser[] = await runWithAppServices(
           fetchMrsForRepos(repos, (repoPath, status) => {
             if (!cancelled) setRepoStatuses(prev => new Map([...prev, [repoPath, status]]))
           })
