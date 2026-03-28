@@ -1,5 +1,5 @@
 import { Schema } from "effect"
-import type { AccessLevelEnum, AccessTokenGranularScopeAccess, AccessTokenSort, AccessTokenState, AgentTokenStatus, AiAcceptedSelfHostedModels, AiAction, AiAdditionalContextCategory, AiCatalogFlowConfigType, AiCatalogItemReportReason, AiCatalogItemType, AiCatalogVersionBump, AiConversationsThreadsConversationType, AiFeatureProviders, AiFeatures, AiMessageRole, AiMessageType, AiModelSelectionFeatures, AiSelfHostedModelReleaseState, AiUsageEventType, AiUserMetricsSort, AlertManagementAlertSort, AlertManagementDomainFilter, AlertManagementIntegrationType, AlertManagementPayloadAlertFieldName, AlertManagementPayloadAlertFieldType, AlertManagementSeverity, AlertManagementStatus, AnalyticsAggregationPeriod, AnalyzerStatusEnum, AnalyzerTypeEnum, ApiFuzzingScanMode, ApprovalReportType, ApprovalRuleType, AssigneeWildcardId, AttributeFilterOperator, AutoStopSetting, AvailabilityEnum, AvailableExportFields, BlobViewersType, CarStatus, CiCatalogResourceScope, CiCatalogResourceSort, CiCatalogResourceVerificationLevel, CiConfigIncludeType, CiConfigStatus, CiFreezePeriodStatus, CiGroupVariablesSort, CiInputsType, CiJobAnalyticsSort, CiJobFailureReason, CiJobKind, CiJobSource, CiJobStatus, CiJobTokenScopeDirection, CiJobTokenScopePolicies, CiPipelineCreationStatus, CiPipelineSources, CiRunnerAccessLevel, CiRunnerCloudProvider, CiRunnerCreationMethod, CiRunnerCreationState, CiRunnerJobExecutionStatus, CiRunnerMembershipFilter, CiRunnerSort, CiRunnerStatus, CiRunnerType, CiRunnerUpgradeStatus, CiVariableSort, CiVariableType, CodeFlowNodeType, CodeQualityDegradationSeverity, CodequalityReportsComparerReportGenerationStatus, CodequalityReportsComparerStatus, CommitActionMode, CommitEncoding, ComparableSecurityReportType, ComparisonOperator, ComplianceFrameworkPresenceFilter, ComplianceFrameworkSort, ComplianceStandardsAdherenceCheckName, ComplianceStandardsAdherenceStandard, ComplianceStandardsAdherenceStatus, ComplianceViolationReason, ComplianceViolationSeverity, ComplianceViolationSort, ComplianceViolationStatus, ConanMetadatumFileTypeEnum, ContactSort, ContainerExpirationPolicyCadenceEnum, ContainerExpirationPolicyKeepEnum, ContainerExpirationPolicyOlderThanEnum, ContainerProtectionRepositoryRuleAccessLevel, ContainerProtectionTagRuleAccessLevel, ContainerRepositoryCleanupStatus, ContainerRepositorySort, ContainerRepositoryStatus, ContainerRepositoryTagSort, CustomFieldType, CustomerRelationsContactState, CustomerRelationsOrganizationState, CustomizableDashboardCategory, CvssSeverity, DastPreScanVerificationCheckType, DastPreScanVerificationStatus, DastProfileCadenceUnit, DastScanMethodType, DastScanTypeEnum, DastSiteProfileValidationStatusEnum, DastSiteValidationStatusEnum, DastSiteValidationStrategyEnum, DastTargetTypeEnum, DataVisualizationColorEnum, DataVisualizationWeightEnum, DependencyProxyManifestStatus, DependencySort, DeploymentApprovalSummaryStatus, DeploymentStatus, DeploymentTier, DeploymentsApprovalStatus, DesignCollectionCopyState, DesignVersionEvent, DetailedMergeStatus, DiffPositionType, DismissalType, DoraMetricBucketingInterval, DuoWorkflowStatus, DuoWorkflowStatusGroup, DuoWorkflowsWorkflowSort, EntryType, EpicSort, EpicState, EpicStateEvent, EpicWildcardId, ErrorTrackingStatus, EscalationRuleStatus, EventAction, ExclusionScannerEnum, ExclusionTypeEnum, ExtensionsMarketplaceOptInStatus, FindingReportsComparerStatus, FlowTypeSort, GeoRegistriesBulkAction, GeoRegistryAction, GeoRegistryClass, GeoRegistrySort, GitlabSubscriptionsAddOnType, GitlabSubscriptionsUserRole, GitlabSubscriptionsUserSort, GoogleCloudArtifactRegistryArtifactsSort, GroupMemberRelation, GroupPermission, GroupReleaseSort, GroupSecretsManagerStatus, GroupSort, GroupingEnum, HealthStatus, HealthStatusFilter, ImportSource, ImportSourceUserStatus, IntegrationType, IssuableResourceLinkType, IssuableSearchableField, IssuableSeverity, IssuableState, IssueCreationIterationWildcardId, IssueEscalationStatus, IssueSort, IssueState, IssueStateEvent, IssueType, IterationSearchableField, IterationSort, IterationState, IterationWildcardId, JobArtifactFileType, LabelSearchFieldList, LdapAdminRoleSyncStatus, ListLimitMetric, MeasurementIdentifier, MemberAccessLevel, MemberAccessLevelName, MemberApprovalStatusType, MemberRoleAdminPermission, MemberRolePermission, MemberRoleStandardPermission, MemberRolesAccessLevel, MemberRolesOrderBy, MemberSort, MergeRequestNewState, MergeRequestReviewState, MergeRequestSort, MergeRequestState, MergeRequestsDashboardListType, MergeStatus, MergeStrategyEnum, MergeTrainStatus, MergeabilityCheckIdentifier, MergeabilityCheckStatus, MilestoneSort, MilestoneStateEnum, MilestoneWildcardId, MlModelVersionsOrderBy, MlModelsOrderBy, MoveType, MutationOperationMode, NamespaceClusterAgentFilter, NamespaceProjectSort, NegatedIterationWildcardId, NegatedMilestoneWildcardId, NotesFilterType, OncallRotationUnitEnum, OpenTelemetryMetricType, OrganizationClusterAgentFilter, OrganizationGroupProjectDisplay, OrganizationGroupProjectSort, OrganizationSort, OrganizationUserAccessLevel, PackageDependencyType, PackageGroupSort, PackageManager, PackageSort, PackageStatus, PackageTypeEnum, PackagesCleanupKeepDuplicatedPackageFilesEnum, PackagesProtectionRuleAccessLevel, PackagesProtectionRuleAccessLevelForDelete, PackagesProtectionRulePackageType, PermissionBoundary, PipelineAnalyticsJobStatus, PipelineConfigSourceEnum, PipelineMergeRequestEventType, PipelineScheduleSort, PipelineScheduleStatus, PipelineScopeEnum, PipelineSecurityReportFindingSort, PipelineStatusEnum, PipelineVariablesDefaultRoleType, PolicyEnforcementType, PolicyProjectCreatedStatus, PolicyStatus, PolicyType, PolicyViolationErrorType, PolicyViolationStatus, PolicyViolations, PrincipalType, ProductAnalyticsState, ProjectArchived, ProjectComplianceControlStatus, ProjectComplianceRequirementStatusOrderBy, ProjectFeatureAccessLevel, ProjectMemberRelation, ProjectSecretStatus, ProjectSecretsManagerStatus, ProjectSort, ProjectTrackedContext, PromptInjectionProtectionLevel, ReachabilityType, RefType, RegistryState, RelationshipType, RelativePositionType, ReleaseAssetLinkType, ReleaseSort, ReleaseTagWildcardId, ReplicationStateEnum, RequirementState, RequirementStatusFilter, ResourceGroupsProcessMode, ReviewerWildcardId, RiskRating, SastUiComponentSize, SbomSourceType, ScanModeEnum, ScanStatus, SearchLevel, SearchType, SecretRotationStatus, SecretsManagementAction, SecurityAttributeBulkUpdateMode, SecurityCategoryEditableState, SecurityCategoryTemplateType, SecurityPolicyRelationType, SecurityPreferredLicenseSourceConfiguration, SecurityReportTypeEnum, SecurityScanProfileType, SecurityScannerType, SentryErrorStatus, ServiceType, ShaFormat, SharedRunnersSetting, SnippetBlobActionEnum, Sort, SortDirectionEnum, SourceUserSort, SquashOptionSetting, SubscriptionHistoryChangeType, SubscriptionStatus, TestCaseStatus, TestReportState, TimeboxReportErrorReason, TimelogSort, TodoActionEnum, TodoSort, TodoStateEnum, TodoTargetEnum, TrainingUrlRequestStatus, TypeEnum, UserCalloutFeatureNameEnum, UserGroupCalloutFeatureName, UserPromotionStatusType, UserState, UserType, ValueStreamDashboardMetric, ValueStreamDashboardProjectLevelMetric, ValueStreamStageEvent, ValueStreamStageItemSort, VerificationStateEnum, VerificationStatus, VisibilityLevelsEnum, VisibilityPipelineIdType, VisibilityScopesEnum, VulnerabilityDismissalReason, VulnerabilityExternalIssueLinkExternalTracker, VulnerabilityExternalIssueLinkType, VulnerabilityFalsePositiveDetectionStatus, VulnerabilityFindingTokenStatusState, VulnerabilityGrade, VulnerabilityIssueLinkType, VulnerabilityOwasp2021Top10, VulnerabilityOwaspTop10, VulnerabilityReportType, VulnerabilitySeverity, VulnerabilitySort, VulnerabilityState, VulnerabilityWorkflowName, WebhookAlertStatus, WebhookBranchFilterStrategy, WeightWildcardId, WorkItemAwardEmojiUpdateAction, WorkItemDiscussionsSort, WorkItemParentWildcardId, WorkItemRelatedLinkType, WorkItemSort, WorkItemState, WorkItemStateEvent, WorkItemStatusCategoryEnum, WorkItemSubscriptionEvent, WorkItemTodoUpdateAction, WorkItemWidgetType, WorkItemsSavedViewsSort, WorkflowEnvironment, WorkspaceVariableInputType, WorkspaceVariableType } from "./gitlab-base-types"
+import type { AccessLevelEnum, AccessTokenGranularScopeAccess, AccessTokenSort, AccessTokenState, AgentTokenStatus, AiAcceptedSelfHostedModels, AiAction, AiAdditionalContextCategory, AiCatalogFlowConfigType, AiCatalogItemReportReason, AiCatalogItemType, AiCatalogItemVerificationLevel, AiCatalogMcpServerAuthType, AiCatalogMcpServerTransport, AiCatalogVersionBump, AiConversationsThreadsConversationType, AiFeatureProviders, AiFeatures, AiFlowTriggerEventType, AiMessageRole, AiMessageType, AiModelSelectionFeatures, AiSelfHostedModelReleaseState, AiUsageEventType, AiUserMetricsSort, AlertManagementAlertSort, AlertManagementDomainFilter, AlertManagementIntegrationType, AlertManagementPayloadAlertFieldName, AlertManagementPayloadAlertFieldType, AlertManagementSeverity, AlertManagementStatus, AnalyticsAggregationPeriod, AnalyzerStatusEnum, AnalyzerTypeEnum, ApiFuzzingScanMode, ApprovalReportType, ApprovalRuleType, AssigneeWildcardId, AttributeFilterOperator, AutoStopSetting, AvailabilityEnum, AvailableExportFields, BlobViewersType, CarStatus, CiCatalogResourceScope, CiCatalogResourceSort, CiCatalogResourceVerificationLevel, CiConfigIncludeType, CiConfigStatus, CiFreezePeriodStatus, CiGroupVariablesSort, CiInputsType, CiJobAnalyticsSort, CiJobFailureReason, CiJobKind, CiJobSource, CiJobStatus, CiJobTokenScopeDirection, CiJobTokenScopePolicies, CiPipelineCreationStatus, CiPipelineSources, CiRunnerAccessLevel, CiRunnerCloudProvider, CiRunnerCreationMethod, CiRunnerCreationState, CiRunnerJobExecutionStatus, CiRunnerMembershipFilter, CiRunnerSort, CiRunnerStatus, CiRunnerType, CiRunnerUpgradeStatus, CiVariableSort, CiVariableType, CodeFlowNodeType, CodeQualityDegradationSeverity, CodequalityReportsComparerReportGenerationStatus, CodequalityReportsComparerStatus, CommitActionMode, CommitEncoding, ComparableSecurityReportType, ComparisonOperator, ComplianceFrameworkPresenceFilter, ComplianceFrameworkSort, ComplianceStandardsAdherenceCheckName, ComplianceStandardsAdherenceStandard, ComplianceStandardsAdherenceStatus, ComplianceViolationReason, ComplianceViolationSeverity, ComplianceViolationSort, ComplianceViolationStatus, ConanMetadatumFileTypeEnum, ContactSort, ContainerExpirationPolicyCadenceEnum, ContainerExpirationPolicyKeepEnum, ContainerExpirationPolicyOlderThanEnum, ContainerProtectionRepositoryRuleAccessLevel, ContainerProtectionTagRuleAccessLevel, ContainerRepositoryCleanupStatus, ContainerRepositorySort, ContainerRepositoryStatus, ContainerRepositoryTagSort, CustomFieldType, CustomerRelationsContactState, CustomerRelationsOrganizationState, CustomizableDashboardCategory, CustomizableDashboardGridHeight, CvssSeverity, DastPreScanVerificationCheckType, DastPreScanVerificationStatus, DastProfileCadenceUnit, DastScanMethodType, DastScanTypeEnum, DastSiteProfileValidationStatusEnum, DastSiteValidationStatusEnum, DastSiteValidationStrategyEnum, DastTargetTypeEnum, DataVisualizationColorEnum, DataVisualizationWeightEnum, DependencyProxyManifestStatus, DependencySort, DeploymentApprovalSummaryStatus, DeploymentStatus, DeploymentTier, DeploymentsApprovalStatus, DesignCollectionCopyState, DesignVersionEvent, DetailedMergeStatus, DiffPositionType, DismissalType, DoraMetricBucketingInterval, DuoWorkflowStatus, DuoWorkflowStatusGroup, DuoWorkflowsWorkflowSort, EntryType, EpicSort, EpicState, EpicStateEvent, EpicWildcardId, ErrorTrackingStatus, EscalationRuleStatus, EventAction, ExclusionScannerEnum, ExclusionTypeEnum, ExtensionsMarketplaceOptInStatus, FindingReportsComparerStatus, FlowTypeSort, GeoRegistriesBulkAction, GeoRegistryAction, GeoRegistryClass, GeoRegistrySort, GitlabSubscriptionsAddOnType, GitlabSubscriptionsUserRole, GitlabSubscriptionsUserSort, GoogleCloudArtifactRegistryArtifactsSort, GroupMemberRelation, GroupPermission, GroupReleaseSort, GroupSecretsManagerStatus, GroupSort, GroupingEnum, HealthStatus, HealthStatusFilter, ImportSource, ImportSourceUserStatus, IntegrationType, IssuableResourceLinkType, IssuableSearchableField, IssuableSeverity, IssuableState, IssueCreationIterationWildcardId, IssueEscalationStatus, IssueSort, IssueState, IssueStateEvent, IssueType, IterationSearchableField, IterationSort, IterationState, IterationWildcardId, JobArtifactFileType, LabelSearchFieldList, LdapAdminRoleSyncStatus, ListLimitMetric, MeasurementIdentifier, MemberAccessLevel, MemberAccessLevelName, MemberApprovalStatusType, MemberRoleAdminPermission, MemberRolePermission, MemberRoleStandardPermission, MemberRolesAccessLevel, MemberRolesOrderBy, MemberSort, MergeRequestNewState, MergeRequestReviewState, MergeRequestSort, MergeRequestState, MergeRequestsDashboardListType, MergeStatus, MergeStrategyEnum, MergeTrainStatus, MergeabilityCheckIdentifier, MergeabilityCheckStatus, MilestoneSort, MilestoneStateEnum, MilestoneWildcardId, MlModelVersionsOrderBy, MlModelsOrderBy, MoveType, MutationOperationMode, NamespaceClusterAgentFilter, NamespaceProjectSort, NegatedIterationWildcardId, NegatedMilestoneWildcardId, NotesFilterType, OncallRotationUnitEnum, OpenTelemetryMetricType, OrganizationClusterAgentFilter, OrganizationGroupProjectDisplay, OrganizationGroupProjectSort, OrganizationSort, OrganizationUserAccessLevel, PackageDependencyType, PackageGroupSort, PackageManager, PackageSort, PackageStatus, PackageTypeEnum, PackagesCleanupKeepDuplicatedPackageFilesEnum, PackagesProtectionRuleAccessLevel, PackagesProtectionRuleAccessLevelForDelete, PackagesProtectionRulePackageType, PermissionBoundary, PipelineAnalyticsJobStatus, PipelineConfigSourceEnum, PipelineMergeRequestEventType, PipelineScheduleSort, PipelineScheduleStatus, PipelineScopeEnum, PipelineSecurityReportFindingSort, PipelineStatusEnum, PipelineVariablesDefaultRoleType, PolicyEnforcementType, PolicyProjectCreatedStatus, PolicyStatus, PolicyType, PolicyViolationErrorType, PolicyViolationStatus, PolicyViolations, PrincipalType, ProductAnalyticsState, ProjectArchived, ProjectComplianceControlStatus, ProjectComplianceRequirementStatusOrderBy, ProjectFeatureAccessLevel, ProjectMemberRelation, ProjectSecretsManagerStatus, ProjectSort, ProjectTrackedContext, PromptInjectionProtectionLevel, ReachabilityType, RefType, RegistryState, RelationshipType, RelativePositionType, ReleaseAssetLinkType, ReleaseSort, ReleaseTagWildcardId, ReplicationStateEnum, RequirementState, RequirementStatusFilter, ResourceGroupsProcessMode, ReviewerWildcardId, RiskRating, SastUiComponentSize, SbomSourceType, ScanModeEnum, ScanStatus, SearchLevel, SearchType, SecretRotationStatus, SecretStatus, SecretsManagementAction, SecurityAttributeBulkUpdateMode, SecurityCategoryEditableState, SecurityCategoryTemplateType, SecurityPolicyRelationType, SecurityPreferredLicenseSourceConfiguration, SecurityReportTypeEnum, SecurityScanProfileType, SecurityScannerType, SecurityTrackedRefScope, SecurityTrackedRefState, SecurityTrackedRefType, SentryErrorStatus, ServiceType, ShaFormat, SharedRunnersSetting, SnippetBlobActionEnum, Sort, SortDirectionEnum, SourceUserSort, SquashOptionSetting, SubscriptionHistoryChangeType, SubscriptionStatus, TestCaseStatus, TestReportState, TimeboxReportErrorReason, TimelogSort, TodoActionEnum, TodoSort, TodoStateEnum, TodoTargetEnum, TrainingUrlRequestStatus, TypeEnum, UserCalloutFeatureNameEnum, UserGroupCalloutFeatureName, UserPromotionStatusType, UserState, UserType, ValueStreamDashboardMetric, ValueStreamDashboardProjectLevelMetric, ValueStreamStageEvent, ValueStreamStageItemSort, VerificationStateEnum, VerificationStatus, VisibilityLevelsEnum, VisibilityPipelineIdType, VisibilityScopesEnum, VulnerabilityDismissalReason, VulnerabilityExternalIssueLinkExternalTracker, VulnerabilityExternalIssueLinkType, VulnerabilityFalsePositiveDetectionStatus, VulnerabilityFindingTokenStatusState, VulnerabilityGrade, VulnerabilityIssueLinkType, VulnerabilityOwasp2021Top10, VulnerabilityOwaspTop10, VulnerabilityReportType, VulnerabilitySeverity, VulnerabilitySort, VulnerabilityState, VulnerabilityWorkflowName, WebhookAlertStatus, WebhookBranchFilterStrategy, WeightWildcardId, WorkItemAwardEmojiUpdateAction, WorkItemDiscussionsSort, WorkItemParentWildcardId, WorkItemRelatedLinkType, WorkItemSort, WorkItemState, WorkItemStateEvent, WorkItemStatusCategoryEnum, WorkItemSubscriptionEvent, WorkItemTodoUpdateAction, WorkItemWidgetType, WorkItemsSavedViewsSort, WorkflowEnvironment, WorkspaceVariableInputType, WorkspaceVariableType } from "./gitlab-base-types"
 export const AccessLevelEnumSchema: Schema.Codec<AccessLevelEnum> = Schema.Union([
   Schema.Literal('ADMIN'),
   Schema.Literal('DEVELOPER'),
@@ -83,6 +83,20 @@ export const AiCatalogItemTypeSchema: Schema.Codec<AiCatalogItemType> = Schema.U
   Schema.Literal('FLOW'),
   Schema.Literal('THIRD_PARTY_FLOW')
 ])
+export const AiCatalogItemVerificationLevelSchema: Schema.Codec<AiCatalogItemVerificationLevel> = Schema.Union([
+  Schema.Literal('GITLAB_MAINTAINED'),
+  Schema.Literal('GITLAB_PARTNER_MAINTAINED'),
+  Schema.Literal('UNVERIFIED'),
+  Schema.Literal('VERIFIED_CREATOR_MAINTAINED'),
+  Schema.Literal('VERIFIED_CREATOR_SELF_MANAGED')
+])
+export const AiCatalogMcpServerAuthTypeSchema: Schema.Codec<AiCatalogMcpServerAuthType> = Schema.Union([
+  Schema.Literal('NO_AUTH'),
+  Schema.Literal('OAUTH')
+])
+export const AiCatalogMcpServerTransportSchema: Schema.Codec<AiCatalogMcpServerTransport> = Schema.Union([
+  Schema.Literal('HTTP')
+])
 export const AiCatalogVersionBumpSchema: Schema.Codec<AiCatalogVersionBump> = Schema.Union([
   Schema.Literal('MAJOR'),
   Schema.Literal('MINOR'),
@@ -119,6 +133,12 @@ export const AiFeaturesSchema: Schema.Codec<AiFeatures> = Schema.Union([
   Schema.Literal('REVIEW_MERGE_REQUEST'),
   Schema.Literal('SUMMARIZE_NEW_MERGE_REQUEST'),
   Schema.Literal('SUMMARIZE_REVIEW')
+])
+export const AiFlowTriggerEventTypeSchema: Schema.Codec<AiFlowTriggerEventType> = Schema.Union([
+  Schema.Literal('ASSIGN'),
+  Schema.Literal('ASSIGN_REVIEWER'),
+  Schema.Literal('MENTION'),
+  Schema.Literal('PIPELINE_HOOKS')
 ])
 export const AiMessageRoleSchema: Schema.Codec<AiMessageRole> = Schema.Union([
   Schema.Literal('ASSISTANT'),
@@ -235,6 +255,8 @@ export const AiUserMetricsSortSchema: Schema.Codec<AiUserMetricsSort> = Schema.U
   Schema.Literal('REQUEST_REVIEW_DUO_CODE_REVIEW_ON_MR_BY_NON_AUTHOR_DESC'),
   Schema.Literal('START_MCP_TOOL_CALL_ASC'),
   Schema.Literal('START_MCP_TOOL_CALL_DESC'),
+  Schema.Literal('TOTAL_EVENTS_COUNT_ASC'),
+  Schema.Literal('TOTAL_EVENTS_COUNT_DESC'),
   Schema.Literal('TROUBLESHOOT_JOB_ASC'),
   Schema.Literal('TROUBLESHOOT_JOB_DESC'),
   Schema.Literal('TROUBLESHOOT_JOB_TOTAL_COUNT_ASC'),
@@ -492,8 +514,10 @@ export const CiJobFailureReasonSchema: Schema.Codec<CiJobFailureReason> = Schema
   Schema.Literal('INSUFFICIENT_UPSTREAM_PERMISSIONS'),
   Schema.Literal('INVALID_BRIDGE_TRIGGER'),
   Schema.Literal('IP_RESTRICTION_FAILURE'),
+  Schema.Literal('JOB_EXECUTION_SERVER_TIMEOUT'),
   Schema.Literal('JOB_EXECUTION_TIMEOUT'),
   Schema.Literal('JOB_ROUTER_FAILURE'),
+  Schema.Literal('JOB_TOKEN_EXPIRED'),
   Schema.Literal('MISSING_DEPENDENCY_FAILURE'),
   Schema.Literal('NO_MATCHING_RUNNER'),
   Schema.Literal('PIPELINE_LOOP_DETECTED'),
@@ -876,6 +900,10 @@ export const CustomerRelationsOrganizationStateSchema: Schema.Codec<CustomerRela
 export const CustomizableDashboardCategorySchema: Schema.Codec<CustomizableDashboardCategory> = Schema.Union([
   Schema.Literal('ANALYTICS')
 ])
+export const CustomizableDashboardGridHeightSchema: Schema.Codec<CustomizableDashboardGridHeight> = Schema.Union([
+  Schema.Literal('COMPACT'),
+  Schema.Literal('DEFAULT')
+])
 export const CvssSeveritySchema: Schema.Codec<CvssSeverity> = Schema.Union([
   Schema.Literal('CRITICAL'),
   Schema.Literal('HIGH'),
@@ -1180,6 +1208,7 @@ export const GeoRegistryClassSchema: Schema.Codec<GeoRegistryClass> = Schema.Uni
   Schema.Literal('JOB_ARTIFACT_REGISTRY'),
   Schema.Literal('LFS_OBJECT_REGISTRY'),
   Schema.Literal('MERGE_REQUEST_DIFF_REGISTRY'),
+  Schema.Literal('PACKAGES_HELM_METADATA_CACHE_REGISTRY'),
   Schema.Literal('PACKAGES_NUGET_SYMBOL_REGISTRY'),
   Schema.Literal('PACKAGE_FILE_REGISTRY'),
   Schema.Literal('PAGES_DEPLOYMENT_REGISTRY'),
@@ -1187,6 +1216,7 @@ export const GeoRegistryClassSchema: Schema.Codec<GeoRegistryClass> = Schema.Uni
   Schema.Literal('PROJECT_REPOSITORY_REGISTRY'),
   Schema.Literal('PROJECT_WIKI_REPOSITORY_REGISTRY'),
   Schema.Literal('SNIPPET_REPOSITORY_REGISTRY'),
+  Schema.Literal('SUPPLY_CHAIN_ATTESTATION_REGISTRY'),
   Schema.Literal('TERRAFORM_STATE_VERSION_REGISTRY'),
   Schema.Literal('UPLOAD_REGISTRY')
 ])
@@ -1532,6 +1562,7 @@ export const MemberRolePermissionSchema: Schema.Codec<MemberRolePermission> = Sc
   Schema.Literal('ADMIN_TERRAFORM_STATE'),
   Schema.Literal('ADMIN_VULNERABILITY'),
   Schema.Literal('ADMIN_WEB_HOOK'),
+  Schema.Literal('APPLY_SECURITY_SCAN_PROFILES'),
   Schema.Literal('ARCHIVE_PROJECT'),
   Schema.Literal('MANAGE_DEPLOY_TOKENS'),
   Schema.Literal('MANAGE_GROUP_ACCESS_TOKENS'),
@@ -1571,6 +1602,7 @@ export const MemberRoleStandardPermissionSchema: Schema.Codec<MemberRoleStandard
   Schema.Literal('ADMIN_TERRAFORM_STATE'),
   Schema.Literal('ADMIN_VULNERABILITY'),
   Schema.Literal('ADMIN_WEB_HOOK'),
+  Schema.Literal('APPLY_SECURITY_SCAN_PROFILES'),
   Schema.Literal('ARCHIVE_PROJECT'),
   Schema.Literal('MANAGE_DEPLOY_TOKENS'),
   Schema.Literal('MANAGE_GROUP_ACCESS_TOKENS'),
@@ -2096,13 +2128,6 @@ export const ProjectMemberRelationSchema: Schema.Codec<ProjectMemberRelation> = 
   Schema.Literal('INVITED_GROUPS'),
   Schema.Literal('SHARED_INTO_ANCESTORS')
 ])
-export const ProjectSecretStatusSchema: Schema.Codec<ProjectSecretStatus> = Schema.Union([
-  Schema.Literal('COMPLETED'),
-  Schema.Literal('CREATE_IN_PROGRESS'),
-  Schema.Literal('CREATE_STALE'),
-  Schema.Literal('UPDATE_IN_PROGRESS'),
-  Schema.Literal('UPDATE_STALE')
-])
 export const ProjectSecretsManagerStatusSchema: Schema.Codec<ProjectSecretsManagerStatus> = Schema.Union([
   Schema.Literal('ACTIVE'),
   Schema.Literal('DEPROVISIONING'),
@@ -2250,6 +2275,13 @@ export const SecretRotationStatusSchema: Schema.Codec<SecretRotationStatus> = Sc
   Schema.Literal('OK'),
   Schema.Literal('OVERDUE')
 ])
+export const SecretStatusSchema: Schema.Codec<SecretStatus> = Schema.Union([
+  Schema.Literal('COMPLETED'),
+  Schema.Literal('CREATE_IN_PROGRESS'),
+  Schema.Literal('CREATE_STALE'),
+  Schema.Literal('UPDATE_IN_PROGRESS'),
+  Schema.Literal('UPDATE_STALE')
+])
 export const SecretsManagementActionSchema: Schema.Codec<SecretsManagementAction> = Schema.Union([
   Schema.Literal('DELETE'),
   Schema.Literal('READ'),
@@ -2310,6 +2342,18 @@ export const SecurityScannerTypeSchema: Schema.Codec<SecurityScannerType> = Sche
   Schema.Literal('SAST_ADVANCED'),
   Schema.Literal('SAST_IAC'),
   Schema.Literal('SECRET_DETECTION')
+])
+export const SecurityTrackedRefScopeSchema: Schema.Codec<SecurityTrackedRefScope> = Schema.Union([
+  Schema.Literal('ALL_REFS'),
+  Schema.Literal('DEFAULT_BRANCHES')
+])
+export const SecurityTrackedRefStateSchema: Schema.Codec<SecurityTrackedRefState> = Schema.Union([
+  Schema.Literal('TRACKED'),
+  Schema.Literal('UNTRACKED')
+])
+export const SecurityTrackedRefTypeSchema: Schema.Codec<SecurityTrackedRefType> = Schema.Union([
+  Schema.Literal('BRANCH'),
+  Schema.Literal('TAG')
 ])
 export const SentryErrorStatusSchema: Schema.Codec<SentryErrorStatus> = Schema.Union([
   Schema.Literal('IGNORED'),
@@ -2525,8 +2569,6 @@ export const TypeEnumSchema: Schema.Codec<TypeEnum> = Schema.Union([
 ])
 export const UserCalloutFeatureNameEnumSchema: Schema.Codec<UserCalloutFeatureNameEnum> = Schema.Union([
   Schema.Literal('ACTIVE_USER_COUNT_THRESHOLD'),
-  Schema.Literal('AI_EXPERIMENT_SAST_FP_DETECTION'),
-  Schema.Literal('BRANCH_RULES_INFO_CALLOUT'),
   Schema.Literal('BRANCH_RULES_TIP_CALLOUT'),
   Schema.Literal('BUY_PIPELINE_MINUTES_NOTIFICATION_DOT'),
   Schema.Literal('CANARY_DEPLOYMENT'),
@@ -2535,19 +2577,14 @@ export const UserCalloutFeatureNameEnumSchema: Schema.Codec<UserCalloutFeatureNa
   Schema.Literal('CI_MINUTES_LIMIT_ALERT_EXCEEDED_STAGE'),
   Schema.Literal('CI_MINUTES_LIMIT_ALERT_WARNING_STAGE'),
   Schema.Literal('CLUSTER_SECURITY_WARNING'),
-  Schema.Literal('DEPLOYMENT_APPROVALS_EMPTY_STATE'),
-  Schema.Literal('DEPLOYMENT_DETAILS_FEEDBACK'),
-  Schema.Literal('DORA_DASHBOARD_MIGRATION_GROUP'),
-  Schema.Literal('DORA_DASHBOARD_MIGRATION_PROJECT'),
   Schema.Literal('DUO_AMAZON_Q_ALERT'),
   Schema.Literal('DUO_CHAT_CALLOUT'),
+  Schema.Literal('DUO_PANEL_AUTO_EXPANDED'),
   Schema.Literal('EMAIL_OTP_ENROLLMENT_CALLOUT'),
   Schema.Literal('EXPIRED_TRIAL_STATUS_WIDGET'),
-  Schema.Literal('EXPLORE_DUO_CORE_BANNER'),
   Schema.Literal('FEATURE_FLAGS_NEW_VERSION'),
   Schema.Literal('FILE_TREE_BROWSER_POPOVER'),
   Schema.Literal('FOCUSED_VULNERABILITY_REPORTING'),
-  Schema.Literal('GCP_SIGNUP_OFFER'),
   Schema.Literal('GEO_ENABLE_HASHED_STORAGE'),
   Schema.Literal('GEO_MIGRATE_HASHED_STORAGE'),
   Schema.Literal('GKE_CLUSTER_INTEGRATION'),
@@ -2560,51 +2597,45 @@ export const UserCalloutFeatureNameEnumSchema: Schema.Codec<UserCalloutFeatureNa
   Schema.Literal('NAMESPACE_STORAGE_LIMIT_ALERT_ERROR_THRESHOLD'),
   Schema.Literal('NAMESPACE_STORAGE_LIMIT_ALERT_WARNING_THRESHOLD'),
   Schema.Literal('NAMESPACE_STORAGE_PRE_ENFORCEMENT_BANNER'),
-  Schema.Literal('NEW_MERGE_REQUEST_DASHBOARD_WELCOME'),
-  Schema.Literal('NEW_MR_DASHBOARD_BANNER'),
-  Schema.Literal('NEW_TOP_LEVEL_GROUP_ALERT'),
   Schema.Literal('NEW_USER_SIGNUPS_CAP_REACHED'),
   Schema.Literal('OPENSSL_CALLOUT'),
   Schema.Literal('PERIOD_IN_TERRAFORM_STATE_NAME_ALERT'),
   Schema.Literal('PERSONAL_ACCESS_TOKEN_EXPIRY'),
-  Schema.Literal('PERSONAL_HOMEPAGE_PREFERENCES_BANNER'),
   Schema.Literal('PERSONAL_PROJECT_LIMITATIONS_BANNER'),
-  Schema.Literal('PIPELINE_INPUTS_ANNOUNCEMENT_BANNER'),
   Schema.Literal('PIPELINE_NEEDS_BANNER'),
   Schema.Literal('PIPELINE_NEEDS_HOVER_TIP'),
   Schema.Literal('PIPELINE_NEW_INPUTS_ADOPTION_BANNER'),
   Schema.Literal('PIPELINE_SCHEDULES_INPUTS_ADOPTION_BANNER'),
   Schema.Literal('PIPL_COMPLIANCE_ALERT'),
   Schema.Literal('PREVIEW_USER_OVER_LIMIT_FREE_PLAN_ALERT'),
-  Schema.Literal('PRODUCT_USAGE_DATA_COLLECTION_CHANGES'),
   Schema.Literal('PROFILE_PERSONAL_ACCESS_TOKEN_EXPIRY'),
   Schema.Literal('PROJECT_REPOSITORY_LIMIT_ALERT_WARNING_THRESHOLD'),
   Schema.Literal('REGISTRATION_ENABLED_CALLOUT'),
   Schema.Literal('SECURITY_CONFIGURATION_DEVOPS_ALERT'),
   Schema.Literal('SECURITY_CONFIGURATION_UPGRADE_BANNER'),
-  Schema.Literal('SECURITY_NEWSLETTER_CALLOUT'),
   Schema.Literal('SECURITY_POLICY_PROTECTED_BRANCH_MODIFICATION'),
-  Schema.Literal('SECURITY_TRAINING_FEATURE_PROMOTION'),
+  Schema.Literal('SECURITY_SCANNER_PROFILES_ANNOUNCEMENT'),
   Schema.Literal('SUBMIT_LICENSE_USAGE_DATA_BANNER'),
   Schema.Literal('SUGGEST_PIPELINE'),
   Schema.Literal('SUGGEST_POPOVER_DISMISSED'),
   Schema.Literal('TABS_POSITION_HIGHLIGHT'),
-  Schema.Literal('TERRAFORM_NOTIFICATION_DISMISSED'),
   Schema.Literal('THREAT_MONITORING_INFO'),
   Schema.Literal('TRANSITION_TO_JIHU_CALLOUT'),
   Schema.Literal('TRIAL_STATUS_REMINDER_D3'),
   Schema.Literal('TRIAL_STATUS_REMINDER_D14'),
-  Schema.Literal('TWO_FACTOR_AUTH_RECOVERY_SETTINGS_CHECK'),
   Schema.Literal('ULTIMATE_TRIAL'),
   Schema.Literal('UNFINISHED_TAG_CLEANUP_CALLOUT'),
   Schema.Literal('USER_REACHED_LIMIT_FREE_PLAN_ALERT'),
   Schema.Literal('VERIFICATION_REMINDER'),
+  Schema.Literal('VIRTUAL_REGISTRY_PERMISSION_CHANGE_ALERT'),
   Schema.Literal('VSD_FEEDBACK_BANNER'),
   Schema.Literal('VULNERABILITY_ARCHIVAL'),
   Schema.Literal('VULNERABILITY_REPORT_GROUPING'),
   Schema.Literal('VULNERABILITY_REPORT_LIMITED_EXPERIENCE'),
   Schema.Literal('WEB_IDE_ALERT_DISMISSED'),
   Schema.Literal('WEB_IDE_CI_ENVIRONMENTS_GUIDANCE'),
+  Schema.Literal('WORK_ITEMS_NAV_BADGE'),
+  Schema.Literal('WORK_ITEMS_ONBOARDING_MODAL'),
   Schema.Literal('WORK_ITEM_CONSOLIDATED_LIST_FEEDBACK'),
   Schema.Literal('WORK_ITEM_EPIC_FEEDBACK')
 ])
@@ -2614,15 +2645,12 @@ export const UserGroupCalloutFeatureNameSchema: Schema.Codec<UserGroupCalloutFea
   Schema.Literal('CI_MINUTES_LIMIT_ALERT_DANGER_STAGE'),
   Schema.Literal('CI_MINUTES_LIMIT_ALERT_EXCEEDED_STAGE'),
   Schema.Literal('CI_MINUTES_LIMIT_ALERT_WARNING_STAGE'),
-  Schema.Literal('COMPLIANCE_FRAMEWORK_SETTINGS_MOVED_CALLOUT'),
   Schema.Literal('END_OF_TRIAL_MODAL'),
   Schema.Literal('ENFORCEMENT_AT_LIMIT_ALERT'),
   Schema.Literal('EXPIRED_DUO_ENTERPRISE_TRIAL_WIDGET'),
   Schema.Literal('EXPIRED_DUO_PRO_TRIAL_WIDGET'),
   Schema.Literal('EXPIRED_TRIAL_STATUS_WIDGET'),
-  Schema.Literal('FOUNDATIONAL_ITEMS_AVAILABLE'),
   Schema.Literal('FREE_GROUP_LIMITED_ALERT'),
-  Schema.Literal('INVITE_MEMBERS_BANNER'),
   Schema.Literal('MRS_PREMIUM_MESSAGE_CALLOUT'),
   Schema.Literal('NAMESPACE_OVER_STORAGE_USERS_COMBINED_ALERT'),
   Schema.Literal('NAMESPACE_STORAGE_LIMIT_ALERT_ALERT_THRESHOLD'),
@@ -2635,10 +2663,8 @@ export const UserGroupCalloutFeatureNameSchema: Schema.Codec<UserGroupCalloutFea
   Schema.Literal('PROJECT_PREMIUM_MESSAGE_CALLOUT'),
   Schema.Literal('PROJECT_REPOSITORY_LIMIT_ALERT_WARNING_THRESHOLD'),
   Schema.Literal('REPOSITORY_PREMIUM_MESSAGE_CALLOUT'),
-  Schema.Literal('UNLIMITED_MEMBERS_DURING_TRIAL_ALERT'),
   Schema.Literal('USAGE_QUOTA_TRIAL_ALERT'),
   Schema.Literal('USER_REACHED_LIMIT_FREE_PLAN_ALERT'),
-  Schema.Literal('VIRTUAL_REGISTRY_PERMISSION_CHANGE_ALERT'),
   Schema.Literal('WEB_HOOK_DISABLED')
 ])
 export const UserPromotionStatusTypeSchema: Schema.Codec<UserPromotionStatusType> = Schema.Union([
@@ -2791,7 +2817,7 @@ export const VulnerabilityIssueLinkTypeSchema: Schema.Codec<VulnerabilityIssueLi
   Schema.Literal('CREATED'),
   Schema.Literal('RELATED')
 ])
-export const VulnerabilityOwasp2021Top10Schema = Schema.Union([
+export const VulnerabilityOwasp2021Top10Schema: Schema.Codec<VulnerabilityOwasp2021Top10> = Schema.Union([
   Schema.Literal('A01_2021'),
   Schema.Literal('A02_2021'),
   Schema.Literal('A03_2021'),
@@ -2813,7 +2839,7 @@ export const VulnerabilityOwasp2021Top10Schema = Schema.Union([
   Schema.Literal('A10_2021'),
   Schema.Literal('NONE')
 ])
-export const VulnerabilityOwaspTop10Schema = Schema.Union([
+export const VulnerabilityOwaspTop10Schema: Schema.Codec<VulnerabilityOwaspTop10> = Schema.Union([
   Schema.Literal('A1_2017'),
   Schema.Literal('A2_2017'),
   Schema.Literal('A3_2017'),
@@ -2860,7 +2886,8 @@ export const VulnerabilityStateSchema: Schema.Codec<VulnerabilityState> = Schema
 ])
 export const VulnerabilityWorkflowNameSchema: Schema.Codec<VulnerabilityWorkflowName> = Schema.Union([
   Schema.Literal('RESOLVE_SAST_VULNERABILITY'),
-  Schema.Literal('SAST_FP_DETECTION')
+  Schema.Literal('SAST_FP_DETECTION'),
+  Schema.Literal('SECRETS_FP_DETECTION')
 ])
 export const WebhookAlertStatusSchema: Schema.Codec<WebhookAlertStatus> = Schema.Union([
   Schema.Literal('DISABLED'),
