@@ -2,7 +2,7 @@ import { Schema } from "effect"
 import type { ProjectMRsQuery } from "../project-mrs.generated"
 import { MergeRequestFieldsFragmentSchema } from "./mrs.schema"
 
-export const ProjectMRsQuerySchema = Schema.Struct({
+export const ProjectMRsQuerySchema: Schema.Codec<ProjectMRsQuery> = Schema.Struct({
   project: Schema.NullOr(Schema.Struct({
     id: Schema.Any,
     name: Schema.String,

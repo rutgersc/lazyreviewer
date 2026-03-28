@@ -2,7 +2,7 @@ import { Schema } from "effect"
 import type { MergeRequestFieldsFragment, MRsQuery } from "../mrs.generated"
 import { DetailedMergeStatusSchema, MergeRequestStateSchema, CiJobStatusSchema } from "../generated/gitlab-base-types.schema"
 
-export const MergeRequestFieldsFragmentSchema = Schema.Struct({
+export const MergeRequestFieldsFragmentSchema: Schema.Codec<MergeRequestFieldsFragment> = Schema.Struct({
   id: Schema.Any,
   iid: Schema.String,
   name: Schema.NullOr(Schema.String),
@@ -96,7 +96,7 @@ export const MergeRequestFieldsFragmentSchema = Schema.Struct({
   }))
 })
 
-export const MRsQuerySchema = Schema.Struct({
+export const MRsQuerySchema: Schema.Codec<MRsQuery> = Schema.Struct({
   users: Schema.NullOr(Schema.Struct({
     count: Schema.Number,
     nodes: Schema.NullOr(Schema.Array(

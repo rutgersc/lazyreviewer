@@ -40,22 +40,22 @@ export const changesStream = Effect.fn(function* (_get: Atom.Context) {
     Stream.scan(
       initialAccumulator,
       (state: ChangeTrackingState, events) =>
-        events.reduce<ChangeTrackingState>((acc, event) => {
+        events.reduce<ChangeTrackingState>((state, event) => {
           const { mrDeltas, mrStatesForDelta } = mrChangeTrackingProjection.isRelevantEvent(event)
-            ? mrChangeTrackingProjection.project({ mrStatesForDelta: acc.mrStateForDeltaByMrId, mrDeltas: [] }, event)
-            : { mrDeltas: [], mrStatesForDelta: acc.mrStateForDeltaByMrId };
+            ? mrChangeTrackingProjection.project({ mrStatesForDelta: state.mrStateForDeltaByMrId, mrDeltas: [] }, event)
+            : { mrDeltas: [], mrStatesForDelta: state.mrStateForDeltaByMrId };
 
           const { jiraDeltas, jiraStatesForDelta } = jiraChangeTrackingProjection.isRelevantEvent(event)
-            ? jiraChangeTrackingProjection.project({ jiraStatesForDelta: acc.jiraStateForDeltaByIssueKey, jiraDeltas: [] }, event)
-            : { jiraDeltas: [], jiraStatesForDelta: acc.jiraStateForDeltaByIssueKey };
+            ? jiraChangeTrackingProjection.project({ jiraStatesForDelta: state.jiraStateForDeltaByIssueKey, jiraDeltas: [] }, event)
+            : { jiraDeltas: [], jiraStatesForDelta: state.jiraStateForDeltaByIssueKey };
 
           const sortedDeltas = [...mrDeltas, ...jiraDeltas]
             .sort((a, b) => a.changedAt.getTime() - b.changedAt.getTime());
 
-          const newDeltasByEventId = new Map(acc.deltasByEventId);
+          const newDeltasByEventId = new Map(state.deltasByEventId);
           newDeltasByEventId.set(event.eventId, sortedDeltas);
 
-          const newGroupedDeltasByEventId = new Map(acc.groupedDeltasByEventId);
+          const newGroupedDeltasByEventId = new Map(state.groupedDeltasByEventId);
           newGroupedDeltasByEventId.set(
             event.eventId,
             groupChanges(sortedDeltas.filter(c => !isFilteredSystemNote(c)))
