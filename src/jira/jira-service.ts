@@ -14,9 +14,9 @@ import { UnauthorizedError } from "../domain/unauthorized-error";
 
 export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
 
-const elabPattern = /ELAB-\d+/g;
-export const extractElabTickets = (...sources: readonly string[]): string[] =>
-  Array.from(new Set(sources.flatMap(s => s.match(elabPattern) ?? [])));
+const jiraKeyPattern = new RegExp(process.env.JIRA_KEY_PATTERN ?? '[A-Z][A-Z0-9]+-\\d+', 'g');
+export const extractJiraKeys = (...sources: readonly string[]): string[] =>
+  Array.from(new Set(sources.flatMap(s => s.match(jiraKeyPattern) ?? [])));
 
 
 export const extractTextFromJiraComment = (comment: JiraComment): string => {

@@ -35,6 +35,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 debug
 lazyreviewer-settings.json
+lazyreviewer-settings-users.json
+lazygitlab-settings*.json
 test-cache/mrs_opened_test_gitlab
 storage/events
 
@@ -43,4 +45,3 @@ vendor/
 storage/events_2
 storage/events2
 storage2
-lazyreviewer-settings-users.json

@@ -178,9 +178,7 @@ const extractEvents = (mr: MergeRequest): Event[] => {
 
   jiraIssues.forEach(issue => {
     issue.fields.comment.comments.forEach(comment => {
-      // Convert Jira API URL to browse URL with focused comment
-      // issue.self is like "https://scisure.atlassian.net/rest/api/3/issue/66048"
-      // We want "https://scisure.atlassian.net/browse/ELAB-18165?focusedCommentId=149420"
+      // Derive browse URL from the API self-link
       const jiraBaseUrl = issue.self.split('/rest/')[0];
       const jiraUrl = `${jiraBaseUrl}/browse/${issue.key}?focusedCommentId=${comment.id}`;
       events.push({

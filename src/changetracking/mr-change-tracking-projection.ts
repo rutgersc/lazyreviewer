@@ -234,7 +234,6 @@ const detectMergerequestChanges = (
       if (body.startsWith('mentioned in merge request')) {
         return 'mentioned-in-mr';
       }
-      // deleted the `ELAB-18404__Support_export_samples_query_in_BL_StrawberryShake` branch
       if (body.startsWith('deleted the ') && body.includes('branch')) {
         return 'branch-deleted';
       }
