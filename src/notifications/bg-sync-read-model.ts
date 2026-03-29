@@ -1,5 +1,5 @@
 import { Data, Effect, ServiceMap, Stream, SubscriptionRef } from "effect"
-import { groupedWithin } from "../utils/groupedWithin"
+import { groupedWithin } from "../effect-patches/groupedWithin"
 import type { MrGid } from "../domain/identifiers"
 import type { MergeRequestState } from "../domain/merge-request-state"
 import type { RepositoryId } from "../userselection/userSelection"

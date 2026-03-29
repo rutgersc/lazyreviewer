@@ -35,6 +35,27 @@ describe("groupedWithin", () => {
     expect(result).toEqual([[1, 2, 3], [4, 5]])
   })
 
+  test("emits partial batch via timeout when stream goes idle (no leftover)", async () => {
+    const result = await Effect.runPromise(Effect.gen(function*() {
+      const ref = yield* Ref.make<Array<Array<number>>>([])
+      const fiber = yield* Stream.concat(
+        Stream.fromIterable([1, 2]),
+        Stream.never
+      ).pipe(
+        groupedWithin(5, Duration.millis(200)),
+        Stream.runForEach((batch) =>
+          Ref.update(ref, (batches) => [...batches, Array.from(batch)])
+        ),
+        Effect.forkChild
+      )
+      yield* Effect.sleep(Duration.seconds(1))
+      const batches = yield* Ref.get(ref)
+      yield* Fiber.interrupt(fiber)
+      return batches
+    }))
+    expect(result).toEqual([[1, 2]])
+  })
+
   test("works correctly when item count is exact multiple of chunk size", async () => {
     const result = await Effect.runPromise(
       Stream.fromIterable([1, 2, 3, 4, 5, 6]).pipe(

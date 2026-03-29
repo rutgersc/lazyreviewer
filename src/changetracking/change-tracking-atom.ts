@@ -1,6 +1,6 @@
 import { Atom } from "effect/unstable/reactivity"
 import { Effect, Stream } from 'effect'
-import { groupedWithin } from '../utils/groupedWithin'
+import { groupedWithin } from '../effect-patches/groupedWithin'
 import { EventStorage } from '../events/events'
 import {
   jiraChangeTrackingProjection,

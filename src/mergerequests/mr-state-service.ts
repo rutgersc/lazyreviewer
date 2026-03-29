@@ -1,7 +1,7 @@
-import { Effect, ServiceMap, Stream, SubscriptionRef } from "effect"
+import { Console, Effect, ServiceMap, Stream, SubscriptionRef } from "effect"
 import { EventStorage } from "../events/events"
 import { allMrsProjection } from "./all-mergerequests-projection"
-import { groupedWithin } from "../utils/groupedWithin"
+import { groupedWithin } from "../effect-patches/groupedWithin"
 
 export class MrStateService extends ServiceMap.Service<MrStateService>()("MrStateService", {
   make: Effect.gen(function* () {

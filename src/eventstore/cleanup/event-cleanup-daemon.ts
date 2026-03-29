@@ -1,7 +1,7 @@
 import { Effect, Stream, Chunk, Console, HashMap } from "effect"
 import { EventStorage } from "../../events/events"
 import { eventsToDeleteTodoList } from "./events-to-delete-todolist"
-import { groupedWithin } from "../../utils/groupedWithin"
+import { groupedWithin } from "../../effect-patches/groupedWithin"
 
 export const ensureEventCleanupDaemon = Effect.gen(function* () {
   yield* Console.log("[EventCleanup] Starting event cleanup daemon")

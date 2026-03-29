@@ -4,20 +4,26 @@ import * as Pull from "effect/Pull"
 
 /**
  * Patched copy of Effect v4's aggregateWithin (effect@4.0.0-beta.42).
+ * To be resolved with https://github.com/Effect-TS/effect-smol/issues/1919.
  *
- * Bug: when the sink consumed leftover data from a previous cycle but then
- * got a halt from the buffer, `hadChunk` was false (it only tracks upstream
- * pushes) so the final partial batch was dropped.
+ * Bug: `hadChunk` was reset on every sinkUpstream pull (Stream.ts:8117),
+ * but checked asynchronously by the schedule (Stream.ts:8097) and
+ * catchSinkHalt (Stream.ts:8123). Because the reset happens before each
+ * buffer pull and the producer sets it true only after pushing, the
+ * schedule almost always sees hadChunk=false and never flushes partial
+ * batches. Leftover data from previous cycles also wasn't tracked.
  *
- * Fix: track `consumedLeftover` separately — one new boolean checked in
- * both the schedule guard and catchSinkHalt.
+ * Fix: move `hadChunk = false` to the sink cycle start (once per cycle,
+ * not per pull), and set `hadChunk = true` when returning leftover.
+ * Once any data enters the sink in a cycle, hadChunk stays true until
+ * the cycle ends.
  */
 const aggregateWithin = <A, E, R, B, A2, E2, R2, C, E3, R3>(
   self: Stream.Stream<A, E, R>,
   sink: Sink.Sink<B, A | A2, A2, E2, R2>,
   schedule: Schedule.Schedule<C, Option.Option<B>, E3, R3>
 ): Stream.Stream<B, E | E2 | E3, R | R2 | R3> =>
-  // Stream.ts:8068 — fromChannel(Channel.fromTransformBracket(Effect.fnUntraced(function*(...) {
+  // Stream.ts:8068
   Stream.fromChannel(Channel.fromTransformBracket(Effect.fnUntraced(
     function*(_upstream: Pull.Pull<unknown, unknown, unknown>, _: Scope.Scope, scope: Scope.Scope) {
       // Stream.ts:8069
@@ -35,11 +41,11 @@ const aggregateWithin = <A, E, R, B, A2, E2, R2, C, E3, R3>(
       yield* pull.pipe(
         pullLatch.whenOpen,
         Effect.flatMap((arr) => {
-          hadChunk = true
+          hadChunk = true // Stream.ts:8082
           pullLatch.closeUnsafe()
           return Queue.offer(buffer, arr)
         }),
-        Effect.forever, // Stream.ts:8086 — don't disable autoYield to prevent choking the schedule
+        Effect.forever, // Stream.ts:8086
         Effect.catchCause((cause) => Queue.failCause(buffer, cause)),
         Effect.forkIn(scope)
       )
@@ -47,14 +53,12 @@ const aggregateWithin = <A, E, R, B, A2, E2, R2, C, E3, R3>(
       // Stream.ts:8091-8101 — schedule -> buffer
       let lastOutput = Option.none<B>()
       let leftover: Arr.NonEmptyReadonlyArray<A2> | undefined
-      let consumedLeftover = false // BUG FIX: tracks leftover consumed this sink cycle
       const step = yield* Schedule.toStepWithSleep(schedule)
       const stepToBuffer = Effect.suspend(function loop(): Pull.Pull<never, E3, void, R3> {
         // Stream.ts:8096-8100
         return step(lastOutput).pipe(
-          // BUG FIX: also check consumedLeftover — leftover counts as data to flush
-          // Stream.ts:8097 (original: `!hadChunk && leftover === undefined`)
-          Effect.flatMap(() => !hadChunk && !consumedLeftover && leftover === undefined ? loop() : Queue.offer(buffer, scheduleStep)),
+          // Stream.ts:8097
+          Effect.flatMap(() => !hadChunk && leftover === undefined ? loop() : Queue.offer(buffer, scheduleStep)),
           Effect.flatMap(() => Effect.never),
           Pull.catchDone(() => Cause.done())
         )
@@ -73,11 +77,11 @@ const aggregateWithin = <A, E, R, B, A2, E2, R2, C, E3, R3>(
         if (leftover !== undefined) {
           const chunk = leftover
           leftover = undefined
-          consumedLeftover = true // BUG FIX: track that this cycle got data from leftover
+          hadChunk = true // FIX: leftover counts as data for this cycle
           return Effect.succeed(chunk)
         }
-        // Stream.ts:8117-8119
-        hadChunk = false
+        // FIX: removed `hadChunk = false` — moved to cycle start below
+        // Stream.ts:8118-8119
         pullLatch.openUnsafe()
         return pullFromBuffer
       })
@@ -85,10 +89,7 @@ const aggregateWithin = <A, E, R, B, A2, E2, R2, C, E3, R3>(
       // Stream.ts:8121-8127
       const catchSinkHalt = Effect.flatMap(([value, leftover_]: Sink.End<B, A2>) => {
         // Stream.ts:8122-8123 — ignore the last output if the upstream only pulled a halt
-        // BUG FIX: also check consumedLeftover — leftover counts as data
-        // (original: `!hadChunk && buffer.state._tag === "Done"`)
-        if (!hadChunk && !consumedLeftover && buffer.state._tag === "Done") return Cause.done()
-        consumedLeftover = false
+        if (!hadChunk && buffer.state._tag === "Done") return Cause.done()
         // Stream.ts:8124-8126
         lastOutput = Option.some(value)
         leftover = leftover_
@@ -97,24 +98,27 @@ const aggregateWithin = <A, E, R, B, A2, E2, R2, C, E3, R3>(
 
       // Stream.ts:8129-8137
       return Effect.suspend(() => {
-        // Stream.ts:8130-8132 — if the buffer has exited and there is no more data to process
+        // Stream.ts:8130-8132
         if (buffer.state._tag === "Done") {
           return buffer.state.exit as Exit.Exit<never, Cause.Done<void> | E> // Stream.ts:8132 — original cast
         }
-        // Stream.ts:8134 — `as any` is in the original: sink.transform(sinkUpstream as any, scope)
-        return Effect.succeed(Effect.suspend(() => sink.transform(sinkUpstream as any, scope)))
+        // Stream.ts:8134
+        return Effect.succeed(Effect.suspend(() => {
+          hadChunk = false // FIX: reset once per sink cycle, not per pull
+          return sink.transform(sinkUpstream as any, scope) // Stream.ts:8134 — original cast
+        }))
       }).pipe(
         // Stream.ts:8136
         Effect.flatMap((pull) => Effect.raceFirst(catchSinkHalt(pull), stepToBuffer))
       )
     }
-  ))) as any // widening needed: fromTransformBracket return type doesn't carry R through
+  ))) as any // widening: fromTransformBracket return type doesn't carry R through
 
 /**
  * Workaround for Effect v4 beta bug where Stream.groupedWithin drops
  * the final partial batch when upstream ends or goes idle.
  *
- * Patched copy of the real implementation with consumedLeftover fix.
+ * Patched copy of the real implementation — hadChunk reset moved to cycle start.
  * Source: vendor/effect-smol/packages/effect/src/Stream.ts:7644-7659
  */
 export const groupedWithin = (chunkSize: number, duration: Duration.Input) =>

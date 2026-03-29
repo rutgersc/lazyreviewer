@@ -1,6 +1,6 @@
 import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { Effect, Stream, Console, Fiber } from 'effect';
-import { groupedWithin } from '../utils/groupedWithin';
+import { groupedWithin } from '../effect-patches/groupedWithin';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserIdAtom } from '../settings/settings-atom';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';

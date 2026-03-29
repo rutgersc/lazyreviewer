@@ -1,7 +1,7 @@
 import { Stream, Effect } from "effect";
 import { appAtomRuntime } from "../appLayerRuntime";
 import { EventStorage, type LazyReviewerEvent } from "./events";
-import { groupedWithin } from "../utils/groupedWithin";
+import { groupedWithin } from "../effect-patches/groupedWithin";
 
 const eventsStreamEffect = Effect.gen(function* () {
   const eventStorage = yield* EventStorage
