@@ -1,6 +1,7 @@
 import { Effect, Stream, Chunk, Console, HashMap } from "effect"
 import { EventStorage } from "../../events/events"
 import { eventsToDeleteTodoList } from "./events-to-delete-todolist"
+import { groupedWithin } from "../../utils/groupedWithin"
 
 export const ensureEventCleanupDaemon = Effect.gen(function* () {
   yield* Console.log("[EventCleanup] Starting event cleanup daemon")
@@ -10,7 +11,7 @@ export const ensureEventCleanupDaemon = Effect.gen(function* () {
 
   yield* eventStorage.eventsStream.pipe(
     Stream.filter(eventsToDeleteTodoList.isRelevantEvent),
-    Stream.groupedWithin(200, "0.33 seconds"),
+    groupedWithin(200, "0.33 seconds"),
     Stream.scan(eventsToDeleteTodoList.initialState, (state, events) =>
       events.reduce((s, e) => eventsToDeleteTodoList.project(s, e), state)
     ),

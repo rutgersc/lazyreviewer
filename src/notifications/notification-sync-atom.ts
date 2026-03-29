@@ -1,5 +1,6 @@
 import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { Effect, Stream, Console, Fiber } from 'effect';
+import { groupedWithin } from '../utils/groupedWithin';
 import { appAtomRuntime } from '../appLayerRuntime';
 import { settingsAtom, currentUserIdAtom } from '../settings/settings-atom';
 import { changesStream, type ChangeTrackingState } from '../changetracking/change-tracking-atom';
@@ -122,7 +123,7 @@ const createNotificationDaemon = (get: Atom.Context) =>
     const lastProcessedTimestamp = settings.notifications.lastProcessedEventId;
 
     const stream = (yield* changesStream(get)).pipe(
-      Stream.groupedWithin(3000, "2 seconds"),
+      groupedWithin(3000, "2 seconds"),
       Stream.dropUntil(acc => {
         if (!lastProcessedTimestamp) {
           return true; // stop drop

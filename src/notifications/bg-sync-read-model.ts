@@ -1,4 +1,5 @@
 import { Data, Effect, ServiceMap, Stream, SubscriptionRef } from "effect"
+import { groupedWithin } from "../utils/groupedWithin"
 import type { MrGid } from "../domain/identifiers"
 import type { MergeRequestState } from "../domain/merge-request-state"
 import type { RepositoryId } from "../userselection/userSelection"
@@ -80,7 +81,7 @@ export class BgSyncReadModelService extends ServiceMap.Service<BgSyncReadModelSe
     const eventStorage = yield* EventStorage
 
     yield* eventStorage.eventsStream.pipe(
-      Stream.groupedWithin(200, "0.33 seconds"),
+      groupedWithin(200, "0.33 seconds"),
       Stream.scan(bgSyncProjection.initialState, (state, events) => {
         const relevant = events.filter(bgSyncProjection.isRelevantEvent)
         const projected = relevant.reduce((s, e) => bgSyncProjection.project(s, e), state)

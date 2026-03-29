@@ -1,5 +1,6 @@
 import { Atom } from "effect/unstable/reactivity"
 import { Effect, Stream } from 'effect'
+import { groupedWithin } from '../utils/groupedWithin'
 import { EventStorage } from '../events/events'
 import {
   jiraChangeTrackingProjection,
@@ -35,7 +36,7 @@ export const changesStream = Effect.fn(function* (_get: Atom.Context) {
   const eventStorage = yield* EventStorage
   return eventStorage.eventsStream.pipe(
     Stream.filter((event) => mrChangeTrackingProjection.isRelevantEvent(event) || jiraChangeTrackingProjection.isRelevantEvent(event)),
-    Stream.groupedWithin(300, "0.3 seconds"),
+    groupedWithin(300, "0.3 seconds"),
     Stream.tap(() => Effect.sleep("200 millis")),
     Stream.scan(
       initialAccumulator,
