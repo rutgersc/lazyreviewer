@@ -14,8 +14,8 @@ interface RepoSelectionStepProps {
 
 const isDefaultRepo = (repo: DiscoveredRepo): boolean =>
   repo.provider === 'gitlab'
-    ? DEFAULT_GITLAB_REPOS.includes(repo.fullPath as typeof DEFAULT_GITLAB_REPOS[number])
-    : DEFAULT_BITBUCKET_REPOS.includes(repo.fullPath as typeof DEFAULT_BITBUCKET_REPOS[number])
+    ? DEFAULT_GITLAB_REPOS.includes(repo.fullPath)
+    : DEFAULT_BITBUCKET_REPOS.includes(repo.fullPath)
 
 export default function RepoSelectionStep({ onNext, onBack }: RepoSelectionStepProps) {
   const [repos, setRepos] = useState<DiscoveredRepo[]>([])

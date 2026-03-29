@@ -2,41 +2,11 @@ import type { UserSelectionEntry } from '../userselection/userSelection'
 import { settingsGroupsToUserGroups } from '../userselection/userSelection'
 import { DEFAULT_GROUPS, DEFAULT_USERS } from '../data/default-users-and-groups'
 
-export const DEFAULT_GITLAB_REPOS = ['elab/elab', 'elab/BlackLotus', 'elab/helix' ] as const
-export const DEFAULT_BITBUCKET_REPOS = ['raftdev/core.iam', 'raftdev/Core.AI-Instructions'] as const
-export const BITBUCKET_WORKSPACE = 'raftdev'
+export const DEFAULT_GITLAB_REPOS: readonly string[] = []
+export const DEFAULT_BITBUCKET_REPOS: readonly string[] = []
+export const BITBUCKET_WORKSPACE = ''
 
-const florenceBEId = { type: 'groupId' as const, id: 'FlorenceBE' }
-const florenceFEId = { type: 'groupId' as const, id: 'FlorenceFE' }
-const erlenmeyerBEId = { type: 'groupId' as const, id: 'ErlenmeyerBE' }
-
-export const PREMADE_SELECTIONS: UserSelectionEntry[] = [
-  {
-    userSelectionEntryId: 'premade-florence',
-    name: 'Florence',
-    selection: [florenceBEId, florenceFEId],
-  },
-  {
-    userSelectionEntryId: 'premade-florenceBE',
-    name: 'Florence BE',
-    selection: [florenceBEId],
-  },
-  {
-    userSelectionEntryId: 'premade-florenceFE',
-    name: 'Florence FE',
-    selection: [florenceFEId],
-  },
-  {
-    userSelectionEntryId: 'premade-erlenmeyer',
-    name: 'Erlenmeyer',
-    selection: [erlenmeyerBEId],
-  },
-  {
-    userSelectionEntryId: 'premade-erlenmeyerBE',
-    name: 'Erlenmeyer BE',
-    selection: [erlenmeyerBEId],
-  },
-]
+export const PREMADE_SELECTIONS: UserSelectionEntry[] = []
 
 const defaultGroups = settingsGroupsToUserGroups(DEFAULT_GROUPS, DEFAULT_USERS)
 

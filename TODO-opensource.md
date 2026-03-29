@@ -2,10 +2,6 @@
 
 Company-specific content to remove before publishing.
 
-## Internal project/repo names
-- [ ] `src/onboarding/onboarding-defaults.ts` — replace `elab/*` repos, `raftdev/*` repos, `raftdev` workspace with examples
-- [ ] `default-settings.json` — replace `elab/*` projects and company-specific job names with examples
-
 ## Jira key pattern
 - [ ] `src/jira/jira-service.ts` — make `ELAB-\d+` pattern configurable, rename `extractElabTickets`
 - [ ] `src/gitlab/gitlab-projections.ts` — update import/call of renamed function
