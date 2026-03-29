@@ -5,6 +5,7 @@ import gql from 'graphql-tag';
 type GraphQLClientRequestHeaders = RequestOptions['requestHeaders'];
 export type ProjectQueryVariables = Types.Exact<{
   fullPath: Types.Scalars['ID']['input'];
+  authorUsername?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 
@@ -12,9 +13,9 @@ export type ProjectQuery = { readonly project: { readonly mergeRequests: { reado
 
 
 export const ProjectDocument = gql`
-    query Project($fullPath: ID!) {
+    query Project($fullPath: ID!, $authorUsername: String) {
   project(fullPath: $fullPath) {
-    mergeRequests(authorUsername: "r.schoorstra") {
+    mergeRequests(authorUsername: $authorUsername) {
       nodes {
         webPath
         name

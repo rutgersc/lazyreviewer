@@ -2,11 +2,6 @@
 
 Company-specific content to remove before publishing.
 
-## Employee data
-- [ ] `src/data/default-users-and-groups.ts` — replace 16 employees + 4 team definitions with example data
-- [ ] `src/graphql/project.graphql:3` — remove hardcoded `r.schoorstra` username
-- [ ] `src/graphql/project.generated.ts` — regenerate after fixing .graphql
-
 ## Internal project/repo names
 - [ ] `src/onboarding/onboarding-defaults.ts` — replace `elab/*` repos, `raftdev/*` repos, `raftdev` workspace with examples
 - [ ] `default-settings.json` — replace `elab/*` projects and company-specific job names with examples
