@@ -4,6 +4,7 @@ import { appAtomRuntime } from './appLayerRuntime';
 import { ensureBackgroundSyncWorker } from './notifications/background-sync-service';
 import { ensureNotificationDaemon } from './notifications/notification-sync-atom';
 import { ensurePipelineJobPriorityInSettings } from './settings/settings-ensure-pipeline-jobnames-sink';
+import { ensureDiscoveredUsersInSettings } from './settings/settings-ensure-users-sink';
 import { ensureEventCleanupDaemon } from './eventstore/cleanup/event-cleanup-daemon';
 
 export const appInitAtom = appAtomRuntime.atom(get =>
@@ -11,6 +12,7 @@ export const appInitAtom = appAtomRuntime.atom(get =>
     yield* Console.log('[AppInit] Ensuring all daemons are running');
     yield* Effect.all([
       ensurePipelineJobPriorityInSettings,
+      ensureDiscoveredUsersInSettings,
       ensureBackgroundSyncWorker(get),
       ensureNotificationDaemon(get),
       ensureEventCleanupDaemon,
