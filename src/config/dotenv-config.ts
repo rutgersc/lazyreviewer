@@ -110,7 +110,7 @@ const ENV_TEMPLATE = `# LazyReviewer Configuration
 
 # ── GitLab ────────────────────────────────────────────────
 # Base URL of your GitLab instance (no trailing slash)
-GITLAB_URL=https://gitlab.example.com
+GITLAB_URL=
 # Personal access token for the GitLab API.
 # Required scopes: read_api, read_user
 # Create one at: https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html
@@ -178,11 +178,16 @@ export const dotEnvFileChanges = Effect.gen(function* () {
   const initial = yield* readAndDerive;
   yield* Console.log(`[Config] Initial check: ${initial.length} missing credentials`);
 
-  const watchStream = effectFs.watch(envPath).pipe(
-    Stream.catch(() => Stream.empty),
+  // Watch the parent directory — some editors (vim, sed) replace files
+  // atomically (write tmp + rename), which removes the original inode
+  // and kills a file-level watcher. Watching the directory catches renames.
+  const dir = yield* Effect.sync(() => path.dirname(envPath));
+  const basename = yield* Effect.sync(() => path.basename(envPath));
+
+  const watchStream = effectFs.watch(dir).pipe(
+    Stream.filter(event => event.path === basename),
     Stream.debounce("200 millis"),
     Stream.mapEffect(() => readAndDerive),
-    Stream.changes
   );
 
   return Stream.concat(Stream.make(initial), watchStream);
