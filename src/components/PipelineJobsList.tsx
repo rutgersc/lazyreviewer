@@ -68,7 +68,7 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
   const runDownloadJobTrace = useAtomSet(downloadJobTraceAtom, { mode: 'promiseExit' });
   const setDownloadSignal = useAtomSet(jobLogDownloadSignalAtom);
   const downloadSignal = useAtomValue(jobLogDownloadSignalAtom);
-  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2, scrollerId: 'infoPane' });
   const [scrollToItemRequest, setScrollToItemRequest] = useAtom(requestScrollPipelineJobsListToJob);
 
   const pipelineJobs = getPipelineJobsFromMr(selectedMergeRequest)

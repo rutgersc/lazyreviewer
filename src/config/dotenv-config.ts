@@ -29,6 +29,13 @@ export const ENV_CREDENTIALS: EnvCredential[] = [
     type: 'token'
   },
   {
+    key: 'BITBUCKET_WORKSPACE',
+    displayName: 'Bitbucket Workspace',
+    description: 'Workspace slug from your Bitbucket URL (bitbucket.org/{workspace})',
+    required: false,
+    type: 'token'
+  },
+  {
     key: 'BITBUCKET_EMAIL',
     displayName: 'Bitbucket Email',
     description: 'Email for Bitbucket authentication',
@@ -110,6 +117,8 @@ GITLAB_URL=https://gitlab.example.com
 GITLAB_TOKEN=
 
 # ── Bitbucket ─────────────────────────────────────────────
+# Workspace slug (from your Bitbucket URL: bitbucket.org/{workspace})
+BITBUCKET_WORKSPACE=
 # App Password: https://id.atlassian.com/manage-profile/security/api-tokens
 # Required permissions: Repositories (Read), Pull requests (Read)
 BITBUCKET_EMAIL=

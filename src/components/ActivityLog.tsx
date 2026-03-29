@@ -251,7 +251,7 @@ export default function ActivityLog({ activePane, mergeRequest, columns }: Activ
   const [selectedActivityIndex, setSelectedActivityIndex] = useAtom(selectedActivityIndexAtom);
   const [targetNoteId, setTargetNoteId] = useAtom(targetNoteIdAtom);
   const runLoadJobLog = useAtomSet(loadJobLogAtom);
-  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2, scrollerId: 'infoPane' });
 
   const events = extractEvents(mergeRequest).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 

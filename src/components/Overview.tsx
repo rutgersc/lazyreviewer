@@ -24,7 +24,7 @@ export default function Overview({
   const [, setResolvedExpanded] = useAtom(resolvedExpandedAtom);
   const [copyNotification] = useAtom(copyNotificationAtom);
   const [scrollToDiscussionRequest, setScrollToDiscussionRequest] = useAtom(scrollToDiscussionRequestAtom);
-  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2, scrollerId: 'infoPane' });
 
   // Reset state when the selected MR changes
   const prevMrIdRef = useRef(selectedMergeRequest?.id);

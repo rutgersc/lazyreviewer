@@ -4,7 +4,7 @@ import { DEFAULT_GROUPS, DEFAULT_USERS } from '../data/default-users-and-groups'
 
 export const DEFAULT_GITLAB_REPOS: readonly string[] = []
 export const DEFAULT_BITBUCKET_REPOS: readonly string[] = []
-export const BITBUCKET_WORKSPACE = ''
+export const BITBUCKET_WORKSPACE = process.env.BITBUCKET_WORKSPACE ?? ''
 
 export const PREMADE_SELECTIONS: UserSelectionEntry[] = []
 

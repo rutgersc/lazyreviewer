@@ -38,7 +38,7 @@ export default function JiraIssuesList({ }: JiraIssuesListProps) {
   const registeredRef = useRef(false);
 
   // TODOR: do these scrolls serve the same purpose? can this be simplified?
-  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2, scrollerId: 'infoPane' });
   const { registerHandler } = useJiraScroll();
 
   const [scrollToItemRequest, setScrollToItemRequest] = useAtom(scrollToJiraCommentIdInJiraIssuesListAtom);

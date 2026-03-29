@@ -1,16 +1,32 @@
-import { useRef, type RefObject } from 'react';
+import { useRef, useEffect, type RefObject } from 'react';
 import { ScrollBoxRenderable, Renderable } from '@opentui/core';
+import { registerScroller, unregisterScroller } from './useScrollBox';
 
 interface UseAutoScrollOptions {
   lookahead?: number;
+  /** Register this scrollbox in the scroller registry for remote control via getScroller() */
+  scrollerId?: string;
+  /** Lines to scroll per ctrl+d/u action (default: 5) */
+  scrollerAmount?: number;
 }
 
 export function useAutoScroll(
-  { lookahead = 2 }: UseAutoScrollOptions = {},
+  { lookahead = 2, scrollerId, scrollerAmount = 5 }: UseAutoScrollOptions = {},
   providedRef?: RefObject<ScrollBoxRenderable | null>
 ) {
   const internalRef = useRef<ScrollBoxRenderable | null>(null);
   const scrollBoxRef = providedRef || internalRef;
+
+  useEffect(() => {
+    if (!scrollerId) return;
+    registerScroller(scrollerId, (direction) => {
+      const scrollBox = scrollBoxRef.current;
+      if (!scrollBox) return;
+      const delta = direction === 'down' ? scrollerAmount : -scrollerAmount;
+      scrollBox.scrollTo(Math.max(0, scrollBox.scrollTop + delta));
+    });
+    return () => unregisterScroller(scrollerId);
+  }, [scrollerId, scrollerAmount]);
 
   const calculateScroll = (itemTop: number, itemHeight: number, scrollBox: ScrollBoxRenderable) => {
     const viewportLayout = scrollBox.viewport.getLayoutNode().getComputedLayout();

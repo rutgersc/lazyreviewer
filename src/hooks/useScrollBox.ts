@@ -12,6 +12,11 @@ interface UseScrollBoxOptions {
 // Module-level registry - no React state needed!
 const scrollRefs = new Map<string, ScrollFunction>();
 
+/** Register a scroll function (for use outside useScrollBox) */
+export const registerScroller = (id: string, fn: ScrollFunction): void => { scrollRefs.set(id, fn); };
+/** Unregister a scroll function */
+export const unregisterScroller = (id: string): void => { scrollRefs.delete(id); };
+
 /**
  * Hook to register a scrollbox that can be controlled remotely.
  * Returns a ref to attach to the scrollbox element.

@@ -62,6 +62,8 @@ export const fetchGitlabProjects: Effect.Effect<RepoFetchResult> = Effect.gen(fu
 ))
 
 export const fetchBitbucketRepos = (workspace: string): Effect.Effect<RepoFetchResult> => Effect.gen(function* () {
+  if (!workspace) return { repos: [] as DiscoveredRepo[], warnings: [] as string[] }
+
   const email = yield* Config.string("BITBUCKET_EMAIL")
   const token = yield* Config.redacted("BITBUCKET_API_TOKEN")
 
@@ -79,7 +81,10 @@ export const fetchBitbucketRepos = (workspace: string): Effect.Effect<RepoFetchR
     })
 
     if (!response.ok) {
-      return { repos: [] as DiscoveredRepo[], warnings: [`Bitbucket: API returned ${response.status} ${response.statusText}`] as string[], next: undefined as string | undefined }
+      const hint = response.status === 410 || response.status === 404
+        ? ' — check BITBUCKET_WORKSPACE in your .env (should be your workspace slug from bitbucket.org/{workspace})'
+        : ''
+      return { repos: [] as DiscoveredRepo[], warnings: [`Bitbucket: API returned ${response.status} ${response.statusText}${hint}`] as string[], next: undefined as string | undefined }
     }
 
     const data = yield* Effect.tryPromise({
