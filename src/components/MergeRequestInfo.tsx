@@ -2,7 +2,7 @@ import { TextAttributes, SyntaxStyle, parseColor } from '@opentui/core';
 import { useMemo } from 'react';
 import type { Discussion, DiscussionNote } from '../domain/merge-request-schema';
 import { formatCompactTime } from '../utils/formatting';
-import { Colors } from '../colors';
+import { Colors, getColorScheme } from '../colors';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
@@ -67,6 +67,7 @@ export default function MergeRequestInfo() {
   };
 
   const markdownStyle = useMemo(() => SyntaxStyle.fromStyles({
+    "default": { fg: parseColor(Colors.PRIMARY) },
     "markup.heading.1": { fg: parseColor(Colors.ACCENT), bold: true },
     "markup.heading.2": { fg: parseColor(Colors.ACCENT), bold: true },
     "markup.heading.3": { fg: parseColor(Colors.ACCENT), bold: true },
@@ -87,7 +88,7 @@ export default function MergeRequestInfo() {
     "markup.quote": { fg: parseColor(Colors.DIM), italic: true },
     "markup.strikethrough": { fg: parseColor(Colors.DIM), dim: true },
     "punctuation.special": { fg: parseColor(Colors.DIM) },
-  }), []);
+  }), [getColorScheme()]);
 
   if (!mergeRequest) return null;
 

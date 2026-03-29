@@ -38,7 +38,7 @@ const LightColors = {
 
   PRIMARY: '#1f2328',
   SECONDARY: '#7d5600',
-  DIM: '#8b949e',
+  DIM: '#636c76',
 
   BACKGROUND: '#ffffff',
   BACKGROUND_ALT: '#f6f8fa',
