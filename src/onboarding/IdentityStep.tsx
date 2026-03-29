@@ -25,17 +25,61 @@ const resolveUserId = (username: string): UserId => {
   return predefined?.id ?? { type: 'userId', userId: username }
 }
 
+type FocusedField = 'list' | 'gitlab' | 'bitbucket'
+
 export default function IdentityStep({ discoveredUsers, onNext, onBack }: IdentityStepProps) {
   const [highlightIndex, setHighlightIndex] = useState(0)
-  const [inputFocused, setInputFocused] = useState(false)
+  const [focusedField, setFocusedField] = useState<FocusedField>(discoveredUsers.length === 0 ? 'gitlab' : 'list')
+  const [gitlabInput, setGitlabInput] = useState('')
+  const [bitbucketInput, setBitbucketInput] = useState('')
 
-  const handleSubmitInput = (value: string) => {
-    const trimmed = value.trim()
-    if (!trimmed) return
+  const submitManual = () => {
+    const gl = gitlabInput.trim()
+    const bb = bitbucketInput.trim()
+    if (!gl && !bb) return
+
     const existing = discoveredUsers.find(u =>
-      u.userId === trimmed || u.gitlab === trimmed || u.bitbucket === trimmed
+      (gl && (u.gitlab === gl || u.userId === gl)) ||
+      (bb && (u.bitbucket === bb || u.userId === bb))
     )
-    onNext(existing ?? resolveUserId(trimmed))
+    if (existing) {
+      onNext({
+        ...existing,
+        ...(gl && { gitlab: gl }),
+        ...(bb && { bitbucket: bb }),
+      })
+      return
+    }
+
+    const predefined = resolveUserId(gl || bb)
+    onNext({
+      ...predefined,
+      userId: gl || bb,
+      ...(gl && { gitlab: gl }),
+      ...(bb && { bitbucket: bb }),
+    })
+  }
+
+  const handleGitlabSubmit = (value: string) => {
+    setGitlabInput(value)
+    setFocusedField('bitbucket')
+  }
+
+  const handleBitbucketSubmit = (value: string) => {
+    setBitbucketInput(value)
+    const gl = gitlabInput.trim()
+    const bb = value.trim()
+    if (gl || bb) submitManual()
+  }
+
+  const cycleFocus = () => {
+    if (discoveredUsers.length === 0) {
+      setFocusedField(prev => prev === 'gitlab' ? 'bitbucket' : 'gitlab')
+    } else {
+      setFocusedField(prev =>
+        prev === 'list' ? 'gitlab' : prev === 'gitlab' ? 'bitbucket' : 'list'
+      )
+    }
   }
 
   useKeyboard((key: ParsedKey) => {
@@ -45,11 +89,11 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
     }
 
     if (key.name === 'tab') {
-      setInputFocused(prev => !prev)
+      cycleFocus()
       return
     }
 
-    if (!inputFocused) {
+    if (focusedField === 'list') {
       switch (key.name) {
         case 'j':
         case 'down':
@@ -69,6 +113,8 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
     }
   })
 
+  const inputOnList = focusedField === 'list'
+
   return (
     <box style={{ flexDirection: 'column', flexGrow: 1 }}>
       <box style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 1, paddingRight: 1 }}>
@@ -76,40 +122,56 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
           Step 4/4: Who Are You?
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          j/k: nav | Enter/dbl-click: select | Tab: type manually | Esc: back
+          Tab: switch fields | Enter: confirm | Esc: back
         </text>
       </box>
       <text style={{ fg: Colors.NEUTRAL, paddingLeft: 1 }} wrapMode='none'>
         {'─'.repeat(100)}
       </text>
 
-      <text style={{ fg: Colors.PRIMARY, paddingLeft: 1, paddingTop: 1 }} wrapMode='none'>
-        Select your identity:
-      </text>
+      <box style={{ paddingLeft: 1, paddingRight: 1, paddingTop: 1, flexDirection: 'column' }}>
+        <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
+          Enter your username for each provider:
+        </text>
+        <box style={{ flexDirection: 'row', gap: 1, paddingTop: 1 }}>
+          <text style={{ fg: focusedField === 'gitlab' ? Colors.INFO : Colors.SUPPORTING }} wrapMode='none'>
+            GitLab:
+          </text>
+          <input
+            focused={focusedField === 'gitlab'}
+            style={{
+              width: 30,
+              textColor: Colors.PRIMARY,
+              backgroundColor: focusedField === 'gitlab' ? Colors.SELECTED : Colors.BACKGROUND,
+            }}
+            placeholder="gitlab username"
+            onSubmit={handleGitlabSubmit as any}
+          />
+        </box>
+        <box style={{ flexDirection: 'row', gap: 1 }}>
+          <text style={{ fg: focusedField === 'bitbucket' ? Colors.INFO : Colors.SUPPORTING }} wrapMode='none'>
+            Bitbucket:
+          </text>
+          <input
+            focused={focusedField === 'bitbucket'}
+            style={{
+              width: 30,
+              textColor: Colors.PRIMARY,
+              backgroundColor: focusedField === 'bitbucket' ? Colors.SELECTED : Colors.BACKGROUND,
+            }}
+            placeholder="bitbucket username"
+            onSubmit={handleBitbucketSubmit as any}
+          />
+        </box>
+      </box>
 
-      {inputFocused && (
-        <box style={{ paddingLeft: 1, paddingRight: 1, flexDirection: 'column' }}>
-          <box style={{ flexDirection: 'row', gap: 1 }}>
-            <text style={{ fg: Colors.INFO }} wrapMode='none'>{'>'}</text>
-            <input
-              focused={true}
-              style={{
-                width: 40,
-                textColor: Colors.PRIMARY,
-                backgroundColor: Colors.SELECTED,
-              }}
-              placeholder="username"
-              onSubmit={handleSubmitInput as any}
-            />
-          </box>
+      {discoveredUsers.length > 0 && (
+        <box style={{ paddingLeft: 1, paddingTop: 1 }}>
+          <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD }} wrapMode='none'>
+            {inputOnList ? 'Discovered users' : 'Or select from discovered users (Tab)'}  ({discoveredUsers.length})
+          </text>
         </box>
       )}
-
-      <box style={{ paddingLeft: 1, paddingTop: 1 }}>
-        <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD }} wrapMode='none'>
-          Select user ({discoveredUsers.length})
-        </text>
-      </box>
 
       <scrollbox
         style={{
@@ -122,12 +184,12 @@ export default function IdentityStep({ discoveredUsers, onNext, onBack }: Identi
       >
         <box style={{ flexDirection: 'column' }}>
           {discoveredUsers.map((user, idx) => {
-            const isHighlighted = !inputFocused && idx === highlightIndex
+            const isHighlighted = inputOnList && idx === highlightIndex
             return (
               <box
                 key={user.userId}
                 onMouseDown={() => {
-                  setInputFocused(false)
+                  setFocusedField('list')
                   if (idx === highlightIndex) {
                     onNext(user)
                   } else {

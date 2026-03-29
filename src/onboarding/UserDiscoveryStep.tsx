@@ -7,7 +7,6 @@ import { runWithAppServices } from '../appLayerRuntime'
 import type { DiscoveredRepo, DiscoveredUser } from './onboarding-types'
 import type { RepoFetchStatus } from './onboarding-effects'
 import type { UserSelectionEntry, UserId } from '../userselection/userSelection'
-import { PREMADE_SELECTIONS, getSelectionMembers } from './onboarding-defaults'
 import { fetchMrsForRepos, mergeWithPredefinedUsers } from './onboarding-effects'
 import { settingsUsersToUserSelections } from '../userselection/userSelection'
 import { DEFAULT_USERS } from '../data/default-users-and-groups'
@@ -20,8 +19,6 @@ interface UserDiscoveryStepProps {
 
 export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscoveryStepProps) {
   const [mergedUsers, setMergedUsers] = useState<UserId[]>([])
-  const [selections] = useState<UserSelectionEntry[]>(PREMADE_SELECTIONS)
-  const [highlightIndex, setHighlightIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [repoStatuses, setRepoStatuses] = useState<ReadonlyMap<string, RepoFetchStatus>>(
     () => new Map(repos.map(r => [r.fullPath, 'pending' as const]))
@@ -60,25 +57,14 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
   }, [repos])
 
   const handleProceed = () => {
-    const sel = selections[highlightIndex]
-    if (sel) {
-      onNext(selections, mergedUsers, sel.userSelectionEntryId)
-    }
+    onNext([], mergedUsers, '')
   }
 
   useKeyboard((key: ParsedKey) => {
     switch (key.name) {
-      case 'j':
-      case 'down':
-        setHighlightIndex(i => Math.min(selections.length - 1, i + 1))
-        break
-      case 'k':
-      case 'up':
-        setHighlightIndex(i => Math.max(0, i - 1))
-        break
       case 'space':
       case 'return':
-        handleProceed()
+        if (!loading) handleProceed()
         break
       case 'escape':
         onBack()
@@ -90,10 +76,10 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
     <box style={{ flexDirection: 'column', flexGrow: 1 }}>
       <box style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 1, paddingRight: 1 }}>
         <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
-          Step 3/4: Choose your team — their merge requests will be shown by default
+          Step 3/4: Discovering users from merge requests
         </text>
         <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          j/k: nav | Enter/space: select | Esc: back
+          Enter: next | Esc: back
         </text>
       </box>
       <text style={{ fg: Colors.NEUTRAL, paddingLeft: 1 }} wrapMode='none'>
@@ -103,7 +89,7 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
       {loading && (
         <box style={{ flexDirection: 'column', paddingLeft: 2, paddingTop: 1 }}>
           <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
-            Discovering users from merge requests...
+            Fetching merge requests...
           </text>
           {[...repoStatuses.entries()].map(([repoPath, status]) => {
             const label = status === 'done' ? '✓ done' : status === 'error' ? '✗ error' : status === 'fetching' ? '⟳ fetching' : '· pending'
@@ -126,104 +112,69 @@ export default function UserDiscoveryStep({ repos, onNext, onBack }: UserDiscove
       )}
 
       {!loading && !error && (
-        <box style={{ flexDirection: 'row', flexGrow: 1 }}>
-          {/* Left: premade selections */}
-          <box style={{ flexDirection: 'column', width: '50%', border: true, borderColor: Colors.TRACK }}>
-            <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD, paddingLeft: 1 }} wrapMode='none'>
-              User Selections
-            </text>
-            <scrollbox
-              style={{
-                flexGrow: 1,
-                contentOptions: { backgroundColor: Colors.BACKGROUND },
-                scrollbarOptions: {
-                  trackOptions: { foregroundColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK },
-                },
-              }}
-            >
-              <box style={{ flexDirection: 'column' }}>
-                {selections.map((sel, idx) => {
-                  const isHighlighted = idx === highlightIndex
-                  return (
-                    <box
-                      key={sel.userSelectionEntryId}
-                      onMouseDown={() => {
-                        if (idx === highlightIndex) {
-                          handleProceed()
-                        } else {
-                          setHighlightIndex(idx)
-                        }
-                      }}
-                      style={{
-                        flexDirection: 'row',
-                        backgroundColor: isHighlighted ? Colors.SELECTED : 'transparent',
-                        paddingLeft: 1,
-                        gap: 1,
-                      }}
-                    >
-                      <text style={{ fg: isHighlighted ? Colors.SUCCESS : Colors.PRIMARY }} wrapMode='none'>
-                        {isHighlighted ? '> ' : '  '}{sel.name}
-                      </text>
-                      <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-                        ({getSelectionMembers(sel)})
-                      </text>
-                    </box>
-                  )
-                })}
-              </box>
-            </scrollbox>
-          </box>
-
-          {/* Right: discovered users */}
-          <box style={{ flexDirection: 'column', width: '50%' }}>
-            <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD, paddingLeft: 1 }} wrapMode='none'>
-              Discovered Users ({mergedUsers.length})
-            </text>
-            <scrollbox
-              style={{
-                flexGrow: 1,
-                contentOptions: { backgroundColor: Colors.BACKGROUND },
-                scrollbarOptions: {
-                  trackOptions: { foregroundColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK },
-                },
-              }}
-            >
-              <box style={{ flexDirection: 'column' }}>
-                {mergedUsers.map(user => (
-                  <box key={user.userId} style={{ paddingLeft: 2, flexDirection: 'row', gap: 1 }}>
-                    <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
-                      {user.userId}
-                    </text>
-                    {user.gitlab && (
-                      <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-                        gitlab: {user.gitlab}
-                      </text>
-                    )}
-                    {user.bitbucket && (
-                      <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-                        bb: {user.bitbucket}
-                      </text>
-                    )}
-                  </box>
-                ))}
-                {mergedUsers.length === 0 && (
-                  <text style={{ fg: Colors.SUPPORTING, paddingLeft: 2 }} wrapMode='none'>
-                    No users discovered (no open MRs?)
+        <scrollbox
+          style={{
+            flexGrow: 1,
+            contentOptions: { backgroundColor: Colors.BACKGROUND },
+            scrollbarOptions: {
+              trackOptions: { foregroundColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK },
+            },
+          }}
+        >
+          <box style={{ flexDirection: 'column' }}>
+            <box style={{ paddingLeft: 1 }}>
+              <text style={{ fg: Colors.WARNING, attributes: TextAttributes.BOLD }} wrapMode='none'>
+                Discovered Users ({mergedUsers.length})
+              </text>
+            </box>
+            {mergedUsers.map(user => (
+              <box key={user.userId} style={{ paddingLeft: 2, flexDirection: 'row', gap: 1 }}>
+                <text style={{ fg: Colors.PRIMARY }} wrapMode='none'>
+                  {user.userId}
+                </text>
+                {user.gitlab && (
+                  <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
+                    gitlab: {user.gitlab}
+                  </text>
+                )}
+                {user.bitbucket && (
+                  <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
+                    bb: {user.bitbucket}
                   </text>
                 )}
               </box>
-            </scrollbox>
+            ))}
+            {mergedUsers.length === 0 && (
+              <box style={{ paddingLeft: 2 }}>
+                <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
+                  No users discovered (no open MRs?)
+                </text>
+              </box>
+            )}
           </box>
-        </box>
+        </scrollbox>
       )}
 
-      <box style={{ paddingLeft: 1, paddingRight: 1 }}>
-        <text style={{ fg: Colors.SUPPORTING }} wrapMode='none'>
-          {selections[highlightIndex]
-            ? `Selected: ${selections[highlightIndex].name}`
-            : 'No selection'}
-        </text>
-      </box>
+      {!loading && !error && (
+        <box
+          onMouseDown={handleProceed}
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '100%',
+            zIndex: 10,
+            backgroundColor: Colors.BACKGROUND,
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            paddingRight: 1,
+          }}
+        >
+          <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrapMode='none'>
+            [ Continue → ]
+          </text>
+        </box>
+      )}
     </box>
   )
 }

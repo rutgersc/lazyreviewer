@@ -61,8 +61,9 @@ export const fetchGitlabProjects: Effect.Effect<RepoFetchResult> = Effect.gen(fu
   Effect.succeed({ repos: [] as DiscoveredRepo[], warnings: [String(warning)] })
 ))
 
-export const fetchBitbucketRepos = (workspace: string): Effect.Effect<RepoFetchResult> => Effect.gen(function* () {
-  if (!workspace) return { repos: [] as DiscoveredRepo[], warnings: [] as string[] }
+export const fetchBitbucketRepos: Effect.Effect<RepoFetchResult> = Effect.gen(function* () {
+  const workspace = process.env.BITBUCKET_WORKSPACE ?? ''
+  if (!workspace) return { repos: [] as DiscoveredRepo[], warnings: ['Bitbucket: no workspace configured (set BITBUCKET_WORKSPACE in .env)'] }
 
   const email = yield* Config.string("BITBUCKET_EMAIL")
   const token = yield* Config.redacted("BITBUCKET_API_TOKEN")

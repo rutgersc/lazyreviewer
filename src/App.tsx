@@ -335,8 +335,8 @@ export default function App() {
       case ActivePane.MergeRequests:
         return {
           left: "20%",
-          middle: "50%",
-          right: "30%",
+          middle: "45%",
+          right: "35%",
         };
 
       case ActivePane.InfoPane:
