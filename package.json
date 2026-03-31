@@ -1,8 +1,14 @@
 {
-  "name": "lazyreviewer",
+  "name": "@rutgersc/lazyreviewer",
+  "version": "0.1.0",
   "module": "src/index.tsx",
   "type": "module",
-  "private": true,
+  "bin": {
+    "lazyreviewer": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "bun run build.ts && bun run dist/",
     "watch": "bun --watch run src/index.tsx",

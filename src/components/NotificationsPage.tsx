@@ -5,6 +5,7 @@ import { Effect } from 'effect';
 import { Colors } from '../colors';
 import { notificationSettingsAtom, backgroundSyncSettingsAtom } from '../settings/settings-atom';
 import { openFileInEditor } from '../utils/open-file';
+import { SETTINGS_FILE as settingsFilePath } from '../settings/settings';
 import { appLayer } from '../appLayerRuntime';
 
 interface NotificationsPageProps {
@@ -45,7 +46,7 @@ export default function NotificationsPage({ onClose }: NotificationsPageProps) {
         break;
       case 'e':
         Effect.runPromise(
-          openFileInEditor('lazyreviewer-settings.json').pipe(Effect.provide(appLayer))
+          openFileInEditor(settingsFilePath).pipe(Effect.provide(appLayer))
         );
         break;
     }

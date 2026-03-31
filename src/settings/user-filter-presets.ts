@@ -1,8 +1,9 @@
 import { Effect, FileSystem, Schema, ServiceMap, Stream, Console } from 'effect';
 import type { Struct as Struct_ } from 'effect/Schema';
 import { DEFAULT_USERS, DEFAULT_GROUPS } from '../data/default-users-and-groups';
+import { appDataPath } from '../system/app-data-dir';
 
-const USER_SETTINGS_FILE = 'lazyreviewer-settings-users.json';
+const USER_SETTINGS_FILE = appDataPath('settings-users.json');
 
 const mutableStruct = <F extends Struct_.Fields>(fields: F) =>
   Schema.Struct(fields).mapFields(

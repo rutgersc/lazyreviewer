@@ -38,6 +38,7 @@ import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Effect } from 'effect';
 import { appLayer } from './appLayerRuntime';
 import { openFileInEditor } from './utils/open-file';
+import { SETTINGS_FILE as settingsFilePath } from './settings/settings';
 import { appInitAtom } from './app-init';
 import { clearUnreadCount } from './notifications/title-indicator';
 import { missingCredentialsAtom } from './config/config-atom';
@@ -253,7 +254,7 @@ export default function App() {
       description: 'Open settings JSON',
       handler: async () => {
         await Effect.runPromise(
-          openFileInEditor('lazyreviewer-settings.json').pipe(Effect.provide(appLayer))
+          openFileInEditor(settingsFilePath).pipe(Effect.provide(appLayer))
         );
       },
     },

@@ -1,7 +1,8 @@
 import { Effect, FileSystem, Path, Schema, ServiceMap, Stream, PubSub, Console, Ref } from "effect"
 import { EventSchema, type LazyReviewerEvent, type InMemoryLazyReviewerEvent, type AnyLazyReviewerEvent } from "../events/events"
+import { appDataPath } from "../system/app-data-dir"
 
-const EVENTS_DIR = "storage/events"
+const EVENTS_DIR = appDataPath("events")
 
 // Migration: add missing fields to old events before schema validation
 const migrateEventJson = (data: unknown): unknown => {

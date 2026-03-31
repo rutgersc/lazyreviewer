@@ -4,8 +4,10 @@ import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { MrGid } from '../domain/identifiers';
 import { PipelineJobSchema } from '../domain/merge-request-schema';
 
-const SETTINGS_FILE = 'lazyreviewer-settings.json';
-const DEFAULT_SETTINGS_FILE = 'default-settings.json';
+import { appDataPath } from '../system/app-data-dir';
+
+export const SETTINGS_FILE = appDataPath('settings.json');
+const DEFAULT_SETTINGS_FILE = appDataPath('default-settings.json');
 
 // v4: Schema.mutable only works on arrays. For structs, use mapFields with mutableKey.
 const mutableStruct = <F extends Struct_.Fields>(fields: F) =>

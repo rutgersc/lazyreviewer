@@ -17,4 +17,10 @@ if (!result.success) {
   process.exit(1);
 }
 
+const indexPath = "./dist/index.js";
+const content = await Bun.file(indexPath).text();
+if (!content.startsWith("#!/")) {
+  await Bun.write(indexPath, `#!/usr/bin/env bun\n${content}`);
+}
+
 console.log("✅ Build completed");
