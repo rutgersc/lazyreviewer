@@ -101,8 +101,10 @@ export const deriveMissingCredentials = (envVars: Record<string, string>): Missi
     .filter(c => isMissingValue(c.currentValue));
 
 
+import { appDataPath } from '../system/app-data-dir';
+
 export const getEnvFilePath = (): string =>
-  path.join(process.cwd(), '.env');
+  appDataPath('.env');
 
 const ENV_TEMPLATE = `# LazyReviewer Configuration
 # Fill in the credentials for the services you want to use.
