@@ -1,4 +1,4 @@
-import { Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { Atom, AsyncResult, AtomRegistry } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
@@ -212,7 +212,7 @@ export const mrActionsAtom = Atom.make((get) => {
 
         const jiraIssuesMap = registry.get(allJiraIssuesAtom);
         const allMrsResult = registry.get(allMrsAtom);
-        const allMrsByGid = Result.match(allMrsResult, {
+        const allMrsByGid = AsyncResult.match(allMrsResult, {
           onInitial: () => new Map(),
           onSuccess: (state) => state.value.mrsByGid,
           onFailure: () => new Map(),

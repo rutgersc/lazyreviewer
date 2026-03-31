@@ -5,7 +5,7 @@ import gql from 'graphql-tag';
 type GraphQLClientRequestHeaders = RequestOptions['requestHeaders'];
 export type ProjectQueryVariables = Types.Exact<{
   fullPath: Types.Scalars['ID']['input'];
-  authorUsername?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  authorUsername: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 
