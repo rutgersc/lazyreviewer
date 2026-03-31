@@ -69,6 +69,7 @@ export const MergeRequestSchema = Schema.Struct({
   webUrl: Schema.String,
   sourcebranch: Schema.String,
   targetbranch: Schema.String,
+  diffHeadSha: Schema.NullOr(Schema.String),
   detailedMergeStatus: Schema.NullOr(DetailedMergeStatusSchema),
   project: Schema.Struct({
     name: Schema.String,

@@ -8,6 +8,7 @@ fragment MergeRequestFields on MergeRequest {
   sourceBranch
   targetBranch
   detailedMergeStatus
+  diffHeadSha
   project {
     name
     path

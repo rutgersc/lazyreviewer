@@ -12,6 +12,7 @@ export const MergeRequestFieldsFragmentSchema: Schema.Codec<MergeRequestFieldsFr
   sourceBranch: Schema.String,
   targetBranch: Schema.String,
   detailedMergeStatus: Schema.NullOr(DetailedMergeStatusSchema),
+  diffHeadSha: Schema.NullOr(Schema.String),
   project: Schema.Struct({
     name: Schema.String,
     path: Schema.String,

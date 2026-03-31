@@ -4,7 +4,7 @@ import { AsyncResult, Atom } from "effect/unstable/reactivity"
 import { useAtomValue, useAtomSet } from "@effect/atom-react";
 import { sprintFilterAtom, setSprintFilterAtom } from '../../settings/settings-atom';
 import { useMemo, useRef, useState } from 'react';
-import { Colors } from '../../colors';
+import { Colors, getColorScheme } from '../../colors';
 import {
   loadSprintsAtom,
   loadSprintIssuesAtom,
@@ -183,6 +183,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     scrollToItem(index);
   };
 
+  const isLightMode = getColorScheme() === 'light';
   const searchLower = searchQuery.toLowerCase();
   const itemMatchesSearch = (flatItem: (typeof flatItems)[number]) => {
     if (!searchQuery) return true;
@@ -344,6 +345,16 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         setEpicLegendVisible(!epicLegendVisible);
         break;
       case 'x': {
+        const xItem = flatItems[selectedIndex];
+        if (xItem?.type === 'detail' && xItem.detailKind === 'mr') {
+          openUrl(xItem.mr.webUrl);
+        } else if (xItem?.type === 'issue') {
+          const baseUrl = process.env.JIRA_BASE_URL || 'https://scisure.atlassian.net';
+          openUrl(`${baseUrl}/browse/${xItem.item.key}`);
+        }
+        break;
+      }
+      case 'tab': {
         const nextState: Record<CollapseState, CollapseState> = {
           normal: 'expanded',
           expanded: 'collapsed',
@@ -362,26 +373,8 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         if (key.shift) {
           setSortPopupVisible(true);
           setSortSelectedIndex(SORT_OPTIONS.findIndex(o => o.key === sortOrder));
-        } else {
-          const oItem = flatItems[selectedIndex];
-          if (oItem?.type === 'detail' && oItem.detailKind === 'mr') {
-            openUrl(oItem.mr.webUrl);
-          } else if (oItem?.type === 'issue') {
-            const baseUrl = getJiraBaseUrl();
-            openUrl(`${baseUrl}/browse/${oItem.item.key}`);
-          }
         }
         break;
-      case 'i': {
-        const iItem = flatItems[selectedIndex];
-        if (iItem?.type === 'detail' && iItem.detailKind === 'mr') {
-          openUrl(iItem.mr.webUrl);
-        } else if (iItem?.type === 'issue') {
-          const baseUrl = getJiraBaseUrl();
-          openUrl(`${baseUrl}/browse/${iItem.item.key}`);
-        }
-        break;
-      }
       case 'c': {
         const cItem = flatItems[selectedIndex];
         if (cItem?.type === 'detail' && cItem.detailKind === 'mr') {
@@ -476,7 +469,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
     const isDimmed = !itemMatchesSearch(flatItem);
     const isRowDim = isDimmed || !!flatItem.dimColor;
     const dimColor = isDimmed ? Colors.SUPPORTING : (flatItem.dimColor ?? Colors.SUPPORTING);
-    const dimAttrStyle = isRowDim ? { attributes: TextAttributes.DIM } as const : {};
+    const dimAttrStyle = isRowDim && !isLightMode ? { attributes: TextAttributes.DIM } as const : {};
     const rowColor = isRowDim ? dimColor : flatItem.statusColor;
 
     const mr = flatItem.mr;
@@ -541,7 +534,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
       const priority = isTopLevel ? mapPriority(item.fields.priority.name) : null;
       const isRowDim = isDimmed || !!status.dimColor;
       const dimColor = isDimmed ? Colors.SUPPORTING : (status.dimColor ?? Colors.SUPPORTING);
-      const dimAttrStyle = isRowDim ? { attributes: TextAttributes.DIM } as const : {};
+      const dimAttrStyle = isRowDim && !isLightMode ? { attributes: TextAttributes.DIM } as const : {};
 
       const showSeparator = flatItem.itemIndex === 0 && flatItem.storyIndex > 0;
 
@@ -569,8 +562,8 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
           {!isTopLevel && <text style={{ ...dimAttrStyle }} wrapMode="none"> </text>}
           <text style={{ fg: isRowDim ? dimColor : status.color, ...dimAttrStyle }} wrapMode="none">{statusPadded}</text>
           <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, ...dimAttrStyle }} wrapMode="none">{icon}</text>
-          <text style={{ fg: isRowDim ? dimColor : status.color, ...(isRowDim ? { attributes: TextAttributes.DIM } : isTopLevel ? { attributes: TextAttributes.BOLD } : {}) }} wrapMode="none">{keyPadded}</text>
-          <text style={{ fg: isRowDim ? dimColor : (isTopLevel ? Colors.SECONDARY : status.color), flexShrink: 1, ...(isRowDim ? { attributes: TextAttributes.DIM } : isTopLevel ? { attributes: TextAttributes.BOLD } : {}) }} wrapMode="none">{item.fields.summary}</text>
+          <text style={{ fg: isRowDim ? dimColor : status.color, ...(isRowDim ? dimAttrStyle : isTopLevel ? { attributes: TextAttributes.BOLD } : {}) }} wrapMode="none">{keyPadded}</text>
+          <text style={{ fg: isRowDim ? dimColor : (isTopLevel ? Colors.SECONDARY : status.color), flexShrink: 1, ...(isRowDim ? dimAttrStyle : isTopLevel ? { attributes: TextAttributes.BOLD } : {}) }} wrapMode="none">{item.fields.summary}</text>
           {item.fields.assignee && (
             <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, ...dimAttrStyle }} wrapMode="none"> @{item.fields.assignee.displayName}</text>
           )}
@@ -756,7 +749,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
             ✦ Sprint Board {selectedSprint ? `- ${selectedSprint.name}` : ''} {subtasksCollapsed !== 'normal' ? `[${subtasksCollapsed}]` : ''}
           </text>
           <text style={{ fg: Colors.SUPPORTING, flexShrink: 1 }} wrapMode="none">
-            q: close | ↵: MR | S: board | r: sprints | f: fetch | F: filter MRs | G: goal | x: collapse | O: sort | o: open | y: yank
+            q: close | ↵: MR | S: board | r: sprints | f: fetch | F: filter MRs | G: goal | tab: collapse | O: sort | x: open | y: yank
           </text>
         </box>
         {renderSprintTabs()}

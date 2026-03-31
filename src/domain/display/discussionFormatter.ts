@@ -51,6 +51,9 @@ export const formatDiscussionsForClipboard = (mergeRequest: MergeRequest): strin
   result += `${headerSeparator}\n\n`;
   result += `Title: ${mergeRequest.title}\n`;
   result += `Author: ${mergeRequest.author}\n`;
+  if (mergeRequest.diffHeadSha) {
+    result += `Commit: ${mergeRequest.diffHeadSha.substring(0, 8)}\n`;
+  }
   result += `URL: ${mergeRequest.webUrl}\n`;
   result += `Total unresolved discussions: ${unresolvedDiscussions.length}\n`;
   result += `\n${headerSeparator}\n\n`;

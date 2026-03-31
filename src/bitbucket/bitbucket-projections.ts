@@ -109,6 +109,7 @@ export function mapBitbucketToMergeRequest(
     webUrl: pr.links.html.href,
     sourcebranch: pr.source.branch.name,
     targetbranch: pr.destination.branch.name,
+    diffHeadSha: pr.source.commit?.hash ?? null,
     detailedMergeStatus: null,
     project: {
       name: pr.destination.repository.name || repoSlug,

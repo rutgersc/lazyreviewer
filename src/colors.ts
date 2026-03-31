@@ -23,6 +23,8 @@ const DarkColors = {
   BADGE_WARNING_BG: '#4a2a00',
   BADGE_INFO_BG: '#003a4a',
 
+  FADE: '#8c9ac4',
+
   EPIC_PALETTE: ['#ff5555', '#50fa7b', '#8be9fd', '#bd93f9', '#f1fa8c', '#ffb86c', '#ff79c6'],
 } as const;
 
@@ -50,6 +52,8 @@ const LightColors = {
   BADGE_ACCENT_BG: '#ffeff7',
   BADGE_WARNING_BG: '#fff8c5',
   BADGE_INFO_BG: '#ddf4ff',
+
+  FADE: '#b0b8c1',
 
   EPIC_PALETTE: ['#cf222e', '#1a7f37', '#0969da', '#8250df', '#7d4e00', '#bf3989', '#0a3069'],
 } as const;
