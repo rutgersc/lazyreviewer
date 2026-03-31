@@ -1,0 +1,13 @@
+# Set these to your GitLab instance URL
+# Used by IDE extensions for GraphQL autocomplete/validation
+schema: ${GITLAB_URL}/api/graphql
+documents:
+  - src/graphql/**/*.graphql
+extensions:
+  codegen:
+    configFile: codegen.yml
+  endpoints:
+    default:
+      url: ${GITLAB_URL}/api/graphql
+      headers:
+        Authorization: "Bearer ${GITLAB_TOKEN}"

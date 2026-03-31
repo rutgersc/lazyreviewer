@@ -1,0 +1,397 @@
+import { GraphQLClient } from "graphql-request"
+import { getSdk as getMRsSdk } from "../graphql/mrs.generated";
+import { getSdk as getProjectMRsSdk } from "../graphql/project-mrs.generated";
+import { getSdk as getSingleMrSdk } from "../graphql/single-mr.generated";
+import { getSdk as GitlabMRs } from "../graphql/gitlab-mrs.generated";
+import { getSdk as getMrPipelineSdk } from "../graphql/mr-pipeline.generated";
+import { getSdk as getProjectPipelinesJobHistorySdk } from "../graphql/project-pipelines-job-history.generated";
+import { getSdk as getJobSdk } from "../graphql/job.generated";
+import type { MergeRequestState } from "../domain/merge-request-state";
+import { Data, Effect, Console, Config, Redacted } from "effect";
+import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent, GitlabMrsFetchedEvent } from "../events/gitlab-events";
+import { projectGitlabJobHistoryFetchedEvent, projectGitlabJobTraceFetchedEvent, projectGitlabPipelineFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent } from "./gitlab-projections";
+import { generateEventId } from "../events/event-id";
+
+export class FetchGitlabMrsError extends Data.TaggedError("FetchGitlabMrsError")<{
+  cause: unknown;
+}> { }
+
+export const getGitlabBaseUrl = (): string => {
+  const url = process.env.GITLAB_URL;
+  if (!url) throw new Error("GITLAB_URL not configured. Set it in .env");
+  return url;
+};
+
+const getGitlabSdk = Effect.gen(function* () {
+  const baseUrl = yield* Config.string("GITLAB_URL")
+  const token = yield* Config.redacted("GITLAB_TOKEN")
+  const endpoint = `${baseUrl}/api/graphql`
+  const client = new GraphQLClient(endpoint, {
+    headers: { Authorization: `Bearer ${Redacted.value(token)}` }
+  })
+
+  return {
+    ...GitlabMRs(client),
+    ...getMRsSdk(client),
+    ...getProjectMRsSdk(client),
+    ...getSingleMrSdk(client),
+    ...getMrPipelineSdk(client),
+    ...getProjectPipelinesJobHistorySdk(client),
+    ...getJobSdk(client),
+  }
+})
+
+export class FetchGitlabProjectMrsError extends Data.TaggedError("FetchGitlabProjectMrsError")<{
+  projectPath: string;
+  message: string;
+}> { }
+
+export const getGitlabMrsByProject = Effect.fn("getGitlabMrsByProject")(function* (projectPath: string, state: MergeRequestState = 'opened') {
+  const event = yield* getGitlabMrsByProjectAsEvent(projectPath, state);
+  return projectGitlabProjectMrsFetchedEvent(event);
+})
+
+export class FetchJobTraceError extends Data.TaggedError("FetchJobTraceError")<{
+  cause: unknown;
+}> { }
+
+export const getJobTraceRaw = Effect.fn("getJobTraceRaw")(function* (projectId: string, jobId: string) {
+  const token = yield* Config.redacted("GITLAB_TOKEN")
+  const baseUrl = yield* Config.string("GITLAB_URL")
+  const encodedProjectId = encodeURIComponent(projectId);
+  const realIdLol = jobId.split("/");
+  const uhh = realIdLol[realIdLol.length-1];
+  const url = `${baseUrl}/api/v4/projects/${encodedProjectId}/jobs/${uhh}/trace`;
+
+  const response = yield* Effect.tryPromise({
+    try: () => fetch(url, {
+      headers: {
+        'PRIVATE-TOKEN': Redacted.value(token)
+      }
+    }),
+    catch: cause => new FetchJobTraceError({ cause })
+  });
+
+  if (!response.ok) {
+    yield* Console.error(`Failed to fetch job trace: ${url} ${response.status} ${response.statusText}`);
+    return null;
+  }
+
+  const traceData = yield* Effect.tryPromise({
+    try: () => response.text(),
+    catch: cause => new FetchJobTraceError({ cause })
+  });
+
+  return traceData;
+})
+
+export const getJobTrace = Effect.fn("getJobTrace")(function* (projectId: string, jobId: string) {
+  const event = yield* getJobTraceAsEvent(projectId, jobId);
+  return projectGitlabJobTraceFetchedEvent(event);
+})
+
+export class FetchMrPipelineError extends Data.TaggedError("FetchMrPipelineError")<{
+  cause: unknown;
+}> { }
+
+export const getMrPipeline = Effect.fn("getMrPipeline")(function* (projectPath: string, iid: string) {
+  const event = yield* getMrPipelineAsEvent(projectPath, iid);
+  const pipeline = projectGitlabPipelineFetchedEvent(event);
+  const mr = event.pipeline.project?.mergeRequest;
+
+  if (!mr) {
+    yield* Console.log(`[Pipeline] No MR found for ${iid} in ${projectPath}`, event);
+    return null;
+  }
+
+  if (!pipeline) {
+    yield* Console.log(`[Pipeline] No pipeline found for MR ${iid} in ${projectPath}`);
+  } else {
+    yield* Console.log(`[Pipeline] Fetched pipeline for MR ${iid}: ${pipeline.stage.length} stages`);
+  }
+
+  return {
+    mergeRequest: {
+      id: mr.id,
+      iid: mr.iid,
+      state: mr.state
+    },
+    headPipeline: pipeline
+  };
+})
+
+export class FetchJobHistoryError extends Data.TaggedError("FetchJobHistoryError")<{
+  cause: unknown;
+}> { }
+
+export const fetchJobHistory = Effect.fn("fetchJobHistory")(function* (
+  projectPath: string,
+  jobName: string,
+  limit: number = 50,
+  after: string | null = null
+) {
+  const event = yield* fetchJobHistoryAsEvent(projectPath, jobName, limit, after);
+  const result = projectGitlabJobHistoryFetchedEvent(event);
+
+  yield* Console.log(`[JobHistory] Fetched ${result.history.length} job history entries for "${jobName}" in ${projectPath} (hasNextPage: ${result.pageInfo.hasNextPage})`);
+  return result;
+})
+
+export class FetchSingleMrError extends Data.TaggedError("FetchSingleMrError")<{
+  cause: unknown;
+}> { }
+
+export const getSingleMr = Effect.fn("getSingleMr")(function* (projectPath: string, iid: string) {
+  const event = yield* getSingleMrAsEvent(projectPath, iid);
+  const mr = projectGitlabSingleMrFetchedEvent(event);
+
+  if (!mr) {
+    yield* Console.log(`[SingleMR] No MR found for ${iid} in ${projectPath}`);
+  } else {
+    yield* Console.log(`[SingleMR] Fetched MR ${iid} in ${projectPath}`);
+  }
+
+  return mr;
+})
+
+// Event-returning wrapper functions
+export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (usernames: string[], state: MergeRequestState = 'opened', first: number = 50) {
+  const sdk = yield* getGitlabSdk
+  const data = yield* Effect.tryPromise({
+    try: () => sdk.MRs({
+      usernames: usernames,
+      state: state,
+      first
+    }),
+    catch: cause => new FetchGitlabMrsError({ cause })
+  });
+
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-user-mrs-fetched-event' as const;
+  const event: GitlabUserMergeRequestsFetchedEvent = {
+    eventId: generateEventId(timestamp, type),
+    type,
+    mrs: data,
+    forUsernames: usernames,
+    forState: state,
+    timestamp
+  };
+
+  return event;
+});
+
+export const getGitlabMrsByProjectAsEvent = Effect.fn("getGitlabMrsByProjectAsEvent")(function* (projectPath: string, state: MergeRequestState = 'opened', after: string | null = null, first: number = 50) {
+  yield* Console.log(`[GitLab] Fetching MRs for project: "${projectPath}", state: ${state}, after: ${after ?? 'null'}, first: ${first}`);
+
+  const sdk = yield* getGitlabSdk
+  const data = yield* Effect.tryPromise({
+    try: () => sdk.ProjectMRs({
+      projectPath: projectPath,
+      state: state,
+      first,
+      after
+    }),
+    catch: cause => new FetchGitlabProjectMrsError({
+      projectPath,
+      message: `Fetch MRs failed for "${projectPath}": ${cause instanceof Error ? cause.message : String(cause)}`
+    })
+  });
+
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-project-mrs-fetched-event' as const;
+  const event: GitlabprojectMergeRequestsFetchedEvent = {
+    eventId: generateEventId(timestamp, type),
+    type,
+    mrs: data,
+    forProjectPath: projectPath,
+    forState: state,
+    timestamp
+  };
+
+  return event;
+});
+
+export const getAllGitlabMrsByProjectAsEvents = Effect.fn("getAllGitlabMrsByProjectAsEvents")(
+  function* (projectPath: string, state: MergeRequestState = 'opened') {
+    yield* Console.log(`[GitLab] Deep fetch: all MRs for "${projectPath}", state: ${state}`)
+
+    const sdk = yield* getGitlabSdk
+    let after: string | null = null
+    const events: GitlabprojectMergeRequestsFetchedEvent[] = []
+
+    while (true) {
+      const data = yield* Effect.tryPromise({
+        try: () => sdk.ProjectMRs({ projectPath, state, first: 50, after }),
+        catch: cause => new FetchGitlabProjectMrsError({
+          projectPath,
+          message: `Deep fetch failed for "${projectPath}": ${cause instanceof Error ? cause.message : String(cause)}`
+        })
+      })
+
+      const timestamp = new Date().toISOString()
+      const type = 'gitlab-project-mrs-fetched-event' as const
+      events.push({
+        eventId: generateEventId(timestamp, type),
+        type,
+        mrs: data,
+        forProjectPath: projectPath,
+        forState: state,
+        timestamp
+      })
+
+      const pageInfo = data.project?.mergeRequests?.pageInfo
+      if (!pageInfo?.hasNextPage || !pageInfo.endCursor) break
+      after = pageInfo.endCursor
+    }
+
+    yield* Console.log(`[GitLab] Deep fetch complete: ${events.length} page(s) for "${projectPath}"`)
+    return events
+  }
+)
+
+export const getJobTraceAsEvent = Effect.fn("getJobTraceAsEvent")(function* (projectId: string, jobId: string) {
+  const traceData = yield* getJobTraceRaw(projectId, jobId);
+
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-jobtrace-fetched-event' as const;
+  const event: GitlabJobTraceFetchedEvent = {
+    eventId: generateEventId(timestamp, type),
+    type,
+    jobTrace: traceData || '',
+    forProjectId: projectId,
+    forJobId: jobId,
+    timestamp
+  };
+
+  return event;
+});
+
+export const getMrPipelineAsEvent = Effect.fn("getMrPipelineAsEvent")(function* (projectPath: string, iid: string) {
+  const sdk = yield* getGitlabSdk
+  const data = yield* Effect.tryPromise({
+    try: () => sdk.MRPipeline({ projectPath, iid }),
+    catch: cause => new FetchMrPipelineError({ cause })
+  });
+
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-pipeline-fetched-event' as const;
+  const event: GitlabPipelineFetchedEvent = {
+    eventId: generateEventId(timestamp, type),
+    type,
+    pipeline: data,
+    forProjectPath: projectPath,
+    forIid: iid,
+    timestamp
+  };
+
+  return event;
+});
+
+export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(function* (
+  projectPath: string,
+  jobName: string,
+  limit: number = 50,
+  after: string | null = null
+) {
+  const sdk = yield* getGitlabSdk
+  const data = yield* Effect.tryPromise({
+    try: () => sdk.ProjectPipelinesJobHistory({
+      projectPath,
+      jobName,
+      first: limit,
+      after: after
+    }),
+    catch: cause => new FetchJobHistoryError({ cause })
+  });
+
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-jobhistory-fetched-event' as const;
+  const event: GitlabJobHistoryFetchedEvent = {
+    eventId: generateEventId(timestamp, type),
+    type,
+    jobHistory: data,
+    forProjectPath: projectPath,
+    forJobName: jobName,
+    timestamp
+  };
+
+  return event;
+});
+
+export const getMrsAsEvent = Effect.fn("getSingleMrAsEvent")(function* (projectPath: string, mrIids: string[]) {
+  yield* Console.log(`[GitLab] Fetching bulk MRs: [${mrIids}] in projects "${projectPath}"`);
+
+  const sdk = yield* getGitlabSdk
+
+  const mrs = yield* Effect.tryPromise({
+    try: () => sdk.GitlabMRs({ projectPath: projectPath, iids: mrIids }),
+    catch: cause => new FetchSingleMrError({ cause })
+  });
+
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-mrs-fetched-event' as const;
+  const event: GitlabMrsFetchedEvent = {
+    eventId: generateEventId(timestamp, type),
+    type: 'gitlab-mrs-fetched-event',
+    mrs: mrs,
+    forProjectPath: projectPath,
+    forIids: mrIids,
+    timestamp
+  };
+
+  return event;
+});
+
+export const getSingleMrAsEvent = Effect.fn("getSingleMrAsEvent")(function* (projectPath: string, iid: string) {
+  yield* Console.log(`[GitLab] Fetching single MR: ${iid} in project "${projectPath}"`);
+
+  const sdk = yield* getGitlabSdk
+  const data = yield* Effect.tryPromise({
+    try: () => sdk.SingleMR({
+      projectPath: projectPath,
+      iid: iid
+    }),
+    catch: cause => new FetchSingleMrError({ cause })
+  });
+
+  const timestamp = new Date().toISOString();
+  const type = 'gitlab-single-mr-fetched-event' as const;
+  const event: GitlabSingleMrFetchedEvent = {
+    eventId: generateEventId(timestamp, type),
+    type,
+    mr: data,
+    forProjectPath: projectPath,
+    forIid: iid,
+    timestamp
+  };
+
+  return event;
+});
+
+// export const getHeadPipe = Effect.fn("getSingleMrAsEvent")(function* (projectPath: string, iid: string) {
+//   yield* Console.log(`[GitLab] Fetching single MR: ${iid} in project "${projectPath}"`);
+
+//   const sdk = yield* getGitlabSdk
+//   const data = yield* Effect.tryPromise({
+//     try: () => sdk.SingleMR({
+//       projectPath: projectPath,
+//       iid: iid
+//     }),
+//     catch: cause => new FetchSingleMrError({ cause })
+//   });
+
+//   const timestamp = new Date().toISOString();
+//   const type = 'gitlab-single-mr-fetched-event' as const;
+//   const event: GitlabSingleMrFetchedEvent = {
+//     eventId: generateEventId(timestamp, type),
+//     type,
+//     mr: data,
+//     forProjectPath: projectPath,
+//     forIid: iid,
+//     timestamp
+//   };
+
+//   return event;
+// });
+
+

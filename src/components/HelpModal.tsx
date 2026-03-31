@@ -1,0 +1,240 @@
+import React, { useState } from 'react';
+import { useKeyboard } from '@opentui/react';
+import { TextAttributes, type ParsedKey } from '@opentui/core';
+import { ActivePane } from '../userselection/userSelection';
+import { Colors } from '../colors';
+import type { Action } from '../actions/action-types';
+import { infoPaneTabAtom, activePaneAtom, activeModalAtom, type InfoPaneTab } from '../ui/navigation-atom';
+import { paneActionsForDisplayAtom } from '../actions/pane-actions-atoms';
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAutoScroll } from '../hooks/useAutoScroll';
+
+interface HelpModalProps {
+  isVisible: boolean;
+  globalActions: Action[];
+  setCopyNotification?: (notification: string | null) => void;
+}
+
+interface KeyBinding {
+  key: string;
+  description: string;
+  action?: () => void;
+}
+
+const KeyRow = ({
+  id,
+  binding,
+  isSelected,
+  onMouseDown,
+  onMouseOver,
+}: {
+  id: string;
+  binding: KeyBinding;
+  isSelected: boolean;
+  onMouseDown?: () => void;
+  onMouseOver?: () => void;
+}) => (
+  <box
+    id={id}
+    {...(onMouseDown !== undefined && { onMouseDown })}
+    {...(onMouseOver !== undefined && { onMouseOver })}
+    style={{
+      flexDirection: "row",
+      backgroundColor: isSelected ? Colors.SELECTED : 'transparent',
+      paddingLeft: 1,
+      paddingRight: 1,
+      height: 1,
+    }}
+  >
+    <box style={{ width: 18 }}>
+      <text
+        style={{
+          fg: Colors.WARNING,
+          ...(isSelected && { attributes: TextAttributes.BOLD }),
+        }}
+        wrapMode='none'
+      >
+        {binding.key}
+      </text>
+    </box>
+    <text
+      style={{
+        fg: Colors.PRIMARY,
+        ...(isSelected && { attributes: TextAttributes.BOLD }),
+      }}
+      wrapMode='none'
+    >
+      {binding.description}
+    </text>
+  </box>
+);
+
+const getPaneTitle = (pane: ActivePane, infoPaneTab?: InfoPaneTab): string => {
+  switch (pane) {
+    case ActivePane.MergeRequests: return 'Merge Requests Pane';
+    case ActivePane.InfoPane:
+      if (infoPaneTab === 'overview') return 'Info Pane - Overview Tab';
+      if (infoPaneTab === 'jira') return 'Info Pane - Jira Tab';
+      if (infoPaneTab === 'pipeline') return 'Info Pane - Pipeline Tab';
+      if (infoPaneTab === 'activity') return 'Info Pane - Activity Tab';
+      return 'Info Pane';
+    case ActivePane.UserSelection: return 'User Selection Pane';
+    case ActivePane.Console: return 'Console Pane';
+    case ActivePane.Facts: return 'Facts Pane';
+  }
+
+  return '';
+};
+
+// Convert Action[] to KeyBinding[] for display
+const actionsToKeyBindings = (actions: Action[]): KeyBinding[] => {
+  return actions
+    .filter(a => a.displayKey && a.description) // Only show actions with display info
+    .map(action => ({
+      key: action.displayKey,
+      description: action.description,
+      action: action.handler,
+    }));
+};
+
+export default function HelpModal({ isVisible, globalActions }: HelpModalProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const activePane = useAtomValue(activePaneAtom);
+  const infoPaneTab = useAtomValue(infoPaneTabAtom);
+  const setActiveModal = useAtomSet(activeModalAtom);
+  const paneActions = useAtomValue(paneActionsForDisplayAtom);
+
+  // Convert actions to key bindings for display
+  const paneKeys = actionsToKeyBindings(paneActions);
+  const globalKeys = actionsToKeyBindings(globalActions);
+  const allKeys = [...paneKeys, ...globalKeys];
+
+  const executeAction = (index: number) => {
+    const binding = allKeys[index];
+    if (binding?.action) {
+      setActiveModal('none');
+      binding.action();
+    }
+  };
+
+  const { scrollBoxRef, scrollToId } = useAutoScroll({ lookahead: 2 });
+
+  const handleRowClick = (index: number) => {
+    if (index === selectedIndex) executeAction(index);
+    else setSelectedIndex(index);
+  };
+
+  // Reset selection when modal opens or pane changes
+  React.useEffect(() => {
+    if (isVisible) {
+      setSelectedIndex(0);
+    }
+  }, [isVisible, activePane]);
+
+  useKeyboard((key: ParsedKey) => {
+    if (!isVisible) return;
+
+    switch (key.name) {
+      case 'j':
+      case 'down': {
+        const next = Math.min(selectedIndex + 1, allKeys.length - 1);
+        setSelectedIndex(next);
+        scrollToId(`help-key-${next}`);
+        break;
+      }
+      case 'k':
+      case 'up': {
+        const prev = Math.max(selectedIndex - 1, 0);
+        setSelectedIndex(prev);
+        scrollToId(`help-key-${prev}`);
+        break;
+      }
+      case 'return':
+        executeAction(selectedIndex);
+        break;
+    }
+  });
+
+  if (!isVisible) return null;
+
+  return (
+    <box
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'transparent',
+        justifyContent: "center",
+        alignItems: "center"
+      }}
+    >
+      <box
+        style={{
+          border: true,
+          borderColor: Colors.SUCCESS,
+          backgroundColor: Colors.BACKGROUND,
+          padding: 1,
+          width: 70,
+          maxHeight: '80%',
+          flexDirection: "column"
+        }}
+      >
+        <scrollbox
+          ref={scrollBoxRef}
+          style={{
+            flexGrow: 1,
+            contentOptions: { backgroundColor: Colors.BACKGROUND },
+            scrollbarOptions: {
+              trackOptions: { foregroundColor: Colors.NEUTRAL, backgroundColor: Colors.TRACK },
+            },
+          }}
+        >
+          <box style={{ flexDirection: "column" }}>
+            {/* Pane-specific keys */}
+            {paneKeys.length > 0 && (
+              <>
+                <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD, marginTop: 1 }} wrapMode='none'>
+                  {getPaneTitle(activePane, infoPaneTab)}
+                </text>
+                <box style={{ flexDirection: "column", marginBottom: 1 }}>
+                  {paneKeys.map((binding, index) => (
+                    <KeyRow key={index} id={`help-key-${index}`} binding={binding} isSelected={index === selectedIndex} onMouseDown={() => handleRowClick(index)} onMouseOver={() => setSelectedIndex(index)} />
+                  ))}
+                </box>
+
+                {/* Separator */}
+                <text style={{ fg: Colors.NEUTRAL, marginBottom: 1 }} wrapMode='none'>
+                  {'─'.repeat(60)}
+                </text>
+              </>
+            )}
+
+            {/* Global keys */}
+            <text style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }} wrapMode='none'>
+              Global Keys
+            </text>
+            <box style={{ flexDirection: "column" }}>
+              {globalKeys.map((binding, index) => (
+                <KeyRow
+                  key={index}
+                  id={`help-key-${paneKeys.length + index}`}
+                  binding={binding}
+                  isSelected={paneKeys.length + index === selectedIndex}
+                  onMouseDown={() => handleRowClick(paneKeys.length + index)}
+                  onMouseOver={() => setSelectedIndex(paneKeys.length + index)}
+                />
+              ))}
+            </box>
+          </box>
+        </scrollbox>
+
+        <text style={{ fg: Colors.SUPPORTING, marginTop: 1 }} wrapMode='none'>
+          j/k: Navigate • Enter: Execute • Esc: Close
+        </text>
+      </box>
+    </box>
+  );
+}

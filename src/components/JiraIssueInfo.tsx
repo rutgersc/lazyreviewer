@@ -1,0 +1,81 @@
+import React from 'react';
+import { TextAttributes } from '@opentui/core';
+import type { JiraIssue } from '../jira/jira-schema';
+import { extractTextFromJiraComment, type JiraComment } from '../jira/jira-service';
+import { formatCompactTime } from '../utils/formatting';
+import { Colors } from '../colors';
+
+interface JiraIssueInfoProps {
+  issue: JiraIssue;
+  selectedCommentIndex: number;
+  commentFocused: boolean;
+}
+
+export default function JiraIssueInfo({ issue, selectedCommentIndex, commentFocused }: JiraIssueInfoProps) {
+  const renderComments = (comments: JiraComment[]) => {
+    if (!comments || comments.length === 0) {
+      return (
+        <text
+          style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
+          wrapMode='word'
+        >
+          No comments
+        </text>
+      );
+    }
+
+    return (
+      <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
+        <text
+          style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.BOLD, marginBottom: 1 }}
+          wrapMode='word'
+        >
+          {`Comments (${comments.length})`}
+        </text>
+        {[...comments].reverse().map((comment, index) => {
+          const commentText = extractTextFromJiraComment(comment);
+          const isSelected = commentFocused && index === selectedCommentIndex;
+
+          return (
+            <box
+              key={comment.id}
+              id={`jira-comment-${comment.id}`}
+              style={{ flexDirection: "column", marginLeft: 2, width: "100%", backgroundColor: isSelected ? Colors.SELECTED : Colors.BACKGROUND_ALT, padding: 1 }}
+            >
+              <box style={{ flexDirection: "row", gap: 0, width: "100%" }}>
+                <text
+                  style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }}
+                  wrapMode='word'
+                >
+                  {comment.author.displayName}
+                </text>
+                <text
+                  style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}
+                  wrapMode='word'
+                >
+                  {` ${formatCompactTime(new Date(comment.created))} (${new Date(comment.created).toLocaleDateString()} ${new Date(comment.created).toLocaleTimeString()}):`}
+                </text>
+              </box>
+              <box style={{ marginLeft: 4 }}>
+                <text
+                  style={{ fg: Colors.SECONDARY }}
+                  wrapMode='word'
+                >
+                  {commentText}
+                </text>
+              </box>
+            </box>
+          );
+        })}
+      </box>
+    );
+  };
+
+  return (
+    <box style={{ flexDirection: "column", gap: 1, width: "100%" }}>
+      <box style={{ marginBottom: 1, width: "100%" }}>
+        {renderComments(issue.fields.comment.comments || [])}
+      </box>
+    </box>
+  );
+}

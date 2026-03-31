@@ -1,0 +1,102 @@
+fragment MergeRequestFields on MergeRequest {
+  id
+  iid
+  name
+  title
+  description
+  webUrl
+  sourceBranch
+  targetBranch
+  detailedMergeStatus
+  diffHeadSha
+  project {
+    name
+    path
+    fullPath
+  }
+  author {
+    name
+    username
+    avatarUrl
+  }
+  createdAt
+  updatedAt
+  state
+  approvedBy {
+    nodes {
+      id
+      name
+      username
+    }
+  }
+  discussions {
+    nodes {
+      resolved
+      resolvable
+      id
+      notes {
+        nodes {
+          id
+          __typename
+          system
+          body
+          author {
+            name
+            username
+          }
+          url
+          createdAt
+          resolvable
+          resolved
+          position {
+            filePath
+            newLine
+            oldLine
+            oldPath
+          }
+        }
+      }
+    }
+  }
+  headPipeline {
+    active
+    iid
+    stages {
+      __typename
+      nodes {
+        id
+        name
+        jobs {
+          nodes {
+            id
+            webPath
+            name
+            status
+            failureMessage
+            startedAt
+            duration
+          }
+        }
+        status
+      }
+    }
+  }
+}
+
+query MRs($usernames: [String!], $state: MergeRequestState, $first: Int!) {
+  users(usernames: $usernames, first: $first) {
+    count
+    nodes {
+      username
+      authoredMergeRequests(state: $state, first: 10) {
+        count
+        pageInfo {
+          hasNextPage
+        }
+        nodes {
+          ...MergeRequestFields
+        }
+      }
+    }
+  }
+}

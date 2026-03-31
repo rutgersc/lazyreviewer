@@ -1,0 +1,11 @@
+query SingleMR($projectPath: ID!, $iid: String!) {
+  project(fullPath: $projectPath) {
+    id
+    name
+    path
+    fullPath
+    mergeRequest(iid: $iid) {
+      ...MergeRequestFields
+    }
+  }
+}

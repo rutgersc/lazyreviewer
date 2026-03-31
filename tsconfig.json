@@ -1,18 +1,22 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "target": "ESNext",
-    "module": "Preserve",
+    "module": "esnext",
     "moduleDetection": "force",
     "jsx": "react-jsx",
+    "jsxImportSource": "@opentui/react",
     "allowJs": true,
 
     // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
     "noEmit": true,
+
+    "incremental": true,
 
     // Best practices
     "strict": true,
@@ -20,11 +24,19 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-
-    // Some stricter flags (disabled by default)
+    // TODO: re-enable after graphql-request codegen types are fixed
+    // "exactOptionalPropertyTypes": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+
+    // plugins
+    "plugins": [
+      {
+        "name": "@effect/language-service"
+      }
+    ]
   },
-  "include": ["**/*.ts", "**/*.d.ts", "**/*.vue"]
+  "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts", "**/*.vue"],
+  "exclude": ["vendor", "node_modules"]
 }

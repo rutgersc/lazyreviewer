@@ -32,3 +32,17 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+debug
+lazyreviewer-settings.json
+lazyreviewer-settings-users.json
+lazygitlab-settings*.json
+test-cache/mrs_opened_test_gitlab
+storage/events
+
+vendor/
+reference-source/
+.claude/settings.local.json
+storage/events_2
+storage/events2
+storage2

@@ -1,0 +1,130 @@
+import { TextAttributes, type ParsedKey } from '@opentui/core';
+import { useKeyboard } from '@opentui/react';
+import Overview from './Overview';
+import ActivityLog from './ActivityLog';
+import JiraIssuesList from './JiraIssuesList';
+import PipelineJobsList from './PipelineJobsList';
+import { ActivePane } from '../userselection/userSelection';
+import { Colors } from '../colors';
+import type { PipelineJob, PipelineStage } from '../domain/merge-request-schema';
+import { Atom } from "effect/unstable/reactivity"
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { activePaneAtom, activeModalAtom, infoPaneTabAtom, type InfoPaneTab } from '../ui/navigation-atom';
+import { selectedMrAtom, allJiraIssuesAtom } from '../mergerequests/mergerequests-atom';
+import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
+
+interface InfoPaneProps {
+  activePane: ActivePane;
+}
+
+const TAB_LABELS: Record<InfoPaneTab, string> = {
+  overview: 'Merge request',
+  jira: 'Jira',
+  pipeline: 'Pipeline',
+  activity: 'Activity'
+};
+
+export const selectedMergeRequestJiraIssuesAtom = Atom.readable(get => {
+  const selectedMergeRequest = get(selectedMrAtom);
+  const jiraIssuesMap = get(allJiraIssuesAtom);
+
+  return selectedMergeRequest?.jiraIssueKeys.flatMap(key => {
+    const issue = jiraIssuesMap.get(key);
+    return issue
+      ? [issue]
+      : [];
+  }) || [];
+});
+
+export default function InfoPane({ activePane }: InfoPaneProps) {
+  const setActivePane = useAtomSet(activePaneAtom);
+  const activeModal = useAtomValue(activeModalAtom);
+  const [infoPaneTab, setInfoPaneTab] = useAtom(infoPaneTabAtom);
+  const [selectedPipelineJobIndex] = useAtom(selectedPipelineJobIndexAtom);
+
+  const selectedMergeRequest = useAtomValue(selectedMrAtom);
+
+  useKeyboard((key: ParsedKey) => {
+    if (activePane !== ActivePane.InfoPane) return;
+    if (activeModal !== 'none') return;
+
+    if (key.name === 'escape') {
+      setActivePane(ActivePane.MergeRequests);
+      return;
+    }
+  });
+
+  const renderTabBar = () => {
+    const tabs: InfoPaneTab[] = ['overview', 'jira', 'pipeline', 'activity'];
+
+    return (
+      <box style={{ flexDirection: "column", gap: 0, marginBottom: 1 }}>
+        {/* Tabs */}
+        <box style={{ flexDirection: "row", gap: 1 }}>
+          {tabs.map((tab, index) => (
+            <text
+              key={tab}
+              onMouseDown={() => {
+                setInfoPaneTab(tab);
+                setActivePane(ActivePane.InfoPane);
+              }}
+              style={{
+                fg: tab === infoPaneTab ? Colors.PRIMARY : Colors.NEUTRAL,
+                ...(tab === infoPaneTab && { attributes: TextAttributes.BOLD }),
+              }}
+              wrapMode='none'
+            >
+              {index > 0 ? '| ' : ''}{TAB_LABELS[tab]}
+            </text>
+          ))}
+        </box>
+      </box>
+    );
+  };
+
+  const renderTabContent = () => {
+    switch (infoPaneTab) {
+      case 'overview':
+        return <Overview
+          selectedMergeRequest={selectedMergeRequest}
+        />;
+
+      case 'jira':
+        return <JiraIssuesList />;
+
+      case 'pipeline':
+        return <PipelineJobsList
+          selectedPipelineJobIndex={selectedPipelineJobIndex}
+        />;
+
+      case 'activity':
+        if (!selectedMergeRequest) {
+          return (
+            <box style={{ flexDirection: "column", gap: 1, justifyContent: "flex-start", alignItems: "flex-start", flexGrow: 1 }}>
+              <text style={{ fg: Colors.SECONDARY, attributes: TextAttributes.DIM }} wrapMode='none'>
+                No selection
+              </text>
+            </box>
+          );
+        }
+
+        return <ActivityLog
+          activePane={activePane}
+          mergeRequest={selectedMergeRequest}
+          columns={['time', 'eventType', 'eventDetails']} />;
+
+    }
+  };
+
+  return (
+    <box
+      onMouseDown={() => setActivePane(ActivePane.InfoPane)}
+      style={{ flexDirection: "column", padding: 1, flexGrow: 1, alignItems: "flex-start", height: "100%" }}
+    >
+      {renderTabBar()}
+      <box style={{ flexGrow: 1, width: "100%" }}>
+        {renderTabContent()}
+      </box>
+    </box>
+  );
+}

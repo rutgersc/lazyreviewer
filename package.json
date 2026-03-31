@@ -1,21 +1,39 @@
 {
-  "name": "lazygitlab",
+  "name": "lazyreviewer",
   "module": "src/index.tsx",
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "bun run build.ts && bun run dist/"
+    "start": "bun run build.ts && bun run dist/",
+    "watch": "bun --watch run src/index.tsx",
+    "watch2": "watchexec --debounce 2000 -- bun run src/index.tsx",
+    "codegen": "graphql-codegen --config codegen.ts",
+    "typecheck": "tsc --noEmit",
+    "migrate:add-eventid": "bun run scripts/migrate-add-eventid.ts",
+    "prepare": ""
   },
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "@graphql-codegen/cli": "^5.0.7",
+    "@graphql-codegen/introspection": "^4.0.3",
+    "@graphql-codegen/near-operation-file-preset": "^3.1.0",
+    "@graphql-codegen/typescript": "^4.1.6",
+    "@graphql-codegen/typescript-graphql-request": "6.3.0",
+    "@graphql-codegen/typescript-operations": "^4.6.1",
+    "@types/bun": "latest",
+    "@types/node-notifier": "^8.0.5",
+    "@types/react": "^19.0.0",
+    "graphql": "^16.11.0",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@opentui/core": "^0.1.23",
-    "@opentui/vue": "^0.1.23",
-    "bun-plugin-vue3": "^1.0.0-beta.2",
-    "vue": "^3.5.20"
+    "@effect/atom-react": "4.0.0-beta.42",
+    "@effect/platform-node": "4.0.0-beta.42",
+    "@opentui/core": "^0.1.86",
+    "@opentui/react": "^0.1.86",
+    "dotenv": "^17.2.3",
+    "effect": "4.0.0-beta.42",
+    "graphql-request": "6.1.0",
+    "node-notifier": "^10.0.1",
+    "react": "^19.0.0"
   }
 }

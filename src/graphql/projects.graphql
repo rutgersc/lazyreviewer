@@ -1,0 +1,19 @@
+query Projects($fullPaths: [String!]) {
+  projects(fullPaths: $fullPaths) {
+    count
+    nodes {
+      id
+      name
+      fullPath
+      # mergeRequests(authorUsername: ) {
+      # }
+      mergeRequests {
+        nodes {
+          name
+          webPath
+        }
+      }
+    }
+  }
+}
+

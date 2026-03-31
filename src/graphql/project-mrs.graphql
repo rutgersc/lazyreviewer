@@ -1,0 +1,18 @@
+query ProjectMRs($projectPath: ID!, $state: MergeRequestState, $first: Int!, $after: String) {
+  project(fullPath: $projectPath) {
+    id
+    name
+    path
+    fullPath
+    mergeRequests(state: $state, first: $first, sort: UPDATED_DESC, after: $after) {
+      count
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        ...MergeRequestFields
+      }
+    }
+  }
+}
