@@ -36,7 +36,6 @@
     "@effect/platform-node": "4.0.0-beta.42",
     "@opentui/core": "^0.1.86",
     "@opentui/react": "^0.1.86",
-    "dotenv": "^17.2.3",
     "effect": "4.0.0-beta.42",
     "graphql-request": "6.1.0",
     "node-notifier": "^10.0.1",

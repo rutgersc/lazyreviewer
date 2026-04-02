@@ -1,10 +1,10 @@
 import { createRoot } from "@opentui/react";
 import { createCliRenderer } from "@opentui/core";
-import { ensureEnvFileSync } from "./config/dotenv-config";
+import { ensureCredentialsFileSync } from "./config/credentials-config";
 import { detectSchemeFromBackground, setColorScheme } from "./colors";
 import App from "./App";
 
-ensureEnvFileSync();
+ensureCredentialsFileSync();
 
 const renderer = await createCliRenderer({
   useMouse: true,

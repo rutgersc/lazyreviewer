@@ -8,7 +8,7 @@ import type { DiscoveredRepo } from './onboarding-types'
 import { DEFAULT_GITLAB_REPOS, DEFAULT_BITBUCKET_REPOS } from './onboarding-defaults'
 import { fetchGitlabProjects, fetchBitbucketRepos, type RepoFetchResult } from './onboarding-effects'
 import { useAutoScroll } from '../hooks/useAutoScroll'
-import { ENV_CREDENTIALS } from '../config/dotenv-config'
+import { CREDENTIALS } from '../config/credentials-config'
 import { missingCredentialsAtom } from '../config/config-atom'
 
 interface RepoSelectionStepProps {
@@ -30,8 +30,8 @@ const statusIcon = (status: ProviderStatus): string =>
 const statusColor = (status: ProviderStatus): string =>
   status === 'loading' ? Colors.WARNING : status === 'done' ? Colors.SUCCESS : Colors.ERROR
 
-const GITLAB_CREDENTIALS = ENV_CREDENTIALS.filter(c => c.key.startsWith('GITLAB_'))
-const BITBUCKET_CREDENTIALS = ENV_CREDENTIALS.filter(c => c.key.startsWith('BITBUCKET_'))
+const GITLAB_CREDENTIALS = CREDENTIALS.filter(c => c.key.startsWith('GITLAB_'))
+const BITBUCKET_CREDENTIALS = CREDENTIALS.filter(c => c.key.startsWith('BITBUCKET_'))
 
 export default function RepoSelectionStep({ onNext, onBack }: RepoSelectionStepProps) {
   const [repos, setRepos] = useState<DiscoveredRepo[]>([])

@@ -2,7 +2,7 @@ import { TextAttributes } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import type { ParsedKey } from '@opentui/core';
 import { Effect } from 'effect';
-import { ENV_CREDENTIALS, ensureEnvFile, getEnvFilePath, type MissingCredential } from '../config/dotenv-config';
+import { CREDENTIALS, ensureCredentialsFile, getCredentialsFilePath, type MissingCredential } from '../config/credentials-config';
 import { openFileInEditor } from '../utils/open-file';
 import { runWithAppServices } from '../appLayerRuntime';
 import { useState } from 'react';
@@ -14,21 +14,21 @@ interface ConfigurationPageProps {
   onClose: () => void;
 }
 
-const openEnvFile = async () => {
-  await Effect.runPromise(ensureEnvFile());
-  await runWithAppServices(openFileInEditor('.env'));
+const openCredentialsFile = async () => {
+  await Effect.runPromise(ensureCredentialsFile());
+  await runWithAppServices(openFileInEditor(getCredentialsFilePath()));
 };
 
 export default function ConfigurationPage({ missingCredentials, onClose }: ConfigurationPageProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const envPath = getEnvFilePath();
+  const credentialsPath = getCredentialsFilePath();
 
-  const configured = ENV_CREDENTIALS.length - missingCredentials.length;
+  const configured = CREDENTIALS.length - missingCredentials.length;
   const missingKeys = new Set(missingCredentials.map(c => c.key));
 
   const handleClick = useDoubleClick<number>({
     onSingleClick: (index) => setSelectedIndex(index),
-    onDoubleClick: () => openEnvFile(),
+    onDoubleClick: () => openCredentialsFile(),
   });
 
   useKeyboard((key: ParsedKey) => {
@@ -37,9 +37,9 @@ export default function ConfigurationPage({ missingCredentials, onClose }: Confi
     } else if (key.name === 'up' || key.name === 'k') {
       setSelectedIndex(prev => Math.max(0, prev - 1));
     } else if (key.name === 'down' || key.name === 'j') {
-      setSelectedIndex(prev => Math.min(ENV_CREDENTIALS.length - 1, prev + 1));
+      setSelectedIndex(prev => Math.min(CREDENTIALS.length - 1, prev + 1));
     } else if (key.name === 'return' || key.name === 'e') {
-      openEnvFile();
+      openCredentialsFile();
     }
   });
 
@@ -58,12 +58,12 @@ export default function ConfigurationPage({ missingCredentials, onClose }: Confi
     >
       <box style={{ paddingLeft: 1, paddingRight: 1, border: true, borderColor: Colors.DIM }}>
         <text style={{ fg: Colors.SUCCESS, attributes: TextAttributes.BOLD }} wrapMode="none">
-          Configuration  ({configured}/{ENV_CREDENTIALS.length} configured)
+          Configuration  ({configured}/{CREDENTIALS.length} configured)
         </text>
       </box>
 
       <box style={{ flexDirection: 'column', paddingLeft: 1, paddingRight: 1, flexGrow: 1, overflow: 'hidden' }}>
-        {ENV_CREDENTIALS.map((credential, index) => {
+        {CREDENTIALS.map((credential, index) => {
           const isSelected = selectedIndex === index;
           const isMissing = missingKeys.has(credential.key);
 
@@ -92,10 +92,10 @@ export default function ConfigurationPage({ missingCredentials, onClose }: Confi
 
       <box style={{ paddingLeft: 1, paddingRight: 1, border: true, borderColor: Colors.DIM, flexDirection: 'column' }}>
         <text style={{ fg: Colors.PRIMARY }} wrapMode="none">
-          Enter/e/Double-click: Open .env in editor  |  q/Esc: Close
+          Enter/e/Double-click: Open credentials in editor  |  q/Esc: Close
         </text>
         <text style={{ fg: Colors.PRIMARY }} wrapMode="none">
-          {envPath}
+          {credentialsPath}
         </text>
       </box>
     </box>
