@@ -7,7 +7,6 @@ import { knownProjectsAtom } from '../mergerequests/mergerequests-atom';
 import { repositoryFullPath } from '../userselection/userSelection';
 
 interface RepoFilterModalProps {
-  isVisible: boolean;
   currentFilter: readonly string[];
   onConfirm: (filter: readonly string[]) => void;
   onClose: () => void;
@@ -18,22 +17,15 @@ const shortName = (path: string) => {
   return parts[parts.length - 1] ?? path;
 };
 
-export default function RepoFilterModal({ isVisible, currentFilter, onConfirm, onClose }: RepoFilterModalProps) {
+export default function RepoFilterModal({ currentFilter, onConfirm, onClose }: RepoFilterModalProps) {
   const knownProjects = useAtomValue(knownProjectsAtom);
   const allPaths = React.useMemo(() => knownProjects.map(repositoryFullPath), [knownProjects]);
 
   const [selectedIndex, setSelectedIndex] = React.useState(0);
-  const [checked, setChecked] = React.useState<ReadonlySet<string>>(new Set());
+  const [checked, setChecked] = React.useState<ReadonlySet<string>>(() => new Set(currentFilter));
 
   // items: "all" sentinel + each repo path
   const items = React.useMemo(() => ['__all__' as const, ...allPaths], [allPaths]);
-
-  React.useEffect(() => {
-    if (isVisible) {
-      setChecked(new Set(currentFilter));
-      setSelectedIndex(0);
-    }
-  }, [isVisible, currentFilter]);
 
   const isAllSelected = checked.size === 0;
 
@@ -63,8 +55,6 @@ export default function RepoFilterModal({ isVisible, currentFilter, onConfirm, o
   }, [items, allPaths]);
 
   useKeyboard((key: ParsedKey) => {
-    if (!isVisible) return;
-
     switch (key.name) {
       case 'j':
       case 'down':
@@ -87,8 +77,6 @@ export default function RepoFilterModal({ isVisible, currentFilter, onConfirm, o
         break;
     }
   });
-
-  if (!isVisible) return null;
 
   return (
     <box

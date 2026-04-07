@@ -11,7 +11,6 @@ import type { UserId, UserGroup } from '../userselection/userSelection';
 type Column = 'left' | 'right'
 
 interface PresetEditorModalProps {
-  isVisible: boolean;
   initialName?: string;
   initialUserIds?: readonly string[];
   initialGroupIds?: readonly string[];
@@ -19,17 +18,17 @@ interface PresetEditorModalProps {
   onClose: () => void;
 }
 
-export default function PresetEditorModal({ isVisible, initialName, initialUserIds, initialGroupIds, onSave, onClose }: PresetEditorModalProps) {
+export default function PresetEditorModal({ initialName, initialUserIds, initialGroupIds, onSave, onClose }: PresetEditorModalProps) {
   const knownAuthors = useAtomValue(knownAuthorsAtom);
   const groups = useAtomValue(groupsAtom);
 
-  const [name, setName] = React.useState('');
-  const [nameInputFocused, setNameInputFocused] = React.useState(false);
+  const [name, setName] = React.useState(initialName ?? '');
+  const [nameInputFocused, setNameInputFocused] = React.useState(!initialName);
   const [activeColumn, setActiveColumn] = React.useState<Column>('left');
   const [leftIndex, setLeftIndex] = React.useState(0);
   const [rightIndex, setRightIndex] = React.useState(0);
-  const [checkedUserIds, setCheckedUserIds] = React.useState<ReadonlySet<string>>(new Set());
-  const [checkedGroupIds, setCheckedGroupIds] = React.useState<ReadonlySet<string>>(new Set());
+  const [checkedUserIds, setCheckedUserIds] = React.useState<ReadonlySet<string>>(() => new Set(initialUserIds ?? []));
+  const [checkedGroupIds, setCheckedGroupIds] = React.useState<ReadonlySet<string>>(() => new Set(initialGroupIds ?? []));
 
   const leftItems: readonly UserGroup[] = groups;
   const rightItems: readonly UserId[] = knownAuthors;
@@ -46,18 +45,6 @@ export default function PresetEditorModal({ isVisible, initialName, initialUserI
     const resolved = resolveGroupIds([item.id.id], groups);
     return new Set(resolved.map(u => u.userId));
   }, [activeColumn, leftIndex, leftItems, groups]);
-
-  React.useEffect(() => {
-    if (isVisible) {
-      setName(initialName ?? '');
-      setNameInputFocused(!initialName);
-      setCheckedUserIds(new Set(initialUserIds ?? []));
-      setCheckedGroupIds(new Set(initialGroupIds ?? []));
-      setActiveColumn('left');
-      setLeftIndex(0);
-      setRightIndex(0);
-    }
-  }, [isVisible]);
 
   const toggleGroup = React.useCallback((group: UserGroup) => {
     const id = group.id.id;
@@ -97,8 +84,6 @@ export default function PresetEditorModal({ isVisible, initialName, initialUserI
   }, [activeColumn, leftIndex, rightIndex, leftItems, rightItems, toggleGroup, toggleUser]);
 
   useKeyboard((key: ParsedKey) => {
-    if (!isVisible) return;
-
     if (nameInputFocused) {
       if (key.name === 'escape') {
         onClose();
@@ -143,8 +128,6 @@ export default function PresetEditorModal({ isVisible, initialName, initialUserI
         break;
     }
   });
-
-  if (!isVisible) return null;
 
   const isEditing = !!initialName;
   const totalSelected = checkedUserIds.size + checkedGroupIds.size;

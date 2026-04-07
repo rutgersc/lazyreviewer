@@ -5,7 +5,6 @@ import type { MergeRequestState } from '../domain/merge-request-state';
 import { Colors } from '../colors';
 
 interface MrStateModalProps {
-  isVisible: boolean;
   currentState: MergeRequestState;
   onStateSelect: (state: MergeRequestState) => void;
   onClose: () => void;
@@ -20,7 +19,6 @@ const STATE_OPTIONS: Array<{ key: MergeRequestState; label: string }> = [
 ];
 
 export default function MrStateModal({
-  isVisible,
   currentState,
   onStateSelect,
   onClose,
@@ -30,8 +28,6 @@ export default function MrStateModal({
   );
 
   useKeyboard((key: ParsedKey) => {
-    if (!isVisible) return;
-
     switch (key.name) {
       case 'j':
       case 'down':
@@ -54,8 +50,6 @@ export default function MrStateModal({
         break;
     }
   });
-
-  if (!isVisible) return null;
 
   return (
     <box

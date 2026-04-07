@@ -1,14 +1,16 @@
 import { useKeyboard } from "@opentui/react";
 import { TextAttributes, type ParsedKey } from "@opentui/core";
+import { useAtomValue } from "@effect/atom-react";
 import { Colors } from "../colors";
 import { execSync } from "child_process";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { formatDetachedLabel, getWorkingTreeStatus, getWorktrees, type GitWorkingTreeStatus, type WorktreeInfo } from "../git/git-effects";
+import { allMrSourceBranchesByProjectAtom } from "../mergerequests/mergerequests-atom";
 
 interface GitSwitchModalProps {
-  isVisible: boolean;
   branchName: string;
   repoPath: string | null;
+  projectPath: string | null;
   onClose: () => void;
   onSuccess: () => void;
   onError: (message: string) => void;
@@ -24,17 +26,30 @@ const initialStatus: GitWorkingTreeStatus = {
 type ModalPhase = 'worktree-select' | 'confirm';
 
 export default function GitSwitchModal({
-  isVisible,
   branchName,
   repoPath,
+  projectPath,
   onClose,
   onSuccess,
   onError
 }: GitSwitchModalProps) {
-  const [phase, setPhase] = useState<ModalPhase>('worktree-select');
-  const [worktrees, setWorktrees] = useState<readonly WorktreeInfo[]>([]);
+  const allMrBranchesByProject = useAtomValue(allMrSourceBranchesByProjectAtom);
+  const mrBranches = projectPath ? allMrBranchesByProject.get(projectPath) : undefined;
+
+  const [phase, setPhase] = useState<ModalPhase>(() => {
+    if (!repoPath) return 'worktree-select';
+    const wts = getWorktrees(repoPath);
+    return wts.length <= 1 ? 'confirm' : 'worktree-select';
+  });
+  const [worktrees, setWorktrees] = useState<readonly WorktreeInfo[]>(() =>
+    repoPath ? getWorktrees(repoPath) : []
+  );
   const [selectedWorktreeIndex, setSelectedWorktreeIndex] = useState(0);
-  const [status, setStatus] = useState<GitWorkingTreeStatus>(initialStatus);
+  const [status, setStatus] = useState<GitWorkingTreeStatus>(() => {
+    if (!repoPath) return initialStatus;
+    const wts = getWorktrees(repoPath);
+    return wts.length <= 1 ? getWorkingTreeStatus(wts[0]?.path ?? repoPath) : initialStatus;
+  });
 
   const selectWorktree = (index: number) => {
     const path = worktrees[index]?.path;
@@ -44,31 +59,9 @@ export default function GitSwitchModal({
     setStatus(getWorkingTreeStatus(path));
   };
 
-  useEffect(() => {
-    if (isVisible && repoPath) {
-      const wts = getWorktrees(repoPath);
-      setWorktrees(wts);
-      setSelectedWorktreeIndex(0);
-      if (wts.length <= 1) {
-        setPhase('confirm');
-        setStatus(getWorkingTreeStatus(wts[0]?.path ?? repoPath));
-      } else {
-        setPhase('worktree-select');
-        setStatus(initialStatus);
-      }
-    } else {
-      setWorktrees([]);
-      setSelectedWorktreeIndex(0);
-      setPhase('worktree-select');
-      setStatus(initialStatus);
-    }
-  }, [isVisible, repoPath]);
-
   const selectedWorktreePath = worktrees[selectedWorktreeIndex]?.path ?? repoPath;
 
   useKeyboard((key: ParsedKey) => {
-    if (!isVisible) return;
-
     if (phase === 'worktree-select') {
       const num = parseInt(key.name);
       if (!isNaN(num) && num >= 0 && num < worktrees.length) {
@@ -131,8 +124,6 @@ export default function GitSwitchModal({
     }
   });
 
-  if (!isVisible) return null;
-
   if (!repoPath) {
     return (
       <ModalOverlay>
@@ -160,20 +151,24 @@ export default function GitSwitchModal({
             Switch to {branchName.slice(0, 60)} in which worktree?
           </text>
           <box style={{ flexDirection: "column", marginTop: 1 }}>
-            {worktrees.map((wt, i) => (
-              <text
-                key={wt.path}
-                style={{
-                  fg: i === selectedWorktreeIndex ? Colors.SUCCESS : Colors.NEUTRAL,
-                  attributes: i === selectedWorktreeIndex ? TextAttributes.BOLD : 0,
-                }}
-                wrapMode='none'
-              >
-                {i === selectedWorktreeIndex ? '> ' : '  '}
-                [{i}] {wt.folderName} {wt.branch ? `(${wt.branch})` : formatDetachedLabel(wt)}
-                {wt.isMain ? ' [main]' : ''}
-              </text>
-            ))}
+            {worktrees.map((wt, i) => {
+              const hasMr = wt.branch != null && mrBranches?.has(wt.branch) === true;
+              const isSelected = i === selectedWorktreeIndex;
+              return (
+                <text
+                  key={wt.path}
+                  style={{
+                    fg: isSelected ? Colors.SUCCESS : hasMr ? Colors.INFO : Colors.NEUTRAL,
+                    attributes: isSelected || hasMr ? TextAttributes.BOLD : 0,
+                  }}
+                  wrapMode='none'
+                >
+                  {isSelected ? '> ' : '  '}
+                  [{i}] {wt.folderName} {wt.branch ? `(${wt.branch})` : formatDetachedLabel(wt)}
+                  {wt.isMain ? ' [main]' : ''}{hasMr ? ' ● MR' : ''}
+                </text>
+              );
+            })}
           </box>
           <box style={{ marginTop: 1 }}>
             <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }}>

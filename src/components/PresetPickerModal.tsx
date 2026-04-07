@@ -11,7 +11,6 @@ import type { SettingsGroup } from '../data/default-users-and-groups';
 import type { UserId } from '../userselection/userSelection';
 
 interface PresetPickerModalProps {
-  isVisible: boolean;
   onClose: () => void;
 }
 
@@ -59,7 +58,7 @@ const userToItem = (user: UserId): PickerItem => ({
 const isPresetItem = (item: PickerItem) => item.id.startsWith('preset:');
 const presetIdFrom = (item: PickerItem) => item.id.slice('preset:'.length);
 
-export default function PresetPickerModal({ isVisible, onClose }: PresetPickerModalProps) {
+export default function PresetPickerModal({ onClose }: PresetPickerModalProps) {
   const groups = useAtomValue(userGroupsAtom);
   const knownAuthors = useAtomValue(knownAuthorsAtom);
   const setUserFilter = useAtomSet(setUserFilterAtom);
@@ -146,13 +145,10 @@ export default function PresetPickerModal({ isVisible, onClose }: PresetPickerMo
     setPickerKey(k => k + 1);
   };
 
-  if (!isVisible) return null;
-
   if (editorState.mode !== 'pick') {
     const editing = editorState.mode === 'edit' ? editorState.group : undefined;
     return (
       <PresetEditorModal
-        isVisible={true}
         {...(editing && { initialName: editing.name, initialUserIds: editing.users, initialGroupIds: editing.groups })}
         onSave={handleEditorSave}
         onClose={handleEditorClose}
@@ -163,7 +159,6 @@ export default function PresetPickerModal({ isVisible, onClose }: PresetPickerMo
   return (
     <PickerModal
       key={pickerKey}
-      isVisible={true}
       title="Users & Presets"
       placeholder="search..."
       items={items}

@@ -4,15 +4,12 @@ import { Colors } from '../colors';
 import type { ActiveModal } from '../ui/navigation-atom';
 
 interface FChooserModalProps {
-  isVisible: boolean;
   onChoose: (modal: ActiveModal) => void;
   onClose: () => void;
 }
 
-export default function FChooserModal({ isVisible, onChoose, onClose }: FChooserModalProps) {
+export default function FChooserModal({ onChoose, onClose }: FChooserModalProps) {
   useKeyboard((key: ParsedKey) => {
-    if (!isVisible) return;
-
     switch (key.name) {
       case 'f':
         onChoose('presetPicker');
@@ -31,8 +28,6 @@ export default function FChooserModal({ isVisible, onChoose, onClose }: FChooser
         break;
     }
   });
-
-  if (!isVisible) return null;
 
   return (
     <box

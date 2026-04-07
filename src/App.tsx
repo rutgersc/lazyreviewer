@@ -441,67 +441,76 @@ export default function App() {
       </box>
 
       {/* F Chooser Modal - pick filter or sort */}
-      <FChooserModal
-        isVisible={activeModal === 'fChooser'}
-        onChoose={(modal) => setActiveModal(modal)}
-        onClose={() => setActiveModal('none')}
-      />
+      {activeModal === 'fChooser' && (
+        <FChooserModal
+          onChoose={(modal) => setActiveModal(modal)}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
 
       {/* Preset Picker Modal */}
-      <PresetPickerModal
-        isVisible={activeModal === 'presetPicker'}
-        onClose={() => setActiveModal('none')}
-      />
+      {activeModal === 'presetPicker' && (
+        <PresetPickerModal
+          onClose={() => setActiveModal('none')}
+        />
+      )}
 
       {/* Refresh Picker Modal */}
-      <RefreshPickerModal
-        isVisible={activeModal === 'refreshPicker'}
-        onClose={() => setActiveModal('none')}
-      />
+      {activeModal === 'refreshPicker' && (
+        <RefreshPickerModal
+          onClose={() => setActiveModal('none')}
+        />
+      )}
 
-      <MrSortModal
-        isVisible={activeModal === 'mrSort'}
-        currentSortOrder={sortOrder}
-        onSortOrderSelect={handleSortOrderSelect}
-        onClose={() => setActiveModal('none')}
-      />
+      {activeModal === 'mrSort' && (
+        <MrSortModal
+          currentSortOrder={sortOrder}
+          onSortOrderSelect={handleSortOrderSelect}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
 
-      <MrStateModal
-        isVisible={activeModal === 'mrState'}
-        currentState={filterMrState}
-        onStateSelect={(state) => setFilterMrState(state)}
-        onClose={() => setActiveModal('none')}
-      />
+      {activeModal === 'mrState' && (
+        <MrStateModal
+          currentState={filterMrState}
+          onStateSelect={(state) => setFilterMrState(state)}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
 
-      <RepoFilterModal
-        isVisible={activeModal === 'repoFilter'}
-        currentFilter={repoFilter}
-        onConfirm={(filter) => { setRepoFilter(filter); setActiveModal('none'); }}
-        onClose={() => setActiveModal('none')}
-      />
+      {activeModal === 'repoFilter' && (
+        <RepoFilterModal
+          currentFilter={repoFilter}
+          onConfirm={(filter) => { setRepoFilter(filter); setActiveModal('none'); }}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
 
       {/* Git Switch Modal - rendered at app level to cover entire screen */}
-      <GitSwitchModal
-        isVisible={activeModal === 'gitSwitch'}
-        branchName={mergeRequests[selectedIndex]?.sourcebranch || ""}
-        repoPath={mergeRequests[selectedIndex] ? repositoryPaths[mergeRequests[selectedIndex].project.fullPath]?.localPath || null : null}
-        onClose={() => setActiveModal('none')}
-        onSuccess={() => {
-          setCopyNotification('Branch switched!');
-          setTimeout(() => setCopyNotification(null), 2000);
-        }}
-        onError={(message) => {
-          setCopyNotification(message);
-          setTimeout(() => setCopyNotification(null), 5000);
-        }}
-      />
+      {activeModal === 'gitSwitch' && (
+        <GitSwitchModal
+          branchName={mergeRequests[selectedIndex]?.sourcebranch || ""}
+          repoPath={mergeRequests[selectedIndex] ? repositoryPaths[mergeRequests[selectedIndex].project.fullPath]?.localPath || null : null}
+          projectPath={mergeRequests[selectedIndex]?.project.fullPath ?? null}
+          onClose={() => setActiveModal('none')}
+          onSuccess={() => {
+            setCopyNotification('Branch switched!');
+            setTimeout(() => setCopyNotification(null), 2000);
+          }}
+          onError={(message) => {
+            setCopyNotification(message);
+            setTimeout(() => setCopyNotification(null), 5000);
+          }}
+        />
+      )}
 
       {/* Help Modal - rendered at app level to cover entire screen */}
-      <HelpModal
-        isVisible={activeModal === 'help'}
-        globalActions={globalActions}
-        setCopyNotification={setCopyNotification}
-      />
+      {activeModal === 'help' && (
+        <HelpModal
+          globalActions={globalActions}
+          setCopyNotification={setCopyNotification}
+        />
+      )}
 
       {/* Job History Input Modal - standalone lookup */}
       {activeModal === 'jobHistoryInput' && (

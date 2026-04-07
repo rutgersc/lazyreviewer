@@ -8,7 +8,6 @@ import { groupsAtom } from '../data/data-atom';
 import PickerModal, { type PickerItem, type PickerHint } from './PickerModal';
 
 interface RefreshPickerModalProps {
-  readonly isVisible: boolean
   readonly onClose: () => void
 }
 
@@ -17,7 +16,7 @@ const HINTS: readonly PickerHint[] = [
   { key: 'Esc', description: 'close' },
 ];
 
-export default function RefreshPickerModal({ isVisible, onClose }: RefreshPickerModalProps) {
+export default function RefreshPickerModal({ onClose }: RefreshPickerModalProps) {
   const groups = useAtomValue(userGroupsAtom);
   const resolvedGroups = useAtomValue(groupsAtom);
   const knownProjects = useAtomValue(knownProjectsAtom);
@@ -62,7 +61,6 @@ export default function RefreshPickerModal({ isVisible, onClose }: RefreshPicker
 
   return (
     <PickerModal
-      isVisible={isVisible}
       title="Refresh"
       placeholder="search groups & repos..."
       items={items}

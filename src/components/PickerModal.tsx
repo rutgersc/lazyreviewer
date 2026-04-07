@@ -27,7 +27,6 @@ export interface PickerKeyContext {
 }
 
 interface PickerModalProps {
-  readonly isVisible: boolean
   readonly title: string
   readonly placeholder: string
   readonly items: readonly PickerItem[]
@@ -43,7 +42,6 @@ const KEY_UP = [parseKeyString('up')];
 const KEY_DOWN = [parseKeyString('down')];
 
 export default function PickerModal({
-  isVisible,
   title,
   placeholder,
   items,
@@ -75,8 +73,6 @@ export default function PickerModal({
   };
 
   useKeyboard((key: ParsedKey) => {
-    if (!isVisible) return;
-
     if (onExtraKey?.(key, context)) return;
 
     if (matchesAnyKey(key, KEY_UP)) {
@@ -99,8 +95,6 @@ export default function PickerModal({
       onClose();
     }
   });
-
-  if (!isVisible) return null;
 
   return (
     <box

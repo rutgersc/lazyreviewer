@@ -10,7 +10,6 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useAutoScroll } from '../hooks/useAutoScroll';
 
 interface HelpModalProps {
-  isVisible: boolean;
   globalActions: Action[];
   setCopyNotification?: (notification: string | null) => void;
 }
@@ -97,7 +96,7 @@ const actionsToKeyBindings = (actions: Action[]): KeyBinding[] => {
     }));
 };
 
-export default function HelpModal({ isVisible, globalActions }: HelpModalProps) {
+export default function HelpModal({ globalActions }: HelpModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const activePane = useAtomValue(activePaneAtom);
@@ -125,16 +124,7 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
     else setSelectedIndex(index);
   };
 
-  // Reset selection when modal opens or pane changes
-  React.useEffect(() => {
-    if (isVisible) {
-      setSelectedIndex(0);
-    }
-  }, [isVisible, activePane]);
-
   useKeyboard((key: ParsedKey) => {
-    if (!isVisible) return;
-
     switch (key.name) {
       case 'j':
       case 'down': {
@@ -155,8 +145,6 @@ export default function HelpModal({ isVisible, globalActions }: HelpModalProps) 
         break;
     }
   });
-
-  if (!isVisible) return null;
 
   return (
     <box

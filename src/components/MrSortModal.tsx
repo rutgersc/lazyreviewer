@@ -5,7 +5,6 @@ import type { MrSortOrder } from '../mergerequests/mergerequests-atom';
 import { Colors } from '../colors';
 
 interface MrSortModalProps {
-  isVisible: boolean;
   currentSortOrder: MrSortOrder;
   onSortOrderSelect: (sortOrder: MrSortOrder) => void;
   onClose: () => void;
@@ -17,7 +16,6 @@ const SORT_OPTIONS: Array<{ key: MrSortOrder; label: string }> = [
 ];
 
 export default function MrSortModal({
-  isVisible,
   currentSortOrder,
   onSortOrderSelect,
   onClose
@@ -27,8 +25,6 @@ export default function MrSortModal({
   );
 
   useKeyboard((key: ParsedKey) => {
-    if (!isVisible) return;
-
     switch (key.name) {
       case 'j':
       case 'down':
@@ -46,8 +42,6 @@ export default function MrSortModal({
         break;
     }
   });
-
-  if (!isVisible) return null;
 
   return (
     <box

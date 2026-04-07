@@ -854,6 +854,8 @@ export default function MergeRequestPane() {
           {repositoryBranches.map((repo, index) => {
             const allWorktrees = projectBranchMap.get(repo.projectPath)?.allWorktrees;
             const checkedOutBranches = allMrBranchesByProject.get(repo.projectPath);
+            const selectedMr = mergeRequests[selectedIndex];
+            const selectedBranch = selectedMr?.project.fullPath === repo.projectPath ? selectedMr.sourcebranch : null;
             return (
               <box key={repo.projectPath} style={{ flexDirection: "column" }}>
                 {!repo.localPath && (
@@ -863,18 +865,20 @@ export default function MergeRequestPane() {
                 )}
                 {allWorktrees?.map((wt) => {
                   const isCheckedOut = wt.branch != null && checkedOutBranches?.has(wt.branch) === true;
+                  const isSelectedMrBranch = wt.branch != null && wt.branch === selectedBranch;
                   return (
                     <box
                       key={wt.folderName}
                       height={1}
+                      style={isSelectedMrBranch ? { backgroundColor: Colors.TRACK } : {}}
                       {...(isCheckedOut && wt.branch
                         ? { onMouseDown: () => selectMrByBranch({ projectPath: repo.projectPath, branch: wt.branch! }) }
                         : {})}
                     >
                       <text
                         style={{
-                          fg: isCheckedOut ? Colors.INFO : Colors.PRIMARY,
-                          attributes: isCheckedOut ? TextAttributes.BOLD : 0,
+                          fg: isSelectedMrBranch ? Colors.SUCCESS : isCheckedOut ? Colors.INFO : Colors.PRIMARY,
+                          attributes: isSelectedMrBranch || isCheckedOut ? TextAttributes.BOLD : 0,
                         }}
                         wrapMode='none'
                       >
