@@ -139,7 +139,7 @@ const backgroundWorker =
         : true;
 
       const allJobs = headPipeline.stage.flatMap(stage => stage.jobs);
-      const [missingJobNames, relevantJobs] = Array.partition(
+      const [, relevantJobs] = Array.partition(
         jobNamesToMonitor,
         (jobName) =>
           Array.findFirst(allJobs, (job) => job.name === jobName).pipe(
@@ -153,9 +153,6 @@ const backgroundWorker =
           )
       );
 
-      if (missingJobNames.length > 0) {
-        return yield* Effect.fail({ type: 'missingJobs' as const });
-      }
 
       const isNewPipeline = !existingMrPipelineState ||
         existingMrPipelineState.pipelineIid !== headPipeline.iid;
