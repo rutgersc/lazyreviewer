@@ -5,7 +5,7 @@ import { Colors } from "../colors";
 import { execSync } from "child_process";
 import { useState } from "react";
 import { formatDetachedLabel, getWorkingTreeStatus, getWorktrees, type GitWorkingTreeStatus, type WorktreeInfo } from "../git/git-effects";
-import { allMrSourceBranchesByProjectAtom } from "../mergerequests/mergerequests-atom";
+import { allMrSourceBranchesByProjectAtom, mergedMrSourceBranchesByProjectAtom } from "../mergerequests/mergerequests-atom";
 
 interface GitSwitchModalProps {
   branchName: string;
@@ -34,7 +34,9 @@ export default function GitSwitchModal({
   onError
 }: GitSwitchModalProps) {
   const allMrBranchesByProject = useAtomValue(allMrSourceBranchesByProjectAtom);
+  const mergedMrBranchesByProject = useAtomValue(mergedMrSourceBranchesByProjectAtom);
   const mrBranches = projectPath ? allMrBranchesByProject.get(projectPath) : undefined;
+  const mergedMrBranches = projectPath ? mergedMrBranchesByProject.get(projectPath) : undefined;
 
   const [phase, setPhase] = useState<ModalPhase>(() => {
     if (!repoPath) return 'worktree-select';
@@ -151,21 +153,23 @@ export default function GitSwitchModal({
             Switch to {branchName.slice(0, 60)} in which worktree?
           </text>
           <box style={{ flexDirection: "column", marginTop: 1 }}>
+            {/* MR branch colors: keep in sync with worktree overview in MergeRequestPane */}
             {worktrees.map((wt, i) => {
               const hasMr = wt.branch != null && mrBranches?.has(wt.branch) === true;
+              const isMerged = wt.branch != null && mergedMrBranches?.has(wt.branch) === true;
               const isSelected = i === selectedWorktreeIndex;
               return (
                 <text
                   key={wt.path}
                   style={{
-                    fg: isSelected ? Colors.SUCCESS : hasMr ? Colors.INFO : Colors.NEUTRAL,
-                    attributes: isSelected || hasMr ? TextAttributes.BOLD : 0,
+                    fg: isSelected ? Colors.SUCCESS : isMerged ? Colors.WARNING : hasMr ? Colors.INFO : Colors.NEUTRAL,
+                    attributes: isSelected || hasMr || isMerged ? TextAttributes.BOLD : 0,
                   }}
                   wrapMode='none'
                 >
                   {isSelected ? '> ' : '  '}
                   [{i}] {wt.folderName} {wt.branch ? `(${wt.branch})` : formatDetachedLabel(wt)}
-                  {wt.isMain ? ' [main]' : ''}{hasMr ? ' ● MR' : ''}
+                  {wt.isMain ? ' [main]' : ''}{isMerged ? ' ✓ merged' : hasMr ? ' ● MR' : ''}
                 </text>
               );
             })}

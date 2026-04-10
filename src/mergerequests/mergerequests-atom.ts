@@ -84,6 +84,25 @@ export const allMrSourceBranchesByProjectAtom = Atom.map(
     })
 );
 
+export const mergedMrSourceBranchesByProjectAtom = Atom.map(
+  allMrsAtom,
+  (result) =>
+    AsyncResult.match(result, {
+      onInitial: () => new Map<string, ReadonlySet<string>>(),
+      onSuccess: (success) => {
+        const map = new Map<string, Set<string>>();
+        for (const mr of success.value.mrsByGid.values()) {
+          if (mr.state !== "merged") continue;
+          const existing = map.get(mr.project.fullPath);
+          if (existing) existing.add(mr.sourcebranch);
+          else map.set(mr.project.fullPath, new Set([mr.sourcebranch]));
+        }
+        return map as ReadonlyMap<string, ReadonlySet<string>>;
+      },
+      onFailure: () => new Map<string, ReadonlySet<string>>()
+    })
+);
+
 export const allJiraIssuesAtom = Atom.map(
   allMrsAtom,
   (result) =>

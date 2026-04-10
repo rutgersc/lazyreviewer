@@ -23,7 +23,7 @@ import type { MergeRequestState } from "../domain/merge-request-state";
 import { filterPipelineJobs } from "../domain/display/pipelineJobFiltering";
 import { Atom, AsyncResult } from "effect/unstable/reactivity"
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom, allMrSourceBranchesByProjectAtom, selectMrByBranchAtom, pinnedMrGidsAtom } from "../mergerequests/mergerequests-atom";
+import { filterMrStateAtom, selectedMrIndexAtom, branchDifferencesAtom, refetchSelectedMrPipelineAtom, unwrappedLastRefreshTimestampAtom, isMergeRequestsLoadingAtom, unwrappedMergeRequestsAtom, allJiraIssuesAtom, allMrsAtom, allMrSourceBranchesByProjectAtom, mergedMrSourceBranchesByProjectAtom, selectMrByBranchAtom, pinnedMrGidsAtom } from "../mergerequests/mergerequests-atom";
 import { activePaneAtom, activeModalAtom, nowAtom } from "../ui/navigation-atom";
 import { currentUserIdAtom } from "../settings/settings-atom";
 import type { JiraIssue } from "../jira/jira-schema";
@@ -571,6 +571,7 @@ export default function MergeRequestPane() {
 
   const projectBranchMap = useAtomValue(projectBranchMapAtom);
   const allMrBranchesByProject = useAtomValue(allMrSourceBranchesByProjectAtom);
+  const mergedMrBranchesByProject = useAtomValue(mergedMrSourceBranchesByProjectAtom);
 
   const selectedMrContext = useMemo((): SelectedMrContext | null => {
     const selectedMr = mergeRequests[selectedIndex];
@@ -851,9 +852,11 @@ export default function MergeRequestPane() {
             }, 0),
           }}
         >
+          {/* MR branch colors: keep in sync with worktree list in GitSwitchModal */}
           {repositoryBranches.map((repo, index) => {
             const allWorktrees = projectBranchMap.get(repo.projectPath)?.allWorktrees;
             const checkedOutBranches = allMrBranchesByProject.get(repo.projectPath);
+            const mergedBranches = mergedMrBranchesByProject.get(repo.projectPath);
             const selectedMr = mergeRequests[selectedIndex];
             const selectedBranch = selectedMr?.project.fullPath === repo.projectPath ? selectedMr.sourcebranch : null;
             return (
@@ -865,6 +868,7 @@ export default function MergeRequestPane() {
                 )}
                 {allWorktrees?.map((wt) => {
                   const isCheckedOut = wt.branch != null && checkedOutBranches?.has(wt.branch) === true;
+                  const isMerged = wt.branch != null && mergedBranches?.has(wt.branch) === true;
                   const isSelectedMrBranch = wt.branch != null && wt.branch === selectedBranch;
                   return (
                     <box
@@ -877,12 +881,12 @@ export default function MergeRequestPane() {
                     >
                       <text
                         style={{
-                          fg: isSelectedMrBranch ? Colors.SUCCESS : isCheckedOut ? Colors.INFO : Colors.PRIMARY,
-                          attributes: isSelectedMrBranch || isCheckedOut ? TextAttributes.BOLD : 0,
+                          fg: isSelectedMrBranch ? Colors.SUCCESS : isMerged ? Colors.WARNING : isCheckedOut ? Colors.INFO : Colors.PRIMARY,
+                          attributes: isSelectedMrBranch || isCheckedOut || isMerged ? TextAttributes.BOLD : 0,
                         }}
                         wrapMode='none'
                       >
-                        {`[${wt.index}] ${wt.folderName} : ${wt.branch ?? formatDetachedLabel(wt)}`}
+                        {`[${wt.index}] ${wt.folderName} : ${wt.branch ?? formatDetachedLabel(wt)}`}{isMerged ? ' ✓ merged' : ''}
                       </text>
                     </box>
                   );
