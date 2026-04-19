@@ -845,18 +845,23 @@ export default function MergeRequestPane() {
           style={{
             flexDirection: "column",
             marginTop: 1,
-            height: repositoryBranches.reduce((sum, repo, index) => {
-              const wtCount = projectBranchMap.get(repo.projectPath)?.allWorktrees.length ?? 0;
+            height: repositoryBranches.reduce((sum, repo) => {
+              const allWt = projectBranchMap.get(repo.projectPath)?.allWorktrees ?? [];
+              const mrBranches = allMrBranchesByProject.get(repo.projectPath);
+              const visibleCount = repo.hidden
+                ? allWt.filter(wt => wt.index === 0 || (wt.branch != null && mrBranches?.has(wt.branch))).length
+                : allWt.length;
               const noPathWarning = repo.localPath ? 0 : 1;
-              return sum + noPathWarning + wtCount;
+              return sum + noPathWarning + visibleCount;
             }, 0),
           }}
         >
           {/* MR branch colors: keep in sync with worktree list in GitSwitchModal */}
           {repositoryBranches.map((repo, index) => {
-            const allWorktrees = projectBranchMap.get(repo.projectPath)?.allWorktrees;
             const checkedOutBranches = allMrBranchesByProject.get(repo.projectPath);
             const mergedBranches = mergedMrBranchesByProject.get(repo.projectPath);
+            const allWorktrees = projectBranchMap.get(repo.projectPath)?.allWorktrees
+              .filter(wt => !repo.hidden || wt.index === 0 || (wt.branch != null && checkedOutBranches?.has(wt.branch)));
             const selectedMr = mergeRequests[selectedIndex];
             const selectedBranch = selectedMr?.project.fullPath === repo.projectPath ? selectedMr.sourcebranch : null;
             return (

@@ -293,7 +293,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
             let changed = false;
             for (const path of discoveredPaths) {
               if (!(path in updated)) {
-                updated[path] = { localPath: '', remoteName: 'origin' };
+                updated[path] = { localPath: '', remoteName: 'origin', hidden: false };
                 changed = true;
               }
             }

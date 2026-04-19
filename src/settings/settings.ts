@@ -61,7 +61,8 @@ export type BackgroundSyncSettings = Schema.Schema.Type<typeof BackgroundSyncSet
 // Repository path configuration schema
 const RepositoryPathConfigSchema = mutableStruct({
   localPath: Schema.String,
-  remoteName: Schema.String.pipe(Schema.withDecodingDefaultKey(() => 'origin'))
+  remoteName: Schema.String.pipe(Schema.withDecodingDefaultKey(() => 'origin')),
+  hidden: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(() => false))
 })
 export type RepositoryPathConfig = Schema.Schema.Type<typeof RepositoryPathConfigSchema>
 
@@ -69,9 +70,9 @@ export type RepositoryPathConfig = Schema.Schema.Type<typeof RepositoryPathConfi
 const RepositoryPathConfigWithMigration = Schema.Union([Schema.String, RepositoryPathConfigSchema]).pipe(
   Schema.decodeTo(RepositoryPathConfigSchema, {
     decode: SchemaGetter.transform((input) => typeof input === 'string'
-      ? { localPath: input, remoteName: 'origin' }
+      ? { localPath: input, remoteName: 'origin', hidden: false }
       : input),
-    encode: SchemaGetter.transform((output) => ({ localPath: output.localPath, remoteName: output.remoteName ?? 'origin' }))
+    encode: SchemaGetter.transform((output) => ({ localPath: output.localPath, remoteName: output.remoteName ?? 'origin', hidden: output.hidden ?? false }))
   })
 )
 

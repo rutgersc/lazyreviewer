@@ -15,6 +15,7 @@ export interface RepositoryBranch {
   projectPath: string;
   projectName: string;
   localPath: string;
+  hidden: boolean;
   currentBranch: string | null;
   currentTag: string | null;
   currentHead: string | null;
@@ -45,6 +46,7 @@ export const repositoryBranchesAtom = Atom.make((get): RepositoryBranch[] => {
         projectPath,
         projectName: projectPath,
         localPath,
+        hidden: config.hidden,
         currentBranch: currentWt?.branch ?? null,
         currentTag: currentWt?.tag ?? null,
         currentHead: currentWt?.head ?? null,

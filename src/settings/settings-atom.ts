@@ -332,7 +332,7 @@ export const repositoryColorsAtom = selectFromSettings(
 
 export const repositoryPathsAtom = selectFromSettings(
   s => s.repositoryPaths,
-  {} as Record<string, { localPath: string; remoteName: string }>,
+  {} as Record<string, { localPath: string; remoteName: string; hidden: boolean }>,
   shallowObjectEquals
 );
 
@@ -342,7 +342,7 @@ export const ensureRepositoryPathsAtom = appAtomRuntime.fn((repoPaths: readonly 
     let changed = false
     for (const path of repoPaths) {
       if (!(path in updated)) {
-        updated[path] = { localPath: '', remoteName: 'origin' }
+        updated[path] = { localPath: '', remoteName: 'origin', hidden: false }
         changed = true
       }
     }
@@ -365,6 +365,7 @@ export const completeOnboardingAtom = appAtomRuntime.fn((params: CompleteOnboard
       repositoryPaths[path] = {
         localPath,
         remoteName: repositoryPaths[path]?.remoteName ?? 'origin',
+        hidden: repositoryPaths[path]?.hidden ?? false,
       }
     }
     return {
