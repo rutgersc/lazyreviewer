@@ -106,6 +106,7 @@ export type Scalars = {
   EnvironmentID: { input: any; output: any; }
   EpicID: { input: any; output: any; }
   EpicTreeSortingID: { input: any; output: any; }
+  GeoAbuseReportUploadRegistryID: { input: any; output: any; }
   GeoBaseRegistryID: { input: any; output: any; }
   GeoCiSecureFileRegistryID: { input: any; output: any; }
   GeoContainerRepositoryRegistryID: { input: any; output: any; }
@@ -117,10 +118,12 @@ export type Scalars = {
   GeoLfsObjectRegistryID: { input: any; output: any; }
   GeoMergeRequestDiffRegistryID: { input: any; output: any; }
   GeoPackageFileRegistryID: { input: any; output: any; }
+  GeoPackagesHelmMetadataCacheRegistryID: { input: any; output: any; }
   GeoPackagesNugetSymbolRegistryID: { input: any; output: any; }
   GeoPagesDeploymentRegistryID: { input: any; output: any; }
   GeoPipelineArtifactRegistryID: { input: any; output: any; }
   GeoProjectRepositoryRegistryID: { input: any; output: any; }
+  GeoProjectUploadRegistryID: { input: any; output: any; }
   GeoProjectWikiRepositoryRegistryID: { input: any; output: any; }
   GeoSnippetRepositoryRegistryID: { input: any; output: any; }
   GeoTerraformStateVersionRegistryID: { input: any; output: any; }
@@ -209,6 +212,7 @@ export type Scalars = {
   SbomComponentID: { input: any; output: any; }
   SbomComponentVersionID: { input: any; output: any; }
   SbomOccurrenceID: { input: any; output: any; }
+  SecurityAscpScanID: { input: any; output: any; }
   SecurityAttributeID: { input: any; output: any; }
   SecurityCategoryID: { input: any; output: any; }
   SecurityOrchestrationPolicyConfigurationID: { input: any; output: any; }
@@ -230,9 +234,12 @@ export type Scalars = {
   UserID: { input: any; output: any; }
   UsersSavedReplyID: { input: any; output: any; }
   VirtualRegistriesContainerRegistryID: { input: any; output: any; }
+  VirtualRegistriesContainerRegistryUpstreamID: { input: any; output: any; }
   VirtualRegistriesContainerUpstreamID: { input: any; output: any; }
   VirtualRegistriesPackagesMavenRegistryID: { input: any; output: any; }
+  VirtualRegistriesPackagesMavenRegistryUpstreamID: { input: any; output: any; }
   VirtualRegistriesPackagesMavenUpstreamID: { input: any; output: any; }
+  VirtualRegistriesPackagesMavenUpstreamRuleID: { input: any; output: any; }
   VulnerabilitiesExternalIssueLinkID: { input: any; output: any; }
   VulnerabilitiesScannerID: { input: any; output: any; }
   VulnerabilitiesStateTransitionID: { input: any; output: any; }
@@ -251,6 +258,81 @@ export type Scalars = {
 export type AbuseReport = {
   /** Global ID of the abuse report. */
   readonly id: Scalars['AbuseReportID']['output'];
+};
+
+/** Represents the Geo replication and verification state of a abuse_report_upload */
+export type AbuseReportUploadRegistry = {
+  /** ID of the Abuse Report Upload. */
+  readonly abuseReportUploadId: Scalars['ID']['output'];
+  /** Indicate if the checksums of the AbuseReportUploadRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the AbuseReportUploadRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this AbuseReportUploadRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the AbuseReportUploadRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** Error message during sync of the AbuseReportUploadRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the AbuseReportUploadRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the AbuseReportUploadRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the AbuseReportUploadRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** Timestamp after which the AbuseReportUploadRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the AbuseReportUploadRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the AbuseReportUploadRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** The local checksum of the AbuseReportUploadRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the AbuseReportUploadRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the AbuseReportUploadRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the AbuseReportUploadRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the AbuseReportUploadRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of AbuseReportUploadRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the AbuseReportUploadRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the AbuseReportUploadRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+};
+
+/** The connection type for AbuseReportUploadRegistry. */
+export type AbuseReportUploadRegistryConnection = {
+  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<AbuseReportUploadRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<AbuseReportUploadRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for AbuseReportUploadRegistry. */
+export type AbuseReportUploadRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type AbuseReportUploadRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<AbuseReportUploadRegistry>;
 };
 
 /** Represents the access level of a relationship between a User and object that it is related to */
@@ -329,20 +411,11 @@ export type AccessLevelGroup = {
 };
 
 export type AccessLevelInterface = {
-  /**
-   * Returns true when tag rule is for tag immutability. Otherwise, false. Introduced in GitLab 17.11: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
-   */
+  /** Returns true when tag rule is for tag immutability. Otherwise, false. */
   readonly immutable: Scalars['Boolean']['output'];
-  /**
-   * Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can delete tags.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can delete tags.  */
   readonly minimumAccessLevelForDelete: Maybe<ContainerProtectionTagRuleAccessLevel>;
-  /**
-   * Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can push tags.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can push tags.  */
   readonly minimumAccessLevelForPush: Maybe<ContainerProtectionTagRuleAccessLevel>;
 };
 
@@ -679,6 +752,8 @@ export type AddOnUser = Todoable & User & {
   readonly customAttributes: Maybe<ReadonlyArray<CustomAttribute>>;
   /** Discord ID of the user. */
   readonly discord: Maybe<Scalars['String']['output']>;
+  /** Duo status for the user. */
+  readonly duoStatus: Maybe<UserDuoStatus>;
   /**
    * User email. Deprecated in GitLab 13.7: This was renamed.
    * @deprecated This was renamed. Please use `User.publicEmail`. Deprecated in GitLab 13.7.
@@ -1455,6 +1530,8 @@ export type AgentPlatformSessionsAggregationResponseDurationQuantileArgs = {
 
 /** The connection type for AgentPlatformSessionsAggregationResponse. */
 export type AgentPlatformSessionsAggregationResponseConnection = {
+  /** Total number of aggregated rows. */
+  readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<AgentPlatformSessionsAggregationResponseEdge>>>;
   /** A list of nodes. */
@@ -1829,6 +1906,8 @@ export type AiCatalogAgent = AiCatalogItem & {
   readonly foundationalFlowReference: Maybe<Scalars['String']['output']>;
   /** ID of the item. */
   readonly id: Scalars['ID']['output'];
+  /** Whether the item is enabled in the project it is managed by. This field can only be resolved for one AiCatalogItem in any single request. */
+  readonly isEnabledInManagedByProject: Scalars['Boolean']['output'];
   /** Type of the item. */
   readonly itemType: AiCatalogItemType;
   /** Latest version of the item. */
@@ -1886,6 +1965,11 @@ export type AiCatalogAgentCreateInput = {
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
   /** Description for the agent. */
   readonly description: Scalars['String']['input'];
+  /**
+   * MCP servers to associate with the agent. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly mcpServers: InputMaybe<ReadonlyArray<Scalars['AiCatalogMcpServerID']['input']>>;
   /** Name for the agent. */
   readonly name: Scalars['String']['input'];
   /** Project for the agent. */
@@ -1940,6 +2024,11 @@ export type AiCatalogAgentUpdateInput = {
   readonly description: InputMaybe<Scalars['String']['input']>;
   /** Global ID of the catalog Agent to update. */
   readonly id: Scalars['AiCatalogItemID']['input'];
+  /**
+   * MCP servers to associate with the agent. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly mcpServers: InputMaybe<ReadonlyArray<Scalars['AiCatalogMcpServerID']['input']>>;
   /** Name for the agent. */
   readonly name: InputMaybe<Scalars['String']['input']>;
   /** Whether the agent is publicly visible in the catalog. */
@@ -1978,6 +2067,11 @@ export type AiCatalogAgentVersion = AiCatalogItemVersion & {
   readonly id: Scalars['ID']['output'];
   /** Item the version belongs to. */
   readonly item: AiCatalogItem;
+  /**
+   * MCP servers associated with the item. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly mcpServers: Maybe<AiCatalogMcpServerConnection>;
   /** Indicates the item version is released. */
   readonly released: Scalars['Boolean']['output'];
   /** Timestamp of when the item version was released. */
@@ -1992,6 +2086,15 @@ export type AiCatalogAgentVersion = AiCatalogItemVersion & {
   readonly userPrompt: Maybe<Scalars['String']['output']>;
   /** Version name of the item version. */
   readonly versionName: Maybe<Scalars['String']['output']>;
+};
+
+
+/** An AI catalog agent version */
+export type AiCatalogAgentVersionMcpServersArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -2055,6 +2158,8 @@ export type AiCatalogFlow = AiCatalogItem & {
   readonly foundationalFlowReference: Maybe<Scalars['String']['output']>;
   /** ID of the item. */
   readonly id: Scalars['ID']['output'];
+  /** Whether the item is enabled in the project it is managed by. This field can only be resolved for one AiCatalogItem in any single request. */
+  readonly isEnabledInManagedByProject: Scalars['Boolean']['output'];
   /** Type of the item. */
   readonly itemType: AiCatalogItemType;
   /** Latest version of the item. */
@@ -2282,6 +2387,8 @@ export type AiCatalogItem = {
   readonly foundationalFlowReference: Maybe<Scalars['String']['output']>;
   /** ID of the item. */
   readonly id: Scalars['ID']['output'];
+  /** Whether the item is enabled in the project it is managed by. This field can only be resolved for one AiCatalogItem in any single request. */
+  readonly isEnabledInManagedByProject: Scalars['Boolean']['output'];
   /** Type of the item. */
   readonly itemType: AiCatalogItemType;
   /** Latest version of the item. */
@@ -2689,6 +2796,40 @@ export type AiCatalogMcpServerTransport =
   /** HTTP transport. */
   | 'HTTP';
 
+/** Autogenerated input type of AiCatalogMcpServerUpdate */
+export type AiCatalogMcpServerUpdateInput = {
+  /** Authentication type for the MCP server. */
+  readonly authType: InputMaybe<AiCatalogMcpServerAuthType>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Description for the MCP server. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** Homepage URL for the MCP server. */
+  readonly homepageUrl: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the MCP server to update. */
+  readonly id: Scalars['AiCatalogMcpServerID']['input'];
+  /** Name for the MCP server. */
+  readonly name: InputMaybe<Scalars['String']['input']>;
+  /** OAuth client ID for the MCP server. */
+  readonly oauthClientId: InputMaybe<Scalars['String']['input']>;
+  /** OAuth client secret for the MCP server. */
+  readonly oauthClientSecret: InputMaybe<Scalars['String']['input']>;
+  /** Transport type for the MCP server. */
+  readonly transport: InputMaybe<AiCatalogMcpServerTransport>;
+  /** URL for the MCP server. */
+  readonly url: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Autogenerated return type of AiCatalogMcpServerUpdate. */
+export type AiCatalogMcpServerUpdatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** MCP server that was updated. */
+  readonly mcpServer: Maybe<AiCatalogMcpServer>;
+};
+
 /** An AI catalog third party flow */
 export type AiCatalogThirdPartyFlow = AiCatalogItem & {
   /**
@@ -2711,6 +2852,8 @@ export type AiCatalogThirdPartyFlow = AiCatalogItem & {
   readonly foundationalFlowReference: Maybe<Scalars['String']['output']>;
   /** ID of the item. */
   readonly id: Scalars['ID']['output'];
+  /** Whether the item is enabled in the project it is managed by. This field can only be resolved for one AiCatalogItem in any single request. */
+  readonly isEnabledInManagedByProject: Scalars['Boolean']['output'];
   /** Type of the item. */
   readonly itemType: AiCatalogItemType;
   /** Latest version of the item. */
@@ -3140,6 +3283,8 @@ export type AiFeatures =
   | 'RESOLVE_VULNERABILITY'
   /** Review merge request feature setting */
   | 'REVIEW_MERGE_REQUEST'
+  /** Sast vulnerability fp detection feature setting */
+  | 'SAST_VULNERABILITY_FP_DETECTION'
   /** Summarize new merge request feature setting */
   | 'SUMMARIZE_NEW_MERGE_REQUEST'
   /** Summarize review feature setting */
@@ -3548,10 +3693,14 @@ export type AiModelSelectionFeatures =
   | 'DUO_CHAT_WRITE_TESTS'
   /** Generate commit message feature setting */
   | 'GENERATE_COMMIT_MESSAGE'
+  /** Glab ask git command feature setting */
+  | 'GLAB_ASK_GIT_COMMAND'
   /** Resolve vulnerability feature setting */
   | 'RESOLVE_VULNERABILITY'
   /** Review merge request feature setting */
   | 'REVIEW_MERGE_REQUEST'
+  /** Sast vulnerability fp detection feature setting */
+  | 'SAST_VULNERABILITY_FP_DETECTION'
   /** Summarize new merge request feature setting */
   | 'SUMMARIZE_NEW_MERGE_REQUEST'
   /** Summarize review feature setting */
@@ -5096,6 +5245,80 @@ export type ArtifactDestroyPayload = {
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
 };
 
+/** An ASCP scan of a project */
+export type AscpScan = {
+  /** Base commit SHA for incremental scans. */
+  readonly baseCommitSha: Maybe<Scalars['String']['output']>;
+  /** Reference to the base scan for incremental scans. */
+  readonly baseScan: Maybe<AscpScan>;
+  /** Git commit SHA that was scanned. */
+  readonly commitSha: Scalars['String']['output'];
+  /** Timestamp when the scan was created. */
+  readonly createdAt: Scalars['Time']['output'];
+  /** ID of the scan. */
+  readonly id: Scalars['SecurityAscpScanID']['output'];
+  /** Sequence number of the scan within the project. */
+  readonly scanSequence: Scalars['Int']['output'];
+  /** Type of scan (full or incremental). */
+  readonly scanType: AscpScanType;
+  /** Timestamp when the scan was last updated. */
+  readonly updatedAt: Scalars['Time']['output'];
+};
+
+/** The connection type for AscpScan. */
+export type AscpScanConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<AscpScanEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<AscpScan>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** Autogenerated input type of AscpScanCreate */
+export type AscpScanCreateInput = {
+  /** Base commit SHA for incremental scans. */
+  readonly baseCommitSha: InputMaybe<Scalars['String']['input']>;
+  /** ID of the base scan for incremental scans. */
+  readonly baseScanId: InputMaybe<Scalars['SecurityAscpScanID']['input']>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Git commit SHA that was scanned. */
+  readonly commitSha: Scalars['String']['input'];
+  /** Full path of the project. */
+  readonly projectPath: Scalars['ID']['input'];
+  /** Type of scan (default: full). */
+  readonly scanType: InputMaybe<AscpScanType>;
+};
+
+/** Autogenerated return type of AscpScanCreate. */
+export type AscpScanCreatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /**
+   * Created scan. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly scan: Maybe<AscpScan>;
+};
+
+/** An edge in a connection. */
+export type AscpScanEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<AscpScan>;
+};
+
+/** Type of ASCP scan (full or incremental). */
+export type AscpScanType =
+  /** Full scan of the entire codebase. */
+  | 'FULL'
+  /** Incremental scan based on changes since last scan. */
+  | 'INCREMENTAL';
+
 /** Represents a vulnerability asset type. */
 export type AssetType = {
   /** Name of the asset. */
@@ -5858,6 +6081,8 @@ export type AutocompletedUser = Todoable & User & {
   readonly customAttributes: Maybe<ReadonlyArray<CustomAttribute>>;
   /** Discord ID of the user. */
   readonly discord: Maybe<Scalars['String']['output']>;
+  /** Duo status for the user. */
+  readonly duoStatus: Maybe<UserDuoStatus>;
   /**
    * User email. Deprecated in GitLab 13.7: This was renamed.
    * @deprecated This was renamed. Please use `User.publicEmail`. Deprecated in GitLab 13.7.
@@ -6415,7 +6640,7 @@ export type AwardEmoji = {
   /** Emoji description. */
   readonly description: Scalars['String']['output'];
   /** Emoji as an icon. */
-  readonly emoji: Scalars['String']['output'];
+  readonly emoji: Maybe<Scalars['String']['output']>;
   /** Emoji name. */
   readonly name: Scalars['String']['output'];
   /** Emoji in Unicode. */
@@ -7214,6 +7439,8 @@ export type BoardIssueInput = {
   readonly weight: InputMaybe<Scalars['String']['input']>;
   /** Filter by weight ID wildcard. Incompatible with weight. */
   readonly weightWildcardId: InputMaybe<WeightWildcardId>;
+  /** Filter by work item type global IDs. */
+  readonly workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 /** Represents a list for an issue board */
@@ -7907,6 +8134,8 @@ export type CiCatalogResourceVersionsArgs = {
 };
 
 export type CiCatalogResourceComponent = {
+  /** Description of the component. */
+  readonly description: Maybe<Scalars['String']['output']>;
   /** ID of the component. */
   readonly id: Scalars['CiCatalogResourcesComponentID']['output'];
   /** Path used to include the component. */
@@ -8714,12 +8943,12 @@ export type CiInputsInput = {
 export type CiInputsRule = {
   /** Parsed condition tree for frontend eval. */
   readonly conditionTree: Maybe<CiInputsCondition>;
-  /** Default value when rule matches. */
-  readonly default: Maybe<Scalars['String']['output']>;
+  /** Default value when rule matches. Can be a string, array, number, or boolean. */
+  readonly default: Maybe<Scalars['CiInputsValue']['output']>;
   /** Condition expression. */
   readonly if: Maybe<Scalars['String']['output']>;
-  /** Available options when rule matches. */
-  readonly options: Maybe<ReadonlyArray<Scalars['String']['output']>>;
+  /** Available options when rule matches. Each option can be a string, array, number, or boolean. */
+  readonly options: Maybe<ReadonlyArray<Scalars['CiInputsValue']['output']>>;
 };
 
 /** Input for pipeline creation */
@@ -9016,6 +9245,10 @@ export type CiJobAnalyticsSort =
   | 'P99_DURATION_ASC'
   /** Sort by 99th percentile duration in descending order. */
   | 'P99_DURATION_DESC'
+  /** Sort by stage name in ascending order. */
+  | 'STAGE_NAME_ASC'
+  /** Sort by stage name in descending order. */
+  | 'STAGE_NAME_DESC'
   /** Sort by success rate in ascending order. */
   | 'SUCCESS_RATE_ASC'
   /** Sort by success rate in descending order. */
@@ -10310,6 +10543,11 @@ export type CiRunner = {
   readonly tagList: Maybe<ReadonlyArray<Scalars['String']['output']>>;
   /** Runner token expiration time. */
   readonly tokenExpiresAt: Maybe<Scalars['Time']['output']>;
+  /**
+   * Deadline after which token rotation is rejected. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly tokenRotationDeadline: Maybe<Scalars['Time']['output']>;
   /** Availability of upgrades for the runner. */
   readonly upgradeStatus: Maybe<CiRunnerUpgradeStatus>;
   /** Permissions for the current user on the resource */
@@ -11816,7 +12054,7 @@ export type ComparedSecurityReportFinding = {
    */
   readonly location: Maybe<VulnerabilityLocation>;
   /**
-   * Indicates whether the finding matches an auto-dismiss policy. Returns `null` if `auto_dismiss_vulnerability_policies` feature flag is disabled. Introduced in GitLab 18.9: **Status**: Experiment.
+   * Indicates whether the finding matches an auto-dismiss policy. Introduced in GitLab 18.9: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.9.
    */
   readonly matchesAutoDismissPolicy: Maybe<Scalars['Boolean']['output']>;
@@ -12668,6 +12906,24 @@ export type ContactStateCounts = {
   readonly inactive: Maybe<Scalars['Int']['output']>;
 };
 
+/** Autogenerated input type of ContainerCacheEntryDelete */
+export type ContainerCacheEntryDeleteInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** ID of the cache entry. */
+  readonly id: Scalars['String']['input'];
+};
+
+/** Autogenerated return type of ContainerCacheEntryDelete. */
+export type ContainerCacheEntryDeletePayload = {
+  /** Deleted container cache entry. */
+  readonly cacheEntry: Maybe<ContainerUpstreamCacheEntry>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
 /** A tag expiration policy designed to keep only the images that matter most */
 export type ContainerExpirationPolicy = {
   /** This container expiration policy schedule. */
@@ -12730,20 +12986,11 @@ export type ContainerExpirationPolicyOlderThanEnum =
 
 /** Represents the most restrictive permissions for a container image tag */
 export type ContainerProtectionAccessLevel = AccessLevelInterface & {
-  /**
-   * Returns true when tag rule is for tag immutability. Otherwise, false. Introduced in GitLab 17.11: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
-   */
+  /** Returns true when tag rule is for tag immutability. Otherwise, false. */
   readonly immutable: Scalars['Boolean']['output'];
-  /**
-   * Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can delete tags.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can delete tags.  */
   readonly minimumAccessLevelForDelete: Maybe<ContainerProtectionTagRuleAccessLevel>;
-  /**
-   * Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can push tags.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can push tags.  */
   readonly minimumAccessLevelForPush: Maybe<ContainerProtectionTagRuleAccessLevel>;
 };
 
@@ -12751,7 +12998,10 @@ export type ContainerProtectionAccessLevel = AccessLevelInterface & {
 export type ContainerProtectionRepositoryRule = {
   /** ID of the container repository protection rule. */
   readonly id: Scalars['ContainerRegistryProtectionRuleID']['output'];
-  /** Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. */
+  /**
+   * Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. Valid only when feature flag `container_registry_protected_containers_delete` is enabled. Introduced in GitLab 17.11: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
+   */
   readonly minimumAccessLevelForDelete: Maybe<ContainerProtectionRepositoryRuleAccessLevel>;
   /** Minimum GitLab access level required to push container images to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. */
   readonly minimumAccessLevelForPush: Maybe<ContainerProtectionRepositoryRuleAccessLevel>;
@@ -12788,30 +13038,15 @@ export type ContainerProtectionRepositoryRuleEdge = {
 
 /** A container repository tag protection rule designed to prevent users with a certain access level or lower from altering the container registry. */
 export type ContainerProtectionTagRule = AccessLevelInterface & {
-  /**
-   * ID of the container repository tag protection rule. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** ID of the container repository tag protection rule. */
   readonly id: Scalars['ContainerRegistryProtectionTagRuleID']['output'];
-  /**
-   * Returns true when tag rule is for tag immutability. Otherwise, false. Introduced in GitLab 17.11: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
-   */
+  /** Returns true when tag rule is for tag immutability. Otherwise, false. */
   readonly immutable: Scalars['Boolean']['output'];
-  /**
-   * Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can delete tags.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can delete tags.  */
   readonly minimumAccessLevelForDelete: Maybe<ContainerProtectionTagRuleAccessLevel>;
-  /**
-   * Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can push tags.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can push tags.  */
   readonly minimumAccessLevelForPush: Maybe<ContainerProtectionTagRuleAccessLevel>;
-  /**
-   * The pattern that matches container image tags to protect. For example, `v1.*`. Wildcard character `*` allowed. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** The pattern that matches container image tags to protect. For example, `v1.*`. Wildcard character `*` allowed. */
   readonly tagNamePattern: Scalars['String']['output'];
   /** Permissions for the current user on the resource */
   readonly userPermissions: ContainerRegistryProtectionTagRulePermissions;
@@ -12819,11 +13054,11 @@ export type ContainerProtectionTagRule = AccessLevelInterface & {
 
 /** Access level of a container registry tag protection rule resource */
 export type ContainerProtectionTagRuleAccessLevel =
-  /** Admin access. Introduced in GitLab 17.8: **Status**: Experiment. */
+  /** Admin access. */
   | 'ADMIN'
-  /** Maintainer access. Introduced in GitLab 17.8: **Status**: Experiment. */
+  /** Maintainer access. */
   | 'MAINTAINER'
-  /** Owner access. Introduced in GitLab 17.8: **Status**: Experiment. */
+  /** Owner access. */
   | 'OWNER';
 
 /** The connection type for ContainerProtectionTagRule. */
@@ -13208,10 +13443,7 @@ export type ContainerRepositoryTag = {
   readonly name: Scalars['String']['output'];
   /** Path of the tag. */
   readonly path: Scalars['String']['output'];
-  /**
-   * Minimum GitLab access level required to push and delete container image tags. If the value is `nil`, no minimum access level is enforced. Users with the Developer role or higher can push tags by default. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
+  /** Minimum GitLab access level required to push and delete container image tags. If the value is `nil`, no minimum access level is enforced. Users with the Developer role or higher can push tags by default. */
   readonly protection: Maybe<ContainerProtectionAccessLevel>;
   /** Timestamp when the tag was published. */
   readonly publishedAt: Maybe<Scalars['Time']['output']>;
@@ -13316,8 +13548,8 @@ export type ContainerUpstream = UpstreamInterface & {
    */
   readonly url: Scalars['String']['output'];
   /**
-   * Username to sign in to the upstream registry. Introduced in GitLab 18.1: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
+   * Username to sign in to the upstream registry. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
    */
   readonly username: Maybe<Scalars['String']['output']>;
 };
@@ -13539,8 +13771,8 @@ export type ContainerUpstreamDetails = UpstreamInterface & {
    */
   readonly url: Scalars['String']['output'];
   /**
-   * Username to sign in to the upstream registry. Introduced in GitLab 18.1: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
+   * Username to sign in to the upstream registry. Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
    */
   readonly username: Maybe<Scalars['String']['output']>;
 };
@@ -13563,9 +13795,35 @@ export type ContainerUpstreamEdge = {
   readonly node: Maybe<ContainerUpstream>;
 };
 
+/** Autogenerated input type of ContainerUpstreamTest */
+export type ContainerUpstreamTestInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Full path of the group to test the upstream registry against. Required when `id` is not provided. */
+  readonly groupPath: InputMaybe<Scalars['ID']['input']>;
+  /** ID of the upstream registry to test. When provided, `groupPath`, `url`, `username`, and `password` are ignored. */
+  readonly id: InputMaybe<Scalars['VirtualRegistriesContainerUpstreamID']['input']>;
+  /** Password for authenticating with the upstream registry. Used when `id` is not provided. */
+  readonly password: InputMaybe<Scalars['String']['input']>;
+  /** URL of the upstream registry to test. Required when `GraphqlExplorerControllerid` is not provided. */
+  readonly url: InputMaybe<Scalars['String']['input']>;
+  /** Username for authenticating with the upstream registry. Used when `id` is not provided. */
+  readonly username: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Autogenerated return type of ContainerUpstreamTest. */
+export type ContainerUpstreamTestPayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Whether the upstream connectivity test was successful. */
+  readonly success: Scalars['Boolean']['output'];
+};
+
 /** Autogenerated input type of ContainerUpstreamUpdate */
 export type ContainerUpstreamUpdateInput = {
-  /** Cache validity period. Defaults to 24 hours. */
+  /** Cache validity period. */
   readonly cacheValidityHours: InputMaybe<Scalars['Int']['input']>;
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
@@ -13660,7 +13918,7 @@ export type ContainerVirtualRegistryUpdateInput = {
   /** ID of the container virtual registry to be updated. */
   readonly id: Scalars['VirtualRegistriesContainerRegistryID']['input'];
   /** Name of virtual registry. */
-  readonly name: Scalars['String']['input'];
+  readonly name: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Autogenerated return type of ContainerVirtualRegistryUpdate. */
@@ -13690,6 +13948,44 @@ export type ContainerVirtualRegistryUpstreamCreatePayload = {
   /** Errors encountered during the mutation. */
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
   /** Container registry upstream after association. */
+  readonly registryUpstream: Maybe<ContainerRegistryUpstreamWithRegistry>;
+};
+
+/** Autogenerated input type of ContainerVirtualRegistryUpstreamDelete */
+export type ContainerVirtualRegistryUpstreamDeleteInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** ID of the container virtual registry upstream. */
+  readonly upstreamId: Scalars['VirtualRegistriesContainerRegistryUpstreamID']['input'];
+};
+
+/** Autogenerated return type of ContainerVirtualRegistryUpstreamDelete. */
+export type ContainerVirtualRegistryUpstreamDeletePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Deleted container registry upstream. */
+  readonly registryUpstream: Maybe<ContainerRegistryUpstreamWithRegistry>;
+};
+
+/** Autogenerated input type of ContainerVirtualRegistryUpstreamUpdate */
+export type ContainerVirtualRegistryUpstreamUpdateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** ID of the container virtual registry upstream. */
+  readonly id: Scalars['VirtualRegistriesContainerRegistryUpstreamID']['input'];
+  /** Priority order of an upstream within a virtual registry. */
+  readonly position: Scalars['Int']['input'];
+};
+
+/** Autogenerated return type of ContainerVirtualRegistryUpstreamUpdate. */
+export type ContainerVirtualRegistryUpstreamUpdatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Container registry upstream after update. */
   readonly registryUpstream: Maybe<ContainerRegistryUpstreamWithRegistry>;
 };
 
@@ -13888,6 +14184,8 @@ export type CountableVulnerability = NoteableInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
    */
   readonly reachability: Maybe<ReachabilityType>;
+  /** Indicates whether the vulnerability is present in the code or not. */
+  readonly removedFromCode: Scalars['Boolean']['output'];
   /** Type of the security report that found the vulnerability (SAST, DEPENDENCY_SCANNING, CONTAINER_SCANNING, DAST, SECRET_DETECTION, COVERAGE_FUZZING, API_FUZZING, CLUSTER_IMAGE_SCANNING, CONTAINER_SCANNING_FOR_REGISTRY, GENERIC). `Scan Type` in the UI. */
   readonly reportType: Maybe<VulnerabilityReportType>;
   /**
@@ -13917,6 +14215,11 @@ export type CountableVulnerability = NoteableInterface & Todoable & {
   readonly stateTransitions: Maybe<VulnerabilityStateTransitionTypeConnection>;
   /** Title of the vulnerability. */
   readonly title: Maybe<Scalars['String']['output']>;
+  /**
+   * Tracked ref (branch or tag) where the vulnerability was detected. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly trackedRef: Maybe<SecurityTrackedRef>;
   /** Timestamp of when the vulnerability was last updated. */
   readonly updatedAt: Maybe<Scalars['Time']['output']>;
   /** Number of user notes attached to the vulnerability. */
@@ -14292,7 +14595,10 @@ export type CreateComplianceRequirementsControlPayload = {
 export type CreateContainerProtectionRepositoryRuleInput = {
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
-  /** Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. */
+  /**
+   * Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. Valid only when feature flag `container_registry_protected_containers_delete` is enabled. Introduced in GitLab 17.11: **Status**: Experiment. Introduced in GitLab 17.11: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
+   */
   readonly minimumAccessLevelForDelete: InputMaybe<ContainerProtectionRepositoryRuleAccessLevel>;
   /** Minimum GitLab access level required to push container images to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. */
   readonly minimumAccessLevelForPush: InputMaybe<ContainerProtectionRepositoryRuleAccessLevel>;
@@ -14324,8 +14630,8 @@ export type CreateCustomDashboardInput = {
   readonly name: Scalars['String']['input'];
   /** Namespace to scope the dashboard to. */
   readonly namespaceId: InputMaybe<Scalars['NamespaceID']['input']>;
-  /** Organization the dashboard belongs to. */
-  readonly organizationId: Scalars['OrganizationsOrganizationID']['input'];
+  /** Organization the dashboard belongs to. Defaults to the current organization if not provided. */
+  readonly organizationId: InputMaybe<Scalars['OrganizationsOrganizationID']['input']>;
 };
 
 /** Autogenerated return type of CreateCustomDashboard. */
@@ -14573,6 +14879,38 @@ export type CreateIterationPayload = {
   readonly iteration: Maybe<Iteration>;
 };
 
+/** Autogenerated input type of CreateLatestDiffNote */
+export type CreateLatestDiffNoteInput = {
+  /** Content of the note. */
+  readonly body: Scalars['String']['input'];
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Path of the file to comment on. For renamed files, either the old or new path can be used. */
+  readonly filePath: Scalars['String']['input'];
+  /** HEAD SHA of the merge request diff. The request fails if it does not match the current diff, guarding against commenting on a stale diff. */
+  readonly headSha: Scalars['String']['input'];
+  /** Internal flag for a note. Default is false. */
+  readonly internal: InputMaybe<Scalars['Boolean']['input']>;
+  /** Line number on the new version of the file. Use alone for added lines, with oldLine for unchanged context lines. At least one of newLine or oldLine is required. */
+  readonly newLine: InputMaybe<Scalars['Int']['input']>;
+  /** Global ID of the merge request to add a diff note to. */
+  readonly noteableId: Scalars['MergeRequestID']['input'];
+  /** Line number on the old version of the file. Use alone for removed lines, with newLine for unchanged context lines. At least one of newLine or oldLine is required. */
+  readonly oldLine: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Autogenerated return type of CreateLatestDiffNote. */
+export type CreateLatestDiffNotePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Note after mutation. */
+  readonly note: Maybe<Note>;
+  /** Status of quick actions after mutation. */
+  readonly quickActionsStatus: Maybe<QuickActionsStatus>;
+};
+
 /** Autogenerated input type of CreateNote */
 export type CreateNoteInput = {
   /** Content of the note. */
@@ -14807,11 +15145,15 @@ export type CurrentUser = Todoable & User & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.6.
    */
   readonly duoChatAvailableFeatures: ReadonlyArray<Scalars['String']['output']>;
+  /** User access to GitLab Duo Chat (non-agentic) feature. */
+  readonly duoClassicChatAvailable: Scalars['Boolean']['output'];
   /**
    * User access to code suggestions feature. Introduced in GitLab 16.8: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
    */
   readonly duoCodeSuggestionsAvailable: Scalars['Boolean']['output'];
+  /** Duo status for the user. */
+  readonly duoStatus: Maybe<UserDuoStatus>;
   /**
    * User email. Deprecated in GitLab 13.7: This was renamed.
    * @deprecated This was renamed. Please use `User.publicEmail`. Deprecated in GitLab 13.7.
@@ -15420,6 +15762,7 @@ export type CurrentUserWorkItemsArgs = {
   types: InputMaybe<ReadonlyArray<IssueType>>;
   updatedAfter: InputMaybe<Scalars['Time']['input']>;
   updatedBefore: InputMaybe<Scalars['Time']['input']>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -15465,7 +15808,7 @@ export type CustomDashboard = {
   /** Timestamp when the dashboard was created. */
   readonly createdAt: Scalars['Time']['output'];
   /** User who created the dashboard. */
-  readonly createdBy: UserCore;
+  readonly createdBy: Maybe<UserCore>;
   /** Optional summary or purpose of the dashboard. */
   readonly description: Maybe<Scalars['String']['output']>;
   /** Global ID of the custom dashboard. */
@@ -15484,6 +15827,24 @@ export type CustomDashboard = {
   readonly updatedAt: Scalars['Time']['output'];
   /** User who last updated the dashboard. */
   readonly updatedBy: Maybe<UserCore>;
+};
+
+/** The connection type for CustomDashboard. */
+export type CustomDashboardConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<CustomDashboardEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<CustomDashboard>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** An edge in a connection. */
+export type CustomDashboardEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<CustomDashboard>;
 };
 
 /** A custom emoji uploaded by user */
@@ -17052,10 +17413,7 @@ export type DeleteContainerProtectionTagRuleInput = {
 export type DeleteContainerProtectionTagRulePayload = {
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: Maybe<Scalars['String']['output']>;
-  /**
-   * Deleted protection rule for container image tags. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Deleted protection rule for container image tags. */
   readonly containerProtectionTagRule: Maybe<ContainerProtectionTagRule>;
   /** Errors encountered during the mutation. */
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
@@ -17077,6 +17435,24 @@ export type DeleteConversationThreadPayload = {
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
   /** Returns true if thread was successfully deleted. */
   readonly success: Scalars['Boolean']['output'];
+};
+
+/** Autogenerated input type of DeleteCustomDashboard */
+export type DeleteCustomDashboardInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the dashboard to delete. */
+  readonly id: Scalars['AnalyticsCustomDashboardsDashboardID']['input'];
+};
+
+/** Autogenerated return type of DeleteCustomDashboard. */
+export type DeleteCustomDashboardPayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Deleted dashboard. */
+  readonly dashboard: Maybe<CustomDashboard>;
+  /** Errors encountered during deletion. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
 };
 
 /** Autogenerated input type of DeleteDuoWorkflowsWorkflow */
@@ -19313,6 +19689,8 @@ export type DuoSettings = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
    */
   readonly minimumAccessLevelManage: Maybe<AccessLevelEnum>;
+  /** Whether local Duo Agent Platform service uses secure transport (TLS). */
+  readonly selfHostedDuoAgentPlatformServiceSecure: Maybe<Scalars['Boolean']['output']>;
   /**
    * Timestamp of last GitLab Duo setting update. Introduced in GitLab 17.9: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
@@ -19352,6 +19730,8 @@ export type DuoSettingsUpdateInput = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
    */
   readonly minimumAccessLevelManage: InputMaybe<AccessLevelEnum>;
+  /** Whether to use secure transport (TLS) for the local Duo Agent Platform service. */
+  readonly selfHostedDuoAgentPlatformServiceSecure: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 /** Autogenerated return type of DuoSettingsUpdate. */
@@ -19513,20 +19893,10 @@ export type DuoWorkflowEvent = {
   readonly executionStatus: Scalars['String']['output'];
   /** Metadata associated with the event. */
   readonly metadata: Maybe<Scalars['JsonString']['output']>;
-  /**
-   * UUID v7 timestamp identifier of the parent message for branched conversations or responses. Deprecated in GitLab 18.6: Use `parentTs` instead.
-   * @deprecated Use `parentTs` instead. Deprecated in GitLab 18.6.
-   */
-  readonly parentTimestamp: Maybe<Scalars['String']['output']>;
   /** UUID v7 timestamp identifier of the parent message for branched conversations or responses. */
   readonly parentTs: Maybe<Scalars['String']['output']>;
   /** UUID v7 timestamp identifier for the conversation thread/session in LangGraph state management. */
   readonly threadTs: Maybe<Scalars['String']['output']>;
-  /**
-   * UUID v7 timestamp identifier for the conversation thread in LangGraph state management. Deprecated in GitLab 18.6: Use `threadTs` instead.
-   * @deprecated Use `threadTs` instead. Deprecated in GitLab 18.6.
-   */
-  readonly timestamp: Maybe<Scalars['String']['output']>;
   /** GitLab Duo Agent Platform flow type based on its capabilities. */
   readonly workflowDefinition: Maybe<Scalars['String']['output']>;
   /** Goal of the session. */
@@ -20845,6 +21215,8 @@ export type EpicIssue = CurrentUserTodos & NoteableInterface & Todoable & {
   readonly webUrl: Scalars['String']['output'];
   /** Weight of the issue. */
   readonly weight: Maybe<Scalars['Int']['output']>;
+  /** Type assigned to the issue. */
+  readonly workItemType: WorkItemType;
 };
 
 
@@ -21832,6 +22204,11 @@ export type ForkDetails = {
 };
 
 export type GeoNode = {
+  /**
+   * Find Abuse Report Upload registries on this Geo node. Ignored if `geo_abuse_report_upload_replication` feature flag is disabled. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly abuseReportUploadRegistries: Maybe<AbuseReportUploadRegistryConnection>;
   /** Find Ci Secure File registries on this Geo node */
   readonly ciSecureFileRegistries: Maybe<CiSecureFileRegistryConnection>;
   /** Maximum concurrency of container repository sync for the secondary node. */
@@ -21872,10 +22249,9 @@ export type GeoNode = {
   readonly name: Maybe<Scalars['String']['output']>;
   /** Package file registries of the GeoNode. */
   readonly packageFileRegistries: Maybe<PackageFileRegistryConnection>;
-  /**
-   * Find Packages::Nuget::Symbols registries on this Geo node. Ignored if `geo_packages_nuget_symbol_replication` feature flag is disabled. Introduced in GitLab 18.6: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
-   */
+  /** Find Helm Metadata Cache registries on this Geo node. Ignored if `geo_packages_helm_metadata_cache_replication` feature flag is disabled. */
+  readonly packagesHelmMetadataCacheRegistries: Maybe<PackagesHelmMetadataCacheRegistryConnection>;
+  /** Find Packages::Nuget::Symbols registries on this Geo node. Ignored if `geo_packages_nuget_symbol_replication` feature flag is disabled. */
   readonly packagesNugetSymbolRegistries: Maybe<PackagesNugetSymbolRegistryConnection>;
   /** Find Pages Deployment registries on this Geo node */
   readonly pagesDeploymentRegistries: Maybe<PagesDeploymentRegistryConnection>;
@@ -21885,6 +22261,11 @@ export type GeoNode = {
   readonly primary: Maybe<Scalars['Boolean']['output']>;
   /** Find Project registries on this Geo node. Ignored if `geo_project_repository_replication` feature flag is disabled. */
   readonly projectRepositoryRegistries: Maybe<ProjectRepositoryRegistryConnection>;
+  /**
+   * Find Project Upload registries on this Geo node. Ignored if `geo_project_upload_replication` feature flag is disabled. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly projectUploadRegistries: Maybe<ProjectUploadRegistryConnection>;
   /** Find Project Wiki Repository registries on this Geo node. Ignored if `geo_project_wiki_repository_replication` feature flag is disabled. */
   readonly projectWikiRepositoryRegistries: Maybe<ProjectWikiRepositoryRegistryConnection>;
   /** Maximum concurrency of repository backfill for the secondary node. */
@@ -21907,6 +22288,19 @@ export type GeoNode = {
   readonly url: Maybe<Scalars['String']['output']>;
   /** Maximum concurrency of repository verification for the secondary node. */
   readonly verificationMaxCapacity: Maybe<Scalars['Int']['output']>;
+};
+
+
+export type GeoNodeAbuseReportUploadRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoAbuseReportUploadRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
 };
 
 
@@ -22040,6 +22434,19 @@ export type GeoNodePackageFileRegistriesArgs = {
 };
 
 
+export type GeoNodePackagesHelmMetadataCacheRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoPackagesHelmMetadataCacheRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
+};
+
+
 export type GeoNodePackagesNugetSymbolRegistriesArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -22084,6 +22491,19 @@ export type GeoNodeProjectRepositoryRegistriesArgs = {
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   ids: InputMaybe<ReadonlyArray<Scalars['GeoProjectRepositoryRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
+};
+
+
+export type GeoNodeProjectUploadRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoProjectUploadRegistryID']['input']>>;
   keyword: InputMaybe<Scalars['String']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   replicationState: InputMaybe<ReplicationStateEnum>;
@@ -22213,6 +22633,8 @@ export type GeoRegistryAction =
 
 /** Geo registry class */
 export type GeoRegistryClass =
+  /** Geo::AbuseReportUploadRegistry registry class */
+  | 'ABUSE_REPORT_UPLOAD_REGISTRY'
   /** Geo::CiSecureFileRegistry registry class */
   | 'CI_SECURE_FILE_REGISTRY'
   /** Geo::ContainerRepositoryRegistry registry class */
@@ -22243,6 +22665,8 @@ export type GeoRegistryClass =
   | 'PIPELINE_ARTIFACT_REGISTRY'
   /** Geo::ProjectRepositoryRegistry registry class */
   | 'PROJECT_REPOSITORY_REGISTRY'
+  /** Geo::ProjectUploadRegistry registry class */
+  | 'PROJECT_UPLOAD_REGISTRY'
   /** Geo::ProjectWikiRepositoryRegistry registry class */
   | 'PROJECT_WIKI_REPOSITORY_REGISTRY'
   /** Geo::SnippetRepositoryRegistry registry class */
@@ -22416,6 +22840,14 @@ export type GitlabSubscriptionUsage = {
 /** Describes the location of a subscription usage event. */
 export type GitlabSubscriptionUsageEventLocation = Group | Project;
 
+/** Information about a GitLab Credits flow type. */
+export type GitlabSubscriptionUsageFlowTypeInfo = {
+  /** Identifier for the flow type, used for filtering. */
+  readonly id: Scalars['String']['output'];
+  /** Display name for the flow type. */
+  readonly title: Scalars['String']['output'];
+};
+
 /** Describes the user with their usage data */
 export type GitlabSubscriptionUsageUser = {
   /** URL of the user's avatar. */
@@ -22428,6 +22860,8 @@ export type GitlabSubscriptionUsageUser = {
   readonly name: Scalars['String']['output'];
   /** Usage of consumables for a user under the subscription. */
   readonly usage: Maybe<GitlabSubscriptionUsageUserUsage>;
+  /** Flow types used by the user during the billing period. */
+  readonly usedFlowTypes: Maybe<ReadonlyArray<GitlabSubscriptionUsageFlowTypeInfo>>;
   /** Username of the user. Unique within the instance of GitLab. */
   readonly username: Scalars['String']['output'];
 };
@@ -22438,6 +22872,7 @@ export type GitlabSubscriptionUsageUserEventsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
+  flowTypes: InputMaybe<ReadonlyArray<InputMaybe<Scalars['String']['input']>>>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -22469,6 +22904,8 @@ export type GitlabSubscriptionUsageUserEvent = {
   readonly flowType: Maybe<Scalars['String']['output']>;
   /** Event location: project or namespace. */
   readonly location: Maybe<GitlabSubscriptionUsageEventLocation>;
+  /** URL of the agent session associated with the event. */
+  readonly sessionLink: Maybe<Scalars['String']['output']>;
   /** Date and time of the event. */
   readonly timestamp: Maybe<Scalars['ISO8601DateTime']['output']>;
 };
@@ -22491,6 +22928,17 @@ export type GitlabSubscriptionUsageUserEventEdge = {
   readonly node: Maybe<GitlabSubscriptionUsageUserEvent>;
 };
 
+/** Values for sorting users in subscription usage */
+export type GitlabSubscriptionUsageUserSort =
+  /** Name by ascending order. */
+  | 'NAME_ASC'
+  /** Name by descending order. */
+  | 'NAME_DESC'
+  /** Total credits used by ascending order. */
+  | 'TOTAL_CREDITS_USED_ASC'
+  /** Total credits used by descending order. */
+  | 'TOTAL_CREDITS_USED_DESC';
+
 /** Describes the usage of consumables for a user under the subscription */
 export type GitlabSubscriptionUsageUserUsage = {
   /** GitLab Credits used by the user. */
@@ -22501,6 +22949,8 @@ export type GitlabSubscriptionUsageUserUsage = {
   readonly monthlyWaiverCreditsUsed: Maybe<Scalars['Float']['output']>;
   /** Overage GitLab Credits used by the user. */
   readonly overageCreditsUsed: Maybe<Scalars['Float']['output']>;
+  /** Paid Tier Trial GitLab Credits used by the user. */
+  readonly paidTierTrialCreditsUsed: Maybe<Scalars['Float']['output']>;
   /** Total GitLab Credits available for the user. */
   readonly totalCredits: Maybe<Scalars['Float']['output']>;
 };
@@ -22528,6 +22978,8 @@ export type GitlabSubscriptionUsageUsersUsageUsersArgs = {
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
+  searchQuery: InputMaybe<Scalars['String']['input']>;
+  sort: InputMaybe<GitlabSubscriptionUsageUserSort>;
   username: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -22989,16 +23441,16 @@ export type Group = GroupInterface & Todoable & {
   readonly aiUserMetrics: Maybe<AiUserMetricsConnection>;
   /** Indicates whether to regularly prune stale group runners. Defaults to false. */
   readonly allowStaleRunnerPruning: Scalars['Boolean']['output'];
-  /** Amazon S3 configurations that receive audit events belonging to the group. */
+  /**
+   * Amazon S3 configurations that receive audit events belonging to the group. Deprecated in GitLab 18.10: Use `externalAuditEventStreamingDestinations` with `amazonS3` category instead.
+   * @deprecated Use `externalAuditEventStreamingDestinations` with `amazonS3` category instead. Deprecated in GitLab 18.10.
+   */
   readonly amazonS3Configurations: Maybe<AmazonS3ConfigurationTypeConnection>;
   /** Status for all analyzers in the group. */
   readonly analyzerStatuses: Maybe<ReadonlyArray<AnalyzerGroupStatusType>>;
   /** Approval Policies of the project */
   readonly approvalPolicies: Maybe<ApprovalPolicyConnection>;
-  /**
-   * Indicates if the group or any ancestor is archived. Introduced in GitLab 18.3: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.3.
-   */
+  /** Indicates if the group or any ancestor is archived. */
   readonly archived: Maybe<Scalars['Boolean']['output']>;
   /** Indicates whether Auto DevOps is enabled for all projects within the group. */
   readonly autoDevopsEnabled: Maybe<Scalars['Boolean']['output']>;
@@ -23200,7 +23652,10 @@ export type Group = GroupInterface & Todoable & {
    * @deprecated Replaced by `WorkItem` type. For more information, see [migration guide](https://docs.gitlab.com/api/graphql/epic_work_items_api_migration_guide/). Deprecated in GitLab 17.5.
    */
   readonly epicsEnabled: Maybe<Scalars['Boolean']['output']>;
-  /** External locations that receive audit events belonging to the group. */
+  /**
+   * External locations that receive audit events belonging to the group. Deprecated in GitLab 18.10: Use `externalAuditEventStreamingDestinations` instead.
+   * @deprecated Use `externalAuditEventStreamingDestinations` instead. Deprecated in GitLab 18.10.
+   */
   readonly externalAuditEventDestinations: Maybe<ExternalAuditEventDestinationConnection>;
   /**
    * External destinations that receive audit events belonging to the group. Introduced in GitLab 16.11: **Status**: Experiment.
@@ -23218,7 +23673,10 @@ export type Group = GroupInterface & Todoable & {
   readonly fullPath: Scalars['ID']['output'];
   /** Preview Billable User Changes */
   readonly gitlabSubscriptionsPreviewBillableUserChange: Maybe<PreviewBillableUserChange>;
-  /** Google Cloud logging configurations that receive audit events belonging to the group. */
+  /**
+   * Google Cloud logging configurations that receive audit events belonging to the group. Deprecated in GitLab 18.10: Use `externalAuditEventStreamingDestinations` with `gcpLogging` category instead.
+   * @deprecated Use `externalAuditEventStreamingDestinations` with `gcpLogging` category instead. Deprecated in GitLab 18.10.
+   */
   readonly googleCloudLoggingConfigurations: Maybe<GoogleCloudLoggingConfigurationTypeConnection>;
   /** A membership of a user within this group. */
   readonly groupMembers: Maybe<GroupMemberConnection>;
@@ -23233,10 +23691,7 @@ export type Group = GroupInterface & Todoable & {
   readonly importSourceUsers: Maybe<ImportSourceUserConnection>;
   /** Indicates if group is linked to a subscription. */
   readonly isLinkedToSubscription: Maybe<Scalars['Boolean']['output']>;
-  /**
-   * Indicates if the group is archived. Introduced in GitLab 18.6: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
-   */
+  /** Indicates if the group is archived. */
   readonly isSelfArchived: Maybe<Scalars['Boolean']['output']>;
   /**
    * Indicates if group deletion is in progress. Introduced in GitLab 18.2: **Status**: Experiment.
@@ -23254,6 +23709,11 @@ export type Group = GroupInterface & Todoable & {
   readonly iterationCadences: Maybe<IterationCadenceConnection>;
   /** Find iterations. */
   readonly iterations: Maybe<IterationConnection>;
+  /**
+   * Indicates whether the Knowledge Graph is enabled for the namespace. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly knowledgeGraphEnabled: Scalars['Boolean']['output'];
   /** Label available on the group. */
   readonly label: Maybe<Label>;
   /** Labels available on this group. */
@@ -23537,7 +23997,7 @@ export type Group = GroupInterface & Todoable & {
   /** Value streams available to the group. */
   readonly valueStreams: Maybe<ValueStreamConnection>;
   /**
-   * Virtual registries cleanup policy of the group. Returns null if the `maven_virtual_registry` or `virtual_registry_cleanup_policies`feature flag is disabled. Introduced in GitLab 18.7: **Status**: Experiment.
+   * Virtual registries cleanup policy of the group. Returns null if the `maven_virtual_registry` feature flag is disabled. Introduced in GitLab 18.7: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
    */
   readonly virtualRegistriesCleanupPolicy: Maybe<VirtualRegistryCleanupPolicy>;
@@ -24160,6 +24620,7 @@ export type GroupIssuesArgs = {
   updatedBefore: InputMaybe<Scalars['Time']['input']>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -24885,6 +25346,7 @@ export type GroupWorkItemStateCountsArgs = {
   verificationStatusWidget: InputMaybe<VerificationStatusFilterInput>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -24954,6 +25416,7 @@ export type GroupWorkItemsArgs = {
   verificationStatusWidget: InputMaybe<VerificationStatusFilterInput>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -25613,6 +26076,8 @@ export type GroupPermissions = {
   readonly archiveGroup: Scalars['Boolean']['output'];
   /** If `true`, the user can leave this group. */
   readonly canLeave: Scalars['Boolean']['output'];
+  /** If `true`, the user can perform `change_group` on this resource */
+  readonly changeGroup: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `create_custom_emoji` on this resource */
   readonly createCustomEmoji: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `create_projects` on this resource */
@@ -25759,6 +26224,8 @@ export type GroupSavedReplyUpdatePayload = {
 
 /** Represents a group secret */
 export type GroupSecret = {
+  /** Timestamp when the secret creation started. */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
   /** Description of the group secret. */
   readonly description: Maybe<Scalars['String']['output']>;
   /** Environments that can access the secret. */
@@ -25771,6 +26238,8 @@ export type GroupSecret = {
   readonly name: Scalars['String']['output'];
   /** Whether the secret is only accessible from protected branches. */
   readonly protected: Scalars['Boolean']['output'];
+  /** Rotation configuration for the secret. */
+  readonly rotationInfo: Maybe<SecretRotationInfo>;
   /** Computed lifecycle status of the secret, based on timestamps. */
   readonly status: SecretStatus;
 };
@@ -25799,6 +26268,8 @@ export type GroupSecretCreateInput = {
   readonly name: Scalars['String']['input'];
   /** Whether the secret is only accessible from protected branches. */
   readonly protected: Scalars['Boolean']['input'];
+  /** Number of days between rotation reminders for the secret. */
+  readonly rotationIntervalDays: InputMaybe<Scalars['Int']['input']>;
   /** Value of the group secret. */
   readonly secret: Scalars['String']['input'];
 };
@@ -25857,6 +26328,8 @@ export type GroupSecretUpdateInput = {
   readonly name: Scalars['String']['input'];
   /** Whether the secret is only accessible from protected branches. */
   readonly protected: InputMaybe<Scalars['Boolean']['input']>;
+  /** Number of days between rotation reminders for the secret. */
+  readonly rotationIntervalDays: InputMaybe<Scalars['Int']['input']>;
   /** New value of the group secret. */
   readonly secret: InputMaybe<Scalars['String']['input']>;
 };
@@ -27625,6 +28098,8 @@ export type Issue = CurrentUserTodos & NoteableInterface & Todoable & {
   readonly webUrl: Scalars['String']['output'];
   /** Weight of the issue. */
   readonly weight: Maybe<Scalars['Int']['output']>;
+  /** Type assigned to the issue. */
+  readonly workItemType: WorkItemType;
 };
 
 
@@ -28360,6 +28835,8 @@ export type Iteration = TimeboxReportInterface & {
   readonly descriptionHtml: Maybe<Scalars['String']['output']>;
   /** Timestamp of the iteration due date. */
   readonly dueDate: Maybe<Scalars['Time']['output']>;
+  /** Group of the iteration. */
+  readonly group: Group;
   /** ID of the iteration. */
   readonly id: Scalars['ID']['output'];
   /** Internal ID of the iteration. */
@@ -29165,10 +29642,7 @@ export type LabelSearchFieldList =
 
 /** Autogenerated input type of LabelUpdate */
 export type LabelUpdateInput = {
-  /**
-   * Whether the label should be archived. Available only if feature flag `labels_archive` is enabled. Introduced in GitLab 18.4: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.4.
-   */
+  /** Whether to archive the label. Introduced in GitLab 18.10. */
   readonly archived: InputMaybe<Scalars['Boolean']['input']>;
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
@@ -29666,6 +30140,24 @@ export type MarkdownPathsMarkdownPreviewPathArgs = {
   iid: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Autogenerated input type of MavenCacheEntryDelete */
+export type MavenCacheEntryDeleteInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** ID of the cache entry. */
+  readonly id: Scalars['String']['input'];
+};
+
+/** Autogenerated return type of MavenCacheEntryDelete. */
+export type MavenCacheEntryDeletePayload = {
+  /** Maven cache entry. */
+  readonly cacheEntry: Maybe<MavenUpstreamCacheEntry>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
 /** Maven metadata */
 export type MavenMetadata = {
   /** App group of the Maven package. */
@@ -29809,6 +30301,11 @@ export type MavenUpstream = UpstreamInterface & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
    */
   readonly registriesCount: Scalars['Int']['output'];
+  /**
+   * Total number of rules for the upstream. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly rulesCount: Scalars['Int']['output'];
   /**
    * URL of the upstream registry. Introduced in GitLab 18.1: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
@@ -29957,10 +30454,7 @@ export type MavenUpstreamCreateInput = {
   readonly description: InputMaybe<Scalars['String']['input']>;
   /** ID of the upstream registry. */
   readonly id: Scalars['VirtualRegistriesPackagesMavenRegistryID']['input'];
-  /**
-   * Metadata cache validity period. Defaults to 24 hours. Introduced in GitLab 18.4: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.4.
-   */
+  /** Metadata cache validity period. Defaults to 24 hours. */
   readonly metadataCacheValidityHours: InputMaybe<Scalars['Int']['input']>;
   /** Name of upstream registry. */
   readonly name: Scalars['String']['input'];
@@ -30003,6 +30497,11 @@ export type MavenUpstreamDeletePayload = {
 /** Represents Maven upstream registry details. */
 export type MavenUpstreamDetails = UpstreamInterface & {
   /**
+   * Allow rules for the upstream. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly allowRules: ReadonlyArray<MavenUpstreamRule>;
+  /**
    * Represents cache entries for the upstream. Introduced in GitLab 18.7: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
    */
@@ -30012,6 +30511,11 @@ export type MavenUpstreamDetails = UpstreamInterface & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
    */
   readonly cacheValidityHours: Scalars['Int']['output'];
+  /**
+   * Deny rules for the upstream. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly denyRules: ReadonlyArray<MavenUpstreamRule>;
   /**
    * Description of the upstream registry. Introduced in GitLab 18.1: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
@@ -30043,6 +30547,11 @@ export type MavenUpstreamDetails = UpstreamInterface & {
    */
   readonly registryUpstreams: ReadonlyArray<MavenRegistryUpstreamWithRegistry>;
   /**
+   * Total number of rules for the upstream. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly rulesCount: Scalars['Int']['output'];
+  /**
    * URL of the upstream registry. Introduced in GitLab 18.1: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
    */
@@ -30070,6 +30579,68 @@ export type MavenUpstreamEdge = {
   readonly cursor: Scalars['String']['output'];
   /** The item at the end of the edge. */
   readonly node: Maybe<MavenUpstream>;
+};
+
+/** Pattern type for Maven upstream rules. */
+export type MavenUpstreamPatternType =
+  /** Regular expression pattern type. */
+  | 'REGEX'
+  /** Wildcard pattern type. */
+  | 'WILDCARD';
+
+/** Represents a Maven upstream rule. */
+export type MavenUpstreamRule = RuleInterface & {
+  /** When the rule was created. */
+  readonly createdAt: Scalars['Time']['output'];
+  /** Global ID of the rule. */
+  readonly id: Scalars['VirtualRegistriesPackagesMavenUpstreamRuleID']['output'];
+  /** Pattern for the rule. */
+  readonly pattern: Scalars['String']['output'];
+  /** Type of pattern (WILDCARD or REGEX). */
+  readonly patternType: MavenUpstreamPatternType;
+  /** Target coordinate for the rule. */
+  readonly targetCoordinate: MavenUpstreamTargetCoordinate;
+};
+
+/** Target coordinate for Maven upstream rules. */
+export type MavenUpstreamTargetCoordinate =
+  /** Artifact ID coordinate. */
+  | 'ARTIFACT_ID'
+  /** Group ID coordinate. */
+  | 'GROUP_ID'
+  /** Version coordinate. */
+  | 'VERSION';
+
+/** Autogenerated input type of MavenUpstreamUpdate */
+export type MavenUpstreamUpdateInput = {
+  /** Cache validity period. */
+  readonly cacheValidityHours: InputMaybe<Scalars['Int']['input']>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Description of the upstream registry. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** ID of the upstream registry. */
+  readonly id: Scalars['VirtualRegistriesPackagesMavenUpstreamID']['input'];
+  /** Metadata cache validity period. */
+  readonly metadataCacheValidityHours: InputMaybe<Scalars['Int']['input']>;
+  /** Name of upstream registry. */
+  readonly name: InputMaybe<Scalars['String']['input']>;
+  /** Password of the upstream registry. */
+  readonly password: InputMaybe<Scalars['String']['input']>;
+  /** URL of the upstream registry. */
+  readonly url: InputMaybe<Scalars['String']['input']>;
+  /** Username of the upstream registry. */
+  readonly username: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Autogenerated return type of MavenUpstreamUpdate. */
+export type MavenUpstreamUpdatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Maven upstream after the mutation. */
+  readonly upstream: Maybe<MavenUpstreamDetails>;
 };
 
 /** Autogenerated input type of MavenVirtualRegistryCacheDelete */
@@ -30128,6 +30699,48 @@ export type MavenVirtualRegistryDeletePayload = {
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
   /** Deleted Maven virtual registry. */
   readonly registry: Maybe<MavenRegistry>;
+};
+
+/** Autogenerated input type of MavenVirtualRegistryUpdate */
+export type MavenVirtualRegistryUpdateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Description of the virtual registry. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** ID of the Maven virtual registry to be updated. */
+  readonly id: Scalars['VirtualRegistriesPackagesMavenRegistryID']['input'];
+  /** Name of virtual registry. */
+  readonly name: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Autogenerated return type of MavenVirtualRegistryUpdate. */
+export type MavenVirtualRegistryUpdatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Maven virtual registry after the mutation. */
+  readonly registry: Maybe<MavenRegistry>;
+};
+
+/** Autogenerated input type of MavenVirtualRegistryUpstreamUpdate */
+export type MavenVirtualRegistryUpstreamUpdateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** ID of the Maven virtual registry upstream. */
+  readonly id: Scalars['VirtualRegistriesPackagesMavenRegistryUpstreamID']['input'];
+  /** Priority order of an upstream within a virtual registry. */
+  readonly position: Scalars['Int']['input'];
+};
+
+/** Autogenerated return type of MavenVirtualRegistryUpstreamUpdate. */
+export type MavenVirtualRegistryUpstreamUpdatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Maven registry upstream after update. */
+  readonly registryUpstream: Maybe<MavenRegistryUpstreamWithRegistry>;
 };
 
 /** Possible identifier types for a measurement */
@@ -30502,8 +31115,6 @@ export type MemberRolePermission =
   | 'ADMIN_RUNNERS'
   /** Manage the security categories and attributes belonging to a top-level group. Also requires the `read_security_attribute` permission. */
   | 'ADMIN_SECURITY_ATTRIBUTES'
-  /** Edit and manage security testing configurations and settings. */
-  | 'ADMIN_SECURITY_TESTING'
   /** Execute terraform commands, lock/unlock terraform state files, and remove file versions. */
   | 'ADMIN_TERRAFORM_STATE'
   /** Edit the status, linked issue, and severity of a vulnerability object. Also requires the `read_vulnerability` permission. */
@@ -30554,7 +31165,7 @@ export type MemberRolePermission =
   | 'READ_SECURITY_SCAN_PROFILES'
   /** Read vulnerability reports and security dashboards. */
   | 'READ_VULNERABILITY'
-  /** Ability to delete or restore a group. This ability does not allow deleting top-level groups. Review the Retention period settings to prevent accidental deletion. */
+  /** Ability to delete or restore a subgroup. This ability does not allow deleting top-level groups. Review the retention period settings to prevent accidental deletion. */
   | 'REMOVE_GROUP'
   /** Allows deletion of projects. */
   | 'REMOVE_PROJECT';
@@ -30581,8 +31192,6 @@ export type MemberRoleStandardPermission =
   | 'ADMIN_RUNNERS'
   /** Manage the security categories and attributes belonging to a top-level group. Also requires the `read_security_attribute` permission. Introduced in GitLab 18.2: **Status**: Experiment. */
   | 'ADMIN_SECURITY_ATTRIBUTES'
-  /** Edit and manage security testing configurations and settings. Introduced in GitLab 17.9: **Status**: Experiment. */
-  | 'ADMIN_SECURITY_TESTING'
   /** Execute terraform commands, lock/unlock terraform state files, and remove file versions. */
   | 'ADMIN_TERRAFORM_STATE'
   /** Edit the status, linked issue, and severity of a vulnerability object. Also requires the `read_vulnerability` permission. */
@@ -30621,7 +31230,7 @@ export type MemberRoleStandardPermission =
   | 'READ_SECURITY_SCAN_PROFILES'
   /** Read vulnerability reports and security dashboards. */
   | 'READ_VULNERABILITY'
-  /** Ability to delete or restore a group. This ability does not allow deleting top-level groups. Review the Retention period settings to prevent accidental deletion. */
+  /** Ability to delete or restore a subgroup. This ability does not allow deleting top-level groups. Review the retention period settings to prevent accidental deletion. */
   | 'REMOVE_GROUP'
   /** Allows deletion of projects. */
   | 'REMOVE_PROJECT';
@@ -30849,6 +31458,11 @@ export type MergeRequest = CurrentUserTodos & NoteableInterface & Todoable & {
   /** Indicates if the merge request is a draft. */
   readonly draft: Scalars['Boolean']['output'];
   /**
+   * Duo Workflow sessions associated with the merge request. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly duoWorkflows: Maybe<DuoWorkflowConnection>;
+  /**
    * Vulnerability finding reports comparison reported on the merge request. Introduced in GitLab 16.1: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 16.1.
    */
@@ -30875,6 +31489,11 @@ export type MergeRequest = CurrentUserTodos & NoteableInterface & Todoable & {
   readonly inProgressMergeCommitSha: Maybe<Scalars['String']['output']>;
   /** Labels of the merge request. */
   readonly labels: Maybe<LabelConnection>;
+  /**
+   * Work items linked to this merge request (closing or mentioned). Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly linkedWorkItems: Maybe<ReadonlyArray<MergeRequestLinkedWorkItem>>;
   /** Date after which the merge request can be merged. */
   readonly mergeAfter: Maybe<Scalars['Time']['output']>;
   /** SHA of the merge request commit (set once merged). */
@@ -31129,6 +31748,14 @@ export type MergeRequestDiscussionsArgs = {
 };
 
 
+export type MergeRequestDuoWorkflowsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
 export type MergeRequestFindingReportsComparerArgs = {
   reportType: ComparableSecurityReportType;
   scanMode: InputMaybe<ScanModeEnum>;
@@ -31140,6 +31767,11 @@ export type MergeRequestLabelsArgs = {
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type MergeRequestLinkedWorkItemsArgs = {
+  types: InputMaybe<ReadonlyArray<MergeRequestWorkItemLinkType>>;
 };
 
 
@@ -31287,6 +31919,8 @@ export type MergeRequestAssignee = Todoable & User & {
   readonly customAttributes: Maybe<ReadonlyArray<CustomAttribute>>;
   /** Discord ID of the user. */
   readonly discord: Maybe<Scalars['String']['output']>;
+  /** Duo status for the user. */
+  readonly duoStatus: Maybe<UserDuoStatus>;
   /**
    * User email. Deprecated in GitLab 13.7: This was renamed.
    * @deprecated This was renamed. Please use `User.publicEmail`. Deprecated in GitLab 13.7.
@@ -31817,6 +32451,8 @@ export type MergeRequestAuthor = Todoable & User & {
   readonly customAttributes: Maybe<ReadonlyArray<CustomAttribute>>;
   /** Discord ID of the user. */
   readonly discord: Maybe<Scalars['String']['output']>;
+  /** Duo status for the user. */
+  readonly duoStatus: Maybe<UserDuoStatus>;
   /**
    * User email. Deprecated in GitLab 13.7: This was renamed.
    * @deprecated This was renamed. Please use `User.publicEmail`. Deprecated in GitLab 13.7.
@@ -32498,6 +33134,26 @@ export type MergeRequestEdge = {
   readonly node: Maybe<MergeRequest>;
 };
 
+/** An external issue referenced by a merge request */
+export type MergeRequestExternalIssue = {
+  /** Reference of the external issue (e.g. JIRA-123). */
+  readonly reference: Scalars['String']['output'];
+  /** Title of the external issue. */
+  readonly title: Maybe<Scalars['String']['output']>;
+  /** URL of the external issue on the external tracker. */
+  readonly webUrl: Maybe<Scalars['String']['output']>;
+};
+
+/** A work item linked to a merge request */
+export type MergeRequestLinkedWorkItem = {
+  /** Linked external issue. */
+  readonly externalIssue: Maybe<MergeRequestExternalIssue>;
+  /** Type of relationship between the merge request and work item. */
+  readonly linkType: MergeRequestWorkItemLinkType;
+  /** Linked work item. */
+  readonly workItem: Maybe<WorkItem>;
+};
+
 /** Mergeability check of the merge request. */
 export type MergeRequestMergeabilityCheck = {
   /** Identifier of the mergeability check. */
@@ -32541,6 +33197,8 @@ export type MergeRequestParticipant = Todoable & User & {
   readonly customAttributes: Maybe<ReadonlyArray<CustomAttribute>>;
   /** Discord ID of the user. */
   readonly discord: Maybe<Scalars['String']['output']>;
+  /** Duo status for the user. */
+  readonly duoStatus: Maybe<UserDuoStatus>;
   /**
    * User email. Deprecated in GitLab 13.7: This was renamed.
    * @deprecated This was renamed. Please use `User.publicEmail`. Deprecated in GitLab 13.7.
@@ -33130,6 +33788,8 @@ export type MergeRequestReviewer = Todoable & User & {
   readonly customAttributes: Maybe<ReadonlyArray<CustomAttribute>>;
   /** Discord ID of the user. */
   readonly discord: Maybe<Scalars['String']['output']>;
+  /** Duo status for the user. */
+  readonly duoStatus: Maybe<UserDuoStatus>;
   /**
    * User email. Deprecated in GitLab 13.7: This was renamed.
    * @deprecated This was renamed. Please use `User.publicEmail`. Deprecated in GitLab 13.7.
@@ -33981,6 +34641,13 @@ export type MergeRequestUpdatePayload = {
   /** Merge request after mutation. */
   readonly mergeRequest: Maybe<MergeRequest>;
 };
+
+/** Type of relationship between a merge request and a work item */
+export type MergeRequestWorkItemLinkType =
+  /** Work item will be closed when the merge request is merged. */
+  | 'CLOSES'
+  /** Work item is mentioned in the merge request but will not be closed. */
+  | 'MENTIONED';
 
 /** Values for merge request dashboard list type */
 export type MergeRequestsDashboardListType =
@@ -35012,6 +35679,8 @@ export type Mutation = {
   readonly aiCatalogItemReport: Maybe<AiCatalogItemReportPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
   readonly aiCatalogMcpServerCreate: Maybe<AiCatalogMcpServerCreatePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly aiCatalogMcpServerUpdate: Maybe<AiCatalogMcpServerUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.5. */
   readonly aiCatalogThirdPartyFlowCreate: Maybe<AiCatalogThirdPartyFlowCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.5. */
@@ -35061,8 +35730,13 @@ export type Mutation = {
   readonly approvalProjectRuleUpdate: Maybe<ApprovalProjectRuleUpdatePayload>;
   readonly approveDeployment: Maybe<ApproveDeploymentPayload>;
   readonly artifactDestroy: Maybe<ArtifactDestroyPayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly ascpScanCreate: Maybe<AscpScanCreatePayload>;
+  /** @deprecated Use `groupAuditEventStreamingDestinationsCreate` with `amazonS3` category instead. Deprecated in GitLab 18.10. */
   readonly auditEventsAmazonS3ConfigurationCreate: Maybe<AuditEventsAmazonS3ConfigurationCreatePayload>;
+  /** @deprecated Use `groupAuditEventStreamingDestinationsDelete` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsAmazonS3ConfigurationDelete: Maybe<AuditEventsAmazonS3ConfigurationDeletePayload>;
+  /** @deprecated Use `groupAuditEventStreamingDestinationsUpdate` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsAmazonS3ConfigurationUpdate: Maybe<AuditEventsAmazonS3ConfigurationUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.0. */
   readonly auditEventsGroupDestinationEventsAdd: Maybe<AuditEventsGroupDestinationEventsAddPayload>;
@@ -35072,8 +35746,11 @@ export type Mutation = {
   readonly auditEventsGroupDestinationNamespaceFilterCreate: Maybe<AuditEventsGroupDestinationNamespaceFilterCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.0. */
   readonly auditEventsGroupDestinationNamespaceFilterDelete: Maybe<AuditEventsGroupDestinationNamespaceFilterDeletePayload>;
+  /** @deprecated Use `instanceAuditEventStreamingDestinationsCreate` with `amazonS3` category instead. Deprecated in GitLab 18.10. */
   readonly auditEventsInstanceAmazonS3ConfigurationCreate: Maybe<AuditEventsInstanceAmazonS3ConfigurationCreatePayload>;
+  /** @deprecated Use `instanceAuditEventStreamingDestinationsDelete` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsInstanceAmazonS3ConfigurationDelete: Maybe<AuditEventsInstanceAmazonS3ConfigurationDeletePayload>;
+  /** @deprecated Use `instanceAuditEventStreamingDestinationsUpdate` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsInstanceAmazonS3ConfigurationUpdate: Maybe<AuditEventsInstanceAmazonS3ConfigurationUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.0. */
   readonly auditEventsInstanceDestinationEventsAdd: Maybe<AuditEventsInstanceDestinationEventsAddPayload>;
@@ -35083,17 +35760,47 @@ export type Mutation = {
   readonly auditEventsInstanceDestinationNamespaceFilterCreate: Maybe<AuditEventsInstanceDestinationNamespaceFilterCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.2. */
   readonly auditEventsInstanceDestinationNamespaceFilterDelete: Maybe<AuditEventsInstanceDestinationNamespaceFilterDeletePayload>;
+  /** @deprecated Use `auditEventsGroupDestinationEventsAdd` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsStreamingDestinationEventsAdd: Maybe<AuditEventsStreamingDestinationEventsAddPayload>;
+  /** @deprecated Use `auditEventsGroupDestinationEventsRemove` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsStreamingDestinationEventsRemove: Maybe<AuditEventsStreamingDestinationEventsRemovePayload>;
+  /** @deprecated Use `auditEventsInstanceDestinationEventsAdd` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsStreamingDestinationInstanceEventsAdd: Maybe<AuditEventsStreamingDestinationInstanceEventsAddPayload>;
+  /** @deprecated Use `auditEventsInstanceDestinationEventsRemove` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsStreamingDestinationInstanceEventsRemove: Maybe<AuditEventsStreamingDestinationInstanceEventsRemovePayload>;
+  /**
+   * @deprecated Configure headers by using the streaming destination configuration.
+   *            Use `groupAuditEventStreamingDestinationsUpdate`. Deprecated in GitLab 18.10.
+   */
   readonly auditEventsStreamingHeadersCreate: Maybe<AuditEventsStreamingHeadersCreatePayload>;
+  /**
+   * @deprecated Configure headers by using the streaming destination configuration.
+   *            Use `groupAuditEventStreamingDestinationsUpdate`. Deprecated in GitLab 18.10.
+   */
   readonly auditEventsStreamingHeadersDestroy: Maybe<AuditEventsStreamingHeadersDestroyPayload>;
+  /**
+   * @deprecated Configure headers by using the streaming destination configuration.
+   *            Use `groupAuditEventStreamingDestinationsUpdate`. Deprecated in GitLab 18.10.
+   */
   readonly auditEventsStreamingHeadersUpdate: Maybe<AuditEventsStreamingHeadersUpdatePayload>;
+  /** @deprecated Use `auditEventsGroupDestinationNamespaceFilterCreate` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsStreamingHttpNamespaceFiltersAdd: Maybe<AuditEventsStreamingHttpNamespaceFiltersAddPayload>;
+  /** @deprecated Use `auditEventsGroupDestinationNamespaceFilterDelete` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsStreamingHttpNamespaceFiltersDelete: Maybe<AuditEventsStreamingHttpNamespaceFiltersDeletePayload>;
+  /**
+   * @deprecated Configure headers by using the streaming destination configuration.
+   *            Use `instanceAuditEventStreamingDestinationsUpdate`. Deprecated in GitLab 18.10.
+   */
   readonly auditEventsStreamingInstanceHeadersCreate: Maybe<AuditEventsStreamingInstanceHeadersCreatePayload>;
+  /**
+   * @deprecated Configure headers by using the streaming destination configuration.
+   *            Use `instanceAuditEventStreamingDestinationsUpdate`. Deprecated in GitLab 18.10.
+   */
   readonly auditEventsStreamingInstanceHeadersDestroy: Maybe<AuditEventsStreamingInstanceHeadersDestroyPayload>;
+  /**
+   * @deprecated Configure headers by using the streaming destination configuration.
+   *            Use `instanceAuditEventStreamingDestinationsUpdate`. Deprecated in GitLab 18.10.
+   */
   readonly auditEventsStreamingInstanceHeadersUpdate: Maybe<AuditEventsStreamingInstanceHeadersUpdatePayload>;
   readonly awardEmojiAdd: Maybe<AwardEmojiAddPayload>;
   readonly awardEmojiRemove: Maybe<AwardEmojiRemovePayload>;
@@ -35202,12 +35909,16 @@ export type Mutation = {
    *
    */
   readonly configureSecretDetection: Maybe<ConfigureSecretDetectionPayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly containerCacheEntryDelete: Maybe<ContainerCacheEntryDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.9. */
   readonly containerUpstreamCacheDelete: Maybe<ContainerUpstreamCacheDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.8. */
   readonly containerUpstreamCreate: Maybe<ContainerUpstreamCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.9. */
   readonly containerUpstreamDelete: Maybe<ContainerUpstreamDeletePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly containerUpstreamTest: Maybe<ContainerUpstreamTestPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.8. */
   readonly containerUpstreamUpdate: Maybe<ContainerUpstreamUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.9. */
@@ -35220,6 +35931,10 @@ export type Mutation = {
   readonly containerVirtualRegistryUpdate: Maybe<ContainerVirtualRegistryUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
   readonly containerVirtualRegistryUpstreamCreate: Maybe<ContainerVirtualRegistryUpstreamCreatePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly containerVirtualRegistryUpstreamDelete: Maybe<ContainerVirtualRegistryUpstreamDeletePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly containerVirtualRegistryUpstreamUpdate: Maybe<ContainerVirtualRegistryUpstreamUpdatePayload>;
   readonly corpusCreate: Maybe<CorpusCreatePayload>;
   readonly createAlertIssue: Maybe<CreateAlertIssuePayload>;
   /** @deprecated Underlying feature was removed in 16.0. Deprecated in GitLab 16.0. */
@@ -35253,6 +35968,11 @@ export type Mutation = {
   readonly createIssue: Maybe<CreateIssuePayload>;
   /** @deprecated Use iterationCreate. Deprecated in GitLab 14.0. */
   readonly createIteration: Maybe<CreateIterationPayload>;
+  /**
+   * Creates a diff note on a merge request using minimal parameters. SHAs, file paths, and position type are resolved automatically from the latest merge request diff. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly createLatestDiffNote: Maybe<CreateLatestDiffNotePayload>;
   /**
    * Creates a Note.
    * If the body of the Note contains only quick actions,
@@ -35303,6 +36023,11 @@ export type Mutation = {
   readonly deleteContainerProtectionTagRule: Maybe<DeleteContainerProtectionTagRulePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.9. */
   readonly deleteConversationThread: Maybe<DeleteConversationThreadPayload>;
+  /**
+   * Deletes a custom dashboard. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly deleteCustomDashboard: Maybe<DeleteCustomDashboardPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.1. */
   readonly deleteDuoWorkflowsWorkflow: Maybe<DeleteDuoWorkflowsWorkflowPayload>;
   /**
@@ -35410,8 +36135,11 @@ export type Mutation = {
   readonly escalationPolicyDestroy: Maybe<EscalationPolicyDestroyPayload>;
   readonly escalationPolicyUpdate: Maybe<EscalationPolicyUpdatePayload>;
   readonly exportRequirements: Maybe<ExportRequirementsPayload>;
+  /** @deprecated Use `groupAuditEventStreamingDestinationsCreate` instead. Deprecated in GitLab 18.10. */
   readonly externalAuditEventDestinationCreate: Maybe<ExternalAuditEventDestinationCreatePayload>;
+  /** @deprecated Use `groupAuditEventStreamingDestinationsDelete` instead. Deprecated in GitLab 18.10. */
   readonly externalAuditEventDestinationDestroy: Maybe<ExternalAuditEventDestinationDestroyPayload>;
+  /** @deprecated Use `groupAuditEventStreamingDestinationsUpdate` instead. Deprecated in GitLab 18.10. */
   readonly externalAuditEventDestinationUpdate: Maybe<ExternalAuditEventDestinationUpdatePayload>;
   /**
    * Mutates multiple Geo registries for a given registry class. Introduced in GitLab 16.4: **Status**: Experiment.
@@ -35424,8 +36152,11 @@ export type Mutation = {
    */
   readonly geoRegistriesUpdate: Maybe<GeoRegistriesUpdatePayload>;
   readonly gitlabSubscriptionActivate: Maybe<GitlabSubscriptionActivatePayload>;
+  /** @deprecated Use `groupAuditEventStreamingDestinationsCreate` with `gcpLogging` category instead. Deprecated in GitLab 18.10. */
   readonly googleCloudLoggingConfigurationCreate: Maybe<GoogleCloudLoggingConfigurationCreatePayload>;
+  /** @deprecated Use `groupAuditEventStreamingDestinationsDelete` instead. Deprecated in GitLab 18.10. */
   readonly googleCloudLoggingConfigurationDestroy: Maybe<GoogleCloudLoggingConfigurationDestroyPayload>;
+  /** @deprecated Use `groupAuditEventStreamingDestinationsUpdate` instead. Deprecated in GitLab 18.10. */
   readonly googleCloudLoggingConfigurationUpdate: Maybe<GoogleCloudLoggingConfigurationUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 16.11. */
   readonly groupAuditEventStreamingDestinationsCreate: Maybe<GroupAuditEventStreamingDestinationsCreatePayload>;
@@ -35472,11 +36203,17 @@ export type Mutation = {
   readonly instanceAuditEventStreamingDestinationsDelete: Maybe<InstanceAuditEventStreamingDestinationsDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 16.11. */
   readonly instanceAuditEventStreamingDestinationsUpdate: Maybe<InstanceAuditEventStreamingDestinationsUpdatePayload>;
+  /** @deprecated Use `instanceAuditEventStreamingDestinationsCreate` instead. Deprecated in GitLab 18.10. */
   readonly instanceExternalAuditEventDestinationCreate: Maybe<InstanceExternalAuditEventDestinationCreatePayload>;
+  /** @deprecated Use `instanceAuditEventStreamingDestinationsDelete` instead. Deprecated in GitLab 18.10. */
   readonly instanceExternalAuditEventDestinationDestroy: Maybe<InstanceExternalAuditEventDestinationDestroyPayload>;
+  /** @deprecated Use `instanceAuditEventStreamingDestinationsUpdate` instead. Deprecated in GitLab 18.10. */
   readonly instanceExternalAuditEventDestinationUpdate: Maybe<InstanceExternalAuditEventDestinationUpdatePayload>;
+  /** @deprecated Use `instanceAuditEventStreamingDestinationsCreate` with `gcpLogging` category instead. Deprecated in GitLab 18.10. */
   readonly instanceGoogleCloudLoggingConfigurationCreate: Maybe<InstanceGoogleCloudLoggingConfigurationCreatePayload>;
+  /** @deprecated Use `instanceAuditEventStreamingDestinationsDelete` instead. Deprecated in GitLab 18.10. */
   readonly instanceGoogleCloudLoggingConfigurationDestroy: Maybe<InstanceGoogleCloudLoggingConfigurationDestroyPayload>;
+  /** @deprecated Use `instanceAuditEventStreamingDestinationsUpdate` instead. Deprecated in GitLab 18.10. */
   readonly instanceGoogleCloudLoggingConfigurationUpdate: Maybe<InstanceGoogleCloudLoggingConfigurationUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.0. */
   readonly integrationExclusionCreate: Maybe<IntegrationExclusionCreatePayload>;
@@ -35537,17 +36274,25 @@ export type Mutation = {
   readonly linkProjectComplianceViolationIssue: Maybe<LinkProjectComplianceViolationIssuePayload>;
   readonly markAsSpamSnippet: Maybe<MarkAsSpamSnippetPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly mavenCacheEntryDelete: Maybe<MavenCacheEntryDeletePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
   readonly mavenUpstreamCacheDelete: Maybe<MavenUpstreamCacheDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.2. */
   readonly mavenUpstreamCreate: Maybe<MavenUpstreamCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.9. */
   readonly mavenUpstreamDelete: Maybe<MavenUpstreamDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly mavenUpstreamUpdate: Maybe<MavenUpstreamUpdatePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
   readonly mavenVirtualRegistryCacheDelete: Maybe<MavenVirtualRegistryCacheDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.9. */
   readonly mavenVirtualRegistryCreate: Maybe<MavenVirtualRegistryCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.9. */
   readonly mavenVirtualRegistryDelete: Maybe<MavenVirtualRegistryDeletePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly mavenVirtualRegistryUpdate: Maybe<MavenVirtualRegistryUpdatePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly mavenVirtualRegistryUpstreamUpdate: Maybe<MavenVirtualRegistryUpstreamUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.7. */
   readonly memberRoleAdminCreate: Maybe<MemberRoleAdminCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.10. */
@@ -35624,6 +36369,8 @@ export type Mutation = {
   readonly oncallScheduleCreate: Maybe<OncallScheduleCreatePayload>;
   readonly oncallScheduleDestroy: Maybe<OncallScheduleDestroyPayload>;
   readonly oncallScheduleUpdate: Maybe<OncallScheduleUpdatePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly orbitUpdate: Maybe<OrbitUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 16.6. */
   readonly organizationCreate: Maybe<OrganizationCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.11. */
@@ -35799,6 +36546,8 @@ export type Mutation = {
   readonly securityPolicyProjectCreateAsync: Maybe<SecurityPolicyProjectCreateAsyncPayload>;
   /** Unassigns the security policy project for the given project (`full_path`). */
   readonly securityPolicyProjectUnassign: Maybe<SecurityPolicyProjectUnassignPayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly securityRefsUntrack: Maybe<SecurityRefsUntrackPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.9. */
   readonly securityScanProfileAttach: Maybe<SecurityScanProfileAttachPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.9. */
@@ -35894,6 +36643,11 @@ export type Mutation = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
    */
   readonly updateContainerProtectionTagRule: Maybe<UpdateContainerProtectionTagRulePayload>;
+  /**
+   * Updates a custom dashboard. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly updateCustomDashboard: Maybe<UpdateCustomDashboardPayload>;
   /** These settings can be adjusted only by the group Owner. */
   readonly updateDependencyProxyImageTtlGroupPolicy: Maybe<UpdateDependencyProxyImageTtlGroupPolicyPayload>;
   /**
@@ -36104,6 +36858,8 @@ export type Mutation = {
   /** @deprecated **Status**: Experiment. Introduced in GitLab 16.3. */
   readonly workItemSubscribe: Maybe<WorkItemSubscribePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
+  readonly workItemTypeCreate: Maybe<WorkItemTypeCreatePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
   readonly workItemTypeUpdate: Maybe<WorkItemTypeUpdatePayload>;
   /**
    * Updates a work item by Global ID. Introduced in GitLab 15.1: **Status**: Experiment.
@@ -36249,6 +37005,11 @@ export type MutationAiCatalogMcpServerCreateArgs = {
 };
 
 
+export type MutationAiCatalogMcpServerUpdateArgs = {
+  input: AiCatalogMcpServerUpdateInput;
+};
+
+
 export type MutationAiCatalogThirdPartyFlowCreateArgs = {
   input: AiCatalogThirdPartyFlowCreateInput;
 };
@@ -36341,6 +37102,11 @@ export type MutationApproveDeploymentArgs = {
 
 export type MutationArtifactDestroyArgs = {
   input: ArtifactDestroyInput;
+};
+
+
+export type MutationAscpScanCreateArgs = {
+  input: AscpScanCreateInput;
 };
 
 
@@ -36669,6 +37435,11 @@ export type MutationConfigureSecretDetectionArgs = {
 };
 
 
+export type MutationContainerCacheEntryDeleteArgs = {
+  input: ContainerCacheEntryDeleteInput;
+};
+
+
 export type MutationContainerUpstreamCacheDeleteArgs = {
   input: ContainerUpstreamCacheDeleteInput;
 };
@@ -36681,6 +37452,11 @@ export type MutationContainerUpstreamCreateArgs = {
 
 export type MutationContainerUpstreamDeleteArgs = {
   input: ContainerUpstreamDeleteInput;
+};
+
+
+export type MutationContainerUpstreamTestArgs = {
+  input: ContainerUpstreamTestInput;
 };
 
 
@@ -36711,6 +37487,16 @@ export type MutationContainerVirtualRegistryUpdateArgs = {
 
 export type MutationContainerVirtualRegistryUpstreamCreateArgs = {
   input: ContainerVirtualRegistryUpstreamCreateInput;
+};
+
+
+export type MutationContainerVirtualRegistryUpstreamDeleteArgs = {
+  input: ContainerVirtualRegistryUpstreamDeleteInput;
+};
+
+
+export type MutationContainerVirtualRegistryUpstreamUpdateArgs = {
+  input: ContainerVirtualRegistryUpstreamUpdateInput;
 };
 
 
@@ -36806,6 +37592,11 @@ export type MutationCreateIssueArgs = {
 
 export type MutationCreateIterationArgs = {
   input: CreateIterationInput;
+};
+
+
+export type MutationCreateLatestDiffNoteArgs = {
+  input: CreateLatestDiffNoteInput;
 };
 
 
@@ -36961,6 +37752,11 @@ export type MutationDeleteContainerProtectionTagRuleArgs = {
 
 export type MutationDeleteConversationThreadArgs = {
   input: DeleteConversationThreadInput;
+};
+
+
+export type MutationDeleteCustomDashboardArgs = {
+  input: DeleteCustomDashboardInput;
 };
 
 
@@ -37644,6 +38440,11 @@ export type MutationMarkAsSpamSnippetArgs = {
 };
 
 
+export type MutationMavenCacheEntryDeleteArgs = {
+  input: MavenCacheEntryDeleteInput;
+};
+
+
 export type MutationMavenUpstreamCacheDeleteArgs = {
   input: MavenUpstreamCacheDeleteInput;
 };
@@ -37659,6 +38460,11 @@ export type MutationMavenUpstreamDeleteArgs = {
 };
 
 
+export type MutationMavenUpstreamUpdateArgs = {
+  input: MavenUpstreamUpdateInput;
+};
+
+
 export type MutationMavenVirtualRegistryCacheDeleteArgs = {
   input: MavenVirtualRegistryCacheDeleteInput;
 };
@@ -37671,6 +38477,16 @@ export type MutationMavenVirtualRegistryCreateArgs = {
 
 export type MutationMavenVirtualRegistryDeleteArgs = {
   input: MavenVirtualRegistryDeleteInput;
+};
+
+
+export type MutationMavenVirtualRegistryUpdateArgs = {
+  input: MavenVirtualRegistryUpdateInput;
+};
+
+
+export type MutationMavenVirtualRegistryUpstreamUpdateArgs = {
+  input: MavenVirtualRegistryUpstreamUpdateInput;
 };
 
 
@@ -37891,6 +38707,11 @@ export type MutationOncallScheduleDestroyArgs = {
 
 export type MutationOncallScheduleUpdateArgs = {
   input: OncallScheduleUpdateInput;
+};
+
+
+export type MutationOrbitUpdateArgs = {
+  input: OrbitUpdateInput;
 };
 
 
@@ -38419,6 +39240,11 @@ export type MutationSecurityPolicyProjectUnassignArgs = {
 };
 
 
+export type MutationSecurityRefsUntrackArgs = {
+  input: SecurityRefsUntrackInput;
+};
+
+
 export type MutationSecurityScanProfileAttachArgs = {
   input: SecurityScanProfileAttachInput;
 };
@@ -38661,6 +39487,11 @@ export type MutationUpdateContainerProtectionRepositoryRuleArgs = {
 
 export type MutationUpdateContainerProtectionTagRuleArgs = {
   input: UpdateContainerProtectionTagRuleInput;
+};
+
+
+export type MutationUpdateCustomDashboardArgs = {
+  input: UpdateCustomDashboardInput;
 };
 
 
@@ -39011,6 +39842,11 @@ export type MutationWorkItemSavedViewUpdateArgs = {
 
 export type MutationWorkItemSubscribeArgs = {
   input: WorkItemSubscribeInput;
+};
+
+
+export type MutationWorkItemTypeCreateArgs = {
+  input: WorkItemTypeCreateInput;
 };
 
 
@@ -39610,6 +40446,7 @@ export type NamespaceWorkItemStateCountsArgs = {
   verificationStatusWidget: InputMaybe<VerificationStatusFilterInput>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -39679,6 +40516,7 @@ export type NamespaceWorkItemsArgs = {
   verificationStatusWidget: InputMaybe<VerificationStatusFilterInput>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -40001,6 +40839,8 @@ export type NamespacePermissions = {
   readonly createEpic: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `create_projects` on this resource */
   readonly createProjects: Scalars['Boolean']['output'];
+  /** If `true`, the user can perform `create_saved_view` on this resource */
+  readonly createSavedView: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `create_work_item` on this resource */
   readonly createWorkItem: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `generate_description` on this resource */
@@ -40280,6 +41120,8 @@ export type NegatedBoardIssueInput = {
   readonly types: InputMaybe<ReadonlyArray<IssueType>>;
   /** Filter by weight. */
   readonly weight: InputMaybe<Scalars['String']['input']>;
+  /** Filter by work item type global IDs. */
+  readonly workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 export type NegatedComplianceFrameworkFilters = {
@@ -40427,6 +41269,8 @@ export type NegatedWorkItemFilterInput = {
   readonly types: InputMaybe<ReadonlyArray<IssueType>>;
   /** Weight not applied to the work items. */
   readonly weight: InputMaybe<Scalars['String']['input']>;
+  /** Filter out work items by work item type global IDs. */
+  readonly workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 /** Describes where code is deployed for a project organized by folder. */
@@ -41018,6 +41862,26 @@ export type OpenTelemetryMetricType =
   /** Sum Type type. */
   | 'SUM_TYPE';
 
+/** Autogenerated input type of OrbitUpdate */
+export type OrbitUpdateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Whether to enable or disable the Knowledge Graph for the group. */
+  readonly enabled: Scalars['Boolean']['input'];
+  /** Full path of the group to update. */
+  readonly groupPath: Scalars['ID']['input'];
+};
+
+/** Autogenerated return type of OrbitUpdate. */
+export type OrbitUpdatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Group after mutation. */
+  readonly group: Maybe<Group>;
+};
+
 export type OrchestrationPolicy = {
   /**
    * Indicates whether the policy comes from a centralized security policy group. Introduced in GitLab 18.1: **Status**: Experiment.
@@ -41097,6 +41961,11 @@ export type Organization = {
    */
   readonly webUrl: Scalars['String']['output'];
   /**
+   * Work item types available to the organization. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly workItemTypes: Maybe<WorkItemTypeConnection>;
+  /**
    * Cluster agents in the organization with workspaces capabilities Introduced in GitLab 17.10: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
    */
@@ -41157,6 +42026,16 @@ export type OrganizationProjectsArgs = {
   withDuoEligible: InputMaybe<Scalars['Boolean']['input']>;
   withIssuesEnabled: InputMaybe<Scalars['Boolean']['input']>;
   withMergeRequestsEnabled: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type OrganizationWorkItemTypesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  name: InputMaybe<IssueType>;
+  onlyAvailable: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
@@ -42218,6 +43097,81 @@ export type PackagesCleanupPolicy = {
   readonly nextRunAt: Maybe<Scalars['Time']['output']>;
 };
 
+/** Represents the Geo replication and verification state of a packages_helm_metadata_cache. */
+export type PackagesHelmMetadataCacheRegistry = {
+  /** Indicate if the checksums of the PackagesHelmMetadataCacheRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the PackagesHelmMetadataCacheRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this PackagesHelmMetadataCacheRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the PackagesHelmMetadataCacheRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** Error message during sync of the PackagesHelmMetadataCacheRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the PackagesHelmMetadataCacheRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the PackagesHelmMetadataCacheRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the PackagesHelmMetadataCacheRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** ID of the Helm Metadata Cache. */
+  readonly packagesHelmMetadataCacheId: Scalars['ID']['output'];
+  /** Timestamp after which the PackagesHelmMetadataCacheRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the PackagesHelmMetadataCacheRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the PackagesHelmMetadataCacheRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** The local checksum of the PackagesHelmMetadataCacheRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the PackagesHelmMetadataCacheRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the PackagesHelmMetadataCacheRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the PackagesHelmMetadataCacheRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the PackagesHelmMetadataCacheRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of PackagesHelmMetadataCacheRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the PackagesHelmMetadataCacheRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the PackagesHelmMetadataCacheRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+};
+
+/** The connection type for PackagesHelmMetadataCacheRegistry. */
+export type PackagesHelmMetadataCacheRegistryConnection = {
+  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<PackagesHelmMetadataCacheRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<PackagesHelmMetadataCacheRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for PackagesHelmMetadataCacheRegistry. */
+export type PackagesHelmMetadataCacheRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type PackagesHelmMetadataCacheRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<PackagesHelmMetadataCacheRegistry>;
+};
+
 /** Represents the Geo replication and verification state of a packages_nuget_symbol */
 export type PackagesNugetSymbolRegistry = {
   /** Indicate if the checksums of the PackagesNugetSymbolRegistry do not match on the primary and secondary. */
@@ -42569,7 +43523,7 @@ export type PendingGroupMember = MemberInterface & PendingMemberInterface & {
   readonly createdAt: Maybe<Scalars['Time']['output']>;
   /** User that authorized membership. */
   readonly createdBy: Maybe<UserCore>;
-  /** Email address of the pending member. */
+  /** Public email of the pending member. */
   readonly email: Maybe<Scalars['String']['output']>;
   /** Date and time the membership expires. */
   readonly expiresAt: Maybe<Scalars['Time']['output']>;
@@ -42608,7 +43562,7 @@ export type PendingMemberInterface = {
   readonly createdAt: Maybe<Scalars['Time']['output']>;
   /** User that authorized membership. */
   readonly createdBy: Maybe<UserCore>;
-  /** Email address of the pending member. */
+  /** Public email of the pending member. */
   readonly email: Maybe<Scalars['String']['output']>;
   /** Date and time the membership expires. */
   readonly expiresAt: Maybe<Scalars['Time']['output']>;
@@ -42665,7 +43619,7 @@ export type PendingProjectMember = MemberInterface & PendingMemberInterface & {
   readonly createdAt: Maybe<Scalars['Time']['output']>;
   /** User that authorized membership. */
   readonly createdBy: Maybe<UserCore>;
-  /** Email address of the pending member. */
+  /** Public email of the pending member. */
   readonly email: Maybe<Scalars['String']['output']>;
   /** Date and time the membership expires. */
   readonly expiresAt: Maybe<Scalars['Time']['output']>;
@@ -42842,7 +43796,7 @@ export type Pipeline = PipelineInterface & {
   readonly complete: Scalars['Boolean']['output'];
   /** Total minutes consumed by the pipeline. */
   readonly computeMinutes: Maybe<Scalars['Float']['output']>;
-  /** Configuration source of the pipeline (UNKNOWN_SOURCE, REPOSITORY_SOURCE, AUTO_DEVOPS_SOURCE, WEBIDE_SOURCE, REMOTE_SOURCE, EXTERNAL_PROJECT_SOURCE, BRIDGE_SOURCE, PARAMETER_SOURCE, COMPLIANCE_SOURCE, SECURITY_POLICIES_DEFAULT_SOURCE, PIPELINE_EXECUTION_POLICY_FORCED) */
+  /** Configuration source of the pipeline (UNKNOWN_SOURCE, REPOSITORY_SOURCE, AUTO_DEVOPS_SOURCE, WEBIDE_SOURCE, REMOTE_SOURCE, EXTERNAL_PROJECT_SOURCE, BRIDGE_SOURCE, PARAMETER_SOURCE, COMPLIANCE_SOURCE, SECURITY_POLICIES_DEFAULT_SOURCE, PIPELINE_EXECUTION_POLICY_FORCED, SECURITY_SCAN_PROFILES_SOURCE) */
   readonly configSource: Maybe<PipelineConfigSourceEnum>;
   /** Coverage percentage. */
   readonly coverage: Maybe<Scalars['Float']['output']>;
@@ -42900,6 +43854,8 @@ export type Pipeline = PipelineInterface & {
   readonly name: Maybe<Scalars['String']['output']>;
   /** Relative path to the pipeline's page. */
   readonly path: Maybe<Scalars['String']['output']>;
+  /** Pipeline schedule that triggered the pipeline. */
+  readonly pipelineSchedule: Maybe<PipelineSchedule>;
   /** Project the pipeline belongs to. */
   readonly project: Maybe<Project>;
   /** How long the pipeline was queued before starting. */
@@ -43246,6 +44202,8 @@ export type PipelineConfigSourceEnum =
   | 'REPOSITORY_SOURCE'
   /** Security policies default source. */
   | 'SECURITY_POLICIES_DEFAULT_SOURCE'
+  /** Security scan profiles source. */
+  | 'SECURITY_SCAN_PROFILES_SOURCE'
   /** Unknown source. */
   | 'UNKNOWN_SOURCE'
   /** Webide source. */
@@ -44344,6 +45302,11 @@ export type PolicyScope = {
   readonly includingGroups: GroupConnection;
   /** Projects to which the policy should be applied. */
   readonly includingProjects: ProjectConnection;
+  /**
+   * Specifies how multiple policy scope conditions are combined. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly matchMode: PolicyScopeMatchMode;
 };
 
 
@@ -44385,6 +45348,13 @@ export type PolicyScopeIncludingProjectsArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
+
+/** Specifies how multiple policy scope conditions are combined. */
+export type PolicyScopeMatchMode =
+  /** All specified conditions must match (AND logic). This is the default behavior. */
+  | 'ALL'
+  /** At least one specified condition must match (OR logic). */
+  | 'ANY';
 
 /** Lists the status of a virtual registry cleanup policy */
 export type PolicyStatus =
@@ -44456,6 +45426,8 @@ export type PolicyViolationStatus =
   | 'FAILED'
   /** Represents a running policy violation. */
   | 'RUNNING'
+  /** Represents a skipped policy violation. */
+  | 'SKIPPED'
   /** Represents a policy violation warning. */
   | 'WARNING';
 
@@ -44675,6 +45647,11 @@ export type Project = ProjectInterface & Todoable & {
   readonly approvalPolicies: Maybe<ApprovalPolicyConnection>;
   /** Indicates if the project or any ancestor is archived. */
   readonly archived: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * ASCP security scans for this project. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly ascpScans: Maybe<AscpScanConnection>;
   /** Indicates if issues referenced by merge requests and commits within the default branch are closed automatically. */
   readonly autocloseReferencedIssues: Maybe<Scalars['Boolean']['output']>;
   /** Search users for autocompletion */
@@ -44788,15 +45765,9 @@ export type Project = ProjectInterface & Todoable & {
    * @deprecated Use `container_tags_expiration_policy`. Deprecated in GitLab 17.5.
    */
   readonly containerExpirationPolicy: Maybe<ContainerExpirationPolicy>;
-  /**
-   * Container protection rules for the project. Introduced in GitLab 16.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.10.
-   */
+  /** Container protection rules for the project. */
   readonly containerProtectionRepositoryRules: Maybe<ContainerProtectionRepositoryRuleConnection>;
-  /**
-   * Container repository tag protection rules for the project. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Container repository tag protection rules for the project. */
   readonly containerProtectionTagRules: Maybe<ContainerProtectionTagRuleConnection>;
   /** Indicates if Container registry is enabled for the current user */
   readonly containerRegistryEnabled: Maybe<Scalars['Boolean']['output']>;
@@ -45561,6 +46532,15 @@ export type ProjectApprovalPoliciesArgs = {
 };
 
 
+export type ProjectAscpScansArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  scanType: InputMaybe<AscpScanType>;
+};
+
+
 export type ProjectAutocompleteUsersArgs = {
   includeServiceAccountsForTriggerEvents: InputMaybe<ReadonlyArray<AiFlowTriggerEventType>>;
   search: InputMaybe<Scalars['String']['input']>;
@@ -45916,6 +46896,7 @@ export type ProjectDuoWorkflowWorkflowsArgs = {
   sort?: InputMaybe<DuoWorkflowsWorkflowSort>;
   statusGroup: InputMaybe<DuoWorkflowStatusGroup>;
   type: InputMaybe<Scalars['String']['input']>;
+  updatedAfter: InputMaybe<Scalars['ISO8601DateTime']['input']>;
   workflowId: InputMaybe<Scalars['AiDuoWorkflowsWorkflowID']['input']>;
 };
 
@@ -46057,6 +47038,7 @@ export type ProjectIssueArgs = {
   updatedBefore: InputMaybe<Scalars['Time']['input']>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -46103,6 +47085,7 @@ export type ProjectIssueStatusCountsArgs = {
   updatedBefore: InputMaybe<Scalars['Time']['input']>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -46156,6 +47139,7 @@ export type ProjectIssuesArgs = {
   updatedBefore: InputMaybe<Scalars['Time']['input']>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -47037,6 +48021,7 @@ export type ProjectWorkItemStateCountsArgs = {
   verificationStatusWidget: InputMaybe<VerificationStatusFilterInput>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -47100,6 +48085,7 @@ export type ProjectWorkItemsArgs = {
   verificationStatusWidget: InputMaybe<VerificationStatusFilterInput>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 /** Values for the archived argument */
@@ -48199,6 +49185,8 @@ export type ProjectSavedReplyUpdatePayload = {
 export type ProjectSecret = {
   /** Branches that can access the secret. */
   readonly branch: Scalars['String']['output'];
+  /** Timestamp when the secret creation started. */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
   /** Description of the project secret. */
   readonly description: Maybe<Scalars['String']['output']>;
   /** Environments that can access the secret. */
@@ -48966,6 +49954,81 @@ export type ProjectUpdateComplianceFrameworksPayload = {
   readonly project: Maybe<Project>;
 };
 
+/** Represents the Geo replication and verification state of a project_upload */
+export type ProjectUploadRegistry = {
+  /** Indicate if the checksums of the ProjectUploadRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the ProjectUploadRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this ProjectUploadRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the ProjectUploadRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** Error message during sync of the ProjectUploadRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the ProjectUploadRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the ProjectUploadRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the ProjectUploadRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** ID of the Project Upload. */
+  readonly projectUploadId: Scalars['ID']['output'];
+  /** Timestamp after which the ProjectUploadRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the ProjectUploadRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the ProjectUploadRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** The local checksum of the ProjectUploadRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the ProjectUploadRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the ProjectUploadRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the ProjectUploadRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the ProjectUploadRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of ProjectUploadRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the ProjectUploadRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the ProjectUploadRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+};
+
+/** The connection type for ProjectUploadRegistry. */
+export type ProjectUploadRegistryConnection = {
+  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<ProjectUploadRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<ProjectUploadRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for ProjectUploadRegistry. */
+export type ProjectUploadRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type ProjectUploadRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<ProjectUploadRegistry>;
+};
+
 /** Exposes aggregated value stream flow metrics */
 export type ProjectValueStreamAnalyticsFlowMetrics = {
   /** Median time from first commit to issue closed */
@@ -49440,7 +50503,31 @@ export type PushAccessLevelInput = {
 
 /** Represents rules that commit pushes must follow. */
 export type PushRules = {
-  /** Indicates whether commits not signed through GPG will be rejected. */
+  /** All commit author emails must match the regular expression. */
+  readonly authorEmailRegex: Maybe<Scalars['String']['output']>;
+  /** All branch names must match the regular expression. */
+  readonly branchNameRegex: Maybe<Scalars['String']['output']>;
+  /** Only allow commits where the committer email matches a verified GitLab user email. */
+  readonly commitCommitterCheck: Scalars['Boolean']['output'];
+  /** Only allow commits where the author name matches the GitLab user name. */
+  readonly commitCommitterNameCheck: Scalars['Boolean']['output'];
+  /** No commit message is allowed to match the regular expression. */
+  readonly commitMessageNegativeRegex: Maybe<Scalars['String']['output']>;
+  /** All commit messages must match the regular expression. */
+  readonly commitMessageRegex: Maybe<Scalars['String']['output']>;
+  /** Deny deleting a tag with `git push`. */
+  readonly denyDeleteTag: Maybe<Scalars['Boolean']['output']>;
+  /** All committed filenames must not match the regular expression. */
+  readonly fileNameRegex: Maybe<Scalars['String']['output']>;
+  /** Maximum file size (MB). */
+  readonly maxFileSize: Maybe<Scalars['Int']['output']>;
+  /** Restrict commits by author (email) to existing GitLab users. */
+  readonly memberCheck: Maybe<Scalars['Boolean']['output']>;
+  /** GitLab rejects any files that are likely to contain secrets. */
+  readonly preventSecrets: Maybe<Scalars['Boolean']['output']>;
+  /** Reject commit when it is not DCO certified. */
+  readonly rejectNonDcoCommits: Scalars['Boolean']['output'];
+  /** Reject commit when it is not signed through GPG. */
   readonly rejectUnsignedCommits: Scalars['Boolean']['output'];
 };
 
@@ -49603,7 +50690,10 @@ export type Query = {
   readonly aiUsageData: Maybe<AiInstanceUsageData>;
   /** Definitions for all audit events available on the instance. */
   readonly auditEventDefinitions: AuditEventDefinitionConnection;
-  /** Instance-level Amazon S3 configurations for audit events. */
+  /**
+   * Instance-level Amazon S3 configurations for audit events. Deprecated in GitLab 18.10: Use `auditEventsInstanceStreamingDestinations` with `amazonS3` category instead.
+   * @deprecated Use `auditEventsInstanceStreamingDestinations` with `amazonS3` category instead. Deprecated in GitLab 18.10.
+   */
   readonly auditEventsInstanceAmazonS3Configurations: Maybe<InstanceAmazonS3ConfigurationTypeConnection>;
   /**
    * Instance-level external audit event streaming destinations. Introduced in GitLab 16.11: **Status**: Experiment.
@@ -49660,6 +50750,10 @@ export type Query = {
   readonly currentLicense: Maybe<CurrentLicense>;
   /** Get information about current user. */
   readonly currentUser: Maybe<CurrentUser>;
+  /** Find a custom dashboard by ID. */
+  readonly customDashboard: Maybe<CustomDashboard>;
+  /** Find custom dashboards for an organization. */
+  readonly customDashboards: Maybe<CustomDashboardConnection>;
   /**
    * Find a custom field by its ID. Introduced in GitLab 17.10: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
@@ -49730,15 +50824,26 @@ export type Query = {
    */
   readonly groupSecretsManager: Maybe<GroupSecretsManager>;
   /**
+   * List group secrets that need to be rotated. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly groupSecretsNeedingRotation: Maybe<GroupSecretConnection>;
+  /**
    * List group secrets permissions. Introduced in GitLab 18.7: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
    */
   readonly groupSecretsPermissions: Maybe<GroupSecretsPermissionConnection>;
   /** Find groups. */
   readonly groups: Maybe<GroupConnection>;
-  /** Instance level external audit event destinations. */
+  /**
+   * Instance level external audit event destinations. Deprecated in GitLab 18.10: Use `auditEventsInstanceStreamingDestinations` instead.
+   * @deprecated Use `auditEventsInstanceStreamingDestinations` instead. Deprecated in GitLab 18.10.
+   */
   readonly instanceExternalAuditEventDestinations: Maybe<InstanceExternalAuditEventDestinationConnection>;
-  /** Instance level google cloud logging configurations. */
+  /**
+   * Instance level google cloud logging configurations. Deprecated in GitLab 18.10: Use `auditEventsInstanceStreamingDestinations` with `gcpLogging` category instead.
+   * @deprecated Use `auditEventsInstanceStreamingDestinations` with `gcpLogging` category instead. Deprecated in GitLab 18.10.
+   */
   readonly instanceGoogleCloudLoggingConfigurations: Maybe<InstanceGoogleCloudLoggingConfigurationTypeConnection>;
   /** Fields related to Instance Security Dashboard. */
   readonly instanceSecurityDashboard: Maybe<InstanceSecurityDashboard>;
@@ -49979,6 +51084,11 @@ export type Query = {
    */
   readonly workItemDescriptionTemplateContent: Maybe<WorkItemDescriptionTemplate>;
   /**
+   * Available icon definitions for work item types. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly workItemTypeIconDefinitions: ReadonlyArray<WorkItemTypeIconDefinition>;
+  /**
    * Find work items by their reference. Introduced in GitLab 16.7: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 16.7.
    */
@@ -50108,6 +51218,7 @@ export type QueryAiCatalogConfiguredItemsArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   foundationalFlowReference: InputMaybe<Scalars['String']['input']>;
   groupId: InputMaybe<Scalars['GroupID']['input']>;
+  includeFoundationalConsumers?: InputMaybe<Scalars['Boolean']['input']>;
   includeInherited?: InputMaybe<Scalars['Boolean']['input']>;
   itemId: InputMaybe<Scalars['AiCatalogItemID']['input']>;
   itemType: InputMaybe<AiCatalogItemType>;
@@ -50162,6 +51273,7 @@ export type QueryAiCatalogMcpServersArgs = {
 
 
 export type QueryAiChatAvailableModelsArgs = {
+  namespaceId: InputMaybe<Scalars['GroupID']['input']>;
   projectId: InputMaybe<Scalars['ProjectID']['input']>;
   rootNamespaceId: InputMaybe<Scalars['GroupID']['input']>;
 };
@@ -50370,6 +51482,22 @@ export type QueryContainerRepositoryArgs = {
 };
 
 
+export type QueryCustomDashboardArgs = {
+  id: Scalars['AnalyticsCustomDashboardsDashboardID']['input'];
+};
+
+
+export type QueryCustomDashboardsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  createdById: InputMaybe<Scalars['UserID']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  namespaceId: InputMaybe<Scalars['NamespaceID']['input']>;
+  organizationId: Scalars['OrganizationsOrganizationID']['input'];
+};
+
+
 export type QueryCustomFieldArgs = {
   id: Scalars['IssuablesCustomFieldID']['input'];
 };
@@ -50418,6 +51546,7 @@ export type QueryDuoWorkflowWorkflowsArgs = {
   sort?: InputMaybe<DuoWorkflowsWorkflowSort>;
   statusGroup: InputMaybe<DuoWorkflowStatusGroup>;
   type: InputMaybe<Scalars['String']['input']>;
+  updatedAfter: InputMaybe<Scalars['ISO8601DateTime']['input']>;
   workflowId: InputMaybe<Scalars['AiDuoWorkflowsWorkflowID']['input']>;
 };
 
@@ -50474,6 +51603,15 @@ export type QueryGroupSecretsArgs = {
 
 export type QueryGroupSecretsManagerArgs = {
   groupPath: Scalars['ID']['input'];
+};
+
+
+export type QueryGroupSecretsNeedingRotationArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  groupPath: Scalars['ID']['input'];
+  last: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -50581,6 +51719,7 @@ export type QueryIssuesArgs = {
   updatedBefore: InputMaybe<Scalars['Time']['input']>;
   weight: InputMaybe<Scalars['String']['input']>;
   weightWildcardId: InputMaybe<WeightWildcardId>;
+  workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 
@@ -50692,7 +51831,7 @@ export type QueryNoteArgs = {
 
 
 export type QueryOrganizationArgs = {
-  id: Scalars['OrganizationsOrganizationID']['input'];
+  id: InputMaybe<Scalars['OrganizationsOrganizationID']['input']>;
 };
 
 
@@ -51278,7 +52417,7 @@ export type RefreshVulnerabilityFindingTokenStatusPayload = {
   readonly findingTokenStatus: Maybe<VulnerabilityFindingTokenStatus>;
 };
 
-export type Registrable = CiSecureFileRegistry | ContainerRepositoryRegistry | DependencyProxyBlobRegistry | DependencyProxyManifestRegistry | DesignManagementRepositoryRegistry | GroupWikiRepositoryRegistry | JobArtifactRegistry | LfsObjectRegistry | MergeRequestDiffRegistry | PackageFileRegistry | PackagesNugetSymbolRegistry | PagesDeploymentRegistry | PipelineArtifactRegistry | ProjectRepositoryRegistry | ProjectWikiRepositoryRegistry | SnippetRepositoryRegistry | TerraformStateVersionRegistry | UploadRegistry;
+export type Registrable = AbuseReportUploadRegistry | CiSecureFileRegistry | ContainerRepositoryRegistry | DependencyProxyBlobRegistry | DependencyProxyManifestRegistry | DesignManagementRepositoryRegistry | GroupWikiRepositoryRegistry | JobArtifactRegistry | LfsObjectRegistry | MergeRequestDiffRegistry | PackageFileRegistry | PackagesHelmMetadataCacheRegistry | PackagesNugetSymbolRegistry | PagesDeploymentRegistry | PipelineArtifactRegistry | ProjectRepositoryRegistry | ProjectUploadRegistry | ProjectWikiRepositoryRegistry | SnippetRepositoryRegistry | TerraformStateVersionRegistry | UploadRegistry;
 
 export type RegistryInterface = {
   /** Description of the virtual registry. */
@@ -52393,6 +53532,19 @@ export type RootStorageStatistics = {
   readonly wikiSize: Scalars['Float']['output'];
 };
 
+export type RuleInterface = {
+  /** When the rule was created. */
+  readonly createdAt: Scalars['Time']['output'];
+  /** Global ID of the rule. */
+  readonly id: Scalars['VirtualRegistriesPackagesMavenUpstreamRuleID']['output'];
+  /** Pattern for the rule. */
+  readonly pattern: Scalars['String']['output'];
+  /** Type of pattern (WILDCARD or REGEX). */
+  readonly patternType: MavenUpstreamPatternType;
+  /** Target coordinate for the rule. */
+  readonly targetCoordinate: MavenUpstreamTargetCoordinate;
+};
+
 export type RunnerArchitecture = {
   /** Download location for the runner for the platform architecture. */
   readonly downloadLocation: Scalars['String']['output'];
@@ -52510,6 +53662,13 @@ export type RunnerCreateInput = {
   readonly runnerType: CiRunnerType;
   /** Tags associated with the runner. */
   readonly tagList: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+  /** Token expiration time (ISO 8601 format). Must be between 5 minutes and 15 days in the future, and cannot exceed instance/group/project limits. */
+  readonly tokenExpiresAt: InputMaybe<Scalars['Time']['input']>;
+  /**
+   * Deadline for token rotation (ISO 8601 format). Requires tokenExpiresAt. Must be <= tokenExpiresAt. Setting both to the same value disables token rotation. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly tokenRotationDeadline: InputMaybe<Scalars['Time']['input']>;
 };
 
 /** Autogenerated return type of RunnerCreate. */
@@ -53162,6 +54321,15 @@ export type ScanModeEnum =
   /** Return results from partial scans. */
   | 'PARTIAL';
 
+/** Scan profile trigger type */
+export type ScanProfileTriggerType =
+  /** Default branch pipeline */
+  | 'DEFAULT_BRANCH_PIPELINE'
+  /** Git push event */
+  | 'GIT_PUSH_EVENT'
+  /** Merge request pipeline */
+  | 'MERGE_REQUEST_PIPELINE';
+
 /** A scan profile. */
 export type ScanProfileType = {
   /** Timestamp of when the scan profile was created. */
@@ -53176,6 +54344,11 @@ export type ScanProfileType = {
   readonly name: Scalars['String']['output'];
   /** Scan profile type. */
   readonly scanType: SecurityScanProfileType;
+  /**
+   * Trigger types for the scan profile. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly triggers: ReadonlyArray<ScanProfileTriggerType>;
   /** Timestamp of when the scan profile was last updated. */
   readonly updatedAt: Scalars['ISO8601DateTime']['output'];
 };
@@ -53468,7 +54641,7 @@ export type SecretPermissionUpdatePayload = {
   readonly secretPermission: Maybe<SecretPermission>;
 };
 
-/** Rotation configuration and status for a project secret. */
+/** Rotation configuration and status for a secret. */
 export type SecretRotationInfo = {
   /** When the rotation configuration was created. */
   readonly createdAt: Scalars['Time']['output'];
@@ -54044,6 +55217,12 @@ export type SecurityMetrics = {
    */
   readonly vulnerabilitiesByAge: Maybe<ReadonlyArray<VulnerabilitiesByAge>>;
   /**
+   * Vulnerability identifier statistics with filtering.
+   * This feature is currently under development and not yet available for general use Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly vulnerabilitiesByIdentifier: Maybe<ReadonlyArray<VulnerabilitiesByIdentifier>>;
+  /**
    * Vulnerability metrics over time with filtering and grouping capabilities.
    * This feature is currently under development and not yet available for general use
    */
@@ -54058,6 +55237,12 @@ export type SecurityMetrics = {
 
 /** Represents security metrics */
 export type SecurityMetricsVulnerabilitiesByAgeArgs = {
+  severity: InputMaybe<ReadonlyArray<VulnerabilitySeverity>>;
+};
+
+
+/** Represents security metrics */
+export type SecurityMetricsVulnerabilitiesByIdentifierArgs = {
   severity: InputMaybe<ReadonlyArray<VulnerabilitySeverity>>;
 };
 
@@ -54248,6 +55433,24 @@ export type SecurityPreferredLicenseSourceConfiguration =
   | 'PMDB'
   /** Use the SBOM as a source of license information for dependencies. */
   | 'SBOM';
+
+/** Autogenerated input type of SecurityRefsUntrack */
+export type SecurityRefsUntrackInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Global IDs of the tracked refs to stop tracking. */
+  readonly refIds: ReadonlyArray<Scalars['SecurityProjectTrackedContextID']['input']>;
+};
+
+/** Autogenerated return type of SecurityRefsUntrack. */
+export type SecurityRefsUntrackPayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Global IDs of refs that were successfully untracked. */
+  readonly untrackedRefIds: Maybe<ReadonlyArray<Scalars['ID']['output']>>;
+};
 
 /** Represents summary of a security report */
 export type SecurityReportSummary = {
@@ -55668,6 +56871,11 @@ export type Subscription = {
    */
   readonly ciPipelineStatusesUpdated: Maybe<Pipeline>;
   /**
+   * Triggered when a stage status is updated. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly ciStageStatusUpdated: Maybe<CiStage>;
+  /**
    * Triggered when jobs in a stage are updated. Introduced in GitLab 18.7: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
    */
@@ -55781,6 +56989,11 @@ export type SubscriptionCiPipelineStatusUpdatedArgs = {
 
 export type SubscriptionCiPipelineStatusesUpdatedArgs = {
   projectId: Scalars['ProjectID']['input'];
+};
+
+
+export type SubscriptionCiStageStatusUpdatedArgs = {
+  stageId: Scalars['CiStageID']['input'];
 };
 
 
@@ -57924,7 +59137,10 @@ export type UpdateContainerProtectionRepositoryRuleInput = {
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
   /** Global ID of the container repository protection rule to be updated. */
   readonly id: Scalars['ContainerRegistryProtectionRuleID']['input'];
-  /** Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. */
+  /**
+   * Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. Valid only when feature flag `container_registry_protected_containers_delete` is enabled. Introduced in GitLab 17.11: **Status**: Experiment. Introduced in GitLab 17.11: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
+   */
   readonly minimumAccessLevelForDelete: InputMaybe<ContainerProtectionRepositoryRuleAccessLevel>;
   /** Minimum GitLab access level required to push container images to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. */
   readonly minimumAccessLevelForPush: InputMaybe<ContainerProtectionRepositoryRuleAccessLevel>;
@@ -57948,20 +59164,11 @@ export type UpdateContainerProtectionTagRuleInput = {
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
   /** Global ID of the tag protection rule to update. */
   readonly id: Scalars['ContainerRegistryProtectionTagRuleID']['input'];
-  /**
-   * Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can delete tags. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can delete tags.  */
   readonly minimumAccessLevelForDelete: InputMaybe<ContainerProtectionTagRuleAccessLevel>;
-  /**
-   * Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can push tags. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can push tags.  */
   readonly minimumAccessLevelForPush: InputMaybe<ContainerProtectionTagRuleAccessLevel>;
-  /**
-   * The pattern that matches container image tags to protect. For example, `v1.*`. Wildcard character `*` allowed. Introduced in GitLab 17.8: **Status**: Experiment. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** The pattern that matches container image tags to protect. For example, `v1.*`. Wildcard character `*` allowed. */
   readonly tagNamePattern: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -57969,12 +59176,33 @@ export type UpdateContainerProtectionTagRuleInput = {
 export type UpdateContainerProtectionTagRulePayload = {
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: Maybe<Scalars['String']['output']>;
-  /**
-   * Protection rule for container image tags after creation. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Protection rule for container image tags after creation. */
   readonly containerProtectionTagRule: Maybe<ContainerProtectionTagRule>;
   /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
+/** Autogenerated input type of UpdateCustomDashboard */
+export type UpdateCustomDashboardInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Dashboard layout/config JSON. */
+  readonly config: InputMaybe<Scalars['JSON']['input']>;
+  /** Dashboard description. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the dashboard to update. */
+  readonly id: Scalars['AnalyticsCustomDashboardsDashboardID']['input'];
+  /** Dashboard name. */
+  readonly name: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Autogenerated return type of UpdateCustomDashboard. */
+export type UpdateCustomDashboardPayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Updated dashboard. */
+  readonly dashboard: Maybe<CustomDashboard>;
+  /** Errors encountered during update. */
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
 };
 
@@ -58626,11 +59854,6 @@ export type UpstreamInterface = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
    */
   readonly url: Scalars['String']['output'];
-  /**
-   * Username to sign in to the upstream registry. Introduced in GitLab 18.1: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
-   */
-  readonly username: Maybe<Scalars['String']['output']>;
 };
 
 /** Represents a recorded measurement (object count) for the Admins */
@@ -58687,6 +59910,8 @@ export type User = {
   readonly createdAt: Maybe<Scalars['Time']['output']>;
   /** Discord ID of the user. */
   readonly discord: Maybe<Scalars['String']['output']>;
+  /** Duo status for the user. */
+  readonly duoStatus: Maybe<UserDuoStatus>;
   /**
    * User email. Deprecated in GitLab 13.7: This was renamed.
    * @deprecated This was renamed. Please use `User.publicEmail`. Deprecated in GitLab 13.7.
@@ -59445,10 +60670,10 @@ export type UserCalloutFeatureNameEnum =
   | 'CLUSTER_SECURITY_WARNING'
   /** Callout feature name for duo_amazon_q_alert. */
   | 'DUO_AMAZON_Q_ALERT'
-  /** Callout feature name for duo_chat_callout. */
-  | 'DUO_CHAT_CALLOUT'
   /** Callout feature name for duo_panel_auto_expanded. */
   | 'DUO_PANEL_AUTO_EXPANDED'
+  /** Callout feature name for duo_panel_empty_state_auto_expanded. */
+  | 'DUO_PANEL_EMPTY_STATE_AUTO_EXPANDED'
   /** Callout feature name for email_otp_enrollment_callout. */
   | 'EMAIL_OTP_ENROLLMENT_CALLOUT'
   /** Callout feature name for expired_trial_status_widget. */
@@ -59497,10 +60722,6 @@ export type UserCalloutFeatureNameEnum =
   | 'PIPELINE_NEEDS_BANNER'
   /** Callout feature name for pipeline_needs_hover_tip. */
   | 'PIPELINE_NEEDS_HOVER_TIP'
-  /** Callout feature name for pipeline_new_inputs_adoption_banner. */
-  | 'PIPELINE_NEW_INPUTS_ADOPTION_BANNER'
-  /** Callout feature name for pipeline_schedules_inputs_adoption_banner. */
-  | 'PIPELINE_SCHEDULES_INPUTS_ADOPTION_BANNER'
   /** Callout feature name for pipl_compliance_alert. */
   | 'PIPL_COMPLIANCE_ALERT'
   /** Callout feature name for preview_user_over_limit_free_plan_alert. */
@@ -59519,6 +60740,8 @@ export type UserCalloutFeatureNameEnum =
   | 'SECURITY_POLICY_PROTECTED_BRANCH_MODIFICATION'
   /** Callout feature name for security_scanner_profiles_announcement. */
   | 'SECURITY_SCANNER_PROFILES_ANNOUNCEMENT'
+  /** Callout feature name for single_origin_fallback_callout. */
+  | 'SINGLE_ORIGIN_FALLBACK_CALLOUT'
   /** Callout feature name for submit_license_usage_data_banner. */
   | 'SUBMIT_LICENSE_USAGE_DATA_BANNER'
   /** Callout feature name for suggest_pipeline. */
@@ -59545,8 +60768,6 @@ export type UserCalloutFeatureNameEnum =
   | 'VERIFICATION_REMINDER'
   /** Callout feature name for virtual_registry_permission_change_alert. */
   | 'VIRTUAL_REGISTRY_PERMISSION_CHANGE_ALERT'
-  /** Callout feature name for vsd_feedback_banner. */
-  | 'VSD_FEEDBACK_BANNER'
   /** Callout feature name for vulnerability_archival. */
   | 'VULNERABILITY_ARCHIVAL'
   /** Callout feature name for vulnerability_report_grouping. */
@@ -59594,6 +60815,8 @@ export type UserCore = Todoable & User & {
   readonly customAttributes: Maybe<ReadonlyArray<CustomAttribute>>;
   /** Discord ID of the user. */
   readonly discord: Maybe<Scalars['String']['output']>;
+  /** Duo status for the user. */
+  readonly duoStatus: Maybe<UserDuoStatus>;
   /**
    * User email. Deprecated in GitLab 13.7: This was renamed.
    * @deprecated This was renamed. Please use `User.publicEmail`. Deprecated in GitLab 13.7.
@@ -60116,6 +61339,16 @@ export type UserCustomAttributeSetPayload = {
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
 };
 
+/** Represents the Duo status for a user. */
+export type UserDuoStatus = {
+  /** Indicates if the user is disabled for assignment in Duo features. */
+  readonly disabled: Scalars['Boolean']['output'];
+  /** Reason why the user is disabled for assignment in Duo features. */
+  readonly disabledReason: Maybe<Scalars['String']['output']>;
+  /** List of available flow trigger events for the user in Duo features. */
+  readonly flowTriggerEvents: ReadonlyArray<AiFlowTriggerEventType>;
+};
+
 export type UserGroupCallout = {
   /** Date when the callout was dismissed. */
   readonly dismissedAt: Scalars['Time']['output'];
@@ -60391,6 +61624,8 @@ export type UserPermissions = {
 };
 
 export type UserPreferences = {
+  /** Default namespace context for Duo features when namespace cannot be inferred. */
+  readonly duoDefaultNamespace: Maybe<Namespace>;
   /** Status of the Web IDE Extension Marketplace opt-in for the user. */
   readonly extensionsMarketplaceOptInStatus: ExtensionsMarketplaceOptInStatus;
   /** Sort order for issue lists. */
@@ -60420,6 +61655,11 @@ export type UserPreferences = {
   readonly useWorkItemsView: Maybe<Scalars['Boolean']['output']>;
   /** Determines whether the pipeline list shows ID or IID. */
   readonly visibilityPipelineIdType: Maybe<VisibilityPipelineIdType>;
+  /**
+   * Whether to skip the commit message modal and use the auto-generated commit message when saving changes to a wiki document. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly wikiUseAutoCommitMessage: Scalars['Boolean']['output'];
   /** Display settings for the work item lists. */
   readonly workItemsDisplaySettings: Scalars['JSON']['output'];
 };
@@ -60456,6 +61696,11 @@ export type UserPreferencesUpdateInput = {
   readonly useWorkItemsView: InputMaybe<Scalars['Boolean']['input']>;
   /** Determines whether the pipeline list shows ID or IID. */
   readonly visibilityPipelineIdType: InputMaybe<VisibilityPipelineIdType>;
+  /**
+   * Whether to skip the commit message modal and use the auto-generated commit message when saving changes to a wiki document. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly wikiUseAutoCommitMessage: InputMaybe<Scalars['Boolean']['input']>;
   /**
    * Display settings for the work item lists, e.g.: "{ shouldOpenItemsInSidePanel: false }". Introduced in GitLab 18.1: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
@@ -61195,6 +62440,16 @@ export type VulnerabilitiesByAge = {
   readonly name: Scalars['String']['output'];
 };
 
+/** Represents vulnerability metrics by identifier with filtering */
+export type VulnerabilitiesByIdentifier = {
+  /** Vulnerability counts grouped by severity level. */
+  readonly bySeverity: Maybe<ReadonlyArray<VulnerabilitySeverityCount>>;
+  /** Number of vulnerabilities for the identifier. */
+  readonly count: Maybe<Scalars['Int']['output']>;
+  /** Identifier name. */
+  readonly name: Scalars['String']['output'];
+};
+
 /** Represents the count of vulnerabilities by severity on a particular day. This data is retained for 365 days */
 export type VulnerabilitiesCountByDay = {
   /** Total number of vulnerabilities on a particular day with critical severity */
@@ -61460,6 +62715,8 @@ export type Vulnerability = NoteableInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
    */
   readonly reachability: Maybe<ReachabilityType>;
+  /** Indicates whether the vulnerability is present in the code or not. */
+  readonly removedFromCode: Scalars['Boolean']['output'];
   /** Type of the security report that found the vulnerability (SAST, DEPENDENCY_SCANNING, CONTAINER_SCANNING, DAST, SECRET_DETECTION, COVERAGE_FUZZING, API_FUZZING, CLUSTER_IMAGE_SCANNING, CONTAINER_SCANNING_FOR_REGISTRY, GENERIC). `Scan Type` in the UI. */
   readonly reportType: Maybe<VulnerabilityReportType>;
   /**
@@ -61489,6 +62746,11 @@ export type Vulnerability = NoteableInterface & Todoable & {
   readonly stateTransitions: Maybe<VulnerabilityStateTransitionTypeConnection>;
   /** Title of the vulnerability. */
   readonly title: Maybe<Scalars['String']['output']>;
+  /**
+   * Tracked ref (branch or tag) where the vulnerability was detected. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly trackedRef: Maybe<SecurityTrackedRef>;
   /** Timestamp of when the vulnerability was last updated. */
   readonly updatedAt: Maybe<Scalars['Time']['output']>;
   /** Number of user notes attached to the vulnerability. */
@@ -63130,6 +64392,8 @@ export type WeightWildcardId =
 
 /** A wiki page */
 export type WikiPage = NoteableInterface & Todoable & {
+  /** List of emoji reactions associated with the wiki page. */
+  readonly awardEmoji: Maybe<AwardEmojiConnection>;
   /** All commenters on the noteable. */
   readonly commenters: UserCoreConnection;
   /** All discussions on the noteable. */
@@ -63148,6 +64412,15 @@ export type WikiPage = NoteableInterface & Todoable & {
   readonly userPermissions: WikiPagePermissions;
   /** URL of the object. */
   readonly webUrl: Maybe<Scalars['String']['output']>;
+};
+
+
+/** A wiki page */
+export type WikiPageAwardEmojiArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -63179,6 +64452,8 @@ export type WikiPageNotesArgs = {
 };
 
 export type WikiPagePermissions = {
+  /** If `true`, the user can perform `award_emoji` on this resource */
+  readonly awardEmoji: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `create_note` on this resource */
   readonly createNote: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `mark_note_as_internal` on this resource */
@@ -63847,6 +65122,8 @@ export type WorkItemExportInput = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.2.
    */
   readonly weightWildcardId: InputMaybe<WeightWildcardId>;
+  /** Filter work items by work item type global IDs. */
+  readonly workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 /** Autogenerated return type of WorkItemExport. */
@@ -64148,11 +65425,16 @@ export type WorkItemSavedViewCreateInput = {
   readonly displaySettings: Scalars['JSON']['input'];
   /** Filters associated with the saved view. */
   readonly filters: WorkItemSavedViewFilterInput;
+  /** Whether the saved view is private. Default is true. */
+  readonly isPrivate: InputMaybe<Scalars['Boolean']['input']>;
   /** Name of the saved view. */
   readonly name: Scalars['String']['input'];
   /** Full path of the namespace to create the saved view in. */
   readonly namespacePath: Scalars['ID']['input'];
-  /** Whether the saved view is private. Default is true. */
+  /**
+   * Whether the saved view is private. Default is true. Deprecated in GitLab 18.10: Replaced by `isPrivate` argument.
+   * @deprecated Replaced by `isPrivate` argument. Deprecated in GitLab 18.10.
+   */
   readonly private: InputMaybe<Scalars['Boolean']['input']>;
   /** Sort option associated with the saved view. */
   readonly sort: WorkItemSort;
@@ -64352,6 +65634,8 @@ export type WorkItemSavedViewSubscribePayload = {
 };
 
 export type WorkItemSavedViewType = {
+  /** Author of the saved view. */
+  readonly author: Maybe<UserCore>;
   /** Description of the saved view. */
   readonly description: Maybe<Scalars['String']['output']>;
   /** Display settings associated with the saved view. */
@@ -64362,11 +65646,21 @@ export type WorkItemSavedViewType = {
   readonly filters: Maybe<Scalars['JSON']['output']>;
   /** ID of the saved view. */
   readonly id: Scalars['WorkItemsSavedViewsSavedViewID']['output'];
+  /** Whether the saved view is private. */
+  readonly isPrivate: Scalars['Boolean']['output'];
+  /**
+   * User who last updated the saved view. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly lastUpdatedBy: Maybe<UserCore>;
   /** Name of the saved view. */
   readonly name: Scalars['String']['output'];
   /** ID of the namespace of the saved view. */
   readonly namespaceId: Scalars['TypesNamespaceID']['output'];
-  /** Whether the saved view is private. */
+  /**
+   * Whether the saved view is private. Deprecated in GitLab 18.10: Replaced by `isPrivate` field.
+   * @deprecated Replaced by `isPrivate` field. Deprecated in GitLab 18.10.
+   */
   readonly private: Scalars['Boolean']['output'];
   /** URL to auto subscribe users to the view. */
   readonly shareUrl: Scalars['String']['output'];
@@ -64374,6 +65668,8 @@ export type WorkItemSavedViewType = {
   readonly sort: Maybe<WorkItemSort>;
   /** Whether the current user is subscribed to the saved view. */
   readonly subscribed: Scalars['Boolean']['output'];
+  /** Timestamp of when the saved view was last updated. */
+  readonly updatedAt: Scalars['Time']['output'];
   /** Permissions for the current user on the resource */
   readonly userPermissions: SavedViewPermissions;
   /**
@@ -64450,9 +65746,14 @@ export type WorkItemSavedViewUpdateInput = {
   readonly filters: InputMaybe<WorkItemSavedViewFilterInput>;
   /** Global ID of the saved view. */
   readonly id: Scalars['WorkItemsSavedViewsSavedViewID']['input'];
+  /** Whether the saved view is private. */
+  readonly isPrivate: InputMaybe<Scalars['Boolean']['input']>;
   /** Name of the saved view. */
   readonly name: InputMaybe<Scalars['String']['input']>;
-  /** Whether the saved view is private. */
+  /**
+   * Whether the saved view is private. Deprecated in GitLab 18.10: Replaced by `isPrivate` argument.
+   * @deprecated Replaced by `isPrivate` argument. Deprecated in GitLab 18.10.
+   */
   readonly private: InputMaybe<Scalars['Boolean']['input']>;
   /** Sorting option associated with the saved view. */
   readonly sort: InputMaybe<WorkItemSort>;
@@ -64790,10 +66091,15 @@ export type WorkItemType = {
    */
   readonly isConfigurable: Maybe<Scalars['Boolean']['output']>;
   /**
-   * Indicates whether the work item type should be filterable. Introduced in GitLab 18.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 18.8.
+   * Indicates whether the work item type is filterable in board view. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
    */
-  readonly isFilterable: Maybe<Scalars['Boolean']['output']>;
+  readonly isFilterableBoardView: Scalars['Boolean']['output'];
+  /**
+   * Indicates whether the work item type is filterable in list view. Introduced in GitLab 18.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.10.
+   */
+  readonly isFilterableListView: Scalars['Boolean']['output'];
   /**
    * Indicates whether the work item type belongs only to a group. Introduced in GitLab 18.8: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.8.
@@ -64873,6 +66179,28 @@ export type WorkItemTypeCountsByState = {
   readonly workItemType: WorkItemType;
 };
 
+/** Autogenerated input type of WorkItemTypeCreate */
+export type WorkItemTypeCreateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Full path of the root group. */
+  readonly fullPath: InputMaybe<Scalars['String']['input']>;
+  /** Icon name for the work item type. Use the `workItemTypeIconDefinitions` query to retrieve the list of available icon names. */
+  readonly iconName: Scalars['String']['input'];
+  /** Name for the work item type. */
+  readonly name: Scalars['String']['input'];
+};
+
+/** Autogenerated return type of WorkItemTypeCreate. */
+export type WorkItemTypeCreatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Work item type that was created. */
+  readonly workItemType: Maybe<WorkItemType>;
+};
+
 /** Represents Depth limit reached for the allowed work item type. */
 export type WorkItemTypeDepthLimitReachedByType = {
   /** Indicates if maximum allowed depth has been reached for the descendant type. */
@@ -64889,6 +66217,14 @@ export type WorkItemTypeEdge = {
   readonly node: Maybe<WorkItemType>;
 };
 
+/** Represents an available icon for work item types. */
+export type WorkItemTypeIconDefinition = {
+  /** Human-readable screen reader label for the icon. */
+  readonly label: Scalars['String']['output'];
+  /** Name of the icon. */
+  readonly name: Scalars['String']['output'];
+};
+
 /** Autogenerated input type of WorkItemTypeUpdate */
 export type WorkItemTypeUpdateInput = {
   /** Whether to archive the work item type. */
@@ -64897,7 +66233,7 @@ export type WorkItemTypeUpdateInput = {
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
   /** Full path of the root group. */
   readonly fullPath: InputMaybe<Scalars['String']['input']>;
-  /** New icon name for the work item type. */
+  /** Icon name for the work item type. Use the `workItemTypeIconDefinitions` query to retrieve the list of available icon names. */
   readonly iconName: InputMaybe<Scalars['String']['input']>;
   /** Global ID of the work item type to update. */
   readonly id: Scalars['WorkItemsTypeID']['input'];
@@ -66121,6 +67457,8 @@ export type WorkItemsCsvExportInput = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.2.
    */
   readonly weightWildcardId: InputMaybe<WeightWildcardId>;
+  /** Filter work items by work item type global IDs. */
+  readonly workItemTypeIds: InputMaybe<ReadonlyArray<Scalars['WorkItemsTypeID']['input']>>;
 };
 
 /** Autogenerated return type of WorkItemsCsvExport. */
@@ -66161,6 +67499,8 @@ export type WorkItemsSavedViewsSort =
   | 'CREATED_DESC'
   /** Ordered by id. */
   | 'ID'
+  /** Alphabetically by name in ascending order. */
+  | 'NAME_ASC'
   /** Relative position by ascending order. If user is logged out, or explicitly subscribed is not passed, falls back to id sort. */
   | 'RELATIVE_POSITION'
   /** Updated at ascending order. */
@@ -66777,13 +68117,13 @@ export type CodeSuggestionsUserMetrics = {
 export type CreateContainerProtectionTagRuleInput = {
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
-  /** Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can delete tags.  */
+  /** Minimum GitLab access level required to delete container image tags from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can delete tags.  */
   readonly minimumAccessLevelForDelete: InputMaybe<ContainerProtectionTagRuleAccessLevel>;
-  /** Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 17.8: **Status**: Experiment. If the value is `nil`, no access level can push tags.  */
+  /** Minimum GitLab access level required to push container image tags to the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, no access level can push tags.  */
   readonly minimumAccessLevelForPush: InputMaybe<ContainerProtectionTagRuleAccessLevel>;
   /** Full path of the project containing the container image tags. */
   readonly projectPath: Scalars['ID']['input'];
-  /** The pattern that matches container image tags to protect. For example, `v1.*`. Wildcard character `*` allowed. Introduced in GitLab 17.8: **Status**: Experiment. */
+  /** The pattern that matches container image tags to protect. For example, `v1.*`. Wildcard character `*` allowed. */
   readonly tagNamePattern: Scalars['String']['input'];
 };
 
@@ -66791,10 +68131,7 @@ export type CreateContainerProtectionTagRuleInput = {
 export type CreateContainerProtectionTagRulePayload = {
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: Maybe<Scalars['String']['output']>;
-  /**
-   * Protection rule for container image tags after creation. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
+  /** Protection rule for container image tags after creation. */
   readonly containerProtectionTagRule: Maybe<ContainerProtectionTagRule>;
   /** Errors encountered during the mutation. */
   readonly errors: ReadonlyArray<Scalars['String']['output']>;

@@ -41,6 +41,7 @@ function mapBitbucketCommentsToDiscussions(comments: readonly BitbucketComment[]
       body: comment.content.raw,
       author: comment.user.display_name,
       authorUsername: comment.user.nickname ?? comment.user.display_name,
+      authorIsBot: false,
       createdAt: new Date(comment.created_on),
       resolvable: true,
       system: false,
@@ -126,6 +127,7 @@ export function mapBitbucketToMergeRequest(
     resolvedDiscussions,
     unresolvedDiscussions,
     totalDiscussions,
+    aiDiscussions: 0,
     discussions,
     pipeline: {
       stage: []

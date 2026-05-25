@@ -32,10 +32,10 @@ export function filterPipelineJobs(
       const importance = repoJobs[job.name] || 'low';
       if (importance === 'monitored') {
         hasHighPriorityJobs = true;
-        if (job.status === 'FAILED') {
+        if (job.status === 'FAILED' && !job.allowFailure) {
           hasFailedHighPriorityJob = true;
           allHighPriorityJobsSucceeded = false;
-        } else if (job.status !== 'SUCCESS') {
+        } else if (job.status !== 'SUCCESS' && !(job.status === 'FAILED' && job.allowFailure)) {
           allHighPriorityJobsSucceeded = false;
         }
       }

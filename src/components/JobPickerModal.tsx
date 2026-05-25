@@ -116,7 +116,7 @@ export default function JobPickerModal({ onClose }: JobPickerModalProps) {
                   wrapMode='none'
                 >
                   {isSelected ? '> ' : '  '}
-                  [{i}] {getJobStatusDisplay(job.status).symbol} {stage.name}: {job.name}
+                  [{i}] {getJobStatusDisplay(job.status, job.allowFailure).symbol} {stage.name}: {job.name}
                   {importance === 'monitored' ? ' ■' : ''}
                 </text>
               </box>

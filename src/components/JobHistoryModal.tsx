@@ -433,7 +433,7 @@ export default function JobHistoryModal({
             </text>
           ) : (
             jobHistory.map((entry, index) => {
-                const statusDisplay = getJobStatusDisplay(entry.jobStatus);
+                const statusDisplay = getJobStatusDisplay(entry.jobStatus, entry.allowFailure);
                 const isSelected = index === selectedIndex;
                 const developIndicator = entry.isDevelopBranch ? '★ ' : '  ';
 

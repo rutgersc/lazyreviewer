@@ -142,7 +142,7 @@ const extractEvents = (mr: MergeRequest): Event[] => {
 
   if (mr.pipeline?.stage && mr.pipeline.stage.length > 0) {
     const allJobs = mr.pipeline.stage.flatMap(stage => stage.jobs);
-    const failedJobs = allJobs.filter(job => job.status === 'FAILED');
+    const failedJobs = allJobs.filter(job => job.status === 'FAILED' && !job.allowFailure);
     const hasFailures = failedJobs.length > 0;
 
     const latestJob = allJobs.reduce((latest, job) => {

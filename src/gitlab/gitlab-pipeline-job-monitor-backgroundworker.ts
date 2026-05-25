@@ -170,6 +170,7 @@ const backgroundWorker =
       const jobCounts = relevantJobs.reduce(
         (acc, { currentJob }) => {
           if (currentJob.status === 'SUCCESS') return { ...acc, success: acc.success + 1 }
+          if (currentJob.status === 'FAILED' && currentJob.allowFailure) return { ...acc, success: acc.success + 1 }
           if (currentJob.status === 'FAILED') return { ...acc, failed: acc.failed + 1 }
           return acc
         },
@@ -187,7 +188,7 @@ const backgroundWorker =
           { id: currentJob.id, name: currentJob.name, localId: currentJob.localId })
       });
 
-      const failedJobs = newlyFinishedJobs.filter(({ currentJob }) => currentJob.status === 'FAILED')
+      const failedJobs = newlyFinishedJobs.filter(({ currentJob }) => currentJob.status === 'FAILED' && !currentJob.allowFailure)
       for (const failedJob of failedJobs) {
         yield* handleFailedJob(failedJob);
       }

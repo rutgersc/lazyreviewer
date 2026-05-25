@@ -14,7 +14,7 @@ export interface JobStatusDisplay {
 const dimIfDark = (): Pick<JobStatusDisplay, 'attributes'> =>
   getColorScheme() === 'dark' ? { attributes: TextAttributes.DIM } : {};
 
-export function getJobStatusDisplay(status: CiJobStatus): JobStatusDisplay {
+export function getJobStatusDisplay(status: CiJobStatus, allowFailure: boolean = false): JobStatusDisplay {
   switch (status) {
     case 'SUCCESS':
       return { symbol: '■', color: Colors.SUCCESS, description: 'Success', ...dimIfDark() };
@@ -23,7 +23,9 @@ export function getJobStatusDisplay(status: CiJobStatus): JobStatusDisplay {
     case 'PENDING':
       return { symbol: '□', color: Colors.PRIMARY, description: 'Pending', ...dimIfDark() };
     case 'FAILED':
-      return { symbol: '■', color: Colors.ERROR, description: 'Failed' };
+      return allowFailure
+        ? { symbol: '▲', color: Colors.WARNING, description: 'Failed (warning)' }
+        : { symbol: '■', color: Colors.ERROR, description: 'Failed' };
     case 'CANCELED':
       return { symbol: '□', color: Colors.NEUTRAL, description: 'Canceled', ...dimIfDark() };
     case 'CANCELING':

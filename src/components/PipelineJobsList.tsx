@@ -179,10 +179,10 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
               }}
             >
               <text
-                style={{ fg: getJobStatusDisplay(job.status).color, attributes: TextAttributes.DIM }}
+                style={{ fg: getJobStatusDisplay(job.status, job.allowFailure).color, attributes: TextAttributes.DIM }}
                 wrapMode='none'
               >
-                {getJobStatusDisplay(job.status).symbol}
+                {getJobStatusDisplay(job.status, job.allowFailure).symbol}
               </text>
               <text
                 style={{ fg: Colors.SUPPORTING, width: 8 }}
@@ -232,8 +232,10 @@ export default function PipelineJobsList({ selectedPipelineJobIndex }: PipelineJ
               <text style={{ fg: Colors.NEUTRAL }} wrapMode='none'>
                 Status:
               </text>
-              <text style={{ fg: getJobStatusDisplay(selectedPipelineJob.job.status).color }} wrapMode='none'>
-                {selectedPipelineJob.job.status}
+              <text style={{ fg: getJobStatusDisplay(selectedPipelineJob.job.status, selectedPipelineJob.job.allowFailure).color }} wrapMode='none'>
+                {selectedPipelineJob.job.allowFailure && selectedPipelineJob.job.status === 'FAILED'
+                  ? `${selectedPipelineJob.job.status} (warning, allowed to fail)`
+                  : selectedPipelineJob.job.status}
               </text>
             </box>
             <box style={{ flexDirection: "row", gap: 2 }}>

@@ -3,7 +3,7 @@ import type * as Types from './generated/gitlab-base-types';
 import type { GraphQLClient, RequestOptions } from 'graphql-request';
 import gql from 'graphql-tag';
 type GraphQLClientRequestHeaders = RequestOptions['requestHeaders'];
-export type PipelineFieldFragment = { readonly active: boolean, readonly iid: string, readonly stages: { readonly __typename: 'CiStageConnection', readonly nodes: ReadonlyArray<{ readonly id: string, readonly name: string | null, readonly status: string | null, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly id: any | null, readonly webPath: string | null, readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly failureMessage: string | null, readonly startedAt: string | null, readonly duration: number | null, readonly finishedAt: string | null, readonly active: boolean } | null> | null } | null } | null> | null } | null };
+export type PipelineFieldFragment = { readonly active: boolean, readonly iid: string, readonly stages: { readonly __typename: 'CiStageConnection', readonly nodes: ReadonlyArray<{ readonly id: string, readonly name: string | null, readonly status: string | null, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly id: any | null, readonly webPath: string | null, readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly failureMessage: string | null, readonly startedAt: string | null, readonly duration: number | null, readonly finishedAt: string | null, readonly active: boolean, readonly allowFailure: boolean } | null> | null } | null } | null> | null } | null };
 
 export type GetJobStatusQueryVariables = Types.Exact<{
   fullPath: Types.Scalars['ID']['input'];
@@ -19,7 +19,7 @@ export type MrPipelineQueryVariables = Types.Exact<{
 }>;
 
 
-export type MrPipelineQuery = { readonly project: { readonly mergeRequest: { readonly id: string, readonly iid: string, readonly state: Types.MergeRequestState, readonly headPipeline: { readonly active: boolean, readonly iid: string, readonly stages: { readonly __typename: 'CiStageConnection', readonly nodes: ReadonlyArray<{ readonly id: string, readonly name: string | null, readonly status: string | null, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly id: any | null, readonly webPath: string | null, readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly failureMessage: string | null, readonly startedAt: string | null, readonly duration: number | null, readonly finishedAt: string | null, readonly active: boolean } | null> | null } | null } | null> | null } | null } | null } | null } | null };
+export type MrPipelineQuery = { readonly project: { readonly mergeRequest: { readonly id: string, readonly iid: string, readonly state: Types.MergeRequestState, readonly headPipeline: { readonly active: boolean, readonly iid: string, readonly stages: { readonly __typename: 'CiStageConnection', readonly nodes: ReadonlyArray<{ readonly id: string, readonly name: string | null, readonly status: string | null, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly id: any | null, readonly webPath: string | null, readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly failureMessage: string | null, readonly startedAt: string | null, readonly duration: number | null, readonly finishedAt: string | null, readonly active: boolean, readonly allowFailure: boolean } | null> | null } | null } | null> | null } | null } | null } | null } | null };
 
 export type MrPipelinesQueryVariables = Types.Exact<{
   projectPath: Types.Scalars['ID']['input'];
@@ -27,7 +27,7 @@ export type MrPipelinesQueryVariables = Types.Exact<{
 }>;
 
 
-export type MrPipelinesQuery = { readonly project: { readonly mergeRequests: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly iid: string, readonly headPipeline: { readonly active: boolean, readonly iid: string, readonly stages: { readonly __typename: 'CiStageConnection', readonly nodes: ReadonlyArray<{ readonly id: string, readonly name: string | null, readonly status: string | null, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly id: any | null, readonly webPath: string | null, readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly failureMessage: string | null, readonly startedAt: string | null, readonly duration: number | null, readonly finishedAt: string | null, readonly active: boolean } | null> | null } | null } | null> | null } | null } | null } | null> | null } | null } | null };
+export type MrPipelinesQuery = { readonly project: { readonly mergeRequests: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly iid: string, readonly headPipeline: { readonly active: boolean, readonly iid: string, readonly stages: { readonly __typename: 'CiStageConnection', readonly nodes: ReadonlyArray<{ readonly id: string, readonly name: string | null, readonly status: string | null, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly id: any | null, readonly webPath: string | null, readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly failureMessage: string | null, readonly startedAt: string | null, readonly duration: number | null, readonly finishedAt: string | null, readonly active: boolean, readonly allowFailure: boolean } | null> | null } | null } | null> | null } | null } | null } | null> | null } | null } | null };
 
 export const PipelineFieldFragmentDoc = gql`
     fragment PipelineField on Pipeline {
@@ -49,6 +49,7 @@ export const PipelineFieldFragmentDoc = gql`
           duration
           finishedAt
           active
+          allowFailure
         }
       }
       status

@@ -31,6 +31,7 @@ query ProjectPipelinesJobHistory($projectPath: ID!, $jobName: String!, $first: I
           shortSha
           duration
           commitPath
+          allowFailure
           runner {
             id
             description

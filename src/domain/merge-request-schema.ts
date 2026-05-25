@@ -26,7 +26,8 @@ export const PipelineJobSchema = Schema.Struct({
   failureMessage: Schema.NullOr(Schema.String),
   webPath: Schema.NullOr(Schema.String),
   startedAt: Schema.String,
-  duration: Schema.NullOr(Schema.Number)
+  duration: Schema.NullOr(Schema.Number),
+  allowFailure: Schema.Boolean
 })
 
 export const PipelineStageSchema = Schema.Struct({
@@ -39,6 +40,7 @@ export const DiscussionNoteSchema = Schema.Struct({
   body: Schema.String,
   author: Schema.String,
   authorUsername: Schema.String,
+  authorIsBot: Schema.Boolean,
   createdAt: Schema.Date,
   resolvable: Schema.Boolean,
   resolved: Schema.Boolean,
@@ -90,6 +92,7 @@ export const MergeRequestSchema = Schema.Struct({
   resolvedDiscussions: Schema.Number,
   unresolvedDiscussions: Schema.Number,
   totalDiscussions: Schema.Number,
+  aiDiscussions: Schema.Number,
   discussions: Schema.mutable(Schema.Array(DiscussionSchema)),
   pipeline: Schema.Struct({
     stage: Schema.mutable(Schema.Array(PipelineStageSchema))
@@ -100,6 +103,7 @@ export interface JobHistoryEntry {
   readonly jobId: string;
   readonly jobName: string;
   readonly jobStatus: CiJobStatus;
+  readonly allowFailure: boolean;
   readonly failureMessage: string | null;
   readonly startedAt: string;
   readonly duration: number | null;

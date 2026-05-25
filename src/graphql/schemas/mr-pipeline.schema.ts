@@ -22,7 +22,8 @@ export const PipelineFieldFragmentSchema: Schema.Codec<PipelineFieldFragment> = 
           startedAt: Schema.NullOr(Schema.String),
           duration: Schema.NullOr(Schema.Number),
           finishedAt: Schema.NullOr(Schema.String),
-          active: Schema.Boolean
+          active: Schema.Boolean,
+          allowFailure: Schema.Boolean
         }))
         ))
       })),

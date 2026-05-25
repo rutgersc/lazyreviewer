@@ -31,7 +31,8 @@ export const mapMrFragment = (
             failureMessage: job?.failureMessage || null,
             webPath: job?.webPath || null,
             startedAt: job?.startedAt || '',
-            duration: job?.duration ?? null
+            duration: job?.duration ?? null,
+            allowFailure: job?.allowFailure ?? false
           } satisfies PipelineJob))
           .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
           || []
@@ -48,6 +49,7 @@ export const mapMrFragment = (
       body: note?.body || '',
       author: note?.author?.name || '',
       authorUsername: note?.author?.username || '',
+      authorIsBot: note?.author?.bot ?? false,
       createdAt: new Date(note?.createdAt || ''),
       resolvable: note?.resolvable || false,
       resolved: note?.resolved || false,
@@ -62,10 +64,17 @@ export const mapMrFragment = (
     } satisfies DiscussionNote))
   }));
 
-  const totalDiscussions = discussions.length;
-  const resolvableDiscussions = discussions.filter(d => d.resolvable).length;
-  const resolvedDiscussions = discussions.filter(d => d.resolvable && d.resolved === true).length;
+  const isAiDiscussion = (d: Discussion) => {
+    const originating = d.notes.find(n => !n.system) ?? d.notes[0];
+    return originating?.authorIsBot === true;
+  };
+
+  const humanDiscussions = discussions.filter(d => !isAiDiscussion(d));
+  const totalDiscussions = humanDiscussions.length;
+  const resolvableDiscussions = humanDiscussions.filter(d => d.resolvable).length;
+  const resolvedDiscussions = humanDiscussions.filter(d => d.resolvable && d.resolved === true).length;
   const unresolvedDiscussions = resolvableDiscussions - resolvedDiscussions;
+  const aiDiscussions = discussions.length - humanDiscussions.length;
 
   return {
     id: MrGid(mr.id),
@@ -94,6 +103,7 @@ export const mapMrFragment = (
     resolvedDiscussions,
     unresolvedDiscussions,
     totalDiscussions,
+    aiDiscussions,
     discussions,
     pipeline: pipeline
   } satisfies MergeRequest;
@@ -144,7 +154,8 @@ export const projectGitlabPipelineFetchedEvent = (event: GitlabPipelineFetchedEv
             failureMessage: job?.failureMessage || null,
             webPath: job?.webPath || null,
             startedAt: job?.startedAt || '',
-            duration: job?.duration ?? null
+            duration: job?.duration ?? null,
+            allowFailure: job?.allowFailure ?? false
           } satisfies PipelineJob))
           .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
           || []
@@ -175,6 +186,7 @@ export const projectGitlabJobHistoryFetchedEvent = (event: GitlabJobHistoryFetch
         jobId: job.id || '',
         jobName: job.name || '',
         jobStatus: job.status || 'CREATED',
+        allowFailure: job.allowFailure ?? false,
         failureMessage: job.failureMessage || null,
         startedAt: job.startedAt || '',
         duration: job.duration ?? null,

@@ -36,6 +36,7 @@ export const ProjectPipelinesJobHistoryQuerySchema: Schema.Codec<ProjectPipeline
           shortSha: Schema.String,
           duration: Schema.NullOr(Schema.Number),
           commitPath: Schema.NullOr(Schema.String),
+          allowFailure: Schema.Boolean,
           runner: Schema.NullOr(Schema.Struct({
             id: Schema.Unknown,
             description: Schema.NullOr(Schema.String),

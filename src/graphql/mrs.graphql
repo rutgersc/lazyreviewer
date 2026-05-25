@@ -43,6 +43,7 @@ fragment MergeRequestFields on MergeRequest {
           author {
             name
             username
+            bot
           }
           url
           createdAt
@@ -75,6 +76,7 @@ fragment MergeRequestFields on MergeRequest {
             failureMessage
             startedAt
             duration
+            allowFailure
           }
         }
         status

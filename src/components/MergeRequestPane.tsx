@@ -136,7 +136,7 @@ const PipelineStagesWithJobStatuses = ({ mr, pipelineJobImportance }: { mr: Merg
   );
 
   const PipelineJobComponent = (props: { job: PipelineJob; key?: string | number }) => {
-    const statusDisplay = getJobStatusDisplay(props.job.status);
+    const statusDisplay = getJobStatusDisplay(props.job.status, props.job.allowFailure);
     return (
       <text
         style={{
@@ -283,6 +283,14 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
         >
           {`${mr.resolvedDiscussions}/${mr.resolvableDiscussions}`}
         </text>
+        {mr.aiDiscussions > 0 && (
+          <text
+            style={{ fg: Colors.SUPPORTING, attributes: TextAttributes.DIM }}
+            wrapMode='none'
+          >
+            {` (+${mr.aiDiscussions} ai)`}
+          </text>
+        )}
       </box>
 
       <box style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>

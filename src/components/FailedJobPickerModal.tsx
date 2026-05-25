@@ -106,7 +106,7 @@ export default function FailedJobPickerModal({ onClose }: FailedJobPickerModalPr
               wrapMode='none'
             >
               {i === selectedIndex ? '> ' : '  '}
-              [{i}] {getJobStatusDisplay(job.status).symbol} {stage.name}: {job.name}
+              [{i}] {getJobStatusDisplay(job.status, job.allowFailure).symbol} {stage.name}: {job.name}
             </text>
           ))}
         </box>

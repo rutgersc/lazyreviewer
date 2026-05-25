@@ -17,6 +17,7 @@ fragment PipelineField on Pipeline {
           duration
           finishedAt
           active
+          allowFailure
         }
       }
       status

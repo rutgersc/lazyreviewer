@@ -50,7 +50,8 @@ export const MergeRequestFieldsFragmentSchema: Schema.Codec<MergeRequestFieldsFr
           body: Schema.String,
           author: Schema.NullOr(Schema.Struct({
             name: Schema.String,
-            username: Schema.String
+            username: Schema.String,
+            bot: Schema.Boolean
           })),
           url: Schema.NullOr(Schema.String),
           createdAt: Schema.String,
@@ -86,7 +87,8 @@ export const MergeRequestFieldsFragmentSchema: Schema.Codec<MergeRequestFieldsFr
             status: Schema.NullOr(CiJobStatusSchema),
             failureMessage: Schema.NullOr(Schema.String),
             startedAt: Schema.NullOr(Schema.String),
-            duration: Schema.NullOr(Schema.Number)
+            duration: Schema.NullOr(Schema.Number),
+            allowFailure: Schema.Boolean
           }))
           ))
         })),

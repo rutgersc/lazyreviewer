@@ -140,7 +140,7 @@ export const overviewActionsAtom = Atom.make((get) => {
       handler: () => {
         const mr = registry.get(selectedMrAtom);
         if (!mr) return;
-        const failedJobs = getPipelineJobsFromMr(mr).filter(({ job }) => job.status === 'FAILED');
+        const failedJobs = getPipelineJobsFromMr(mr).filter(({ job }) => job.status === 'FAILED' && !job.allowFailure);
         if (failedJobs.length === 0) return;
 
         if (failedJobs.length === 1) {
