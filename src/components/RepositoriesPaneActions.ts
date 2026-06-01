@@ -11,6 +11,17 @@ import { withFetchLock } from "../notifications/background-sync-service";
 import { appAtomRuntime } from "../appLayerRuntime";
 import type { MrGid } from "../domain/identifiers";
 import type { MergeRequest } from "../mergerequests/mergerequest-schema";
+import { ensureCredentialsFile, getCredentialsFilePath } from "../config/credentials-config";
+import { openFileInEditor } from "../utils/open-file";
+
+export const openCredentialsFileAtom = appAtomRuntime.fn((_: void) =>
+  Effect.gen(function* () {
+    yield* ensureCredentialsFile();
+    yield* openFileInEditor(getCredentialsFilePath());
+  }).pipe(
+    Effect.catchCause((cause) => Console.error("Error opening credentials file:", cause)),
+  )
+);
 
 const getItemCount = (
   knownProjects: readonly RepositoryId[],

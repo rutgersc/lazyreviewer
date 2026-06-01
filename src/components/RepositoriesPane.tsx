@@ -10,7 +10,7 @@ import { repoSelectionAtom, backgroundSyncSettingsAtom, toggleBackgroundSyncAtom
 import { knownProjectsAtom } from '../mergerequests/mergerequests-atom';
 import { pageSlotsAtom } from '../notifications/notification-sync-atom';
 import type { PageSlotSnapshot } from '../notifications/notification-sync-atom';
-import { refreshSingleRepoAtom } from './RepositoriesPaneActions';
+import { refreshSingleRepoAtom, openCredentialsFileAtom } from './RepositoriesPaneActions';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 
 
@@ -56,6 +56,7 @@ export default function RepositoriesPane() {
   const refreshSingleRepo = useAtomSet(refreshSingleRepoAtom);
   const backgroundSyncSettings = useAtomValue(backgroundSyncSettingsAtom);
   const toggleBackgroundSync = useAtomSet(toggleBackgroundSyncAtom, { mode: 'promiseExit' });
+  const openCredentialsFile = useAtomSet(openCredentialsFileAtom);
   const items = buildItems(knownProjects, repos);
 
   const slotsByRepo = AsyncResult.match(pageSlotsResult, {
@@ -106,6 +107,13 @@ export default function RepositoriesPane() {
           onMouseDown={() => toggleBackgroundSync()}
         >
           {backgroundSyncSettings.enabled ? ' ON ' : ' OFF'}
+        </text>
+        <text
+          style={{ fg: Colors.PRIMARY, flexGrow: 1 }}
+          wrapMode='none'
+          onMouseDown={() => openCredentialsFile()}
+        >
+          {'   [⚙ Credentials]'}
         </text>
       </box>
 

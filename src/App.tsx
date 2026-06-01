@@ -39,6 +39,7 @@ import { Effect } from 'effect';
 import { appLayer } from './appLayerRuntime';
 import { openFileInEditor } from './utils/open-file';
 import { SETTINGS_FILE as settingsFilePath } from './settings/settings';
+import { ensureCredentialsFile, getCredentialsFilePath } from './config/credentials-config';
 import { appInitAtom } from './app-init';
 import { clearUnreadCount } from './notifications/title-indicator';
 import { missingCredentialsAtom } from './config/config-atom';
@@ -255,6 +256,18 @@ export default function App() {
       handler: async () => {
         await Effect.runPromise(
           openFileInEditor(settingsFilePath).pipe(Effect.provide(appLayer))
+        );
+      },
+    },
+    {
+      id: 'global:open-credentials',
+      keys: [parseKeyString('C')],
+      displayKey: 'C',
+      description: 'Open credentials JSON',
+      handler: async () => {
+        await Effect.runPromise(ensureCredentialsFile().pipe(Effect.provide(appLayer)));
+        await Effect.runPromise(
+          openFileInEditor(getCredentialsFilePath()).pipe(Effect.provide(appLayer))
         );
       },
     },
