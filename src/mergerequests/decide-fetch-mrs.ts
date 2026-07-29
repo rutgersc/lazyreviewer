@@ -3,7 +3,7 @@ import type { PlatformError } from "effect/PlatformError"
 import type { SchemaError } from "effect/Schema"
 import type { MergeRequestState } from "../domain/merge-request-state"
 import { EventStorage } from "../events/events"
-import type { FetchGitlabMrsError, FetchGitlabProjectMrsError } from "../gitlab/gitlab-graphql"
+import type { FetchGitlabMrsError, FetchGitlabProjectMrsError, FetchSingleMrError, FetchMrStampsError } from "../gitlab/gitlab-graphql"
 import type { JiraApiError } from "../jira/jira-common"
 import type { UnauthorizedError } from "../domain/unauthorized-error"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
@@ -32,6 +32,8 @@ export type MergeRequestsCacheError =
   | string
   | FetchGitlabMrsError
   | FetchGitlabProjectMrsError
+  | FetchSingleMrError
+  | FetchMrStampsError
   | JiraApiError
   | UnauthorizedError
   | BitbucketCredentialsNotConfiguredError
@@ -48,16 +50,6 @@ export const mrMatchesCacheKey = (mr: MergeRequest, cacheKey: CacheKey): boolean
   (cacheKey._tag === "UserMRs"
     ? cacheKey.users.some(u => isCurrentUser(u, mrProviderAuthor(mr.provider, mr.author)))
     : mr.project.fullPath === repositoryFullPath(cacheKey.repository));
-
-export const mrMatchesFilter = (
-  mr: MergeRequest,
-  state: MergeRequestState,
-  authors: readonly UserId[],
-  repos: readonly RepositoryId[]
-): boolean =>
-  mr.state === state
-  && (repos.length === 0 || repos.some(r => mr.project.fullPath === repositoryFullPath(r)))
-  && (authors.length === 0 || authors.some(u => isCurrentUser(u, mrProviderAuthor(mr.provider, mr.author))));
 
 export const getKnownMrsForCacheKey = (
   mrsByGid: ReadonlyMap<MrGid, MergeRequest>,
@@ -101,6 +93,40 @@ const fetchJiraForKeys = (jiraKeys: readonly string[]) => Effect.gen(function* (
   yield* Console.log(`[Fetch] Fetching ${jiraKeys.length} Jira tickets for reconciled MRs`)
   const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys as string[])
   yield* eventStorage.appendEvent(jiraEvent)
+})
+
+const DETAIL_BATCH_SIZE = 20
+
+// Tier 2 of the sweep: full-fidelity fetch for the MRs a stamp diff flagged. Awaited rather than
+// forked so the caller's fetch lock still covers the writes.
+export const fetchMrDetails = (
+  projectPath: string,
+  iids: readonly string[]
+): Effect.Effect<void, MergeRequestsCacheError, EventStorage> => Effect.gen(function* () {
+  if (iids.length === 0) return
+
+  const eventStorage = yield* EventStorage
+  const batches = iids.reduce<string[][]>((acc, iid) => {
+    const last = acc[acc.length - 1]
+    if (!last || last.length >= DETAIL_BATCH_SIZE) acc.push([iid])
+    else last.push(iid)
+    return acc
+  }, [])
+
+  yield* Console.log(`[Fetch] Detail fetch for ${iids.length} MRs in ${projectPath} (${batches.length} batch(es))`)
+
+  const jiraKeysPerBatch = yield* Effect.forEach(
+    batches,
+    batch => Effect.gen(function* () {
+      const event = yield* getMrsAsEvent(projectPath, batch)
+      yield* eventStorage.appendEvent(event)
+      return projectGitlabMrsFetchedEvent(event).flatMap(mr => mr.jiraIssueKeys)
+    }),
+    { concurrency: 2 }
+  )
+
+  const jiraKeys = [...new Set(jiraKeysPerBatch.flat())]
+  if (jiraKeys.length > 0) yield* fetchJiraForKeys(jiraKeys)
 })
 
 const forkFetchMissingMrs = (
@@ -161,8 +187,6 @@ export const decideFetchUserMrs = (
 export type PageFetchResult = {
   readonly hasNextPage: boolean
   readonly endCursor: string | null
-  readonly oldestUpdatedAt: Date | undefined
-  readonly newestUpdatedAt: Date | undefined
   readonly mrCount: number
   readonly fetchedGids: ReadonlySet<MrGid>
 }
@@ -186,7 +210,6 @@ export const fetchRepoPage = (
   state: MergeRequestState,
   knownMrs: ReadonlyMap<MrGid, KnownMrInfo>,
   afterCursor: string | null,
-  shallowerPageGids: ReadonlySet<MrGid> = new Set(),
   pageSize: number = 50,
 ): Effect.Effect<
   PageFetchResult,
@@ -194,15 +217,12 @@ export const fetchRepoPage = (
   EventStorage
 > => Effect.gen(function* () {
   const eventStorage = yield* EventStorage
-  const isPage1 = afterCursor === null
 
   if (repository.provider === 'bitbucket') {
     const bbEvent = yield* getBitbucketPrsAsEvent(repository.workspace, repository.repo, state)
     yield* eventStorage.appendEvent(bbEvent)
     const mrs = projectBitbucketPrsFetchedEvent(bbEvent, new Map())
     const fetchedGids = new Set(mrs.map(mr => mr.id))
-    const oldestUpdatedAt = mrs.length > 0 ? mrs.reduce((oldest, mr) => mr.updatedAt < oldest ? mr.updatedAt : oldest, mrs[0]!.updatedAt) : undefined
-    const newestUpdatedAt = mrs.length > 0 ? mrs.reduce((newest, mr) => mr.updatedAt > newest ? mr.updatedAt : newest, mrs[0]!.updatedAt) : undefined
 
     if (state === 'opened') {
       yield* forkFetchMissingMrs(knownMrs, fetchedGids)
@@ -214,7 +234,7 @@ export const fetchRepoPage = (
       yield* eventStorage.appendEvent(jiraEvent)
     }
 
-    return { hasNextPage: false, endCursor: null, oldestUpdatedAt, newestUpdatedAt, mrCount: mrs.length, fetchedGids }
+    return { hasNextPage: false, endCursor: null, mrCount: mrs.length, fetchedGids }
   }
 
   const mrEvent = yield* getGitlabMrsByProjectAsEvent(repository.id, state, afterCursor, pageSize)
@@ -225,61 +245,13 @@ export const fetchRepoPage = (
   const endCursor = pageInfo?.endCursor ?? null
   const fetchedGids = new Set(gitlabMrs.map(mr => mr.id))
 
-  // Results are sorted by UPDATED_DESC — last element has oldest updatedAt, first has newest.
-  const oldestUpdatedAt = gitlabMrs.length > 0 ? gitlabMrs[gitlabMrs.length - 1]!.updatedAt : undefined
-  const newestUpdatedAt = gitlabMrs.length > 0 ? gitlabMrs[0]!.updatedAt : undefined
-
-  if (state === 'opened') {
-    // Compute date-range for this page's reconciliation window
-    const floor = hasNextPage ? oldestUpdatedAt : undefined
-    const ceiling = !isPage1 ? newestUpdatedAt : undefined
-
-    const reconcilableMrs = new Map(
-      [...knownMrs.entries()].filter(([gid, info]) => {
-        if (floor !== undefined && info.updatedAt <= floor) return false
-        if (ceiling !== undefined && info.updatedAt > ceiling) return false
-        return true
-      })
-    )
-
-    // Filter out MRs that moved to a shallower page (updatedAt only moves forward)
-    const trulyMissing = new Map(
-      [...reconcilableMrs.entries()].filter(([gid]) =>
-        !fetchedGids.has(gid) && !shallowerPageGids.has(gid)
-      )
-    )
-
-    if (trulyMissing.size > 0) {
-      yield* forkFetchMissingMrs(trulyMissing, fetchedGids)
-    }
-
-    // Fetch recent merged MRs to detect state changes (opened → merged)
-    if (isPage1) {
-      yield* Effect.forkDetach(
-        Effect.gen(function* () {
-          yield* Console.log(`[Fetch] Fetching recent merged MRs for project "${repository.id}" to detect state changes`)
-          const mergedEvent = yield* getGitlabMrsByProjectAsEvent(repository.id, 'merged', null, 10)
-          yield* eventStorage.appendEvent(mergedEvent)
-
-          const mergedMrs = projectGitlabProjectMrsFetchedEvent(mergedEvent)
-          const mergedJiraKeys = Array.from(new Set(mergedMrs.flatMap(mr => mr.jiraIssueKeys)))
-          if (mergedJiraKeys.length > 0) {
-            yield* Effect.forkDetach(fetchJiraForKeys(mergedJiraKeys))
-          }
-        }).pipe(
-          Effect.catchCause((cause) => Console.error(`[Fetch] Error fetching recent merged MRs for project "${repository.id}":`, cause))
-        )
-      )
-    }
-  }
-
   const jiraKeys = Array.from(new Set(gitlabMrs.flatMap(mr => mr.jiraIssueKeys)))
   if (jiraKeys.length > 0) {
     const jiraEvent = yield* loadJiraTicketsAsEvent(jiraKeys)
     yield* eventStorage.appendEvent(jiraEvent)
   }
 
-  return { hasNextPage, endCursor, oldestUpdatedAt, newestUpdatedAt, mrCount: gitlabMrs.length, fetchedGids }
+  return { hasNextPage, endCursor, mrCount: gitlabMrs.length, fetchedGids }
 })
 
 export const deepFetchProjectMrs = (

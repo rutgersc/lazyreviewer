@@ -10,19 +10,19 @@ import { SettingsService } from '../settings/settings';
 import { defaultNotificationPreferences, type NotificationContext, type NotifiableChange, determineNotification, type NotificationFilterResult } from './notification-filter';
 import { type AuthorIdentity, isCurrentUser, mrProviderAuthor } from '../userselection/userSelection';
 import { allMrsAtom } from '../mergerequests/mergerequests-atom';
-import { BackgroundSyncService, type PageSlotSnapshot } from './background-sync-service';
+import { BackgroundSyncService, type RepoSyncSnapshot } from './background-sync-service';
 
 // Re-export for consumers
-export type { PageSlotSnapshot } from './background-sync-service';
+export type { RepoSyncSnapshot } from './background-sync-service';
 
 // Module-level singleton state for notification daemon
 let notificationDaemonFiber: Fiber.Fiber<void, unknown> | undefined;
 
-export const pageSlotsAtom = appAtomRuntime.atom(
+export const repoSyncSnapshotsAtom = appAtomRuntime.atom(
   (_get) => BackgroundSyncService.useSync(
-    (service) => Stream.fromPubSub(service.slotsPubSub)
+    (service) => Stream.fromPubSub(service.snapshotsPubSub)
   ).pipe(Stream.unwrap),
-  { initialValue: [] as readonly PageSlotSnapshot[] }
+  { initialValue: [] as readonly RepoSyncSnapshot[] }
 ).pipe(Atom.keepAlive);
 
 const buildNotificationContext = (get: Atom.Context): NotificationContext => {

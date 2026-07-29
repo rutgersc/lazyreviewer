@@ -50,11 +50,7 @@ export type NotificationSettings = Schema.Schema.Type<typeof NotificationSetting
 const BackgroundSyncSettingsSchema = mutableStruct({
   enabled: Schema.Boolean,
   syncIntervalSeconds: Schema.Number,
-  scalingFactorHours: Schema.Number.pipe(Schema.withDecodingDefaultKey(() => 24)),
   lastRefreshTimestamp: Schema.optional(Schema.String),
-  pageFetchTimestamps: Schema.Record(Schema.String, Schema.mutable(Schema.Array(Schema.String))).pipe(
-    Schema.withDecodingDefaultKey(() => ({}))
-  ),
 })
 export type BackgroundSyncSettings = Schema.Schema.Type<typeof BackgroundSyncSettingsSchema>
 
@@ -97,7 +93,7 @@ export const SettingsSchema = mutableStruct({
   selectedUserSelectionEntryId: Schema.optional(Schema.String),
   currentUser: Schema.optional(Schema.String),
   notifications: NotificationSettingsSchema.pipe(Schema.withDecodingDefaultKey(() => ({ enabled: false }))),
-  backgroundSync: BackgroundSyncSettingsSchema.pipe(Schema.withDecodingDefaultKey(() => ({ enabled: false, syncIntervalSeconds: 500, scalingFactorHours: 24, pageFetchTimestamps: {} }))),
+  backgroundSync: BackgroundSyncSettingsSchema.pipe(Schema.withDecodingDefaultKey(() => ({ enabled: false, syncIntervalSeconds: 500 }))),
   jiraBoardId: Schema.optional(NumberFromStringOrNumber),
   mrSortOrder: MrSortOrderSchema.pipe(Schema.withDecodingDefaultKey(() => 'createdAt' as const)),
   appView: Schema.Literals(['review', 'focus']).pipe(Schema.withDecodingDefaultKey(() => 'review' as const)),

@@ -5,11 +5,11 @@ import { getSdk as getSingleMrSdk } from "../graphql/single-mr.generated";
 import { getSdk as GitlabMRs } from "../graphql/gitlab-mrs.generated";
 import { getSdk as getMrPipelineSdk } from "../graphql/mr-pipeline.generated";
 import { getSdk as getProjectPipelinesJobHistorySdk } from "../graphql/project-pipelines-job-history.generated";
-import { getSdk as getJobSdk } from "../graphql/job.generated";
+import { getSdk as getMrStampsSdk, type MergeRequestStampFieldsFragment } from "../graphql/mr-stamps.generated";
 import type { MergeRequestState } from "../domain/merge-request-state";
 import { Data, Effect, Console, Config, Redacted } from "effect";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent, GitlabMrsFetchedEvent } from "../events/gitlab-events";
-import { projectGitlabJobHistoryFetchedEvent, projectGitlabJobTraceFetchedEvent, projectGitlabPipelineFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent } from "./gitlab-projections";
+import { projectGitlabJobHistoryFetchedEvent, projectGitlabPipelineFetchedEvent } from "./gitlab-projections";
 import { generateEventId } from "../events/event-id";
 
 export class FetchGitlabMrsError extends Data.TaggedError("FetchGitlabMrsError")<{
@@ -25,8 +25,7 @@ export const getGitlabBaseUrl = (): string => {
 const getGitlabSdk = Effect.gen(function* () {
   const baseUrl = yield* Config.string("GITLAB_URL")
   const token = yield* Config.redacted("GITLAB_TOKEN")
-  const endpoint = `${baseUrl}/api/graphql`
-  const client = new GraphQLClient(endpoint, {
+  const client = new GraphQLClient(`${baseUrl}/api/graphql`, {
     headers: { Authorization: `Bearer ${Redacted.value(token)}` }
   })
 
@@ -37,7 +36,7 @@ const getGitlabSdk = Effect.gen(function* () {
     ...getSingleMrSdk(client),
     ...getMrPipelineSdk(client),
     ...getProjectPipelinesJobHistorySdk(client),
-    ...getJobSdk(client),
+    ...getMrStampsSdk(client),
   }
 })
 
@@ -46,9 +45,39 @@ export class FetchGitlabProjectMrsError extends Data.TaggedError("FetchGitlabPro
   message: string;
 }> { }
 
-export const getGitlabMrsByProject = Effect.fn("getGitlabMrsByProject")(function* (projectPath: string, state: MergeRequestState = 'opened') {
-  const event = yield* getGitlabMrsByProjectAsEvent(projectPath, state);
-  return projectGitlabProjectMrsFetchedEvent(event);
+export class FetchMrStampsError extends Data.TaggedError("FetchMrStampsError")<{
+  projectPath: string;
+  message: string;
+}> { }
+
+export type MrStampsPage = {
+  readonly nodes: readonly MergeRequestStampFieldsFragment[]
+  readonly hasNextPage: boolean
+  readonly endCursor: string | null
+}
+
+export const getMrStampsPage = Effect.fn("getMrStampsPage")(function* (
+  projectPath: string,
+  state: MergeRequestState = 'opened',
+  after: string | null = null,
+  first: number = 100
+) {
+  const sdk = yield* getGitlabSdk
+  const data = yield* Effect.tryPromise({
+    try: () => sdk.MrStamps({ projectPath, state, first, after }),
+    catch: cause => new FetchMrStampsError({
+      projectPath,
+      message: `Stamp sweep failed for "${projectPath}": ${cause instanceof Error ? cause.message : String(cause)}`
+    })
+  });
+
+  const connection = data.project?.mergeRequests;
+
+  return {
+    nodes: (connection?.nodes ?? []).filter((node): node is MergeRequestStampFieldsFragment => node !== null),
+    hasNextPage: connection?.pageInfo?.hasNextPage ?? false,
+    endCursor: connection?.pageInfo?.endCursor ?? null,
+  };
 })
 
 export class FetchJobTraceError extends Data.TaggedError("FetchJobTraceError")<{
@@ -83,11 +112,6 @@ export const getJobTraceRaw = Effect.fn("getJobTraceRaw")(function* (projectId: 
   });
 
   return traceData;
-})
-
-export const getJobTrace = Effect.fn("getJobTrace")(function* (projectId: string, jobId: string) {
-  const event = yield* getJobTraceAsEvent(projectId, jobId);
-  return projectGitlabJobTraceFetchedEvent(event);
 })
 
 export class FetchMrPipelineError extends Data.TaggedError("FetchMrPipelineError")<{
@@ -140,19 +164,6 @@ export const fetchJobHistory = Effect.fn("fetchJobHistory")(function* (
 export class FetchSingleMrError extends Data.TaggedError("FetchSingleMrError")<{
   cause: unknown;
 }> { }
-
-export const getSingleMr = Effect.fn("getSingleMr")(function* (projectPath: string, iid: string) {
-  const event = yield* getSingleMrAsEvent(projectPath, iid);
-  const mr = projectGitlabSingleMrFetchedEvent(event);
-
-  if (!mr) {
-    yield* Console.log(`[SingleMR] No MR found for ${iid} in ${projectPath}`);
-  } else {
-    yield* Console.log(`[SingleMR] Fetched MR ${iid} in ${projectPath}`);
-  }
-
-  return mr;
-})
 
 // Event-returning wrapper functions
 export const getGitlabMrsAsEvent = Effect.fn("getGitlabMrsAsEvent")(function* (usernames: string[], state: MergeRequestState = 'opened', first: number = 50) {
@@ -367,31 +378,3 @@ export const getSingleMrAsEvent = Effect.fn("getSingleMrAsEvent")(function* (pro
 
   return event;
 });
-
-// export const getHeadPipe = Effect.fn("getSingleMrAsEvent")(function* (projectPath: string, iid: string) {
-//   yield* Console.log(`[GitLab] Fetching single MR: ${iid} in project "${projectPath}"`);
-
-//   const sdk = yield* getGitlabSdk
-//   const data = yield* Effect.tryPromise({
-//     try: () => sdk.SingleMR({
-//       projectPath: projectPath,
-//       iid: iid
-//     }),
-//     catch: cause => new FetchSingleMrError({ cause })
-//   });
-
-//   const timestamp = new Date().toISOString();
-//   const type = 'gitlab-single-mr-fetched-event' as const;
-//   const event: GitlabSingleMrFetchedEvent = {
-//     eventId: generateEventId(timestamp, type),
-//     type,
-//     mr: data,
-//     forProjectPath: projectPath,
-//     forIid: iid,
-//     timestamp
-//   };
-
-//   return event;
-// });
-
-

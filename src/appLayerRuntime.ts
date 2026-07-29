@@ -7,7 +7,6 @@ import { DiscussionScrollService } from "./discussion/discussion-scroll-service"
 import { BackgroundSyncService } from "./notifications/background-sync-service"
 import { PipelineJobMonitor } from "./gitlab/gitlab-pipeline-job-monitor-backgroundworker"
 import { MrStateService } from "./mergerequests/mr-state-service"
-import { BgSyncReadModelService } from "./notifications/bg-sync-read-model"
 import { SettingsService } from "./settings/settings"
 import { UserSettingsService } from "./settings/user-filter-presets"
 import { type Projection, project } from "./utils/define-projection"
@@ -30,10 +29,6 @@ const mrStateServiceLayer = Layer.effect(MrStateService)(MrStateService.make).pi
   Layer.provide(eventStorageLayer)
 )
 
-const bgSyncReadModelLayer = Layer.effect(BgSyncReadModelService)(BgSyncReadModelService.make).pipe(
-  Layer.provide(eventStorageLayer)
-)
-
 const pipelineJobMonitorLayer = Layer.effect(PipelineJobMonitor)(PipelineJobMonitor.make).pipe(
   Layer.provide(mrStateServiceLayer),
   Layer.provide(eventStorageLayer),
@@ -49,8 +44,7 @@ export const appLayer = Layer.mergeAll(
   Layer.effect(JiraScrollService)(JiraScrollService.make),
   Layer.effect(DiscussionScrollService)(DiscussionScrollService.make),
   Layer.effect(BackgroundSyncService)(BackgroundSyncService.make),
-  mrStateServiceLayer,
-  bgSyncReadModelLayer
+  mrStateServiceLayer
 )
 
 // Build a shared runtime using the atom system's memoMap

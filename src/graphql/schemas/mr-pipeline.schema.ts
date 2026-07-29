@@ -1,5 +1,5 @@
 import { Schema } from "effect"
-import type { PipelineFieldFragment, GetJobStatusQuery, MrPipelineQuery, MrPipelinesQuery } from "../mr-pipeline.generated"
+import type { PipelineFieldFragment, MrPipelineQuery } from "../mr-pipeline.generated"
 import { CiJobStatusSchema, MergeRequestStateSchema } from "../generated/gitlab-base-types.schema"
 
 export const PipelineFieldFragmentSchema: Schema.Codec<PipelineFieldFragment> = Schema.Struct({
@@ -33,15 +33,6 @@ export const PipelineFieldFragmentSchema: Schema.Codec<PipelineFieldFragment> = 
   }))
 })
 
-export const GetJobStatusQuerySchema: Schema.Codec<GetJobStatusQuery> = Schema.Struct({
-  project: Schema.NullOr(Schema.Struct({
-    job: Schema.NullOr(Schema.Struct({
-      status: Schema.NullOr(CiJobStatusSchema),
-      finishedAt: Schema.NullOr(Schema.String)
-    }))
-  }))
-})
-
 export const MrPipelineQuerySchema: Schema.Codec<MrPipelineQuery> = Schema.Struct({
   project: Schema.NullOr(Schema.Struct({
     mergeRequest: Schema.NullOr(Schema.Struct({
@@ -49,20 +40,6 @@ export const MrPipelineQuerySchema: Schema.Codec<MrPipelineQuery> = Schema.Struc
       iid: Schema.String,
       state: MergeRequestStateSchema,
       headPipeline: Schema.NullOr(PipelineFieldFragmentSchema)
-    }))
-  }))
-})
-
-export const MrPipelinesQuerySchema: Schema.Codec<MrPipelinesQuery> = Schema.Struct({
-  project: Schema.NullOr(Schema.Struct({
-    mergeRequests: Schema.NullOr(Schema.Struct({
-      nodes: Schema.NullOr(Schema.Array(
-        Schema.NullOr(Schema.Struct({
-        id: Schema.Any,
-        iid: Schema.String,
-        headPipeline: Schema.NullOr(PipelineFieldFragmentSchema)
-      }))
-      ))
     }))
   }))
 })

@@ -130,6 +130,7 @@ export function mapBitbucketToMergeRequest(
     aiDiscussions: 0,
     discussions,
     pipeline: {
+      iid: null,
       stage: []
     }
   };

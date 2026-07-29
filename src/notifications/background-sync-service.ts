@@ -1,36 +1,42 @@
-import { Data, Effect, Layer, ServiceMap, PubSub, Ref, Console } from 'effect';
+import { Data, Effect, ServiceMap, PubSub, Ref, Console } from 'effect';
 import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { settingsAtom, repoSelectionAtom } from '../settings/settings-atom';
-import { resolveRepoPath } from '../userselection/userSelection';
-import { fetchRepoPage, type KnownMrInfo } from '../mergerequests/decide-fetch-mrs';
+import { resolveRepoPath, type RepositoryId } from '../userselection/userSelection';
+import { fetchRepoPage, fetchMrDetails, extractKnownProjects, type KnownMrInfo } from '../mergerequests/decide-fetch-mrs';
 import { SettingsService } from '../settings/settings';
-import { BgSyncReadModelService, type MrFreshness } from './bg-sync-read-model';
-import type { MrGid } from '../domain/identifiers';
-import type { MergeRequestState } from '../domain/merge-request-state';
-import { formatCompactTime } from '../utils/formatting';
+import { MrStateService } from '../mergerequests/mr-state-service';
+import { getMrStampsPage, type MrStampsPage } from '../gitlab/gitlab-graphql';
+import { stampOfMergeRequest, stampOfNode, type MrStamp } from '../mergerequests/mr-stamp';
+import type { MergeRequest } from '../mergerequests/mergerequest-schema';
+import { MrGid } from '../domain/identifiers';
 
 export type BackgroundSyncStatus =
   | { _tag: 'syncPending'; nextSyncDate: Date; repoCount: number }
-  | { _tag: 'syncing'; repoPath: string; page: number; repoCount: number }
-  | { _tag: 'syncPerformed'; repoPath: string; page: number; repoCount: number }
+  | { _tag: 'sweeping'; repoPath: string; repoCount: number }
+  | { _tag: 'syncPerformed'; repoPath: string; observed: number; fetched: number; repoCount: number }
   | { _tag: 'syncDisabled'; reason: 'settingDisabled' | 'noRepos'; syncIntervalSeconds: number };
 
-export type PageSlotSnapshot = {
+export type RepoSyncSnapshot = {
   readonly repo: string
-  readonly page: number
-  readonly minutesUntilRefresh: number
+  readonly mrCount: number
+  /** Epoch ms the next sweep becomes due; null until the repo has been swept once. Absolute so
+   *  the display can count down between publishes without drifting. */
+  readonly nextRefreshAt: number | null
+  readonly isSweeping: boolean
+  /** The repo the loop will pick next, so "which one is coming" is visible, not just "when". */
+  readonly isNext: boolean
 }
 
 export class BackgroundSyncService extends ServiceMap.Service<BackgroundSyncService, {
   readonly statusPubSub: PubSub.PubSub<BackgroundSyncStatus>;
-  readonly slotsPubSub: PubSub.PubSub<readonly PageSlotSnapshot[]>;
+  readonly snapshotsPubSub: PubSub.PubSub<readonly RepoSyncSnapshot[]>;
   readonly fetchLock: Ref.Ref<boolean>;
 }>()("BackgroundSyncService", {
   make: Effect.gen(function* () {
-    const pubsub = yield* PubSub.unbounded<BackgroundSyncStatus>();
-    const slotsPubSub = yield* PubSub.unbounded<readonly PageSlotSnapshot[]>();
+    const statusPubSub = yield* PubSub.unbounded<BackgroundSyncStatus>();
+    const snapshotsPubSub = yield* PubSub.unbounded<readonly RepoSyncSnapshot[]>();
     const fetchLock = yield* Ref.make(false);
-    return { statusPubSub: pubsub, slotsPubSub, fetchLock };
+    return { statusPubSub, snapshotsPubSub, fetchLock };
   })
 }) {}
 
@@ -48,134 +54,93 @@ export const withFetchLock = <A, E, R>(
     return yield* effect.pipe(Effect.ensuring(Ref.set(fetchLock, false)));
   });
 
-type PageSlot = {
-  readonly repo: string
-  readonly page: number
-  readonly afterCursor: string | null
-  lastFetchedAt: number | null
-  intervalMs: number
-  endCursor: string | null
-  lastFetchedGids: ReadonlySet<MrGid>
-}
+const SWEEP_PAGE_SIZE = 100
+const RETRY_DELAY_MS = 60_000
 
-export const computePageInterval = (baseIntervalMs: number, scalingFactorHours: number, newestUpdatedAt: Date): number => {
-  const ageHours = (Date.now() - newestUpdatedAt.getTime()) / (1000 * 60 * 60)
-  return baseIntervalMs * Math.max(1, 1 + Math.sqrt(ageHours / scalingFactorHours))
-}
+type ObservedMr = { readonly iid: string; readonly stamp: MrStamp }
 
-const formatDurationMs = (ms: number): string => {
-  const totalSeconds = Math.floor(ms / 1000)
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-  if (hours > 0) return `${hours}h ${minutes}m`
-  if (minutes > 0) return `${minutes}m ${seconds}s`
-  return `${seconds}s`
-}
+// A sweep only means something if it runs to completion: an MR missing from a partial sweep is
+// unobserved, not gone. Any page failure aborts the whole sweep rather than yielding a diff.
+const sweepGitlabRepo = (projectPath: string) => Effect.gen(function* () {
+  const observed = new Map<MrGid, ObservedMr>()
+  let after: string | null = null
+  let pages = 0
 
-const canFetch = (slot: PageSlot): boolean =>
-  slot.page === 1 || slot.afterCursor !== null
+  while (true) {
+    const page: MrStampsPage = yield* getMrStampsPage(projectPath, 'opened', after, SWEEP_PAGE_SIZE)
+    pages++
+    page.nodes.forEach(node => observed.set(MrGid(node.id), { iid: node.iid, stamp: stampOfNode(node) }))
 
-const findMostOverdueSlot = (slots: ReadonlyMap<string, PageSlot>): PageSlot | null => {
-  const now = Date.now()
-  let best: PageSlot | null = null
-  let bestOverdue = -Infinity
-
-  for (const slot of slots.values()) {
-    if (!canFetch(slot)) continue
-    if (slot.lastFetchedAt === null) {
-      return slot
-    }
-    const overdue = now - slot.lastFetchedAt - slot.intervalMs
-    if (overdue > bestOverdue) {
-      bestOverdue = overdue
-      best = slot
-    }
+    if (!page.hasNextPage || !page.endCursor) break
+    after = page.endCursor
   }
 
-  return bestOverdue > 0 ? best : null
+  return { observed, pages }
+})
+
+const openMrsInRepo = (mrsByGid: ReadonlyMap<MrGid, MergeRequest>, projectPath: string) =>
+  [...mrsByGid.entries()].filter(([, mr]) => mr.project.fullPath === projectPath && mr.state === 'opened')
+
+const heldStamps = (
+  mrsByGid: ReadonlyMap<MrGid, MergeRequest>,
+  projectPath: string
+): ReadonlyMap<MrGid, ObservedMr> =>
+  new Map(
+    openMrsInRepo(mrsByGid, projectPath)
+      .map(([gid, mr]) => [gid, { iid: mr.iid, stamp: stampOfMergeRequest(mr) }])
+  )
+
+const heldKnownMrs = (
+  mrsByGid: ReadonlyMap<MrGid, MergeRequest>,
+  projectPath: string
+): ReadonlyMap<MrGid, KnownMrInfo> =>
+  new Map(
+    openMrsInRepo(mrsByGid, projectPath)
+      .map(([gid, mr]) => [gid, { projectPath: mr.project.fullPath, iid: mr.iid, updatedAt: mr.updatedAt }])
+  )
+
+// Changed stamp, never seen before, or held-but-absent — an absent MR needs a fetch to learn
+// whether it merged, closed, or is gone, which is the only way to find out.
+const iidsToFetch = (
+  observed: ReadonlyMap<MrGid, ObservedMr>,
+  held: ReadonlyMap<MrGid, ObservedMr>
+): readonly string[] => {
+  const iids = new Set<string>()
+  observed.forEach((mr, gid) => { if (held.get(gid)?.stamp !== mr.stamp) iids.add(mr.iid) })
+  held.forEach((mr, gid) => { if (!observed.has(gid)) iids.add(mr.iid) })
+  return [...iids]
 }
 
-const nextDueTime = (slots: ReadonlyMap<string, PageSlot>): number | null => {
-  let earliest = Infinity
-  for (const slot of slots.values()) {
-    if (!canFetch(slot)) continue
-    if (slot.lastFetchedAt === null) return 0
-    const dueAt = slot.lastFetchedAt + slot.intervalMs
-    if (dueAt < earliest) earliest = dueAt
-  }
-  return earliest === Infinity ? null : earliest
-}
+const repoShortName = (repoPath: string): string => repoPath.split('/').pop() ?? repoPath
 
-const slotKey = (repo: string, page: number) => `${repo}:${page}`
-
-const computeRepoPageIntervals = (
-  mrFreshnessById: ReadonlyMap<MrGid, MrFreshness>,
-  repo: string,
-  pageSize: number,
-  baseIntervalMs: number,
-  scalingFactorHours: number,
-): readonly number[] =>
-  [...mrFreshnessById.values()]
-    .filter(f => f.repo === repo)
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-    .reduce<Date[][]>((pages, f) => {
-      const last = pages[pages.length - 1]
-      if (!last || last.length >= pageSize) pages.push([f.updatedAt])
-      else last.push(f.updatedAt)
-      return pages
-    }, [])
-    .map(dates => computePageInterval(baseIntervalMs, scalingFactorHours, dates[0]!))
-
-const syncSlotsWithSelection = (
-  slots: Map<string, PageSlot>,
-  selectedRepos: readonly string[],
-  baseIntervalMs: number,
-  scalingFactorHours: number,
-  pageFetchTimestamps: Readonly<Record<string, readonly string[]>>,
-  mrFreshnessById: ReadonlyMap<MrGid, MrFreshness>,
-  pageSize: number,
-): void => {
-  const selectedSet = new Set(selectedRepos)
-
-  for (const repo of selectedRepos) {
-    const timestamps = pageFetchTimestamps[repo] ?? []
-    const pageCount = Math.max(1, timestamps.length)
-    const needsIntervals = !slots.has(slotKey(repo, 1))
-    const intervals = needsIntervals
-      ? computeRepoPageIntervals(mrFreshnessById, repo, pageSize, baseIntervalMs, scalingFactorHours)
-      : []
-
-    for (let page = 1; page <= pageCount; page++) {
-      const key = slotKey(repo, page)
-      if (!slots.has(key)) {
-        const persisted = timestamps[page - 1]
-        slots.set(key, {
-          repo,
-          page,
-          afterCursor: null,
-          lastFetchedAt: persisted ? new Date(persisted).getTime() : null,
-          intervalMs: intervals[page - 1] ?? baseIntervalMs,
-          endCursor: null,
-          lastFetchedGids: new Set(),
-        })
-      }
-    }
+const syncRepo = (
+  repository: RepositoryId,
+  projectPath: string,
+  mrsByGid: ReadonlyMap<MrGid, MergeRequest>
+) => Effect.gen(function* () {
+  // Bitbucket returns whole PRs in one unpaged request, so there is no cheaper stamp to fetch —
+  // its list call is both tiers at once.
+  if (repository.provider === 'bitbucket') {
+    const result = yield* fetchRepoPage(repository, 'opened', heldKnownMrs(mrsByGid, projectPath), null)
+    return { observed: result.mrCount, fetched: result.mrCount }
   }
 
-  // Remove slots for deselected repos
-  for (const [key, slot] of slots) {
-    if (!selectedSet.has(slot.repo)) {
-      slots.delete(key)
-    }
-  }
-}
+  const { observed, pages } = yield* sweepGitlabRepo(repository.id)
+  const iids = iidsToFetch(observed, heldStamps(mrsByGid, projectPath))
+
+  yield* Console.log(
+    `[BackgroundSync] ${repoShortName(projectPath)}: ${observed.size} open MRs in ${pages} page(s), ${iids.length} changed`
+  )
+
+  yield* fetchMrDetails(repository.id, iids)
+
+  return { observed: observed.size, fetched: iids.length }
+})
 
 type SyncConfig = {
   enabled: boolean;
   repoPaths: readonly string[];
-  baseIntervalMs: number;
-  scalingFactorHours: number;
+  intervalMs: number;
   syncIntervalSeconds: number;
 };
 
@@ -189,208 +154,140 @@ const computeSyncConfig = (get: Atom.Context): SyncConfig => {
 
   const bg = settings?.backgroundSync;
   const syncIntervalSeconds = bg?.syncIntervalSeconds ?? 300;
-  const scalingFactorHours = bg?.scalingFactorHours ?? 24;
 
   if (!settings || !bg?.enabled) {
-    return { enabled: false, repoPaths: [], baseIntervalMs: syncIntervalSeconds * 1000, scalingFactorHours, syncIntervalSeconds };
+    return { enabled: false, repoPaths: [], intervalMs: syncIntervalSeconds * 1000, syncIntervalSeconds };
   }
 
   const repoPaths = get.registry.get(repoSelectionAtom);
-  return {
-    enabled: repoPaths.length > 0,
-    repoPaths,
-    baseIntervalMs: syncIntervalSeconds * 1000,
-    scalingFactorHours,
-    syncIntervalSeconds,
-  };
+  return { enabled: repoPaths.length > 0, repoPaths, intervalMs: syncIntervalSeconds * 1000, syncIntervalSeconds };
 };
 
-const getShallowerPageGids = (slots: ReadonlyMap<string, PageSlot>, repo: string, page: number): ReadonlySet<MrGid> => {
-  const gids = new Set<MrGid>()
-  for (let p = 1; p < page; p++) {
-    const slot = slots.get(slotKey(repo, p))
-    if (slot) {
-      for (const gid of slot.lastFetchedGids) {
-        gids.add(gid)
-      }
-    }
-  }
-  return gids
-}
-
-const repoShortName = (repoPath: string): string => {
-  const parts = repoPath.split('/')
-  return parts[parts.length - 1] ?? repoPath
-}
-
-const snapshotPageFetchTimestamps = (
-  slots: ReadonlyMap<string, PageSlot>,
-): Record<string, string[]> => {
-  const result: Record<string, string[]> = {}
-  for (const slot of slots.values()) {
-    if (slot.lastFetchedAt === null) continue
-    const arr = result[slot.repo] ??= []
-    arr[slot.page - 1] = new Date(slot.lastFetchedAt).toISOString()
-  }
-  return result
-}
-
-const snapshotSlots = (slots: ReadonlyMap<string, PageSlot>): readonly PageSlotSnapshot[] => {
+const pickDueRepo = (
+  repoPaths: readonly string[],
+  nextEligibleAt: ReadonlyMap<string, number>
+): string | null => {
   const now = Date.now()
-  return [...slots.values()].map(slot => ({
-    repo: slot.repo,
-    page: slot.page,
-    minutesUntilRefresh: slot.lastFetchedAt === null
-      ? 0
-      : Math.max(0, Math.ceil((slot.lastFetchedAt + slot.intervalMs - now) / 60000)),
+  return repoPaths
+    .filter(repo => (nextEligibleAt.get(repo) ?? 0) <= now)
+    .reduce<string | null>((earliest, repo) =>
+      earliest === null || (nextEligibleAt.get(repo) ?? 0) < (nextEligibleAt.get(earliest) ?? 0)
+        ? repo
+        : earliest,
+      null)
+}
+
+const nextDueAt = (repoPaths: readonly string[], nextEligibleAt: ReadonlyMap<string, number>): number =>
+  Math.min(...repoPaths.map(repo => nextEligibleAt.get(repo) ?? 0))
+
+const snapshotRepos = (
+  repoPaths: readonly string[],
+  nextEligibleAt: ReadonlyMap<string, number>,
+  mrCounts: ReadonlyMap<string, number>,
+  sweepingRepo: string | null
+): readonly RepoSyncSnapshot[] => {
+  const upNext = repoPaths
+    .filter(repo => repo !== sweepingRepo)
+    .reduce<string | null>((earliest, repo) =>
+      earliest === null || (nextEligibleAt.get(repo) ?? 0) < (nextEligibleAt.get(earliest) ?? 0)
+        ? repo
+        : earliest,
+      null)
+
+  return repoPaths.map(repo => ({
+    repo,
+    mrCount: mrCounts.get(repo) ?? 0,
+    nextRefreshAt: nextEligibleAt.get(repo) ?? null,
+    isSweeping: repo === sweepingRepo,
+    isNext: repo === upNext,
   }))
 }
 
-const buildKnownMrs = (
-  mrFreshnessById: ReadonlyMap<MrGid, MrFreshness>,
-  repo: string,
-  state: MergeRequestState,
-): ReadonlyMap<MrGid, KnownMrInfo> =>
-  new Map(
-    [...mrFreshnessById.entries()]
-      .filter(([, f]) => f.repo === repo && f.state === state)
-      .map(([gid, f]) => [gid, { projectPath: f.repo, iid: f.iid, updatedAt: f.updatedAt }])
-  )
-
-const createBackgroundWorker = (get: Atom.Context, pubsub: PubSub.PubSub<BackgroundSyncStatus>, slotsPub: PubSub.PubSub<readonly PageSlotSnapshot[]>) =>
+const createBackgroundWorker = (
+  get: Atom.Context,
+  statusPub: PubSub.PubSub<BackgroundSyncStatus>,
+  snapshotsPub: PubSub.PubSub<readonly RepoSyncSnapshot[]>
+) =>
   Effect.gen(function* () {
-    yield* Console.log('[BackgroundSync] Daemon worker STARTED');
+    yield* Console.log('[BackgroundSync] Sweep worker STARTED');
 
     const settingsService = yield* SettingsService;
-    const bgSyncReadModel = yield* BgSyncReadModelService;
-    const initialSettings = yield* settingsService.load;
-    let seedTimestamps: Readonly<Record<string, readonly string[]>> = initialSettings.backgroundSync?.pageFetchTimestamps ?? {};
+    const mrStateService = yield* MrStateService;
 
-    const slots = new Map<string, PageSlot>()
+    const nextEligibleAt = new Map<string, number>()
+    const mrCounts = new Map<string, number>()
 
     while (true) {
       const config = computeSyncConfig(get);
 
       if (!config.enabled) {
-        const reason = config.repoPaths.length === 0 && config.baseIntervalMs > 0 ? 'noRepos' : 'settingDisabled'
-        yield* PubSub.publish(pubsub, { _tag: 'syncDisabled', reason, syncIntervalSeconds: config.syncIntervalSeconds } as BackgroundSyncStatus);
-        yield* PubSub.publish(slotsPub, []);
+        const reason = config.repoPaths.length === 0 && config.intervalMs > 0 ? 'noRepos' : 'settingDisabled'
+        yield* PubSub.publish(statusPub, { _tag: 'syncDisabled', reason, syncIntervalSeconds: config.syncIntervalSeconds } as BackgroundSyncStatus);
+        yield* PubSub.publish(snapshotsPub, []);
         yield* Effect.sleep('2 seconds');
         continue;
       }
 
-      const bgState = yield* bgSyncReadModel.get
-      syncSlotsWithSelection(slots, config.repoPaths, config.baseIntervalMs, config.scalingFactorHours, seedTimestamps, bgState.mrFreshnessById, 20)
-      yield* PubSub.publish(slotsPub, snapshotSlots(slots))
+      yield* PubSub.publish(snapshotsPub, snapshotRepos(config.repoPaths, nextEligibleAt, mrCounts, null));
 
-      const overdueSlot = findMostOverdueSlot(slots)
+      const dueRepo = pickDueRepo(config.repoPaths, nextEligibleAt)
 
-      if (!overdueSlot) {
-        const due = nextDueTime(slots)
-        if (due !== null) {
-          const msUntilDue = Math.max(0, due - Date.now())
-          yield* PubSub.publish(pubsub, {
-            _tag: 'syncPending',
-            nextSyncDate: new Date(due),
-            repoCount: config.repoPaths.length,
-          } as BackgroundSyncStatus);
-          yield* Effect.sleep(`${Math.min(msUntilDue, 5000)} millis`);
-        } else {
-          yield* Effect.sleep('2 seconds');
-        }
+      if (dueRepo === null) {
+        const due = nextDueAt(config.repoPaths, nextEligibleAt)
+        yield* PubSub.publish(statusPub, {
+          _tag: 'syncPending',
+          nextSyncDate: new Date(due),
+          repoCount: config.repoPaths.length,
+        } as BackgroundSyncStatus);
+        yield* Effect.sleep(`${Math.min(Math.max(0, due - Date.now()), 5000)} millis`);
         continue;
       }
 
-      yield* PubSub.publish(pubsub, {
-        _tag: 'syncing',
-        repoPath: overdueSlot.repo,
-        page: overdueSlot.page,
+      yield* PubSub.publish(statusPub, {
+        _tag: 'sweeping',
+        repoPath: dueRepo,
         repoCount: config.repoPaths.length,
       } as BackgroundSyncStatus);
+      yield* PubSub.publish(snapshotsPub, snapshotRepos(config.repoPaths, nextEligibleAt, mrCounts, dueRepo));
 
-      yield* Effect.gen(function* () {
-        const currentBgState = yield* bgSyncReadModel.get
-        const knownProjects = [...currentBgState.knownProjects.values()]
-        const repo = resolveRepoPath(overdueSlot.repo, knownProjects)
-
-        const shallowerGids = getShallowerPageGids(slots, overdueSlot.repo, overdueSlot.page)
-        const knownMrs = buildKnownMrs(currentBgState.mrFreshnessById, overdueSlot.repo, 'opened')
-
-        const result = yield* fetchRepoPage(repo, 'opened', knownMrs, overdueSlot.afterCursor, shallowerGids, 20)
-
-        // Update slot state
-        overdueSlot.lastFetchedAt = Date.now()
-        overdueSlot.lastFetchedGids = result.fetchedGids
-        overdueSlot.endCursor = result.endCursor
-
-        overdueSlot.intervalMs = result.newestUpdatedAt
-          ? computePageInterval(config.baseIntervalMs, config.scalingFactorHours, result.newestUpdatedAt)
-          : config.baseIntervalMs
-
-        // Discover or update next page
-        if (result.hasNextPage) {
-          const nextPageNum = overdueSlot.page + 1
-          const nextKey = slotKey(overdueSlot.repo, nextPageNum)
-          const existing = slots.get(nextKey)
-          if (existing) {
-            slots.set(nextKey, { ...existing, afterCursor: result.endCursor! })
-          } else {
-            const persisted = seedTimestamps[overdueSlot.repo]?.[nextPageNum - 1]
-            const nextInterval = result.oldestUpdatedAt
-              ? computePageInterval(config.baseIntervalMs, config.scalingFactorHours, result.oldestUpdatedAt)
-              : config.baseIntervalMs
-            slots.set(nextKey, {
-              repo: overdueSlot.repo,
-              page: nextPageNum,
-              afterCursor: result.endCursor!,
-              lastFetchedAt: persisted ? new Date(persisted).getTime() : null,
-              intervalMs: nextInterval,
-              endCursor: null,
-              lastFetchedGids: new Set(),
-            })
-          }
-        } else {
-          for (let p = overdueSlot.page + 1; ; p++) {
-            const k = slotKey(overdueSlot.repo, p)
-            if (!slots.has(k)) break
-            slots.delete(k)
-          }
-        }
-
-        const ageStr = result.oldestUpdatedAt
-          ? formatCompactTime(result.oldestUpdatedAt)
-          : 'n/a'
-        const intervalStr = formatDurationMs(overdueSlot.intervalMs)
-        yield* Console.log(
-          `[BackgroundSync] ${repoShortName(overdueSlot.repo)} page ${overdueSlot.page}: `
-          + `${result.mrCount} MRs, oldest ${ageStr} ago → next refresh in ${intervalStr}`
-        )
-
-        const updatedTimestamps = snapshotPageFetchTimestamps(slots)
-        seedTimestamps = updatedTimestamps
-        yield* settingsService.modify(s => ({
-          ...s,
-          backgroundSync: {
-            ...s.backgroundSync!,
-            lastRefreshTimestamp: new Date().toISOString(),
-            pageFetchTimestamps: updatedTimestamps,
-          }
-        }));
-
-        yield* PubSub.publish(slotsPub, snapshotSlots(slots))
-        yield* PubSub.publish(pubsub, {
-          _tag: 'syncPerformed',
-          repoPath: overdueSlot.repo,
-          page: overdueSlot.page,
-          repoCount: config.repoPaths.length,
-        } as BackgroundSyncStatus);
+      const swept = yield* Effect.gen(function* () {
+        const { mrsByGid } = yield* mrStateService.get
+        const repository = resolveRepoPath(dueRepo, extractKnownProjects(mrsByGid))
+        return yield* syncRepo(repository, dueRepo, mrsByGid)
       }).pipe(
         withFetchLock,
-        Effect.catchTag("FetchLockBusy", () => Effect.void),
-        Effect.catchCause((cause) => Console.error('[BackgroundSync] Fetch failed:', cause))
+        Effect.catchTag("FetchLockBusy", () => Effect.succeed(null)),
+        Effect.catchCause((cause) =>
+          Console.error('[BackgroundSync] Sweep failed:', cause).pipe(Effect.as(null))
+        )
       );
 
-      yield* Effect.sleep('5 seconds');
+      if (swept === null) {
+        // Failed or lock-blocked: stay behind the retry delay instead of spinning on the repo.
+        nextEligibleAt.set(dueRepo, Date.now() + Math.min(RETRY_DELAY_MS, config.intervalMs))
+        yield* PubSub.publish(snapshotsPub, snapshotRepos(config.repoPaths, nextEligibleAt, mrCounts, null));
+        continue;
+      }
+
+      nextEligibleAt.set(dueRepo, Date.now() + config.intervalMs)
+      mrCounts.set(dueRepo, swept.observed)
+
+      yield* settingsService.modify(s => ({
+        ...s,
+        backgroundSync: {
+          ...s.backgroundSync!,
+          lastRefreshTimestamp: new Date().toISOString(),
+        }
+      }));
+
+      yield* PubSub.publish(snapshotsPub, snapshotRepos(config.repoPaths, nextEligibleAt, mrCounts, null));
+      yield* PubSub.publish(statusPub, {
+        _tag: 'syncPerformed',
+        repoPath: dueRepo,
+        observed: swept.observed,
+        fetched: swept.fetched,
+        repoCount: config.repoPaths.length,
+      } as BackgroundSyncStatus);
     }
   });
 
@@ -406,5 +303,5 @@ export const ensureBackgroundSyncWorker = (get: Atom.Context) =>
 
     const service = yield* BackgroundSyncService;
     yield* Effect.forkDetach(
-      createBackgroundWorker(get, service.statusPubSub, service.slotsPubSub));
+      createBackgroundWorker(get, service.statusPubSub, service.snapshotsPubSub));
   });

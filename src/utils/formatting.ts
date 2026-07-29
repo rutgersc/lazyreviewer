@@ -33,6 +33,11 @@ export const getAgeColor = (date: Date, now: Date = new Date()): string => {
   return red;
 };
 
+// Fixed-width 24h clock time. toLocaleTimeString is avoided here: it appends seconds and swings
+// to "08:47 PM" under a 12h locale, which breaks alignment in a fixed-width pane.
+export const formatClockTime = (date: Date): string =>
+  `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
 export const formatCompactTime = (date: Date, now: Date = new Date()): string => {
   const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));

@@ -19,6 +19,7 @@ export const mapMrFragment = (
   }
 
   const pipeline = {
+    iid: mr.headPipeline?.iid ?? null,
     stage: mr.headPipeline?.stages?.nodes
       ?.map(stage => ({
         name: stage?.name || '',

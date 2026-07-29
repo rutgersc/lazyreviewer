@@ -230,8 +230,8 @@ export const notificationSettingsAtom = selectFromSettings(
 );
 
 export const backgroundSyncSettingsAtom = selectFromSettings(
-  s => s.backgroundSync ?? { enabled: false, syncIntervalSeconds: 300, scalingFactorHours: 24 },
-  { enabled: false, syncIntervalSeconds: 300, scalingFactorHours: 24 } as BackgroundSyncSettings,
+  s => s.backgroundSync ?? { enabled: false, syncIntervalSeconds: 300 },
+  { enabled: false, syncIntervalSeconds: 300 } as BackgroundSyncSettings,
   shallowObjectEquals
 );
 

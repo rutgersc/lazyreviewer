@@ -95,6 +95,7 @@ export const MergeRequestSchema = Schema.Struct({
   aiDiscussions: Schema.Number,
   discussions: Schema.mutable(Schema.Array(DiscussionSchema)),
   pipeline: Schema.Struct({
+    iid: Schema.NullOr(Schema.String),
     stage: Schema.mutable(Schema.Array(PipelineStageSchema))
   })
 }).pipe(Schema.annotate({ identifier: "MergeRequest" }))

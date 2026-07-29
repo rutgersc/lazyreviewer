@@ -1,0 +1,37 @@
+fragment MergeRequestStampFields on MergeRequest {
+  id
+  iid
+  updatedAt
+  state
+  detailedMergeStatus
+  diffHeadSha
+  approvedBy {
+    nodes {
+      id
+    }
+  }
+  headPipeline {
+    iid
+    jobs {
+      nodes {
+        name
+        status
+      }
+    }
+  }
+}
+
+query MrStamps($projectPath: ID!, $state: MergeRequestState, $first: Int!, $after: String) {
+  project(fullPath: $projectPath) {
+    id
+    mergeRequests(state: $state, first: $first, sort: UPDATED_ASC, after: $after) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        ...MergeRequestStampFields
+      }
+    }
+  }
+}

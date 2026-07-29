@@ -1,7 +1,0 @@
-query JobStatus {
-  jobs {
-    nodes {
-      name
-    }
-  }
-}

@@ -1,5 +1,5 @@
 import { Schema } from "effect"
-import type { AccessLevelEnum, AccessTokenGranularScopeAccess, AccessTokenSort, AccessTokenState, AgentTokenStatus, AiAcceptedSelfHostedModels, AiAction, AiAdditionalContextCategory, AiCatalogFlowConfigType, AiCatalogItemReportReason, AiCatalogItemType, AiCatalogItemVerificationLevel, AiCatalogMcpServerAuthType, AiCatalogMcpServerTransport, AiCatalogVersionBump, AiConversationsThreadsConversationType, AiFeatureProviders, AiFeatures, AiFlowTriggerEventType, AiMessageRole, AiMessageType, AiModelSelectionFeatures, AiSelfHostedModelReleaseState, AiUsageEventType, AiUserMetricsSort, AlertManagementAlertSort, AlertManagementDomainFilter, AlertManagementIntegrationType, AlertManagementPayloadAlertFieldName, AlertManagementPayloadAlertFieldType, AlertManagementSeverity, AlertManagementStatus, AnalyticsAggregationPeriod, AnalyzerStatusEnum, AnalyzerTypeEnum, ApiFuzzingScanMode, ApprovalReportType, ApprovalRuleType, AscpScanType, AssigneeWildcardId, AttributeFilterOperator, AutoStopSetting, AvailabilityEnum, AvailableExportFields, BlobViewersType, CarStatus, CiCatalogResourceScope, CiCatalogResourceSort, CiCatalogResourceVerificationLevel, CiConfigIncludeType, CiConfigStatus, CiFreezePeriodStatus, CiGroupVariablesSort, CiInputsType, CiJobAnalyticsSort, CiJobFailureReason, CiJobKind, CiJobSource, CiJobStatus, CiJobTokenScopeDirection, CiJobTokenScopePolicies, CiPipelineCreationStatus, CiPipelineSources, CiRunnerAccessLevel, CiRunnerCloudProvider, CiRunnerCreationMethod, CiRunnerCreationState, CiRunnerJobExecutionStatus, CiRunnerMembershipFilter, CiRunnerSort, CiRunnerStatus, CiRunnerType, CiRunnerUpgradeStatus, CiVariableSort, CiVariableType, CodeFlowNodeType, CodeQualityDegradationSeverity, CodequalityReportsComparerReportGenerationStatus, CodequalityReportsComparerStatus, CommitActionMode, CommitEncoding, ComparableSecurityReportType, ComparisonOperator, ComplianceFrameworkPresenceFilter, ComplianceFrameworkSort, ComplianceStandardsAdherenceCheckName, ComplianceStandardsAdherenceStandard, ComplianceStandardsAdherenceStatus, ComplianceViolationReason, ComplianceViolationSeverity, ComplianceViolationSort, ComplianceViolationStatus, ConanMetadatumFileTypeEnum, ContactSort, ContainerExpirationPolicyCadenceEnum, ContainerExpirationPolicyKeepEnum, ContainerExpirationPolicyOlderThanEnum, ContainerProtectionRepositoryRuleAccessLevel, ContainerProtectionTagRuleAccessLevel, ContainerRepositoryCleanupStatus, ContainerRepositorySort, ContainerRepositoryStatus, ContainerRepositoryTagSort, CustomFieldType, CustomerRelationsContactState, CustomerRelationsOrganizationState, CustomizableDashboardCategory, CustomizableDashboardGridHeight, CvssSeverity, DastPreScanVerificationCheckType, DastPreScanVerificationStatus, DastProfileCadenceUnit, DastScanMethodType, DastScanTypeEnum, DastSiteProfileValidationStatusEnum, DastSiteValidationStatusEnum, DastSiteValidationStrategyEnum, DastTargetTypeEnum, DataVisualizationColorEnum, DataVisualizationWeightEnum, DependencyProxyManifestStatus, DependencySort, DeploymentApprovalSummaryStatus, DeploymentStatus, DeploymentTier, DeploymentsApprovalStatus, DesignCollectionCopyState, DesignVersionEvent, DetailedMergeStatus, DiffPositionType, DismissalType, DoraMetricBucketingInterval, DuoWorkflowStatus, DuoWorkflowStatusGroup, DuoWorkflowsWorkflowSort, EntryType, EpicSort, EpicState, EpicStateEvent, EpicWildcardId, ErrorTrackingStatus, EscalationRuleStatus, EventAction, ExclusionScannerEnum, ExclusionTypeEnum, ExtensionsMarketplaceOptInStatus, FindingReportsComparerStatus, FlowTypeSort, GeoRegistriesBulkAction, GeoRegistryAction, GeoRegistryClass, GeoRegistrySort, GitlabSubscriptionUsageUserSort, GitlabSubscriptionsAddOnType, GitlabSubscriptionsUserRole, GitlabSubscriptionsUserSort, GoogleCloudArtifactRegistryArtifactsSort, GroupMemberRelation, GroupPermission, GroupReleaseSort, GroupSecretsManagerStatus, GroupSort, GroupingEnum, HealthStatus, HealthStatusFilter, ImportSource, ImportSourceUserStatus, IntegrationType, IssuableResourceLinkType, IssuableSearchableField, IssuableSeverity, IssuableState, IssueCreationIterationWildcardId, IssueEscalationStatus, IssueSort, IssueState, IssueStateEvent, IssueType, IterationSearchableField, IterationSort, IterationState, IterationWildcardId, JobArtifactFileType, LabelSearchFieldList, LdapAdminRoleSyncStatus, ListLimitMetric, MavenUpstreamPatternType, MavenUpstreamTargetCoordinate, MeasurementIdentifier, MemberAccessLevel, MemberAccessLevelName, MemberApprovalStatusType, MemberRoleAdminPermission, MemberRolePermission, MemberRoleStandardPermission, MemberRolesAccessLevel, MemberRolesOrderBy, MemberSort, MergeRequestNewState, MergeRequestReviewState, MergeRequestSort, MergeRequestState, MergeRequestWorkItemLinkType, MergeRequestsDashboardListType, MergeStatus, MergeStrategyEnum, MergeTrainStatus, MergeabilityCheckIdentifier, MergeabilityCheckStatus, MilestoneSort, MilestoneStateEnum, MilestoneWildcardId, MlModelVersionsOrderBy, MlModelsOrderBy, MoveType, MutationOperationMode, NamespaceClusterAgentFilter, NamespaceProjectSort, NegatedIterationWildcardId, NegatedMilestoneWildcardId, NotesFilterType, OncallRotationUnitEnum, OpenTelemetryMetricType, OrganizationClusterAgentFilter, OrganizationGroupProjectDisplay, OrganizationGroupProjectSort, OrganizationSort, OrganizationUserAccessLevel, PackageDependencyType, PackageGroupSort, PackageManager, PackageSort, PackageStatus, PackageTypeEnum, PackagesCleanupKeepDuplicatedPackageFilesEnum, PackagesProtectionRuleAccessLevel, PackagesProtectionRuleAccessLevelForDelete, PackagesProtectionRulePackageType, PermissionBoundary, PipelineAnalyticsJobStatus, PipelineConfigSourceEnum, PipelineMergeRequestEventType, PipelineScheduleSort, PipelineScheduleStatus, PipelineScopeEnum, PipelineSecurityReportFindingSort, PipelineStatusEnum, PipelineVariablesDefaultRoleType, PolicyEnforcementType, PolicyProjectCreatedStatus, PolicyScopeMatchMode, PolicyStatus, PolicyType, PolicyViolationErrorType, PolicyViolationStatus, PolicyViolations, PrincipalType, ProductAnalyticsState, ProjectArchived, ProjectComplianceControlStatus, ProjectComplianceRequirementStatusOrderBy, ProjectFeatureAccessLevel, ProjectMemberRelation, ProjectSecretsManagerStatus, ProjectSort, ProjectTrackedContext, PromptInjectionProtectionLevel, ReachabilityType, RefType, RegistryState, RelationshipType, RelativePositionType, ReleaseAssetLinkType, ReleaseSort, ReleaseTagWildcardId, ReplicationStateEnum, RequirementState, RequirementStatusFilter, ResourceGroupsProcessMode, ReviewerWildcardId, RiskRating, SastUiComponentSize, SbomSourceType, ScanModeEnum, ScanProfileTriggerType, ScanStatus, SearchLevel, SearchType, SecretRotationStatus, SecretStatus, SecretsManagementAction, SecurityAttributeBulkUpdateMode, SecurityCategoryEditableState, SecurityCategoryTemplateType, SecurityPolicyRelationType, SecurityPreferredLicenseSourceConfiguration, SecurityReportTypeEnum, SecurityScanProfileType, SecurityScannerType, SecurityTrackedRefScope, SecurityTrackedRefState, SecurityTrackedRefType, SentryErrorStatus, ServiceType, ShaFormat, SharedRunnersSetting, SnippetBlobActionEnum, Sort, SortDirectionEnum, SourceUserSort, SquashOptionSetting, SubscriptionHistoryChangeType, SubscriptionStatus, TestCaseStatus, TestReportState, TimeboxReportErrorReason, TimelogSort, TodoActionEnum, TodoSort, TodoStateEnum, TodoTargetEnum, TrainingUrlRequestStatus, TypeEnum, UserCalloutFeatureNameEnum, UserGroupCalloutFeatureName, UserPromotionStatusType, UserState, UserType, ValueStreamDashboardMetric, ValueStreamDashboardProjectLevelMetric, ValueStreamStageEvent, ValueStreamStageItemSort, VerificationStateEnum, VerificationStatus, VisibilityLevelsEnum, VisibilityPipelineIdType, VisibilityScopesEnum, VulnerabilityDismissalReason, VulnerabilityExternalIssueLinkExternalTracker, VulnerabilityExternalIssueLinkType, VulnerabilityFalsePositiveDetectionStatus, VulnerabilityFindingTokenStatusState, VulnerabilityGrade, VulnerabilityIssueLinkType, VulnerabilityOwasp2021Top10, VulnerabilityOwaspTop10, VulnerabilityReportType, VulnerabilitySeverity, VulnerabilitySort, VulnerabilityState, VulnerabilityWorkflowName, WebhookAlertStatus, WebhookBranchFilterStrategy, WeightWildcardId, WorkItemAwardEmojiUpdateAction, WorkItemDiscussionsSort, WorkItemParentWildcardId, WorkItemRelatedLinkType, WorkItemSort, WorkItemState, WorkItemStateEvent, WorkItemStatusCategoryEnum, WorkItemSubscriptionEvent, WorkItemTodoUpdateAction, WorkItemWidgetType, WorkItemsSavedViewsSort, WorkflowEnvironment, WorkspaceVariableInputType, WorkspaceVariableType } from "./gitlab-base-types"
+import type { AccessLevelEnum, AccessTokenGranularScopeAccess, AccessTokenSort, AccessTokenState, AgentTokenStatus, AiAcceptedSelfHostedModels, AiAction, AiAdditionalContextCategory, AiCatalogFlowConfigType, AiCatalogItemReportReason, AiCatalogItemType, AiCatalogItemVerificationLevel, AiCatalogItemsSort, AiCatalogMcpServerAuthType, AiCatalogMcpServerTransport, AiCatalogVersionBump, AiConversationsThreadsConversationType, AiDomainSettingAction, AiDomainSettingType, AiFeatureProviders, AiFeatures, AiFlowTriggerEventType, AiMessageRole, AiMessageType, AiModelSelectionFeatures, AiSelfHostedModelProvider, AiSelfHostedModelReleaseState, AiUsageEventType, AiUserMetricsSort, AlertManagementAlertSort, AlertManagementDomainFilter, AlertManagementIntegrationType, AlertManagementPayloadAlertFieldName, AlertManagementPayloadAlertFieldType, AlertManagementSeverity, AlertManagementStatus, AnalyticsAggregationPeriod, AnalyzerSourceEnum, AnalyzerStatusEnum, AnalyzerTypeEnum, ApiFuzzingScanMode, ApprovalReportType, ApprovalRuleType, AscpScanType, AscpSeverity, AssigneeWildcardId, AttributeFilterOperator, AutoStopSetting, AvailabilityEnum, AvailableExportFields, BlobViewersType, CarStatus, CiCatalogResourceProjectUsageSort, CiCatalogResourceScope, CiCatalogResourceSort, CiCatalogResourceVerificationLevel, CiConfigIncludeType, CiConfigStatus, CiFreezePeriodStatus, CiGroupVariablesSort, CiInputsType, CiJobAnalyticsSort, CiJobFailureReason, CiJobKind, CiJobSource, CiJobStatus, CiJobTokenScopeDirection, CiJobTokenScopePolicies, CiPipelineCreationStatus, CiPipelineSources, CiRunnerAccessLevel, CiRunnerCloudProvider, CiRunnerCreationMethod, CiRunnerCreationState, CiRunnerJobExecutionStatus, CiRunnerMembershipFilter, CiRunnerSort, CiRunnerStatus, CiRunnerType, CiRunnerUpgradeStatus, CiVariableSort, CiVariableType, CodeFlowNodeType, CodeQualityDegradationSeverity, CodequalityReportsComparerReportGenerationStatus, CodequalityReportsComparerStatus, CommitActionMode, CommitEncoding, ComparableSecurityReportType, ComparisonOperator, ComplianceFrameworkPresenceFilter, ComplianceFrameworkSort, ComplianceStandardsAdherenceCheckName, ComplianceStandardsAdherenceStandard, ComplianceStandardsAdherenceStatus, ComplianceViolationReason, ComplianceViolationSeverity, ComplianceViolationSort, ComplianceViolationStatus, ConanMetadatumFileTypeEnum, ContactSort, ContainerExpirationPolicyCadenceEnum, ContainerExpirationPolicyKeepEnum, ContainerExpirationPolicyOlderThanEnum, ContainerProtectionRepositoryRuleAccessLevel, ContainerProtectionTagRuleAccessLevel, ContainerRepositoryCleanupStatus, ContainerRepositorySort, ContainerRepositoryStatus, ContainerRepositoryTagSort, CustomDashboardDateRangeOption, CustomDashboardFilteredSearchOperator, CustomDashboardFilteredSearchToken, CustomDashboardGridHeight, CustomDashboardScope, CustomDashboardStatus, CustomFieldType, CustomerRelationsContactState, CustomerRelationsOrganizationState, CustomizableDashboardCategory, CustomizableDashboardGridHeight, CvssSeverity, DailyUsageSort, DastPreScanVerificationCheckType, DastPreScanVerificationStatus, DastProfileCadenceUnit, DastScanMethodType, DastScanTypeEnum, DastSiteProfileValidationStatusEnum, DastSiteValidationStatusEnum, DastSiteValidationStrategyEnum, DastTargetTypeEnum, DataVisualizationColorEnum, DataVisualizationWeightEnum, DependencyProxyManifestStatus, DependencySort, DeploymentApprovalSummaryStatus, DeploymentStatus, DeploymentTier, DeploymentsApprovalStatus, DesignCollectionCopyState, DesignVersionEvent, DetailedMergeStatus, DiffPositionType, DismissalType, DoraMetricBucketingInterval, DuoLicensedFeature, DuoWorkflowStatus, DuoWorkflowStatusGroup, DuoWorkflowsWorkflowSort, EntryType, EpicSort, EpicState, EpicStateEvent, EpicWildcardId, ErrorTrackingStatus, EscalationRuleStatus, EventAction, ExclusionScannerEnum, ExclusionTypeEnum, ExtensionsMarketplaceOptInStatus, FindingReportsComparerStatus, FlowTypeSort, GeoRegistriesBulkAction, GeoRegistryAction, GeoRegistryClass, GeoRegistrySort, GitlabSubscriptionUsageBlockedCapType, GitlabSubscriptionUsageUserSort, GitlabSubscriptionsAddOnType, GitlabSubscriptionsUserRole, GitlabSubscriptionsUserSort, GoogleCloudArtifactRegistryArtifactsSort, GroupMemberRelation, GroupPermission, GroupReleaseSort, GroupSecretsManagerStatus, GroupSort, GroupingEnum, HealthStatus, HealthStatusFilter, ImportSource, ImportSourceUserStatus, IntegrationType, IssuableResourceLinkType, IssuableSearchableField, IssuableSeverity, IssuableState, IssueCreationIterationWildcardId, IssueEscalationStatus, IssueSort, IssueState, IssueStateEvent, IssueType, IterationSearchableField, IterationSort, IterationState, IterationWildcardId, JobArtifactFileType, LabelSearchFieldList, LdapAdminRoleSyncStatus, LicensedFeature, ListLimitMetric, MavenUpstreamPatternType, MavenUpstreamTargetCoordinate, MeasurementIdentifier, MemberAccessLevel, MemberAccessLevelName, MemberApprovalStatusType, MemberRoleAdminPermission, MemberRolePermission, MemberRoleStandardPermission, MemberRolesAccessLevel, MemberRolesOrderBy, MemberSort, MergeRequestNewState, MergeRequestReviewState, MergeRequestSort, MergeRequestState, MergeRequestWorkItemLinkType, MergeRequestsDashboardListType, MergeStatus, MergeStrategyEnum, MergeTrainStatus, MergeabilityCheckIdentifier, MergeabilityCheckStatus, MilestoneSort, MilestoneStateEnum, MilestoneWildcardId, MlModelVersionsOrderBy, MlModelsOrderBy, MoveType, MutationOperationMode, NamespaceClusterAgentFilter, NamespaceProjectSort, NegatedIterationWildcardId, NegatedMilestoneWildcardId, NotesFilterType, OncallRotationUnitEnum, OpenTelemetryMetricType, OrganizationClusterAgentFilter, OrganizationGroupProjectDisplay, OrganizationGroupProjectSort, OrganizationSort, OrganizationState, OrganizationUserAccessLevel, PackageDependencyType, PackageGroupSort, PackageManager, PackageMetadataAdvisorySource, PackageSort, PackageStatus, PackageTypeEnum, PackagesCleanupKeepDuplicatedPackageFilesEnum, PackagesProtectionRuleAccessLevel, PackagesProtectionRuleAccessLevelForDelete, PackagesProtectionRulePackageType, PermissionBoundary, PipelineAnalyticsJobStatus, PipelineConfigSourceEnum, PipelineMergeRequestEventType, PipelineScheduleSort, PipelineScheduleStatus, PipelineScopeEnum, PipelineSecurityReportFindingSort, PipelineStatusEnum, PipelineVariablesDefaultRoleType, PolicyEnforcementType, PolicyProjectCreatedStatus, PolicyScheduleTestRunState, PolicyScopeMatchMode, PolicyStatus, PolicyType, PolicyViolationErrorType, PolicyViolationStatus, PolicyViolations, PrincipalType, ProductAnalyticsState, ProjectArchived, ProjectComplianceControlStatus, ProjectComplianceRequirementStatusOrderBy, ProjectFeatureAccessLevel, ProjectMemberRelation, ProjectSecretsManagerStatus, ProjectSort, ProjectTrackedContext, PromptInjectionProtectionLevel, ReachabilityType, RefType, RegistryState, RelationshipType, RelativePositionType, ReleaseAssetLinkType, ReleaseSort, ReleaseTagWildcardId, ReplicationStateEnum, RequirementState, RequirementStatusFilter, ResourceGroupsProcessMode, ReviewerWildcardId, RiskRating, SastUiComponentSize, SbomSourceType, ScanModeEnum, ScanProfileStatus, ScanProfileTriggerType, ScanStatus, SearchLevel, SearchType, SecretRotationStatus, SecretStatus, SecretsManagementAction, SecurityAttributeBulkUpdateMode, SecurityCategoryEditableState, SecurityCategoryTemplateType, SecurityPolicyRelationType, SecurityPreferredLicenseSourceConfiguration, SecurityReportTypeEnum, SecurityScanProfileType, SecurityScannerType, SecurityTrackedRefScope, SecurityTrackedRefState, SecurityTrackedRefType, SentryErrorStatus, ServiceType, ShaFormat, SharedRunnersSetting, SnippetBlobActionEnum, Sort, SortDirectionEnum, SourceUserSort, SquashOptionSetting, SubscriptionHistoryChangeType, SubscriptionStatus, TerraformStateProtectionRuleAccessLevel, TerraformStateProtectionRuleAllowedFrom, TestCaseStatus, TestReportState, TimeboxReportErrorReason, TimelogSort, TodoActionEnum, TodoSort, TodoStateEnum, TodoTargetEnum, TrainingUrlRequestStatus, TypeEnum, UserCalloutFeatureNameEnum, UserGroupCalloutFeatureName, UserPromotionStatusType, UserState, UserType, ValueStreamDashboardMetric, ValueStreamDashboardProjectLevelMetric, ValueStreamStageEvent, ValueStreamStageItemSort, VerificationStateEnum, VerificationStatus, VisibilityLevelsEnum, VisibilityPipelineIdType, VisibilityScopesEnum, VulnerabilityDismissalReason, VulnerabilityExternalIssueLinkExternalTracker, VulnerabilityExternalIssueLinkType, VulnerabilityFalsePositiveDetectionStatus, VulnerabilityFindingTokenStatusState, VulnerabilityGrade, VulnerabilityIssueLinkType, VulnerabilityOwasp2021Top10, VulnerabilityOwasp2025Top10, VulnerabilityOwaspTop10, VulnerabilityReportType, VulnerabilitySeverity, VulnerabilitySort, VulnerabilityState, VulnerabilityWorkflowName, WebhookAlertStatus, WebhookBranchFilterStrategy, WeightWildcardId, WorkItemAvailabilityAction, WorkItemAvailabilityScope, WorkItemAwardEmojiUpdateAction, WorkItemDiscussionsSort, WorkItemParentWildcardId, WorkItemRelatedLinkType, WorkItemSort, WorkItemState, WorkItemStateEvent, WorkItemStatusCategoryEnum, WorkItemSubscriptionEvent, WorkItemTodoUpdateAction, WorkItemWidgetType, WorkItemsSavedViewsSort, WorkflowEnvironment, WorkspaceVariableInputType, WorkspaceVariableType } from "./gitlab-base-types"
 export const AccessLevelEnumSchema: Schema.Codec<AccessLevelEnum> = Schema.Union([
   Schema.Literal('ADMIN'),
   Schema.Literal('DEVELOPER'),
@@ -46,6 +46,7 @@ export const AiAcceptedSelfHostedModelsSchema: Schema.Codec<AiAcceptedSelfHosted
   Schema.Literal('CODELLAMA'),
   Schema.Literal('CODESTRAL'),
   Schema.Literal('DEEPSEEKCODER'),
+  Schema.Literal('GEMINI'),
   Schema.Literal('GENERAL'),
   Schema.Literal('GPT'),
   Schema.Literal('LLAMA3'),
@@ -81,6 +82,7 @@ export const AiCatalogItemReportReasonSchema: Schema.Codec<AiCatalogItemReportRe
 export const AiCatalogItemTypeSchema: Schema.Codec<AiCatalogItemType> = Schema.Union([
   Schema.Literal('AGENT'),
   Schema.Literal('FLOW'),
+  Schema.Literal('FOUNDATIONAL_AGENT'),
   Schema.Literal('THIRD_PARTY_FLOW')
 ])
 export const AiCatalogItemVerificationLevelSchema: Schema.Codec<AiCatalogItemVerificationLevel> = Schema.Union([
@@ -89,6 +91,11 @@ export const AiCatalogItemVerificationLevelSchema: Schema.Codec<AiCatalogItemVer
   Schema.Literal('UNVERIFIED'),
   Schema.Literal('VERIFIED_CREATOR_MAINTAINED'),
   Schema.Literal('VERIFIED_CREATOR_SELF_MANAGED')
+])
+export const AiCatalogItemsSortSchema: Schema.Codec<AiCatalogItemsSort> = Schema.Union([
+  Schema.Literal('CATALOG_PRIORITY'),
+  Schema.Literal('USAGE_COUNT_ASC'),
+  Schema.Literal('USAGE_COUNT_DESC')
 ])
 export const AiCatalogMcpServerAuthTypeSchema: Schema.Codec<AiCatalogMcpServerAuthType> = Schema.Union([
   Schema.Literal('NO_AUTH'),
@@ -107,6 +114,14 @@ export const AiConversationsThreadsConversationTypeSchema: Schema.Codec<AiConver
   Schema.Literal('DUO_CHAT_LEGACY'),
   Schema.Literal('DUO_CODE_REVIEW'),
   Schema.Literal('DUO_QUICK_CHAT')
+])
+export const AiDomainSettingActionSchema: Schema.Codec<AiDomainSettingAction> = Schema.Union([
+  Schema.Literal('ADD'),
+  Schema.Literal('REMOVE')
+])
+export const AiDomainSettingTypeSchema: Schema.Codec<AiDomainSettingType> = Schema.Union([
+  Schema.Literal('ALLOWED'),
+  Schema.Literal('DENIED')
 ])
 export const AiFeatureProvidersSchema: Schema.Codec<AiFeatureProviders> = Schema.Union([
   Schema.Literal('DISABLED'),
@@ -132,6 +147,8 @@ export const AiFeaturesSchema: Schema.Codec<AiFeatures> = Schema.Union([
   Schema.Literal('RESOLVE_VULNERABILITY'),
   Schema.Literal('REVIEW_MERGE_REQUEST'),
   Schema.Literal('SAST_VULNERABILITY_FP_DETECTION'),
+  Schema.Literal('SAST_VULNERABILITY_RESOLUTION'),
+  Schema.Literal('SECRET_VULNERABILITY_FP_DETECTION'),
   Schema.Literal('SUMMARIZE_NEW_MERGE_REQUEST'),
   Schema.Literal('SUMMARIZE_REVIEW')
 ])
@@ -139,6 +156,7 @@ export const AiFlowTriggerEventTypeSchema: Schema.Codec<AiFlowTriggerEventType> 
   Schema.Literal('ASSIGN'),
   Schema.Literal('ASSIGN_REVIEWER'),
   Schema.Literal('MENTION'),
+  Schema.Literal('MERGE_REQUEST_READY'),
   Schema.Literal('PIPELINE_HOOKS')
 ])
 export const AiMessageRoleSchema: Schema.Codec<AiMessageRole> = Schema.Union([
@@ -167,8 +185,15 @@ export const AiModelSelectionFeaturesSchema: Schema.Codec<AiModelSelectionFeatur
   Schema.Literal('RESOLVE_VULNERABILITY'),
   Schema.Literal('REVIEW_MERGE_REQUEST'),
   Schema.Literal('SAST_VULNERABILITY_FP_DETECTION'),
+  Schema.Literal('SAST_VULNERABILITY_RESOLUTION'),
+  Schema.Literal('SECRET_VULNERABILITY_FP_DETECTION'),
   Schema.Literal('SUMMARIZE_NEW_MERGE_REQUEST'),
   Schema.Literal('SUMMARIZE_REVIEW')
+])
+export const AiSelfHostedModelProviderSchema: Schema.Codec<AiSelfHostedModelProvider> = Schema.Union([
+  Schema.Literal('API'),
+  Schema.Literal('BEDROCK'),
+  Schema.Literal('VERTEX_AI')
 ])
 export const AiSelfHostedModelReleaseStateSchema: Schema.Codec<AiSelfHostedModelReleaseState> = Schema.Union([
   Schema.Literal('BETA'),
@@ -182,16 +207,21 @@ export const AiUsageEventTypeSchema: Schema.Codec<AiUsageEventType> = Schema.Uni
   Schema.Literal('AGENT_PLATFORM_SESSION_RESUMED'),
   Schema.Literal('AGENT_PLATFORM_SESSION_STARTED'),
   Schema.Literal('AGENT_PLATFORM_SESSION_STOPPED'),
+  Schema.Literal('CLICK_DUO_AGENTIC_SUBSCRIPTION_EXPIRED_LEARN_MORE'),
+  Schema.Literal('CLICK_DUO_AGENTIC_SUBSCRIPTION_EXPIRED_UPGRADE'),
   Schema.Literal('CODE_SUGGESTIONS_REQUESTED'),
   Schema.Literal('CODE_SUGGESTION_ACCEPTED_IN_IDE'),
   Schema.Literal('CODE_SUGGESTION_DIRECT_ACCESS_TOKEN_REFRESH'),
   Schema.Literal('CODE_SUGGESTION_REJECTED_IN_IDE'),
   Schema.Literal('CODE_SUGGESTION_SHOWN_IN_IDE'),
+  Schema.Literal('DUO_WORKFLOW_WORKLOAD_COMPLETED'),
   Schema.Literal('ENCOUNTER_DUO_CODE_REVIEW_ERROR_DURING_REVIEW'),
   Schema.Literal('EXCLUDED_FILES_FROM_DUO_CODE_REVIEW'),
   Schema.Literal('FIND_NOTHING_TO_REVIEW_DUO_CODE_REVIEW_ON_MR'),
   Schema.Literal('FIND_NO_ISSUES_DUO_CODE_REVIEW_AFTER_REVIEW'),
   Schema.Literal('FINISH_MCP_TOOL_CALL'),
+  Schema.Literal('FIX_PIPELINE_SUGGESTION_APPLIED'),
+  Schema.Literal('FIX_PIPELINE_SUGGESTION_POSTED'),
   Schema.Literal('POST_COMMENT_DUO_CODE_REVIEW_ON_DIFF'),
   Schema.Literal('REACT_THUMBS_DOWN_ON_DUO_CODE_REVIEW_COMMENT'),
   Schema.Literal('REACT_THUMBS_UP_ON_DUO_CODE_REVIEW_COMMENT'),
@@ -199,7 +229,8 @@ export const AiUsageEventTypeSchema: Schema.Codec<AiUsageEventType> = Schema.Uni
   Schema.Literal('REQUEST_REVIEW_DUO_CODE_REVIEW_ON_MR_BY_AUTHOR'),
   Schema.Literal('REQUEST_REVIEW_DUO_CODE_REVIEW_ON_MR_BY_NON_AUTHOR'),
   Schema.Literal('START_MCP_TOOL_CALL'),
-  Schema.Literal('TROUBLESHOOT_JOB')
+  Schema.Literal('TROUBLESHOOT_JOB'),
+  Schema.Literal('VIEW_DUO_AGENTIC_SUBSCRIPTION_EXPIRED_EMPTY_STATE')
 ])
 export const AiUserMetricsSortSchema: Schema.Codec<AiUserMetricsSort> = Schema.Union([
   Schema.Literal('AGENT_PLATFORM_SESSION_CREATED_ASC'),
@@ -218,6 +249,10 @@ export const AiUserMetricsSortSchema: Schema.Codec<AiUserMetricsSort> = Schema.U
   Schema.Literal('AGENT_PLATFORM_TOTAL_COUNT_DESC'),
   Schema.Literal('CHAT_TOTAL_COUNT_ASC'),
   Schema.Literal('CHAT_TOTAL_COUNT_DESC'),
+  Schema.Literal('CLICK_DUO_AGENTIC_SUBSCRIPTION_EXPIRED_LEARN_MORE_ASC'),
+  Schema.Literal('CLICK_DUO_AGENTIC_SUBSCRIPTION_EXPIRED_LEARN_MORE_DESC'),
+  Schema.Literal('CLICK_DUO_AGENTIC_SUBSCRIPTION_EXPIRED_UPGRADE_ASC'),
+  Schema.Literal('CLICK_DUO_AGENTIC_SUBSCRIPTION_EXPIRED_UPGRADE_DESC'),
   Schema.Literal('CODE_REVIEW_TOTAL_COUNT_ASC'),
   Schema.Literal('CODE_REVIEW_TOTAL_COUNT_DESC'),
   Schema.Literal('CODE_SUGGESTIONS_REQUESTED_ASC'),
@@ -232,6 +267,10 @@ export const AiUserMetricsSortSchema: Schema.Codec<AiUserMetricsSort> = Schema.U
   Schema.Literal('CODE_SUGGESTION_REJECTED_IN_IDE_DESC'),
   Schema.Literal('CODE_SUGGESTION_SHOWN_IN_IDE_ASC'),
   Schema.Literal('CODE_SUGGESTION_SHOWN_IN_IDE_DESC'),
+  Schema.Literal('DUO_WORKFLOW_TOTAL_COUNT_ASC'),
+  Schema.Literal('DUO_WORKFLOW_TOTAL_COUNT_DESC'),
+  Schema.Literal('DUO_WORKFLOW_WORKLOAD_COMPLETED_ASC'),
+  Schema.Literal('DUO_WORKFLOW_WORKLOAD_COMPLETED_DESC'),
   Schema.Literal('ENCOUNTER_DUO_CODE_REVIEW_ERROR_DURING_REVIEW_ASC'),
   Schema.Literal('ENCOUNTER_DUO_CODE_REVIEW_ERROR_DURING_REVIEW_DESC'),
   Schema.Literal('EXCLUDED_FILES_FROM_DUO_CODE_REVIEW_ASC'),
@@ -242,6 +281,12 @@ export const AiUserMetricsSortSchema: Schema.Codec<AiUserMetricsSort> = Schema.U
   Schema.Literal('FIND_NO_ISSUES_DUO_CODE_REVIEW_AFTER_REVIEW_DESC'),
   Schema.Literal('FINISH_MCP_TOOL_CALL_ASC'),
   Schema.Literal('FINISH_MCP_TOOL_CALL_DESC'),
+  Schema.Literal('FIX_PIPELINE_SUGGESTION_APPLIED_ASC'),
+  Schema.Literal('FIX_PIPELINE_SUGGESTION_APPLIED_DESC'),
+  Schema.Literal('FIX_PIPELINE_SUGGESTION_POSTED_ASC'),
+  Schema.Literal('FIX_PIPELINE_SUGGESTION_POSTED_DESC'),
+  Schema.Literal('FIX_PIPELINE_TOTAL_COUNT_ASC'),
+  Schema.Literal('FIX_PIPELINE_TOTAL_COUNT_DESC'),
   Schema.Literal('MCP_TOTAL_COUNT_ASC'),
   Schema.Literal('MCP_TOTAL_COUNT_DESC'),
   Schema.Literal('POST_COMMENT_DUO_CODE_REVIEW_ON_DIFF_ASC'),
@@ -263,7 +308,9 @@ export const AiUserMetricsSortSchema: Schema.Codec<AiUserMetricsSort> = Schema.U
   Schema.Literal('TROUBLESHOOT_JOB_ASC'),
   Schema.Literal('TROUBLESHOOT_JOB_DESC'),
   Schema.Literal('TROUBLESHOOT_JOB_TOTAL_COUNT_ASC'),
-  Schema.Literal('TROUBLESHOOT_JOB_TOTAL_COUNT_DESC')
+  Schema.Literal('TROUBLESHOOT_JOB_TOTAL_COUNT_DESC'),
+  Schema.Literal('VIEW_DUO_AGENTIC_SUBSCRIPTION_EXPIRED_EMPTY_STATE_ASC'),
+  Schema.Literal('VIEW_DUO_AGENTIC_SUBSCRIPTION_EXPIRED_EMPTY_STATE_DESC')
 ])
 export const AlertManagementAlertSortSchema: Schema.Codec<AlertManagementAlertSort> = Schema.Union([
   Schema.Literal('CREATED_ASC'),
@@ -334,9 +381,20 @@ export const AnalyticsAggregationPeriodSchema: Schema.Codec<AnalyticsAggregation
   Schema.Literal('MONTH'),
   Schema.Literal('WEEK')
 ])
+export const AnalyzerSourceEnumSchema: Schema.Codec<AnalyzerSourceEnum> = Schema.Union([
+  Schema.Literal('ON_DEMAND_DAST_SCAN'),
+  Schema.Literal('ON_DEMAND_DAST_VALIDATION'),
+  Schema.Literal('PIPELINE_EXECUTION_POLICY'),
+  Schema.Literal('PIPELINE_EXECUTION_POLICY_SCHEDULE'),
+  Schema.Literal('SCAN_EXECUTION_POLICY'),
+  Schema.Literal('SECURITY_ORCHESTRATION_POLICY'),
+  Schema.Literal('SECURITY_SCAN_PROFILES'),
+  Schema.Literal('YML')
+])
 export const AnalyzerStatusEnumSchema: Schema.Codec<AnalyzerStatusEnum> = Schema.Union([
   Schema.Literal('FAILED'),
   Schema.Literal('NOT_CONFIGURED'),
+  Schema.Literal('STALE'),
   Schema.Literal('SUCCESS')
 ])
 export const AnalyzerTypeEnumSchema: Schema.Codec<AnalyzerTypeEnum> = Schema.Union([
@@ -374,6 +432,12 @@ export const ApprovalRuleTypeSchema: Schema.Codec<ApprovalRuleType> = Schema.Uni
 export const AscpScanTypeSchema: Schema.Codec<AscpScanType> = Schema.Union([
   Schema.Literal('FULL'),
   Schema.Literal('INCREMENTAL')
+])
+export const AscpSeveritySchema: Schema.Codec<AscpSeverity> = Schema.Union([
+  Schema.Literal('CRITICAL'),
+  Schema.Literal('HIGH'),
+  Schema.Literal('LOW'),
+  Schema.Literal('MEDIUM')
 ])
 export const AssigneeWildcardIdSchema: Schema.Codec<AssigneeWildcardId> = Schema.Union([
   Schema.Literal('ANY'),
@@ -430,6 +494,16 @@ export const CarStatusSchema: Schema.Codec<CarStatus> = Schema.Union([
   Schema.Literal('MERGING'),
   Schema.Literal('SKIP_MERGED'),
   Schema.Literal('STALE')
+])
+export const CiCatalogResourceProjectUsageSortSchema: Schema.Codec<CiCatalogResourceProjectUsageSort> = Schema.Union([
+  Schema.Literal('LAST_USED_ASC'),
+  Schema.Literal('LAST_USED_DESC'),
+  Schema.Literal('OLDEST_VERSION_ASC'),
+  Schema.Literal('OLDEST_VERSION_DESC'),
+  Schema.Literal('PROJECT_NAME_ASC'),
+  Schema.Literal('PROJECT_NAME_DESC'),
+  Schema.Literal('VERSION_ASC'),
+  Schema.Literal('VERSION_DESC')
 ])
 export const CiCatalogResourceScopeSchema: Schema.Codec<CiCatalogResourceScope> = Schema.Union([
   Schema.Literal('ALL'),
@@ -529,6 +603,8 @@ export const CiJobFailureReasonSchema: Schema.Codec<CiJobFailureReason> = Schema
   Schema.Literal('JOB_TOKEN_EXPIRED'),
   Schema.Literal('MISSING_DEPENDENCY_FAILURE'),
   Schema.Literal('NO_MATCHING_RUNNER'),
+  Schema.Literal('NO_UPDATES_CANCELING'),
+  Schema.Literal('NO_UPDATES_RUNNING'),
   Schema.Literal('PIPELINE_LOOP_DETECTED'),
   Schema.Literal('PROJECT_DELETED'),
   Schema.Literal('PROTECTED_ENVIRONMENT_FAILURE'),
@@ -540,8 +616,12 @@ export const CiJobFailureReasonSchema: Schema.Codec<CiJobFailureReason> = Schema
   Schema.Literal('SCHEDULER_FAILURE'),
   Schema.Literal('SCRIPT_FAILURE'),
   Schema.Literal('SECRETS_PROVIDER_NOT_FOUND'),
+  Schema.Literal('SERVER_TIMEOUT_CANCELING'),
+  Schema.Literal('SERVER_TIMEOUT_RUNNING'),
   Schema.Literal('STALE_SCHEDULE'),
   Schema.Literal('STUCK_OR_TIMEOUT_FAILURE'),
+  Schema.Literal('STUCK_PENDING_NO_MATCHING_RUNNERS'),
+  Schema.Literal('STUCK_PENDING_WITH_MATCHING_RUNNERS'),
   Schema.Literal('TRACE_SIZE_EXCEEDED'),
   Schema.Literal('UNKNOWN_FAILURE'),
   Schema.Literal('UNMET_PREREQUISITES'),
@@ -556,6 +636,7 @@ export const CiJobSourceSchema: Schema.Codec<CiJobSource> = Schema.Union([
   Schema.Literal('API'),
   Schema.Literal('CHAT'),
   Schema.Literal('CONTAINER_REGISTRY_PUSH'),
+  Schema.Literal('DEPENDENCY_MANAGEMENT_SECURITY_UPDATE'),
   Schema.Literal('DUO_WORKFLOW'),
   Schema.Literal('EXTERNAL'),
   Schema.Literal('EXTERNAL_PULL_REQUEST_EVENT'),
@@ -570,6 +651,7 @@ export const CiJobSourceSchema: Schema.Codec<CiJobSource> = Schema.Union([
   Schema.Literal('SCAN_EXECUTION_POLICY'),
   Schema.Literal('SCHEDULE'),
   Schema.Literal('SECURITY_ORCHESTRATION_POLICY'),
+  Schema.Literal('SECURITY_SCAN_PROFILES'),
   Schema.Literal('TRIGGER'),
   Schema.Literal('UNKNOWN'),
   Schema.Literal('WEB'),
@@ -601,6 +683,7 @@ export const CiJobTokenScopePoliciesSchema: Schema.Codec<CiJobTokenScopePolicies
   Schema.Literal('ADMIN_PACKAGES'),
   Schema.Literal('ADMIN_PIPELINES'),
   Schema.Literal('ADMIN_RELEASES'),
+  Schema.Literal('ADMIN_REPOSITORIES'),
   Schema.Literal('ADMIN_SECURE_FILES'),
   Schema.Literal('ADMIN_TERRAFORM_STATE'),
   Schema.Literal('READ_DEPLOYMENTS'),
@@ -624,6 +707,7 @@ export const CiPipelineSourcesSchema: Schema.Codec<CiPipelineSources> = Schema.U
   Schema.Literal('API'),
   Schema.Literal('CHAT'),
   Schema.Literal('CONTAINER_REGISTRY_PUSH'),
+  Schema.Literal('DEPENDENCY_MANAGEMENT_SECURITY_UPDATE'),
   Schema.Literal('DUO_WORKFLOW'),
   Schema.Literal('EXTERNAL'),
   Schema.Literal('EXTERNAL_PULL_REQUEST_EVENT'),
@@ -740,6 +824,7 @@ export const ComparableSecurityReportTypeSchema: Schema.Codec<ComparableSecurity
   Schema.Literal('COVERAGE_FUZZING'),
   Schema.Literal('DAST'),
   Schema.Literal('DEPENDENCY_SCANNING'),
+  Schema.Literal('SARIF'),
   Schema.Literal('SAST'),
   Schema.Literal('SECRET_DETECTION')
 ])
@@ -846,9 +931,15 @@ export const ContainerExpirationPolicyKeepEnumSchema: Schema.Codec<ContainerExpi
 export const ContainerExpirationPolicyOlderThanEnumSchema: Schema.Codec<ContainerExpirationPolicyOlderThanEnum> = Schema.Union([
   Schema.Literal('FOURTEEN_DAYS'),
   Schema.Literal('NINETY_DAYS'),
+  Schema.Literal('ONE_DAY'),
+  Schema.Literal('ONE_HUNDRED_EIGHTY_DAYS'),
+  Schema.Literal('ONE_THOUSAND_NINETY_FIVE_DAYS'),
   Schema.Literal('SEVEN_DAYS'),
+  Schema.Literal('SEVEN_HUNDRED_THIRTY_DAYS'),
   Schema.Literal('SIXTY_DAYS'),
-  Schema.Literal('THIRTY_DAYS')
+  Schema.Literal('THIRTY_DAYS'),
+  Schema.Literal('THREE_DAYS'),
+  Schema.Literal('THREE_HUNDRED_SIXTY_FIVE_DAYS')
 ])
 export const ContainerProtectionRepositoryRuleAccessLevelSchema: Schema.Codec<ContainerProtectionRepositoryRuleAccessLevel> = Schema.Union([
   Schema.Literal('ADMIN'),
@@ -889,6 +980,42 @@ export const ContainerRepositoryTagSortSchema: Schema.Codec<ContainerRepositoryT
   Schema.Literal('PUBLISHED_AT_ASC'),
   Schema.Literal('PUBLISHED_AT_DESC')
 ])
+export const CustomDashboardDateRangeOptionSchema: Schema.Codec<CustomDashboardDateRangeOption> = Schema.Union([
+  Schema.Literal('CUSTOM'),
+  Schema.Literal('DAYS_7'),
+  Schema.Literal('DAYS_30'),
+  Schema.Literal('DAYS_60'),
+  Schema.Literal('DAYS_90'),
+  Schema.Literal('DAYS_180'),
+  Schema.Literal('DAYS_365'),
+  Schema.Literal('TODAY')
+])
+export const CustomDashboardFilteredSearchOperatorSchema: Schema.Codec<CustomDashboardFilteredSearchOperator> = Schema.Union([
+  Schema.Literal('IS'),
+  Schema.Literal('IS_NOT'),
+  Schema.Literal('IS_NOT_OR')
+])
+export const CustomDashboardFilteredSearchTokenSchema: Schema.Codec<CustomDashboardFilteredSearchToken> = Schema.Union([
+  Schema.Literal('ASSIGNEE'),
+  Schema.Literal('AUTHOR'),
+  Schema.Literal('LABEL'),
+  Schema.Literal('MILESTONE'),
+  Schema.Literal('SOURCE_BRANCH'),
+  Schema.Literal('TARGET_BRANCH')
+])
+export const CustomDashboardGridHeightSchema: Schema.Codec<CustomDashboardGridHeight> = Schema.Union([
+  Schema.Literal('COMPACT'),
+  Schema.Literal('DEFAULT')
+])
+export const CustomDashboardScopeSchema: Schema.Codec<CustomDashboardScope> = Schema.Union([
+  Schema.Literal('ALL'),
+  Schema.Literal('GITLAB'),
+  Schema.Literal('USER')
+])
+export const CustomDashboardStatusSchema: Schema.Codec<CustomDashboardStatus> = Schema.Union([
+  Schema.Literal('BETA'),
+  Schema.Literal('EXPERIMENT')
+])
 export const CustomFieldTypeSchema: Schema.Codec<CustomFieldType> = Schema.Union([
   Schema.Literal('DATE'),
   Schema.Literal('MULTI_SELECT'),
@@ -919,6 +1046,12 @@ export const CvssSeveritySchema: Schema.Codec<CvssSeverity> = Schema.Union([
   Schema.Literal('LOW'),
   Schema.Literal('MEDIUM'),
   Schema.Literal('NONE')
+])
+export const DailyUsageSortSchema: Schema.Codec<DailyUsageSort> = Schema.Union([
+  Schema.Literal('CREDITS_USED_ASC'),
+  Schema.Literal('CREDITS_USED_DESC'),
+  Schema.Literal('DATE_ASC'),
+  Schema.Literal('DATE_DESC')
 ])
 export const DastPreScanVerificationCheckTypeSchema: Schema.Codec<DastPreScanVerificationCheckType> = Schema.Union([
   Schema.Literal('AUTHENTICATION'),
@@ -1064,6 +1197,7 @@ export const DetailedMergeStatusSchema: Schema.Codec<DetailedMergeStatus> = Sche
   Schema.Literal('PREPARING'),
   Schema.Literal('REQUESTED_CHANGES'),
   Schema.Literal('SECURITY_POLICIES_VIOLATIONS'),
+  Schema.Literal('SECURITY_POLICY_PIPELINE_CHECK'),
   Schema.Literal('TITLE_NOT_MATCHING'),
   Schema.Literal('UNCHECKED')
 ])
@@ -1082,6 +1216,11 @@ export const DoraMetricBucketingIntervalSchema: Schema.Codec<DoraMetricBucketing
   Schema.Literal('ALL'),
   Schema.Literal('DAILY'),
   Schema.Literal('MONTHLY')
+])
+export const DuoLicensedFeatureSchema: Schema.Codec<DuoLicensedFeature> = Schema.Union([
+  Schema.Literal('AGENTIC_CHAT'),
+  Schema.Literal('AI_CATALOG'),
+  Schema.Literal('AI_FEATURES')
 ])
 export const DuoWorkflowStatusSchema: Schema.Codec<DuoWorkflowStatus> = Schema.Union([
   Schema.Literal('CREATED'),
@@ -1209,12 +1348,18 @@ export const GeoRegistryActionSchema: Schema.Codec<GeoRegistryAction> = Schema.U
 ])
 export const GeoRegistryClassSchema: Schema.Codec<GeoRegistryClass> = Schema.Union([
   Schema.Literal('ABUSE_REPORT_UPLOAD_REGISTRY'),
+  Schema.Literal('ACHIEVEMENT_UPLOAD_REGISTRY'),
+  Schema.Literal('AI_VECTORIZABLE_FILE_UPLOAD_REGISTRY'),
+  Schema.Literal('BULK_IMPORT_EXPORT_UPLOAD_UPLOAD_REGISTRY'),
   Schema.Literal('CI_SECURE_FILE_REGISTRY'),
   Schema.Literal('CONTAINER_REPOSITORY_REGISTRY'),
   Schema.Literal('DEPENDENCY_PROXY_BLOB_REGISTRY'),
   Schema.Literal('DEPENDENCY_PROXY_MANIFEST_REGISTRY'),
+  Schema.Literal('DESIGN_MANAGEMENT_ACTION_UPLOAD_REGISTRY'),
   Schema.Literal('DESIGN_MANAGEMENT_REPOSITORY_REGISTRY'),
+  Schema.Literal('GROUP_UPLOAD_REGISTRY'),
   Schema.Literal('GROUP_WIKI_REPOSITORY_REGISTRY'),
+  Schema.Literal('IMPORT_EXPORT_UPLOAD_UPLOAD_REGISTRY'),
   Schema.Literal('JOB_ARTIFACT_REGISTRY'),
   Schema.Literal('LFS_OBJECT_REGISTRY'),
   Schema.Literal('MERGE_REQUEST_DIFF_REGISTRY'),
@@ -1223,13 +1368,17 @@ export const GeoRegistryClassSchema: Schema.Codec<GeoRegistryClass> = Schema.Uni
   Schema.Literal('PACKAGE_FILE_REGISTRY'),
   Schema.Literal('PAGES_DEPLOYMENT_REGISTRY'),
   Schema.Literal('PIPELINE_ARTIFACT_REGISTRY'),
+  Schema.Literal('PROJECT_IMPORT_EXPORT_RELATION_EXPORT_UPLOAD_UPLOAD_REGISTRY'),
   Schema.Literal('PROJECT_REPOSITORY_REGISTRY'),
   Schema.Literal('PROJECT_UPLOAD_REGISTRY'),
   Schema.Literal('PROJECT_WIKI_REPOSITORY_REGISTRY'),
   Schema.Literal('SNIPPET_REPOSITORY_REGISTRY'),
   Schema.Literal('SUPPLY_CHAIN_ATTESTATION_REGISTRY'),
   Schema.Literal('TERRAFORM_STATE_VERSION_REGISTRY'),
-  Schema.Literal('UPLOAD_REGISTRY')
+  Schema.Literal('UPLOAD_REGISTRY'),
+  Schema.Literal('USER_UPLOAD_REGISTRY'),
+  Schema.Literal('VULNERABILITY_ARCHIVE_EXPORT_UPLOAD_REGISTRY'),
+  Schema.Literal('VULNERABILITY_EXPORT_UPLOAD_REGISTRY')
 ])
 export const GeoRegistrySortSchema: Schema.Codec<GeoRegistrySort> = Schema.Union([
   Schema.Literal('ID_ASC'),
@@ -1238,6 +1387,10 @@ export const GeoRegistrySortSchema: Schema.Codec<GeoRegistrySort> = Schema.Union
   Schema.Literal('LAST_SYNCED_AT_DESC'),
   Schema.Literal('VERIFIED_AT_ASC'),
   Schema.Literal('VERIFIED_AT_DESC')
+])
+export const GitlabSubscriptionUsageBlockedCapTypeSchema: Schema.Codec<GitlabSubscriptionUsageBlockedCapType> = Schema.Union([
+  Schema.Literal('FLAT_USER_CAP'),
+  Schema.Literal('USER_OVERRIDE_CAP')
 ])
 export const GitlabSubscriptionUsageUserSortSchema: Schema.Codec<GitlabSubscriptionUsageUserSort> = Schema.Union([
   Schema.Literal('NAME_ASC'),
@@ -1487,6 +1640,7 @@ export const JobArtifactFileTypeSchema: Schema.Codec<JobArtifactFileType> = Sche
   Schema.Literal('DAST'),
   Schema.Literal('DEPENDENCY_SCANNING'),
   Schema.Literal('DOTENV'),
+  Schema.Literal('ENVIRONMENT_KEY'),
   Schema.Literal('JACOCO'),
   Schema.Literal('JUNIT'),
   Schema.Literal('LICENSE_SCANNING'),
@@ -1500,6 +1654,7 @@ export const JobArtifactFileTypeSchema: Schema.Codec<JobArtifactFileType> = Sche
   Schema.Literal('REPOSITORY_XRAY'),
   Schema.Literal('REQUIREMENTS'),
   Schema.Literal('REQUIREMENTS_V2'),
+  Schema.Literal('SARIF'),
   Schema.Literal('SAST'),
   Schema.Literal('SCIP'),
   Schema.Literal('SECRET_DETECTION'),
@@ -1516,6 +1671,260 @@ export const LdapAdminRoleSyncStatusSchema: Schema.Codec<LdapAdminRoleSyncStatus
   Schema.Literal('QUEUED'),
   Schema.Literal('RUNNING'),
   Schema.Literal('SUCCESSFUL')
+])
+export const LicensedFeatureSchema: Schema.Codec<LicensedFeature> = Schema.Union([
+  Schema.Literal('ADMIN_MERGE_REQUEST_APPROVERS_RULES'),
+  Schema.Literal('AGENTIC_CHAT'),
+  Schema.Literal('AGENT_MANAGED_RESOURCES'),
+  Schema.Literal('AI_AGENTS'),
+  Schema.Literal('AI_ANALYTICS'),
+  Schema.Literal('AI_CATALOG'),
+  Schema.Literal('AI_CHAT'),
+  Schema.Literal('AI_CONFIG_CHAT'),
+  Schema.Literal('AI_FEATURES'),
+  Schema.Literal('AI_WORKFLOWS'),
+  Schema.Literal('ALLOW_PERSONAL_SNIPPETS'),
+  Schema.Literal('API_DISCOVERY'),
+  Schema.Literal('API_FUZZING'),
+  Schema.Literal('AUDIT_EVENTS'),
+  Schema.Literal('AUTO_ROLLBACK'),
+  Schema.Literal('BLOCKED_ISSUES'),
+  Schema.Literal('BLOCKED_WORK_ITEMS'),
+  Schema.Literal('BLOCKING_MERGE_REQUESTS'),
+  Schema.Literal('BOARD_ASSIGNEE_LISTS'),
+  Schema.Literal('BOARD_ITERATION_LISTS'),
+  Schema.Literal('BOARD_MILESTONE_LISTS'),
+  Schema.Literal('BOARD_STATUS_LISTS'),
+  Schema.Literal('BRANCH_RULE_SQUASH_OPTIONS'),
+  Schema.Literal('BUILT_IN_PROJECT_TEMPLATES_ENABLED'),
+  Schema.Literal('CI_CD_CATALOG_PUBLISH_RESTRICTION'),
+  Schema.Literal('CI_CD_PROJECTS'),
+  Schema.Literal('CI_COMPONENT_USAGES_IN_PROJECTS'),
+  Schema.Literal('CI_JOB_ANALYTICS_FOR_PROJECTS'),
+  Schema.Literal('CI_PIPELINE_CANCELLATION_RESTRICTIONS'),
+  Schema.Literal('CI_PROJECT_SUBSCRIPTIONS'),
+  Schema.Literal('CI_RUNNER_CONTROLLERS'),
+  Schema.Literal('CI_SECRETS_MANAGEMENT'),
+  Schema.Literal('CLUSTER_AGENTS_CI_IMPERSONATION'),
+  Schema.Literal('CLUSTER_AGENTS_USER_IMPERSONATION'),
+  Schema.Literal('CLUSTER_DEPLOYMENTS'),
+  Schema.Literal('CLUSTER_IMAGE_SCANNING'),
+  Schema.Literal('CLUSTER_RECEPTIVE_AGENTS'),
+  Schema.Literal('CODE_OWNERS'),
+  Schema.Literal('CODE_OWNER_APPROVAL_REQUIRED'),
+  Schema.Literal('CODE_REVIEW_ANALYTICS'),
+  Schema.Literal('CODE_SUGGESTIONS'),
+  Schema.Literal('COMMIT_COMMITTER_CHECK'),
+  Schema.Literal('COMMIT_COMMITTER_NAME_CHECK'),
+  Schema.Literal('COMPLIANCE_FRAMEWORK'),
+  Schema.Literal('COMPLIANCE_PIPELINE_CONFIGURATION'),
+  Schema.Literal('CONFIGURABLE_WORK_ITEM_TYPES'),
+  Schema.Literal('CONTAINER_REGISTRY_IMMUTABLE_TAG_RULES'),
+  Schema.Literal('CONTAINER_SCANNING'),
+  Schema.Literal('CONTAINER_SCANNING_FOR_REGISTRY'),
+  Schema.Literal('CONTAINER_VIRTUAL_REGISTRY'),
+  Schema.Literal('CONTRIBUTION_ANALYTICS'),
+  Schema.Literal('COVERAGE_CHECK_APPROVAL_RULE'),
+  Schema.Literal('COVERAGE_FUZZING'),
+  Schema.Literal('CREDENTIALS_INVENTORY'),
+  Schema.Literal('CROSS_PROJECT_PIPELINES'),
+  Schema.Literal('CUSTOM_COMPLIANCE_FRAMEWORKS'),
+  Schema.Literal('CUSTOM_FIELDS'),
+  Schema.Literal('CUSTOM_FILE_TEMPLATES_FOR_NAMESPACE'),
+  Schema.Literal('CUSTOM_ROLES'),
+  Schema.Literal('CYCLE_ANALYTICS_FOR_GROUPS'),
+  Schema.Literal('CYCLE_ANALYTICS_FOR_PROJECTS'),
+  Schema.Literal('DAST'),
+  Schema.Literal('DEFAULT_PROJECT_DELETION_PROTECTION'),
+  Schema.Literal('DEFAULT_ROLES_ASSIGNEES'),
+  Schema.Literal('DELETE_UNCONFIRMED_USERS'),
+  Schema.Literal('DEPENDENCY_FIREWALL'),
+  Schema.Literal('DEPENDENCY_PROXY_FOR_PACKAGES'),
+  Schema.Literal('DEPENDENCY_SCANNING'),
+  Schema.Literal('DESCRIPTION_COMPOSER'),
+  Schema.Literal('DESCRIPTION_DIFFS'),
+  Schema.Literal('DEVOPS_ADOPTION'),
+  Schema.Literal('DISABLE_DELETING_ACCOUNT_FOR_USERS'),
+  Schema.Literal('DISABLE_EXTENSIONS_MARKETPLACE_FOR_ENTERPRISE_USERS'),
+  Schema.Literal('DISABLE_INVITE_MEMBERS'),
+  Schema.Literal('DISABLE_NAME_UPDATE_FOR_USERS'),
+  Schema.Literal('DISABLE_PERSONAL_ACCESS_TOKENS'),
+  Schema.Literal('DISABLE_SSH_KEYS'),
+  Schema.Literal('DOMAIN_VERIFICATION'),
+  Schema.Literal('DORA4_ANALYTICS'),
+  Schema.Literal('EMAIL_ADDITIONAL_TEXT'),
+  Schema.Literal('ENVIRONMENT_ALERTS'),
+  Schema.Literal('EPICS'),
+  Schema.Literal('EPIC_COLORS'),
+  Schema.Literal('ESCALATION_POLICIES'),
+  Schema.Literal('EVALUATE_GROUP_LEVEL_COMPLIANCE_PIPELINE'),
+  Schema.Literal('EXPERIMENTAL_FEATURES'),
+  Schema.Literal('EXPLAIN_CODE'),
+  Schema.Literal('EXPORT_USER_PERMISSIONS'),
+  Schema.Literal('EXTERNAL_AUDIT_EVENTS'),
+  Schema.Literal('EXTERNAL_STATUS_CHECKS'),
+  Schema.Literal('FEATURE_FLAGS_CODE_REFERENCES'),
+  Schema.Literal('FEATURE_FLAGS_RELATED_ISSUES'),
+  Schema.Literal('FILE_LOCKS'),
+  Schema.Literal('FULL_CODEQUALITY_REPORT'),
+  Schema.Literal('GENERATE_COMMIT_MESSAGE'),
+  Schema.Literal('GENERATE_DESCRIPTION'),
+  Schema.Literal('GENERATE_TEST_FILE'),
+  Schema.Literal('GENERIC_ALERT_FINGERPRINTING'),
+  Schema.Literal('GITHUB_INTEGRATION'),
+  Schema.Literal('GIT_TWO_FACTOR_ENFORCEMENT'),
+  Schema.Literal('GLAB_ASK_GIT_COMMAND'),
+  Schema.Literal('GROUP_ACTIVITY_ANALYTICS'),
+  Schema.Literal('GROUP_ALLOWED_EMAIL_DOMAINS'),
+  Schema.Literal('GROUP_BULK_EDIT'),
+  Schema.Literal('GROUP_CI_CD_ANALYTICS_PIPELINES'),
+  Schema.Literal('GROUP_CI_CD_ANALYTICS_RELEASES'),
+  Schema.Literal('GROUP_COVERAGE_REPORTS'),
+  Schema.Literal('GROUP_FORKING_PROTECTION'),
+  Schema.Literal('GROUP_IP_RESTRICTION'),
+  Schema.Literal('GROUP_LEVEL_ANALYTICS_DASHBOARD'),
+  Schema.Literal('GROUP_LEVEL_COMPLIANCE_ADHERENCE_REPORT'),
+  Schema.Literal('GROUP_LEVEL_COMPLIANCE_DASHBOARD'),
+  Schema.Literal('GROUP_LEVEL_COMPLIANCE_VIOLATIONS_REPORT'),
+  Schema.Literal('GROUP_LEVEL_DEVOPS_ADOPTION'),
+  Schema.Literal('GROUP_LEVEL_MERGE_CHECKS_SETTING'),
+  Schema.Literal('GROUP_MILESTONE_PROJECT_RELEASES'),
+  Schema.Literal('GROUP_PROJECT_TEMPLATES'),
+  Schema.Literal('GROUP_PROTECTED_BRANCHES'),
+  Schema.Literal('GROUP_REPOSITORY_ANALYTICS'),
+  Schema.Literal('GROUP_SAML'),
+  Schema.Literal('GROUP_SAVED_REPLIES'),
+  Schema.Literal('GROUP_SCOPED_CI_VARIABLES'),
+  Schema.Literal('GROUP_USAGE_BILLING'),
+  Schema.Literal('GROUP_WEBHOOKS'),
+  Schema.Literal('GROUP_WIKIS'),
+  Schema.Literal('IDE_SCHEMA_CONFIG'),
+  Schema.Literal('INCIDENT_MANAGEMENT'),
+  Schema.Literal('INCIDENT_METRIC_UPLOAD'),
+  Schema.Literal('INCIDENT_SLA'),
+  Schema.Literal('INCIDENT_TIMELINE_VIEW'),
+  Schema.Literal('INCREASED_SAVED_VIEWS_LIMIT'),
+  Schema.Literal('INLINE_CODEQUALITY'),
+  Schema.Literal('INSIGHTS'),
+  Schema.Literal('INSTANCE_LEVEL_DEVOPS_ADOPTION'),
+  Schema.Literal('ISSUABLE_DEFAULT_TEMPLATES'),
+  Schema.Literal('ISSUABLE_HEALTH_STATUS'),
+  Schema.Literal('ISSUABLE_RESOURCE_LINKS'),
+  Schema.Literal('ISSUES_ANALYTICS'),
+  Schema.Literal('ISSUES_COMPLETED_ANALYTICS'),
+  Schema.Literal('ISSUE_WEIGHTS'),
+  Schema.Literal('ITERATIONS'),
+  Schema.Literal('JIRA_ISSUES_INTEGRATION'),
+  Schema.Literal('JIRA_ISSUE_ASSOCIATION_ENFORCEMENT'),
+  Schema.Literal('JIRA_VULNERABILITIES_INTEGRATION'),
+  Schema.Literal('KUBERNETES_CLUSTER_VULNERABILITIES'),
+  Schema.Literal('LICENSE_INFORMATION_SOURCE'),
+  Schema.Literal('LICENSE_SCANNING'),
+  Schema.Literal('LINKED_ITEMS_EPICS'),
+  Schema.Literal('MAINTENANCE_MODE'),
+  Schema.Literal('MCP_SERVER'),
+  Schema.Literal('MEASURE_COMMENT_TEMPERATURE'),
+  Schema.Literal('MEMBER_LOCK'),
+  Schema.Literal('MERGE_PIPELINES'),
+  Schema.Literal('MERGE_REQUEST_APPROVERS'),
+  Schema.Literal('MERGE_REQUEST_PERFORMANCE_METRICS'),
+  Schema.Literal('MERGE_REQUEST_TITLE_REGEX_CHECK'),
+  Schema.Literal('MERGE_TRAINS'),
+  Schema.Literal('METRICS_REPORTS'),
+  Schema.Literal('MICROSOFT_GROUP_SYNC'),
+  Schema.Literal('MILESTONE_CHARTS'),
+  Schema.Literal('MINIMAL_ACCESS_ROLE'),
+  Schema.Literal('MULTIPLE_ALERT_HTTP_INTEGRATIONS'),
+  Schema.Literal('MULTIPLE_APPROVAL_RULES'),
+  Schema.Literal('MULTIPLE_GROUP_ISSUE_BOARDS'),
+  Schema.Literal('MULTIPLE_ISSUE_ASSIGNEES'),
+  Schema.Literal('MULTIPLE_MERGE_REQUEST_ASSIGNEES'),
+  Schema.Literal('MULTIPLE_MERGE_REQUEST_REVIEWERS'),
+  Schema.Literal('NATIVE_SECRETS_MANAGEMENT'),
+  Schema.Literal('OBSERVABILITY'),
+  Schema.Literal('OIDC_CLIENT_GROUPS_CLAIM'),
+  Schema.Literal('OKRS'),
+  Schema.Literal('ONCALL_SCHEDULES'),
+  Schema.Literal('OPERATIONS_DASHBOARD'),
+  Schema.Literal('ORBIT'),
+  Schema.Literal('PACKAGES_VIRTUAL_REGISTRY'),
+  Schema.Literal('PACKAGE_FORWARDING'),
+  Schema.Literal('PAGES_MULTIPLE_VERSIONS'),
+  Schema.Literal('PERSONAL_ACCESS_TOKEN_EXPIRATION_POLICY'),
+  Schema.Literal('PRODUCTIVITY_ANALYTICS'),
+  Schema.Literal('PRODUCT_ANALYTICS'),
+  Schema.Literal('PROJECT_LEVEL_ANALYTICS_DASHBOARD'),
+  Schema.Literal('PROJECT_LEVEL_COMPLIANCE_ADHERENCE_REPORT'),
+  Schema.Literal('PROJECT_LEVEL_COMPLIANCE_DASHBOARD'),
+  Schema.Literal('PROJECT_LEVEL_COMPLIANCE_VIOLATIONS_REPORT'),
+  Schema.Literal('PROJECT_MERGE_REQUEST_ANALYTICS'),
+  Schema.Literal('PROJECT_QUALITY_SUMMARY'),
+  Schema.Literal('PROJECT_SAVED_REPLIES'),
+  Schema.Literal('PROTECTED_ENVIRONMENTS'),
+  Schema.Literal('PROTECTED_REFS_FOR_USERS'),
+  Schema.Literal('PUSH_RULES'),
+  Schema.Literal('QUALITY_MANAGEMENT'),
+  Schema.Literal('REJECT_NON_DCO_COMMITS'),
+  Schema.Literal('REJECT_UNSIGNED_COMMITS'),
+  Schema.Literal('RELATED_EPICS'),
+  Schema.Literal('RELEASE_EVIDENCE_TEST_ARTIFACTS'),
+  Schema.Literal('REMOTE_DEVELOPMENT'),
+  Schema.Literal('REPORT_APPROVER_RULES'),
+  Schema.Literal('REPOSITORY_MIRRORS'),
+  Schema.Literal('REQUESTED_CHANGES_BLOCK_MERGE_REQUEST'),
+  Schema.Literal('REQUIREMENTS'),
+  Schema.Literal('RESOURCE_ACCESS_TOKEN'),
+  Schema.Literal('REVIEW_MERGE_REQUEST'),
+  Schema.Literal('RUNNER_MAINTENANCE_NOTE_FOR_NAMESPACE'),
+  Schema.Literal('RUNNER_PERFORMANCE_INSIGHTS_FOR_NAMESPACE'),
+  Schema.Literal('RUNNER_UPGRADE_MANAGEMENT_FOR_NAMESPACE'),
+  Schema.Literal('SAML_GROUP_SYNC'),
+  Schema.Literal('SARIF'),
+  Schema.Literal('SAST'),
+  Schema.Literal('SAST_ADVANCED'),
+  Schema.Literal('SAST_CUSTOM_RULESETS'),
+  Schema.Literal('SAST_FP_REDUCTION'),
+  Schema.Literal('SAST_IAC'),
+  Schema.Literal('SCOPED_ISSUE_BOARD'),
+  Schema.Literal('SCOPED_LABELS'),
+  Schema.Literal('SEAT_CONTROL'),
+  Schema.Literal('SECRET_DETECTION'),
+  Schema.Literal('SECRET_DETECTION_VALIDITY_CHECKS'),
+  Schema.Literal('SECRET_PUSH_PROTECTION'),
+  Schema.Literal('SECURITY_ATTRIBUTES'),
+  Schema.Literal('SECURITY_CONFIGURATION_IN_UI'),
+  Schema.Literal('SECURITY_DASHBOARD'),
+  Schema.Literal('SECURITY_EXCLUSIONS'),
+  Schema.Literal('SECURITY_INVENTORY'),
+  Schema.Literal('SECURITY_ON_DEMAND_SCANS'),
+  Schema.Literal('SECURITY_ORCHESTRATION_POLICIES'),
+  Schema.Literal('SECURITY_SCANS_API'),
+  Schema.Literal('SECURITY_SCAN_PROFILES'),
+  Schema.Literal('SECURITY_TRAINING'),
+  Schema.Literal('SELF_HOSTED_MODELS'),
+  Schema.Literal('SEMANTIC_CODE_SEARCH'),
+  Schema.Literal('SEND_EMAILS_FROM_ADMIN_AREA'),
+  Schema.Literal('SMARTCARD_AUTH'),
+  Schema.Literal('SSH_CERTIFICATES'),
+  Schema.Literal('SSH_KEY_EXPIRATION_POLICY'),
+  Schema.Literal('STALE_RUNNER_CLEANUP_FOR_NAMESPACE'),
+  Schema.Literal('STATUS_PAGE'),
+  Schema.Literal('SUBEPICS'),
+  Schema.Literal('SUGGESTED_REVIEWERS'),
+  Schema.Literal('SUMMARIZE_COMMENTS'),
+  Schema.Literal('SUMMARIZE_MR_CHANGES'),
+  Schema.Literal('SUMMARIZE_NEW_MERGE_REQUEST'),
+  Schema.Literal('SUMMARIZE_REVIEW'),
+  Schema.Literal('SWIMLANES'),
+  Schema.Literal('TARGET_BRANCH_RULES'),
+  Schema.Literal('TROUBLESHOOT_JOB'),
+  Schema.Literal('TYPE_OF_WORK_ANALYTICS'),
+  Schema.Literal('UNIQUE_PROJECT_DOWNLOAD_LIMIT'),
+  Schema.Literal('UNPROTECTION_RESTRICTIONS'),
+  Schema.Literal('VULNERABILITY_FINDING_SIGNATURES'),
+  Schema.Literal('WIP_LIMITS'),
+  Schema.Literal('WORK_ITEM_STATUS'),
+  Schema.Literal('ZENTAO_ISSUES_INTEGRATION')
 ])
 export const ListLimitMetricSchema: Schema.Codec<ListLimitMetric> = Schema.Union([
   Schema.Literal('all_metrics'),
@@ -1574,6 +1983,8 @@ export const MemberRoleAdminPermissionSchema: Schema.Codec<MemberRoleAdminPermis
   Schema.Literal('READ_ADMIN_USERS')
 ])
 export const MemberRolePermissionSchema: Schema.Codec<MemberRolePermission> = Schema.Union([
+  Schema.Literal('ADMIN_AI_CATALOG_ITEM'),
+  Schema.Literal('ADMIN_AI_CATALOG_ITEM_CONSUMER'),
   Schema.Literal('ADMIN_CICD_VARIABLES'),
   Schema.Literal('ADMIN_COMPLIANCE_FRAMEWORK'),
   Schema.Literal('ADMIN_GROUP_MEMBER'),
@@ -1593,7 +2004,6 @@ export const MemberRolePermissionSchema: Schema.Codec<MemberRolePermission> = Sc
   Schema.Literal('MANAGE_GROUP_ACCESS_TOKENS'),
   Schema.Literal('MANAGE_MERGE_REQUEST_SETTINGS'),
   Schema.Literal('MANAGE_PROJECT_ACCESS_TOKENS'),
-  Schema.Literal('MANAGE_PROTECTED_TAGS'),
   Schema.Literal('MANAGE_SECURITY_POLICY_LINK'),
   Schema.Literal('READ_ADMIN_CICD'),
   Schema.Literal('READ_ADMIN_GROUPS'),
@@ -1608,11 +2018,14 @@ export const MemberRolePermissionSchema: Schema.Codec<MemberRolePermission> = Sc
   Schema.Literal('READ_RUNNERS'),
   Schema.Literal('READ_SECURITY_ATTRIBUTE'),
   Schema.Literal('READ_SECURITY_SCAN_PROFILES'),
+  Schema.Literal('READ_VIRTUAL_REGISTRY'),
   Schema.Literal('READ_VULNERABILITY'),
   Schema.Literal('REMOVE_GROUP'),
   Schema.Literal('REMOVE_PROJECT')
 ])
 export const MemberRoleStandardPermissionSchema: Schema.Codec<MemberRoleStandardPermission> = Schema.Union([
+  Schema.Literal('ADMIN_AI_CATALOG_ITEM'),
+  Schema.Literal('ADMIN_AI_CATALOG_ITEM_CONSUMER'),
   Schema.Literal('ADMIN_CICD_VARIABLES'),
   Schema.Literal('ADMIN_COMPLIANCE_FRAMEWORK'),
   Schema.Literal('ADMIN_GROUP_MEMBER'),
@@ -1632,7 +2045,6 @@ export const MemberRoleStandardPermissionSchema: Schema.Codec<MemberRoleStandard
   Schema.Literal('MANAGE_GROUP_ACCESS_TOKENS'),
   Schema.Literal('MANAGE_MERGE_REQUEST_SETTINGS'),
   Schema.Literal('MANAGE_PROJECT_ACCESS_TOKENS'),
-  Schema.Literal('MANAGE_PROTECTED_TAGS'),
   Schema.Literal('MANAGE_SECURITY_POLICY_LINK'),
   Schema.Literal('READ_CODE'),
   Schema.Literal('READ_COMPLIANCE_DASHBOARD'),
@@ -1641,6 +2053,7 @@ export const MemberRoleStandardPermissionSchema: Schema.Codec<MemberRoleStandard
   Schema.Literal('READ_RUNNERS'),
   Schema.Literal('READ_SECURITY_ATTRIBUTE'),
   Schema.Literal('READ_SECURITY_SCAN_PROFILES'),
+  Schema.Literal('READ_VIRTUAL_REGISTRY'),
   Schema.Literal('READ_VULNERABILITY'),
   Schema.Literal('REMOVE_GROUP'),
   Schema.Literal('REMOVE_PROJECT')
@@ -1754,6 +2167,7 @@ export const MergeabilityCheckIdentifierSchema: Schema.Codec<MergeabilityCheckId
   Schema.Literal('NOT_APPROVED'),
   Schema.Literal('NOT_OPEN'),
   Schema.Literal('REQUESTED_CHANGES'),
+  Schema.Literal('SECURITY_POLICY_PIPELINE_CHECK'),
   Schema.Literal('SECURITY_POLICY_VIOLATIONS'),
   Schema.Literal('STATUS_CHECKS_MUST_PASS'),
   Schema.Literal('TITLE_REGEX')
@@ -1899,6 +2313,13 @@ export const OrganizationSortSchema: Schema.Codec<OrganizationSort> = Schema.Uni
   Schema.Literal('updated_asc'),
   Schema.Literal('updated_desc')
 ])
+export const OrganizationStateSchema: Schema.Codec<OrganizationState> = Schema.Union([
+  Schema.Literal('ACTIVE'),
+  Schema.Literal('CONFIRMED'),
+  Schema.Literal('DELETION_IN_PROGRESS'),
+  Schema.Literal('DELETION_SCHEDULED'),
+  Schema.Literal('UNCONFIRMED')
+])
 export const OrganizationUserAccessLevelSchema: Schema.Codec<OrganizationUserAccessLevel> = Schema.Union([
   Schema.Literal('DEFAULT'),
   Schema.Literal('OWNER')
@@ -1941,6 +2362,10 @@ export const PackageManagerSchema: Schema.Codec<PackageManager> = Schema.Union([
   Schema.Literal('SBT'),
   Schema.Literal('SETUPTOOLS'),
   Schema.Literal('YARN')
+])
+export const PackageMetadataAdvisorySourceSchema: Schema.Codec<PackageMetadataAdvisorySource> = Schema.Union([
+  Schema.Literal('GLAD'),
+  Schema.Literal('TRIVY_DB')
 ])
 export const PackageSortSchema: Schema.Codec<PackageSort> = Schema.Union([
   Schema.Literal('CREATED_ASC'),
@@ -2002,7 +2427,8 @@ export const PackagesProtectionRulePackageTypeSchema: Schema.Codec<PackagesProte
   Schema.Literal('MAVEN'),
   Schema.Literal('NPM'),
   Schema.Literal('NUGET'),
-  Schema.Literal('PYPI')
+  Schema.Literal('PYPI'),
+  Schema.Literal('TERRAFORM_MODULE')
 ])
 export const PermissionBoundarySchema: Schema.Codec<PermissionBoundary> = Schema.Union([
   Schema.Literal('GROUP'),
@@ -2093,6 +2519,11 @@ export const PolicyProjectCreatedStatusSchema: Schema.Codec<PolicyProjectCreated
   Schema.Literal('ERROR'),
   Schema.Literal('SUCCESS')
 ])
+export const PolicyScheduleTestRunStateSchema: Schema.Codec<PolicyScheduleTestRunState> = Schema.Union([
+  Schema.Literal('COMPLETE'),
+  Schema.Literal('FAILED'),
+  Schema.Literal('RUNNING')
+])
 export const PolicyScopeMatchModeSchema: Schema.Codec<PolicyScopeMatchMode> = Schema.Union([
   Schema.Literal('ALL'),
   Schema.Literal('ANY')
@@ -2104,6 +2535,7 @@ export const PolicyStatusSchema: Schema.Codec<PolicyStatus> = Schema.Union([
 ])
 export const PolicyTypeSchema: Schema.Codec<PolicyType> = Schema.Union([
   Schema.Literal('APPROVAL_POLICY'),
+  Schema.Literal('DEPENDENCY_FIREWALL_POLICY'),
   Schema.Literal('PIPELINE_EXECUTION_POLICY'),
   Schema.Literal('PIPELINE_EXECUTION_SCHEDULE_POLICY'),
   Schema.Literal('SCAN_EXECUTION_POLICY'),
@@ -2111,6 +2543,7 @@ export const PolicyTypeSchema: Schema.Codec<PolicyType> = Schema.Union([
 ])
 export const PolicyViolationErrorTypeSchema: Schema.Codec<PolicyViolationErrorType> = Schema.Union([
   Schema.Literal('ARTIFACTS_MISSING'),
+  Schema.Literal('SCAN_NOT_SUCCEEDED'),
   Schema.Literal('SCAN_REMOVED'),
   Schema.Literal('UNKNOWN')
 ])
@@ -2285,6 +2718,14 @@ export const ScanModeEnumSchema: Schema.Codec<ScanModeEnum> = Schema.Union([
   Schema.Literal('FULL'),
   Schema.Literal('PARTIAL')
 ])
+export const ScanProfileStatusSchema: Schema.Codec<ScanProfileStatus> = Schema.Union([
+  Schema.Literal('ACTIVE'),
+  Schema.Literal('FAILED'),
+  Schema.Literal('NOT_CONFIGURED'),
+  Schema.Literal('PENDING'),
+  Schema.Literal('STALE'),
+  Schema.Literal('WARNING')
+])
 export const ScanProfileTriggerTypeSchema: Schema.Codec<ScanProfileTriggerType> = Schema.Union([
   Schema.Literal('DEFAULT_BRANCH_PIPELINE'),
   Schema.Literal('GIT_PUSH_EVENT'),
@@ -2443,7 +2884,6 @@ export const ServiceTypeSchema: Schema.Codec<ServiceType> = Schema.Union([
   Schema.Literal('PUSHOVER_SERVICE'),
   Schema.Literal('REDMINE_SERVICE'),
   Schema.Literal('SLACK_SERVICE'),
-  Schema.Literal('SLACK_SLASH_COMMANDS_SERVICE'),
   Schema.Literal('SQUASH_TM_SERVICE'),
   Schema.Literal('TEAMCITY_SERVICE'),
   Schema.Literal('TELEGRAM_SERVICE'),
@@ -2503,6 +2943,17 @@ export const SubscriptionStatusSchema: Schema.Codec<SubscriptionStatus> = Schema
   Schema.Literal('EXPLICITLY_SUBSCRIBED'),
   Schema.Literal('EXPLICITLY_UNSUBSCRIBED')
 ])
+export const TerraformStateProtectionRuleAccessLevelSchema: Schema.Codec<TerraformStateProtectionRuleAccessLevel> = Schema.Union([
+  Schema.Literal('ADMIN'),
+  Schema.Literal('DEVELOPER'),
+  Schema.Literal('MAINTAINER'),
+  Schema.Literal('OWNER')
+])
+export const TerraformStateProtectionRuleAllowedFromSchema: Schema.Codec<TerraformStateProtectionRuleAllowedFrom> = Schema.Union([
+  Schema.Literal('ANYWHERE'),
+  Schema.Literal('CI_ONLY'),
+  Schema.Literal('CI_ON_PROTECTED_BRANCH_ONLY')
+])
 export const TestCaseStatusSchema: Schema.Codec<TestCaseStatus> = Schema.Union([
   Schema.Literal('error'),
   Schema.Literal('failed'),
@@ -2555,6 +3006,7 @@ export const TodoActionEnumSchema: Schema.Codec<TodoActionEnum> = Schema.Union([
   Schema.Literal('duo_core_access_granted'),
   Schema.Literal('duo_enterprise_access_granted'),
   Schema.Literal('duo_pro_access_granted'),
+  Schema.Literal('duo_workflow_input_required'),
   Schema.Literal('marked'),
   Schema.Literal('member_access_requested'),
   Schema.Literal('mentioned'),
@@ -2587,6 +3039,7 @@ export const TodoTargetEnumSchema: Schema.Codec<TodoTargetEnum> = Schema.Union([
   Schema.Literal('COMMIT'),
   Schema.Literal('COMPLIANCE_VIOLATION'),
   Schema.Literal('DESIGN'),
+  Schema.Literal('DUO_WORKFLOW'),
   Schema.Literal('EPIC'),
   Schema.Literal('ISSUE'),
   Schema.Literal('KEY'),
@@ -2628,6 +3081,7 @@ export const UserCalloutFeatureNameEnumSchema: Schema.Codec<UserCalloutFeatureNa
   Schema.Literal('GEO_MIGRATE_HASHED_STORAGE'),
   Schema.Literal('GKE_CLUSTER_INTEGRATION'),
   Schema.Literal('GOLD_TRIAL_BILLINGS'),
+  Schema.Literal('INLINE_BLAME_POPOVER'),
   Schema.Literal('JOINING_A_PROJECT_ALERT'),
   Schema.Literal('MERGE_REQUEST_DASHBOARD_DISPLAY_PREFERENCES_POPOVER'),
   Schema.Literal('MERGE_REQUEST_DASHBOARD_SHOW_DRAFTS'),
@@ -2671,9 +3125,7 @@ export const UserCalloutFeatureNameEnumSchema: Schema.Codec<UserCalloutFeatureNa
   Schema.Literal('VULNERABILITY_REPORT_LIMITED_EXPERIENCE'),
   Schema.Literal('WEB_IDE_ALERT_DISMISSED'),
   Schema.Literal('WEB_IDE_CI_ENVIRONMENTS_GUIDANCE'),
-  Schema.Literal('WORK_ITEMS_NAV_BADGE'),
   Schema.Literal('WORK_ITEMS_ONBOARDING_MODAL'),
-  Schema.Literal('WORK_ITEM_CONSOLIDATED_LIST_FEEDBACK'),
   Schema.Literal('WORK_ITEM_EPIC_FEEDBACK')
 ])
 export const UserGroupCalloutFeatureNameSchema: Schema.Codec<UserGroupCalloutFeatureName> = Schema.Union([
@@ -2688,7 +3140,6 @@ export const UserGroupCalloutFeatureNameSchema: Schema.Codec<UserGroupCalloutFea
   Schema.Literal('EXPIRED_DUO_PRO_TRIAL_WIDGET'),
   Schema.Literal('EXPIRED_TRIAL_STATUS_WIDGET'),
   Schema.Literal('FREE_GROUP_LIMITED_ALERT'),
-  Schema.Literal('MRS_PREMIUM_MESSAGE_CALLOUT'),
   Schema.Literal('NAMESPACE_OVER_STORAGE_USERS_COMBINED_ALERT'),
   Schema.Literal('NAMESPACE_STORAGE_LIMIT_ALERT_ALERT_THRESHOLD'),
   Schema.Literal('NAMESPACE_STORAGE_LIMIT_ALERT_ERROR_THRESHOLD'),
@@ -2697,9 +3148,7 @@ export const UserGroupCalloutFeatureNameSchema: Schema.Codec<UserGroupCalloutFea
   Schema.Literal('NAMESPACE_USER_CAP_REACHED_ALERT'),
   Schema.Literal('PREVIEW_USAGE_QUOTA_FREE_PLAN_ALERT'),
   Schema.Literal('PREVIEW_USER_OVER_LIMIT_FREE_PLAN_ALERT'),
-  Schema.Literal('PROJECT_PREMIUM_MESSAGE_CALLOUT'),
   Schema.Literal('PROJECT_REPOSITORY_LIMIT_ALERT_WARNING_THRESHOLD'),
-  Schema.Literal('REPOSITORY_PREMIUM_MESSAGE_CALLOUT'),
   Schema.Literal('USAGE_QUOTA_TRIAL_ALERT'),
   Schema.Literal('USER_REACHED_LIMIT_FREE_PLAN_ALERT'),
   Schema.Literal('WEB_HOOK_DISABLED')
@@ -2792,6 +3241,7 @@ export const VerificationStateEnumSchema: Schema.Codec<VerificationStateEnum> = 
   Schema.Literal('SUCCEEDED')
 ])
 export const VerificationStatusSchema: Schema.Codec<VerificationStatus> = Schema.Union([
+  Schema.Literal('EXPIRED_KEY'),
   Schema.Literal('MULTIPLE_SIGNATURES'),
   Schema.Literal('OTHER_USER'),
   Schema.Literal('REVOKED_KEY'),
@@ -2834,8 +3284,8 @@ export const VulnerabilityExternalIssueLinkTypeSchema: Schema.Codec<Vulnerabilit
 export const VulnerabilityFalsePositiveDetectionStatusSchema: Schema.Codec<VulnerabilityFalsePositiveDetectionStatus> = Schema.Union([
   Schema.Literal('DETECTED_AS_FP'),
   Schema.Literal('DETECTED_AS_NOT_FP'),
+  Schema.Literal('DISMISSED'),
   Schema.Literal('FAILED'),
-  Schema.Literal('IN_PROGRESS'),
   Schema.Literal('NOT_STARTED')
 ])
 export const VulnerabilityFindingTokenStatusStateSchema: Schema.Codec<VulnerabilityFindingTokenStatusState> = Schema.Union([
@@ -2876,6 +3326,19 @@ export const VulnerabilityOwasp2021Top10Schema: Schema.Codec<VulnerabilityOwasp2
   Schema.Literal('A10_2021'),
   Schema.Literal('NONE')
 ])
+export const VulnerabilityOwasp2025Top10Schema: Schema.Codec<VulnerabilityOwasp2025Top10> = Schema.Union([
+  Schema.Literal('A01_2025'),
+  Schema.Literal('A02_2025'),
+  Schema.Literal('A03_2025'),
+  Schema.Literal('A04_2025'),
+  Schema.Literal('A05_2025'),
+  Schema.Literal('A06_2025'),
+  Schema.Literal('A07_2025'),
+  Schema.Literal('A08_2025'),
+  Schema.Literal('A09_2025'),
+  Schema.Literal('A10_2025'),
+  Schema.Literal('NONE')
+])
 export const VulnerabilityOwaspTop10Schema: Schema.Codec<VulnerabilityOwaspTop10> = Schema.Union([
   Schema.Literal('A1_2017'),
   Schema.Literal('A2_2017'),
@@ -2898,6 +3361,7 @@ export const VulnerabilityReportTypeSchema: Schema.Codec<VulnerabilityReportType
   Schema.Literal('DAST'),
   Schema.Literal('DEPENDENCY_SCANNING'),
   Schema.Literal('GENERIC'),
+  Schema.Literal('SARIF'),
   Schema.Literal('SAST'),
   Schema.Literal('SECRET_DETECTION')
 ])
@@ -2939,6 +3403,14 @@ export const WebhookBranchFilterStrategySchema: Schema.Codec<WebhookBranchFilter
 export const WeightWildcardIdSchema: Schema.Codec<WeightWildcardId> = Schema.Union([
   Schema.Literal('ANY'),
   Schema.Literal('NONE')
+])
+export const WorkItemAvailabilityActionSchema: Schema.Codec<WorkItemAvailabilityAction> = Schema.Union([
+  Schema.Literal('DISABLE'),
+  Schema.Literal('ENABLE')
+])
+export const WorkItemAvailabilityScopeSchema: Schema.Codec<WorkItemAvailabilityScope> = Schema.Union([
+  Schema.Literal('ALL_CHILDREN'),
+  Schema.Literal('THIS')
 ])
 export const WorkItemAwardEmojiUpdateActionSchema: Schema.Codec<WorkItemAwardEmojiUpdateAction> = Schema.Union([
   Schema.Literal('ADD'),
@@ -3021,6 +3493,8 @@ export const WorkItemTodoUpdateActionSchema: Schema.Codec<WorkItemTodoUpdateActi
   Schema.Literal('MARK_AS_DONE')
 ])
 export const WorkItemWidgetTypeSchema: Schema.Codec<WorkItemWidgetType> = Schema.Union([
+  Schema.Literal('AGENT_PLAN'),
+  Schema.Literal('AI_SESSION'),
   Schema.Literal('ASSIGNEES'),
   Schema.Literal('AWARD_EMOJI'),
   Schema.Literal('COLOR'),
