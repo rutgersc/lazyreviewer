@@ -1,5 +1,5 @@
 // Dracula dark theme palette
-const DarkColors = {
+export const DarkColors = {
   SUCCESS: '#50fa7b',
   ERROR: '#ff5555',
   WARNING: '#ffb86c',
