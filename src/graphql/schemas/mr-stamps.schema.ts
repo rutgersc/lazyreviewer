@@ -22,7 +22,8 @@ export const MergeRequestStampFieldsFragmentSchema: Schema.Codec<MergeRequestSta
       nodes: Schema.NullOr(Schema.Array(
         Schema.NullOr(Schema.Struct({
         name: Schema.NullOr(Schema.String),
-        status: Schema.NullOr(CiJobStatusSchema)
+        status: Schema.NullOr(CiJobStatusSchema),
+        retried: Schema.NullOr(Schema.Boolean)
       }))
       ))
     }))

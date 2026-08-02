@@ -16,6 +16,7 @@ fragment MergeRequestStampFields on MergeRequest {
       nodes {
         name
         status
+        retried
       }
     }
   }

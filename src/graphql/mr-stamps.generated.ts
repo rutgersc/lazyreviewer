@@ -3,7 +3,7 @@ import type * as Types from './generated/gitlab-base-types';
 import type { GraphQLClient, RequestOptions } from 'graphql-request';
 import gql from 'graphql-tag';
 type GraphQLClientRequestHeaders = RequestOptions['requestHeaders'];
-export type MergeRequestStampFieldsFragment = { readonly id: string, readonly iid: string, readonly updatedAt: string, readonly state: Types.MergeRequestState, readonly detailedMergeStatus: Types.DetailedMergeStatus | null, readonly diffHeadSha: string | null, readonly approvedBy: { readonly nodes: ReadonlyArray<{ readonly id: any } | null> | null } | null, readonly headPipeline: { readonly iid: string, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly name: string | null, readonly status: Types.CiJobStatus | null } | null> | null } | null } | null };
+export type MergeRequestStampFieldsFragment = { readonly id: string, readonly iid: string, readonly updatedAt: string, readonly state: Types.MergeRequestState, readonly detailedMergeStatus: Types.DetailedMergeStatus | null, readonly diffHeadSha: string | null, readonly approvedBy: { readonly nodes: ReadonlyArray<{ readonly id: any } | null> | null } | null, readonly headPipeline: { readonly iid: string, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly retried: boolean | null } | null> | null } | null } | null };
 
 export type MrStampsQueryVariables = Types.Exact<{
   projectPath: Types.Scalars['ID']['input'];
@@ -13,7 +13,7 @@ export type MrStampsQueryVariables = Types.Exact<{
 }>;
 
 
-export type MrStampsQuery = { readonly project: { readonly id: string, readonly mergeRequests: { readonly pageInfo: { readonly hasNextPage: boolean, readonly endCursor: string | null }, readonly nodes: ReadonlyArray<{ readonly id: string, readonly iid: string, readonly updatedAt: string, readonly state: Types.MergeRequestState, readonly detailedMergeStatus: Types.DetailedMergeStatus | null, readonly diffHeadSha: string | null, readonly approvedBy: { readonly nodes: ReadonlyArray<{ readonly id: any } | null> | null } | null, readonly headPipeline: { readonly iid: string, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly name: string | null, readonly status: Types.CiJobStatus | null } | null> | null } | null } | null } | null> | null } | null } | null };
+export type MrStampsQuery = { readonly project: { readonly id: string, readonly mergeRequests: { readonly pageInfo: { readonly hasNextPage: boolean, readonly endCursor: string | null }, readonly nodes: ReadonlyArray<{ readonly id: string, readonly iid: string, readonly updatedAt: string, readonly state: Types.MergeRequestState, readonly detailedMergeStatus: Types.DetailedMergeStatus | null, readonly diffHeadSha: string | null, readonly approvedBy: { readonly nodes: ReadonlyArray<{ readonly id: any } | null> | null } | null, readonly headPipeline: { readonly iid: string, readonly jobs: { readonly nodes: ReadonlyArray<{ readonly name: string | null, readonly status: Types.CiJobStatus | null, readonly retried: boolean | null } | null> | null } | null } | null } | null> | null } | null } | null };
 
 export const MergeRequestStampFieldsFragmentDoc = gql`
     fragment MergeRequestStampFields on MergeRequest {
@@ -34,6 +34,7 @@ export const MergeRequestStampFieldsFragmentDoc = gql`
       nodes {
         name
         status
+        retried
       }
     }
   }

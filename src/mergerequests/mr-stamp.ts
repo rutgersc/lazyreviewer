@@ -32,7 +32,10 @@ export const stampOfNode = (node: MergeRequestStampFieldsFragment): MrStamp =>
     node.headPipeline?.iid ?? null,
     jobSignature(
       (node.headPipeline?.jobs?.nodes ?? [])
-        .filter(job => job !== null)
+        // Pipeline.jobs is flat and includes superseded attempts; the stage-grouped jobs the held
+        // side is built from only carry the current one. Without this every retried job is a
+        // permanent phantom difference.
+        .filter((job): job is NonNullable<typeof job> => job !== null && job.retried !== true)
         .map(job => `${job.name || ''}=${job.status || 'CREATED'}`)
     ),
   ])
