@@ -885,7 +885,7 @@ export default function MergeRequestPane() {
                   const isSelectedMrBranch = wt.branch != null && wt.branch === selectedBranch;
                   return (
                     <box
-                      key={wt.folderName}
+                      key={wt.path}
                       height={1}
                       style={isSelectedMrBranch ? { backgroundColor: Colors.TRACK } : {}}
                       {...(isCheckedOut && wt.branch

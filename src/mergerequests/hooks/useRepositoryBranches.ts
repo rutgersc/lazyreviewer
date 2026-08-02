@@ -61,8 +61,11 @@ export const projectBranchMapAtom = Atom.make((get) => {
   const repositoryBranches = get(repositoryBranchesAtom);
   return new Map(
     repositoryBranches.map(repo => {
+      // folderName is a display label and collides across worktrees — the per-ticket layout puts
+      // an `elab` inside every ticket folder alongside the canonical `Source/elab`. path is the identity.
       const additionalWorktrees = repo.worktrees.map((wt, index) => ({
         index: index + 1,
+        path: wt.path,
         folderName: wt.folderName,
         branch: wt.branch,
         tag: wt.tag,
@@ -70,7 +73,7 @@ export const projectBranchMapAtom = Atom.make((get) => {
         headSubject: wt.headSubject,
       }));
       const mainWorktree = repo.localPath
-        ? [{ index: 0, folderName: basename(repo.localPath), branch: repo.currentBranch, tag: repo.currentTag, head: repo.currentHead, headSubject: repo.currentHeadSubject }]
+        ? [{ index: 0, path: repo.localPath, folderName: basename(repo.localPath), branch: repo.currentBranch, tag: repo.currentTag, head: repo.currentHead, headSubject: repo.currentHeadSubject }]
         : [];
       return [
         repo.projectPath,
