@@ -7,6 +7,7 @@ import { getBitbucketPrsAsEvent } from '../bitbucket/bitbucketapi'
 import { projectGitlabProjectMrsFetchedEvent } from '../gitlab/gitlab-projections'
 import { projectBitbucketPrsFetchedEvent } from '../bitbucket/bitbucket-projections'
 import { loadJiraTicketsAsEvent } from '../jira/jira-service'
+import { loggedFetch } from "../logging/http-log";
 
 type GitlabProject = {
   id: number
@@ -36,7 +37,7 @@ export const fetchGitlabProjects: Effect.Effect<RepoFetchResult> = Effect.gen(fu
   const baseUrl = yield* Config.string("GITLAB_URL")
 
   const response = yield* Effect.tryPromise({
-    try: () => fetch(`${baseUrl}/api/v4/projects?membership=true&per_page=100&simple=true`, {
+    try: () => loggedFetch(`${baseUrl}/api/v4/projects?membership=true&per_page=100&simple=true`, {
       headers: { 'PRIVATE-TOKEN': Redacted.value(token) }
     }),
     catch: (cause) => `GitLab: network error - ${cause}`
@@ -77,7 +78,7 @@ export const fetchBitbucketRepos: Effect.Effect<RepoFetchResult> = Effect.gen(fu
   type PageResult = { repos: DiscoveredRepo[], warnings: string[], next: string | undefined }
   const fetchPage = (url: string): Effect.Effect<PageResult, string> => Effect.gen(function* () {
     const response = yield* Effect.tryPromise({
-      try: () => fetch(url, { headers }),
+      try: () => loggedFetch(url, { headers }),
       catch: (cause) => `Bitbucket: network error - ${cause}`
     })
 

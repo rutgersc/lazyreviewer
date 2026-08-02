@@ -12,13 +12,14 @@ import type { JiraSprintIssuesFetchedEvent } from "../events/jira-events";
 import { generateEventId } from "../events/event-id";
 import { JiraApiError, getAuthToken, JiraBaseUrl, JIRA_ISSUE_FIELDS } from "../jira/jira-common";
 import { UnauthorizedError } from "../domain/unauthorized-error";
+import { loggedFetch } from "../logging/http-log";
 
 export const fetchActiveSprints = Effect.fn("fetchActiveSprints")(function* (boardId: number) {
   const authToken = yield* getAuthToken
   const baseUrl = yield* JiraBaseUrl
 
   const response = yield* Effect.tryPromise({
-    try: () => fetch(
+    try: () => loggedFetch(
       `${baseUrl}/rest/agile/1.0/board/${boardId}/sprint?state=active`,
       {
         method: 'GET',
@@ -65,7 +66,7 @@ export const fetchBoards = Effect.fn("fetchBoards")(function* () {
 
   while (true) {
     const response = yield* Effect.tryPromise({
-      try: () => fetch(
+      try: () => loggedFetch(
         `${baseUrl}/rest/agile/1.0/board?startAt=${startAt}&maxResults=${maxResults}`,
         {
           method: 'GET',
@@ -121,7 +122,7 @@ export const fetchSprintIssues = Effect.fn("fetchSprintIssues")(function* (sprin
 
   while (true) {
     const response = yield* Effect.tryPromise({
-      try: () => fetch(
+      try: () => loggedFetch(
         `${baseUrl}/rest/agile/1.0/sprint/${sprintId}/issue?startAt=${startAt}&maxResults=${maxResults}&fields=${fields}`,
         {
           method: 'GET',

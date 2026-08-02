@@ -11,6 +11,7 @@ import { Data, Effect, Console, Config, Redacted } from "effect";
 import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFetchedEvent, GitlabSingleMrFetchedEvent, GitlabJobTraceFetchedEvent, GitlabPipelineFetchedEvent, GitlabJobHistoryFetchedEvent, GitlabMrsFetchedEvent } from "../events/gitlab-events";
 import { projectGitlabJobHistoryFetchedEvent, projectGitlabPipelineFetchedEvent } from "./gitlab-projections";
 import { generateEventId } from "../events/event-id";
+import { loggedFetch } from "../logging/http-log";
 
 export class FetchGitlabMrsError extends Data.TaggedError("FetchGitlabMrsError")<{
   cause: unknown;
@@ -26,7 +27,8 @@ const getGitlabSdk = Effect.gen(function* () {
   const baseUrl = yield* Config.string("GITLAB_URL")
   const token = yield* Config.redacted("GITLAB_TOKEN")
   const client = new GraphQLClient(`${baseUrl}/api/graphql`, {
-    headers: { Authorization: `Bearer ${Redacted.value(token)}` }
+    headers: { Authorization: `Bearer ${Redacted.value(token)}` },
+    fetch: loggedFetch as typeof fetch
   })
 
   return {
@@ -93,7 +95,7 @@ export const getJobTraceRaw = Effect.fn("getJobTraceRaw")(function* (projectId: 
   const url = `${baseUrl}/api/v4/projects/${encodedProjectId}/jobs/${uhh}/trace`;
 
   const response = yield* Effect.tryPromise({
-    try: () => fetch(url, {
+    try: () => loggedFetch(url, {
       headers: {
         'PRIVATE-TOKEN': Redacted.value(token)
       }

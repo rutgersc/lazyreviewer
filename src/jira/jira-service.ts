@@ -11,6 +11,7 @@ import type { JiraIssuesFetchedEvent } from "../events/jira-events";
 import { generateEventId } from "../events/event-id";
 import { JiraApiError, getAuthToken, JiraBaseUrl, JIRA_ISSUE_FIELDS } from "./jira-common";
 import { UnauthorizedError } from "../domain/unauthorized-error";
+import { loggedFetch } from "../logging/http-log";
 
 export type { JiraStatusName, JiraComment, JiraIssue, JiraSearchResponse };
 
@@ -74,7 +75,7 @@ const searchIssues = Effect.fn("searchIssues")(function* (jql: string, maxResult
   const authToken = yield* getAuthToken
 
   const response = yield* Effect.tryPromise({
-    try: () => fetch(
+    try: () => loggedFetch(
       `${baseUrl}/rest/api/3/search/jql`,
       {
         method: 'POST',

@@ -14,6 +14,7 @@ import {
 } from "./bitbucket-schema";
 import * as fs from 'fs';
 import * as path from 'path';
+import { loggedFetch } from "../logging/http-log";
 
 export type BitbucketAccount = Schema.Schema.Type<typeof BitbucketAccountSchema>
 export type BitbucketPullRequest = Schema.Schema.Type<typeof BitbucketPullRequestSchema>
@@ -175,7 +176,7 @@ export const getBitbucketPrsAsEvent = Effect.fn("getBitbucketPrsAsEvent")(functi
   yield* Console.log(`[BitBucket] Fetching PRs for ${workspace}/${repoSlug}, state: ${bbState}`);
 
   const response = yield* Effect.tryPromise({
-    try: () => fetch(url, {
+    try: () => loggedFetch(url, {
       headers: {
         'Authorization': `Basic ${authToken}`,
         'Accept': 'application/json',
@@ -230,7 +231,7 @@ export const fetchBitbucketCommentsAsEvent = Effect.fn("fetchBitbucketCommentsAs
   const url = `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/pullrequests/${prId}/comments`;
 
   const response = yield* Effect.tryPromise({
-    try: () => fetch(url, {
+    try: () => loggedFetch(url, {
       headers: {
         'Authorization': `Basic ${authToken}`,
         'Accept': 'application/json',
@@ -293,7 +294,7 @@ export const getSingleBitbucketPrAsEvent = Effect.fn("getSingleBitbucketPrAsEven
   yield* Console.log(`[BitBucket] Fetching single PR: ${prId} in ${workspace}/${repoSlug}`);
 
   const response = yield* Effect.tryPromise({
-    try: () => fetch(url, {
+    try: () => loggedFetch(url, {
       headers: {
         'Authorization': `Basic ${authToken}`,
         'Accept': 'application/json',
