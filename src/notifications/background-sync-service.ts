@@ -214,6 +214,20 @@ const createBackgroundWorker = (
     const settingsService = yield* SettingsService;
     const mrStateService = yield* MrStateService;
 
+    // The read model replays the persisted log in batches, so it is still filling for a second or
+    // two after startup. Diffing a sweep against a half-replayed map reports every MR as unknown
+    // and refetches the whole repo, every launch. Wait for it to stop growing first.
+    yield* Effect.gen(function* () {
+      let previousSize = -1
+      while (true) {
+        const { mrsByGid } = yield* mrStateService.get
+        if (mrsByGid.size === previousSize) break
+        previousSize = mrsByGid.size
+        yield* Effect.sleep('500 millis')
+      }
+      yield* Console.log(`[BackgroundSync] Read model settled at ${previousSize} MRs`)
+    })
+
     const nextEligibleAt = new Map<string, number>()
     const mrCounts = new Map<string, number>()
 
