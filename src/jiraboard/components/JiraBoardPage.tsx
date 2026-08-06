@@ -27,7 +27,7 @@ import { copyToClipboard } from '../../system/clipboard';
 import { getJiraBaseUrl } from '../../jira/jira-common';
 import JiraBoardSetup from './JiraBoardSetup';
 import EpicLegend from './EpicLegend';
-import { transformToBoard, flattenBoard, mapStatus, mapPriority, sortStories, type CollapseState } from '../board-utils';
+import { transformToBoard, flattenBoard, mapStatus, mapMrState, mapPriority, sortStories, type CollapseState } from '../board-utils';
 import { selectMrByIdAtom } from '../../mergerequests/mergerequests-atom';
 import type { MergeRequest } from '../../mergerequests/mergerequest-schema';
 import { projectBranchMapAtom } from '../../mergerequests/hooks/useRepositoryBranches';
@@ -467,12 +467,13 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
   const renderDetailRow = (flatItem: Extract<(typeof flatItems)[number], { type: 'detail' }>, index: number) => {
     const isSelected = index === selectedIndex;
     const isDimmed = !itemMatchesSearch(flatItem);
-    const isRowDim = isDimmed || !!flatItem.dimColor;
-    const dimColor = isDimmed ? Colors.SUPPORTING : (flatItem.dimColor ?? Colors.SUPPORTING);
+    const mr = flatItem.mr;
+    const mrState = mapMrState(mr);
+    const isRowDim = isDimmed || !!flatItem.dimColor || !!mrState.dimColor;
+    const dimColor = isDimmed ? Colors.SUPPORTING : (flatItem.dimColor ?? mrState.dimColor ?? Colors.SUPPORTING);
     const dimAttrStyle = isRowDim && !isLightMode ? { attributes: TextAttributes.DIM } as const : {};
     const rowColor = isRowDim ? dimColor : flatItem.statusColor;
 
-    const mr = flatItem.mr;
     const branchInfo = projectBranchMap.get(mr.project.fullPath);
     const worktreeMatch = branchInfo?.worktreeBranches.get(mr.sourcebranch) ?? null;
     const isCheckedOut = worktreeMatch !== null;
@@ -497,6 +498,7 @@ export default function JiraBoardPage({ onClose, boardId }: JiraBoardPageProps) 
         <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, ...dimAttrStyle }} wrapMode="none">{'mr:'.padEnd(8)}</text>
         <text style={{ fg: rowColor, ...dimAttrStyle }} wrapMode="none">!{mr.iid}</text>
         <text style={{ fg: rowColor, flexShrink: 1, ...dimAttrStyle }} wrapMode="none">{mr.sourcebranch}</text>
+        <text style={{ fg: isRowDim ? dimColor : mrState.color, flexShrink: 0, ...dimAttrStyle }} wrapMode="none">{mrState.text.padEnd(6)}</text>
         <text style={{ fg: isRowDim ? dimColor : Colors.NEUTRAL, flexShrink: 0, ...dimAttrStyle }} wrapMode="none">{approvalIcon}{approvalCount}{discussions}</text>
         <box style={{ backgroundColor: isCheckedOut ? Colors.SUCCESS : 'transparent', flexShrink: 0, flexDirection: 'row' }}>
           <text style={{ fg: isCheckedOut ? Colors.BACKGROUND : (isRowDim ? dimColor : Colors.NEUTRAL), ...(isCheckedOut ? {} : dimAttrStyle) }} wrapMode="none">

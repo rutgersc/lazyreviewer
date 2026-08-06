@@ -1,4 +1,5 @@
 import type { JiraIssue } from '../jira/jira-schema';
+import type { MergeRequest } from '../mergerequests/mergerequest-schema';
 import { Colors } from '../colors';
 
 export type StatusInfo = { text: string; color: string; dimColor?: string };
@@ -16,6 +17,16 @@ export const mapStatus = (statusName: string): StatusInfo => {
   if (s.includes('progress')) return { text: 'WIP', color: Colors.INFO };
   if (s === 'todo' || s === 'to do') return { text: 'TODO', color: Colors.PRIMARY };
   return { text: statusName.slice(0, 6).toUpperCase(), color: Colors.ERROR };
+};
+
+// The Jira status and the MR state are separate facts: a ticket sits in "Merge Requested" long
+// after its MR merged. Never derive one from the other.
+export const mapMrState = (mr: MergeRequest): StatusInfo => {
+  if (mr.state === 'merged') return { text: 'MERGED', color: Colors.SUCCESS, dimColor: Colors.FADE };
+  if (mr.state === 'closed') return { text: 'CLOSED', color: Colors.ERROR, dimColor: Colors.FADE };
+  if (mr.state === 'locked') return { text: 'LOCKED', color: Colors.WARNING };
+  if (mr.detailedMergeStatus === 'DRAFT_STATUS') return { text: 'DRAFT', color: Colors.WARNING };
+  return { text: 'OPEN', color: Colors.INFO };
 };
 
 export type PriorityInfo = { color: string };
