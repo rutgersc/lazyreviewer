@@ -14,9 +14,11 @@ const migrateEventJson = (data: unknown): unknown => {
     Object.entries(obj).map(([k, v]) => [k, migrateEventJson(v)])
   )
 
-  // Add detailedMergeStatus: null to MR objects (identified by having iid + sourceBranch)
-  if ('iid' in migrated && 'sourceBranch' in migrated && !('detailedMergeStatus' in migrated)) {
-    migrated.detailedMergeStatus = null
+  // Backfill fields added to the MR fragment after these events were written
+  // (MR objects identified by having iid + sourceBranch)
+  if ('iid' in migrated && 'sourceBranch' in migrated) {
+    if (!('detailedMergeStatus' in migrated)) migrated.detailedMergeStatus = null
+    if (!('autoMergeEnabled' in migrated)) migrated.autoMergeEnabled = false
   }
 
   return migrated

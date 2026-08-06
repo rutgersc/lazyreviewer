@@ -337,6 +337,15 @@ const ProjectStatusInfo = ({ mr, isActiveInLocalRepo, worktreeMatch, createdAt, 
 
       <PipelineStagesWithJobStatuses mr={mr} pipelineJobImportance={pipelineJobImportance} />
 
+      {mr.autoMergeEnabled && (
+        <text
+          style={{ fg: Colors.ACCENT, attributes: TextAttributes.BOLD }}
+          wrapMode='none'
+        >
+          [auto-merge]
+        </text>
+      )}
+
       {(() => {
         const blockedLabel = getMergeBlockedLabel(mr.detailedMergeStatus);
         if (!blockedLabel) return null;

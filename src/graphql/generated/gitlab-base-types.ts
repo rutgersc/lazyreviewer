@@ -15,8 +15,6 @@ export type Scalars = {
   AbuseReportID: { input: any; output: any; }
   AchievementsAchievementID: { input: any; output: any; }
   AchievementsUserAchievementID: { input: any; output: any; }
-  AiAgentID: { input: any; output: any; }
-  AiAgentVersionID: { input: any; output: any; }
   AiCatalogBuiltInToolID: { input: any; output: any; }
   AiCatalogItemConsumerID: { input: any; output: any; }
   AiCatalogItemID: { input: any; output: any; }
@@ -56,6 +54,8 @@ export type Scalars = {
   BoardID: { input: any; output: any; }
   BoardsEpicBoardID: { input: any; output: any; }
   BoardsEpicListID: { input: any; output: any; }
+  CdApplicationID: { input: any; output: any; }
+  CdEnvironmentID: { input: any; output: any; }
   CiBuildID: { input: any; output: any; }
   CiCatalogResourceID: { input: any; output: any; }
   CiCatalogResourcesComponentID: { input: any; output: any; }
@@ -111,10 +111,12 @@ export type Scalars = {
   GeoAbuseReportUploadRegistryID: { input: any; output: any; }
   GeoAchievementUploadRegistryID: { input: any; output: any; }
   GeoAiVectorizableFileUploadRegistryID: { input: any; output: any; }
+  GeoAlertManagementMetricImageUploadRegistryID: { input: any; output: any; }
   GeoBaseRegistryID: { input: any; output: any; }
   GeoBulkImportExportUploadUploadRegistryID: { input: any; output: any; }
   GeoCiSecureFileRegistryID: { input: any; output: any; }
   GeoContainerRepositoryRegistryID: { input: any; output: any; }
+  GeoDependencyListExportUploadRegistryID: { input: any; output: any; }
   GeoDependencyProxyBlobRegistryID: { input: any; output: any; }
   GeoDependencyProxyManifestRegistryID: { input: any; output: any; }
   GeoDesignManagementActionUploadRegistryID: { input: any; output: any; }
@@ -122,13 +124,16 @@ export type Scalars = {
   GeoGroupUploadRegistryID: { input: any; output: any; }
   GeoGroupWikiRepositoryRegistryID: { input: any; output: any; }
   GeoImportExportUploadUploadRegistryID: { input: any; output: any; }
+  GeoIssuableMetricImageUploadRegistryID: { input: any; output: any; }
   GeoJobArtifactRegistryID: { input: any; output: any; }
   GeoLfsObjectRegistryID: { input: any; output: any; }
   GeoMergeRequestDiffRegistryID: { input: any; output: any; }
   GeoPackageFileRegistryID: { input: any; output: any; }
+  GeoPackagesDebianProjectComponentFileRegistryID: { input: any; output: any; }
   GeoPackagesHelmMetadataCacheRegistryID: { input: any; output: any; }
   GeoPackagesNugetSymbolRegistryID: { input: any; output: any; }
   GeoPagesDeploymentRegistryID: { input: any; output: any; }
+  GeoPersonalSnippetUploadRegistryID: { input: any; output: any; }
   GeoPipelineArtifactRegistryID: { input: any; output: any; }
   GeoProjectImportExportRelationExportUploadUploadRegistryID: { input: any; output: any; }
   GeoProjectRepositoryRegistryID: { input: any; output: any; }
@@ -137,8 +142,10 @@ export type Scalars = {
   GeoSnippetRepositoryRegistryID: { input: any; output: any; }
   GeoTerraformStateVersionRegistryID: { input: any; output: any; }
   GeoUploadRegistryID: { input: any; output: any; }
+  GeoUserPermissionExportUploadUploadRegistryID: { input: any; output: any; }
   GeoUserUploadRegistryID: { input: any; output: any; }
   GeoVulnerabilityArchiveExportUploadRegistryID: { input: any; output: any; }
+  GeoVulnerabilityExportPartUploadRegistryID: { input: any; output: any; }
   GeoVulnerabilityExportUploadRegistryID: { input: any; output: any; }
   GitlabErrorTrackingDetailedErrorID: { input: any; output: any; }
   GitlabSubscriptionsAddOnPurchaseID: { input: any; output: any; }
@@ -232,7 +239,9 @@ export type Scalars = {
   SecurityAttributeID: { input: any; output: any; }
   SecurityCategoryID: { input: any; output: any; }
   SecurityOrchestrationPolicyConfigurationID: { input: any; output: any; }
+  SecurityPipelineExecutionProjectScheduleID: { input: any; output: any; }
   SecurityPolicyID: { input: any; output: any; }
+  SecurityPolicySchedulePipelineID: { input: any; output: any; }
   SecurityProjectSecurityExclusionID: { input: any; output: any; }
   SecurityProjectTrackedContextID: { input: any; output: any; }
   SecurityScanProfileID: { input: any; output: any; }
@@ -330,7 +339,7 @@ export type AbuseReportUploadRegistry = {
 
 /** The connection type for AbuseReportUploadRegistry. */
 export type AbuseReportUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<AbuseReportUploadRegistryEdge>>>;
@@ -413,7 +422,9 @@ export type AccessLevelEnum =
   /** Planner access. */
   | 'PLANNER'
   /** Reporter access. */
-  | 'REPORTER';
+  | 'REPORTER'
+  /** Security manager access. */
+  | 'SECURITY_MANAGER';
 
 /** Representation of a GitLab group. */
 export type AccessLevelGroup = {
@@ -667,7 +678,7 @@ export type AchievementUploadRegistry = {
 
 /** The connection type for AchievementUploadRegistry. */
 export type AchievementUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<AchievementUploadRegistryEdge>>>;
@@ -695,6 +706,8 @@ export type AchievementUploadRegistryEdge = {
 export type AchievementsAwardInput = {
   /** Global ID of the achievement being awarded. */
   readonly achievementId: Scalars['AchievementsAchievementID']['input'];
+  /** Message to associate with the awarded achievement. */
+  readonly awardMessage: InputMaybe<Scalars['String']['input']>;
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
   /** Global ID of the user being awarded the achievement. */
@@ -857,6 +870,8 @@ export type AddOnUser = Todoable & User & {
   readonly email: Maybe<Scalars['String']['output']>;
   /** User's email addresses. */
   readonly emails: Maybe<EmailConnection>;
+  /** Activity events visible to the current user, most recent first. */
+  readonly events: Maybe<EventConnection>;
   /** GitHub profile name of the user. */
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Ona is enabled at the user level. */
@@ -1104,6 +1119,16 @@ export type AddOnUserContributedProjectsArgs = {
 export type AddOnUserEmailsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** A user with add-on data */
+export type AddOnUserEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<UserEventFilter>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
@@ -1502,6 +1527,8 @@ export type AdminSidekiqQueuesDeleteJobsInput = {
   readonly kubernetesAgentId: InputMaybe<Scalars['String']['input']>;
   /** Delete jobs matching merge_action_status in the context metadata. */
   readonly mergeActionStatus: InputMaybe<Scalars['String']['input']>;
+  /** Delete jobs matching mvcc_manifest in the context metadata. */
+  readonly mvccManifest: InputMaybe<Scalars['String']['input']>;
   /** Delete jobs matching organization_id in the context metadata. */
   readonly organizationId: InputMaybe<Scalars['String']['input']>;
   /** Delete jobs matching pipeline_id in the context metadata. */
@@ -1759,6 +1786,8 @@ export type AiAcceptedSelfHostedModels =
   | 'CODESTRAL'
   /** Deepseek Coder base or instruct. */
   | 'DEEPSEEKCODER'
+  /** Embedding: Suitable for semantic search. */
+  | 'EMBEDDING'
   /** Gemini: Suitable for duo agentic and non-agentic chat. */
   | 'GEMINI'
   /** General: Any model suitable for code suggestions and duo chat. */
@@ -1875,74 +1904,6 @@ export type AiAdditionalContextInput = {
   readonly metadata: InputMaybe<Scalars['JSON']['input']>;
 };
 
-/** An AI agent */
-export type AiAgent = {
-  /** Date of creation. */
-  readonly createdAt: Scalars['Time']['output'];
-  /** ID of the agent. */
-  readonly id: Scalars['ID']['output'];
-  /** Latest version of the agent. */
-  readonly latestVersion: Maybe<AiAgentVersion>;
-  /** Name of the agent. */
-  readonly name: Scalars['String']['output'];
-  /** Route ID of the agent. */
-  readonly routeId: Scalars['Int']['output'];
-  /** Versions of the agent. */
-  readonly versions: Maybe<ReadonlyArray<AiAgentVersion>>;
-};
-
-/** The connection type for AiAgent. */
-export type AiAgentConnection = {
-  /** A list of edges. */
-  readonly edges: Maybe<ReadonlyArray<Maybe<AiAgentEdge>>>;
-  /** A list of nodes. */
-  readonly nodes: Maybe<ReadonlyArray<Maybe<AiAgent>>>;
-  /** Information to aid in pagination. */
-  readonly pageInfo: PageInfo;
-};
-
-/** Autogenerated input type of AiAgentCreate */
-export type AiAgentCreateInput = {
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
-  /** Name of the agent. */
-  readonly name: Scalars['String']['input'];
-  /** Project to which the agent belongs. */
-  readonly projectPath: Scalars['ID']['input'];
-  /** Prompt for the agent. */
-  readonly prompt: Scalars['String']['input'];
-};
-
-/** Autogenerated return type of AiAgentCreate. */
-export type AiAgentCreatePayload = {
-  /** Agent after mutation. */
-  readonly agent: Maybe<AiAgent>;
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: Maybe<Scalars['String']['output']>;
-  /** Errors encountered during the mutation. */
-  readonly errors: ReadonlyArray<Scalars['String']['output']>;
-};
-
-/** An edge in a connection. */
-export type AiAgentEdge = {
-  /** A cursor for use in pagination. */
-  readonly cursor: Scalars['String']['output'];
-  /** The item at the end of the edge. */
-  readonly node: Maybe<AiAgent>;
-};
-
-/** Version of an AI Agent */
-export type AiAgentVersion = {
-  /** Timestamp when the agent version was created. */
-  readonly createdAt: Scalars['Time']['output'];
-  /** ID of the agent version. */
-  readonly id: Scalars['ID']['output'];
-  /** Model of the agent. */
-  readonly model: Scalars['String']['output'];
-  /** Prompt of the agent. */
-  readonly prompt: Scalars['String']['output'];
-};
-
 export type AiAgenticChatInput = {
   /** Additional context to be passed for the chat. */
   readonly additionalContext: InputMaybe<ReadonlyArray<AiAdditionalContextInput>>;
@@ -1954,6 +1915,42 @@ export type AiAgenticChatInput = {
   readonly namespaceId: InputMaybe<Scalars['NamespaceID']['input']>;
   /** Global ID of the resource to mutate. */
   readonly resourceId: Scalars['AiModelID']['input'];
+};
+
+/** Audit event recorded for a GitLab Duo Agent Platform session. */
+export type AiAuditEvent = {
+  /** User who triggered the audit event. */
+  readonly author: Maybe<UserCore>;
+  /** Timestamp of when the audit event was created. */
+  readonly createdAt: Scalars['Time']['output'];
+  /** Event-specific details payload. */
+  readonly details: Maybe<Scalars['JSON']['output']>;
+  /** Name of the audit event. */
+  readonly eventName: Maybe<Scalars['String']['output']>;
+  /** ID of the audit event. */
+  readonly id: Scalars['ID']['output'];
+  /** IP address recorded for the audit event. */
+  readonly ipAddress: Maybe<Scalars['String']['output']>;
+  /** ID of the Duo Agent Platform session the event belongs to. */
+  readonly workflowId: Scalars['ID']['output'];
+};
+
+/** The connection type for AiAuditEvent. */
+export type AiAuditEventConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<AiAuditEventEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<AiAuditEvent>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** An edge in a connection. */
+export type AiAuditEventEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<AiAuditEvent>;
 };
 
 /** An AI catalog agent */
@@ -1972,6 +1969,8 @@ export type AiCatalogAgent = AiCatalogItem & {
   readonly createdAt: Scalars['Time']['output'];
   /** Description of the item. */
   readonly description: Scalars['String']['output'];
+  /** GitLab Flavored Markdown rendering of `description` */
+  readonly descriptionHtml: Maybe<Scalars['String']['output']>;
   /** Whether the item is a foundational item. */
   readonly foundational: Scalars['Boolean']['output'];
   /** Foundational flow reference. */
@@ -2149,6 +2148,8 @@ export type AiCatalogAgentVersion = AiCatalogItemVersion & {
   readonly createdAt: Scalars['Time']['output'];
   /** User that created the item version. */
   readonly createdBy: Maybe<UserCore>;
+  /** Indicates the item version has been deprecated by the author. */
+  readonly deprecated: Scalars['Boolean']['output'];
   /** Human-friendly name of the item version. In the form v1.0.0-draft. */
   readonly humanVersionName: Maybe<Scalars['String']['output']>;
   /** ID of the item version. */
@@ -2266,6 +2267,8 @@ export type AiCatalogFlow = AiCatalogItem & {
   readonly createdAt: Scalars['Time']['output'];
   /** Description of the item. */
   readonly description: Scalars['String']['output'];
+  /** GitLab Flavored Markdown rendering of `description` */
+  readonly descriptionHtml: Maybe<Scalars['String']['output']>;
   /** Whether the item is a foundational item. */
   readonly foundational: Scalars['Boolean']['output'];
   /** Foundational flow reference. */
@@ -2422,6 +2425,8 @@ export type AiCatalogFlowVersion = AiCatalogItemVersion & {
   readonly createdBy: Maybe<UserCore>;
   /** YAML definition of the flow. */
   readonly definition: Maybe<Scalars['String']['output']>;
+  /** Indicates the item version has been deprecated by the author. */
+  readonly deprecated: Scalars['Boolean']['output'];
   /** Human-friendly name of the item version. In the form v1.0.0-draft. */
   readonly humanVersionName: Maybe<Scalars['String']['output']>;
   /** ID of the item version. */
@@ -2454,6 +2459,8 @@ export type AiCatalogItem = {
   readonly createdAt: Scalars['Time']['output'];
   /** Description of the item. */
   readonly description: Scalars['String']['output'];
+  /** GitLab Flavored Markdown rendering of `description` */
+  readonly descriptionHtml: Maybe<Scalars['String']['output']>;
   /** Whether the item is a foundational item. */
   readonly foundational: Scalars['Boolean']['output'];
   /** Foundational flow reference. */
@@ -2567,6 +2574,31 @@ export type AiCatalogItemConsumer = {
   readonly webPath: Maybe<Scalars['String']['output']>;
 };
 
+/** Autogenerated input type of AiCatalogItemConsumerBulkCreate */
+export type AiCatalogItemConsumerBulkCreateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the catalog item to enable. */
+  readonly itemId: Scalars['AiCatalogItemID']['input'];
+  /** Global IDs of the projects to enable the catalog item in (maximum 100). */
+  readonly projectIds: ReadonlyArray<Scalars['ProjectID']['input']>;
+  /**
+   * Filter conditions for the auto-created flow triggers, keyed by event type. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly triggerFilter: InputMaybe<Scalars['JSON']['input']>;
+  /** List of event types to create flow triggers for. */
+  readonly triggerTypes: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+};
+
+/** Autogenerated return type of AiCatalogItemConsumerBulkCreate. */
+export type AiCatalogItemConsumerBulkCreatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
 /** The connection type for AiCatalogItemConsumer. */
 export type AiCatalogItemConsumerConnection = {
   /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
@@ -2595,6 +2627,11 @@ export type AiCatalogItemConsumerCreateInput = {
   readonly parentItemConsumerId: InputMaybe<Scalars['AiCatalogItemConsumerID']['input']>;
   /** Target project or top-level group in which the catalog item is configured. */
   readonly target: ItemConsumerTargetInput;
+  /**
+   * Filter conditions for the auto-created flow triggers, keyed by event type. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly triggerFilter: InputMaybe<Scalars['JSON']['input']>;
   /** List of event types to create flow triggers for (values can be mention, assign or assign_reviewer). */
   readonly triggerTypes: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
 };
@@ -2649,7 +2686,7 @@ export type AiCatalogItemConsumerUpdateInput = {
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
   /** Global ID of the catalog item consumer to update. */
   readonly id: Scalars['AiCatalogItemConsumerID']['input'];
-  /** Version the item is pinned to, in the format `n.n.n`. Required to prevent a concurrency issue where the version could change between read and update. */
+  /** Version the item is pinned to, in the format `n.n.n`. */
   readonly pinnedVersion: InputMaybe<Scalars['AiCatalogPinnedVersion']['input']>;
   /**
    * Version the item is pinned to, in the format `n.n.n`. Deprecated in GitLab 19.0: Use `pinnedVersion` instead.
@@ -2774,6 +2811,8 @@ export type AiCatalogItemVersion = {
   readonly createdAt: Scalars['Time']['output'];
   /** User that created the item version. */
   readonly createdBy: Maybe<UserCore>;
+  /** Indicates the item version has been deprecated by the author. */
+  readonly deprecated: Scalars['Boolean']['output'];
   /** Human-friendly name of the item version. In the form v1.0.0-draft. */
   readonly humanVersionName: Maybe<Scalars['String']['output']>;
   /** ID of the item version. */
@@ -2816,10 +2855,34 @@ export type AiCatalogItemVersionEdge = {
   readonly node: Maybe<AiCatalogItemVersion>;
 };
 
+/** Autogenerated input type of AiCatalogItemVersionRestore */
+export type AiCatalogItemVersionRestoreInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Whether to mark the current latest version as deprecated. */
+  readonly deprecateCurrent: InputMaybe<Scalars['Boolean']['input']>;
+  /** Global ID of the item version to restore from. */
+  readonly id: Scalars['AiCatalogItemVersionID']['input'];
+};
+
+/** Autogenerated return type of AiCatalogItemVersionRestore. */
+export type AiCatalogItemVersionRestorePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Newly created item version restored from the source version. */
+  readonly itemVersion: Maybe<AiCatalogItemVersion>;
+};
+
 /** Values for sorting AI Catalog items. */
 export type AiCatalogItemsSort =
   /** By catalog priority order. */
   | 'CATALOG_PRIORITY'
+  /** Star count by ascending order. */
+  | 'STAR_COUNT_ASC'
+  /** Star count by descending order. */
+  | 'STAR_COUNT_DESC'
   /** Last 30-day usage count by ascending order. */
   | 'USAGE_COUNT_ASC'
   /** Last 30-day usage count by descending order. */
@@ -3005,6 +3068,8 @@ export type AiCatalogThirdPartyFlow = AiCatalogItem & {
   readonly createdAt: Scalars['Time']['output'];
   /** Description of the item. */
   readonly description: Scalars['String']['output'];
+  /** GitLab Flavored Markdown rendering of `description` */
+  readonly descriptionHtml: Maybe<Scalars['String']['output']>;
   /** Whether the item is a foundational item. */
   readonly foundational: Scalars['Boolean']['output'];
   /** Foundational flow reference. */
@@ -3156,6 +3221,8 @@ export type AiCatalogThirdPartyFlowVersion = AiCatalogItemVersion & {
   readonly createdBy: Maybe<UserCore>;
   /** YAML definition of the third party flow. */
   readonly definition: Scalars['String']['output'];
+  /** Indicates the item version has been deprecated by the author. */
+  readonly deprecated: Scalars['Boolean']['output'];
   /** Human-friendly name of the item version. In the form v1.0.0-draft. */
   readonly humanVersionName: Maybe<Scalars['String']['output']>;
   /** ID of the item version. */
@@ -3184,8 +3251,6 @@ export type AiCatalogVersionBump =
 export type AiChatInput = {
   /** Additional context to be passed for the chat. */
   readonly additionalContext: InputMaybe<ReadonlyArray<AiAdditionalContextInput>>;
-  /** Global ID of the agent version to answer the chat. */
-  readonly agentVersionId: InputMaybe<Scalars['AiAgentVersionID']['input']>;
   /** Content of the message. */
   readonly content: Scalars['String']['input'];
   /** Information about currently selected text which can be passed for additional context. */
@@ -3394,6 +3459,11 @@ export type AiFeatureProviders =
 
 /** Duo Chat feature setting */
 export type AiFeatureSetting = {
+  /**
+   * Model selection allowlist for the feature. Returns `null` when the current user cannot read the allowlist or when the feature does not support one. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly allowList: Maybe<AiModelSelectionAllowList>;
   /** LLMs Compatible with the feature. */
   readonly compatibleLlms: Maybe<ReadonlyArray<Scalars['String']['output']>>;
   /** GitLab model selected for use with the AI feature. */
@@ -3454,6 +3524,28 @@ export type AiFeatureSettingEdge = {
   readonly node: Maybe<AiFeatureSetting>;
 };
 
+/** Autogenerated input type of AiFeatureSettingModelAllowlistUpdate */
+export type AiFeatureSettingModelAllowlistUpdateInput = {
+  /** Whether the model selection allowlist is enabled for the feature. */
+  readonly allowlistEnabled: Scalars['Boolean']['input'];
+  /** Identifiers of the GitLab-managed models allowed for the feature. Ignored when `allowlistEnabled` is false. */
+  readonly allowlistModelRefs: ReadonlyArray<Scalars['String']['input']>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** AI feature whose model allowlist is being configured. */
+  readonly feature: AiFeatures;
+};
+
+/** Autogenerated return type of AiFeatureSettingModelAllowlistUpdate. */
+export type AiFeatureSettingModelAllowlistUpdatePayload = {
+  /** Model selection allowlist for the feature after the update. */
+  readonly allowList: Maybe<AiModelSelectionAllowList>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
 /** Autogenerated input type of AiFeatureSettingUpdate */
 export type AiFeatureSettingUpdateInput = {
   /** Global ID of the self-hosted model providing the AI setting. */
@@ -3512,6 +3604,8 @@ export type AiFeatures =
   | 'RESOLVE_VULNERABILITY'
   /** Review merge request feature setting */
   | 'REVIEW_MERGE_REQUEST'
+  /** Review merge request dap feature setting */
+  | 'REVIEW_MERGE_REQUEST_DAP'
   /** Sast vulnerability fp detection feature setting */
   | 'SAST_VULNERABILITY_FP_DETECTION'
   /** Sast vulnerability resolution feature setting */
@@ -3580,10 +3674,16 @@ export type AiFlowTriggerEventType =
   | 'ASSIGN_REVIEWER'
   /** Flow trigger mention event. */
   | 'MENTION'
+  /** Flow trigger merge_request event. */
+  | 'MERGE_REQUEST'
+  /** Flow trigger merge_request_code_conflict event. */
+  | 'MERGE_REQUEST_CODE_CONFLICT'
   /** Flow trigger merge_request_ready event. */
   | 'MERGE_REQUEST_READY'
   /** Flow trigger pipeline_hooks event. */
-  | 'PIPELINE_HOOKS';
+  | 'PIPELINE_HOOKS'
+  /** Flow trigger work_item event. */
+  | 'WORK_ITEM';
 
 /** Represents an AI flow trigger */
 export type AiFlowTriggerType = {
@@ -3694,6 +3794,10 @@ export type AiFoundationalChatAgent = {
   readonly referenceWithVersion: Maybe<Scalars['String']['output']>;
   /** Whether the agent is selectable in the chat agent selection UI. */
   readonly selectableInChat: Scalars['Boolean']['output'];
+  /** System prompt for the agent. */
+  readonly systemPrompt: Maybe<Scalars['String']['output']>;
+  /** List of built-in tools enabled for the agent. */
+  readonly tools: ReadonlyArray<AiCatalogBuiltInTool>;
   /** Version of the agent. */
   readonly version: Maybe<Scalars['String']['output']>;
 };
@@ -3789,8 +3893,6 @@ export type AiMeasureCommentTemperatureInput = {
 
 /** AI features communication message */
 export type AiMessage = {
-  /** Global ID of the agent version to answer the message. */
-  readonly agentVersionId: Maybe<Scalars['AiAgentVersionID']['output']>;
   /** Incremental ID for a chunk from a streamed message. Null when it is not a streamed message. */
   readonly chunkId: Maybe<Scalars['Int']['output']>;
   /** Raw response content. */
@@ -3920,6 +4022,68 @@ export type AiMetricsBasic = {
   readonly codeSuggestions: Maybe<CodeSuggestionMetricsBasic>;
 };
 
+/** Model selection allowlist for an AI feature */
+export type AiModelSelectionAllowList = {
+  /** Whether the model selection allowlist is enabled for the feature. */
+  readonly enabled: Scalars['Boolean']['output'];
+  /** All GitLab-managed models offered for the feature with their effective allowlist state. Includes both allowed and disallowed models so callers can render a complete allowlist UI. */
+  readonly models: AiModelSelectionAllowListModelConnection;
+};
+
+
+/** Model selection allowlist for an AI feature */
+export type AiModelSelectionAllowListModelsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** GitLab-managed model row in the model selection allowlist for a feature */
+export type AiModelSelectionAllowListModel = {
+  /** Whether the model is allowed for this feature under the effective allowlist. The currently chosen/default model for the feature is implicitly allowed and is therefore true even when the allowlist is enabled and the model is not in the stored allowlist refs. */
+  readonly allowed: Scalars['Boolean']['output'];
+  /**
+   * Presentational cost indicator for model usage, e.g "$", "$$", "$$$". Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly costIndicator: Maybe<Scalars['String']['output']>;
+  /** Whether this model is the currently chosen/default model for the feature. This is the admin-chosen model when set, otherwise the GitLab default model from definitions. */
+  readonly currentlyChosenModelForFeature: Scalars['Boolean']['output'];
+  /**
+   * Brief description of the model, e.g "Fast, cost-effective responses". Introduced in GitLab 18.7: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
+   */
+  readonly modelDescription: Maybe<Scalars['String']['output']>;
+  /**
+   * Provider for the model, e.g "OpenAI". Introduced in GitLab 18.6: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
+   */
+  readonly modelProvider: Maybe<Scalars['String']['output']>;
+  /** Humanized name for the offered model, e.g "Chat GPT 4o". */
+  readonly name: Scalars['String']['output'];
+  /** Identifier for the offered model. */
+  readonly ref: Scalars['String']['output'];
+};
+
+/** The connection type for AiModelSelectionAllowListModel. */
+export type AiModelSelectionAllowListModelConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<AiModelSelectionAllowListModelEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<AiModelSelectionAllowListModel>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** An edge in a connection. */
+export type AiModelSelectionAllowListModelEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<AiModelSelectionAllowListModel>;
+};
+
 /** AI features that can be configured through the Model Selection feature settings. */
 export type AiModelSelectionFeatures =
   /** Code completion feature setting */
@@ -3954,6 +4118,8 @@ export type AiModelSelectionFeatures =
   | 'RESOLVE_VULNERABILITY'
   /** Review merge request feature setting */
   | 'REVIEW_MERGE_REQUEST'
+  /** Review merge request dap feature setting */
+  | 'REVIEW_MERGE_REQUEST_DAP'
   /** Sast vulnerability fp detection feature setting */
   | 'SAST_VULNERABILITY_FP_DETECTION'
   /** Sast vulnerability resolution feature setting */
@@ -3967,6 +4133,11 @@ export type AiModelSelectionFeatures =
 
 /** Model Selection feature setting for namespaces. */
 export type AiModelSelectionNamespaceFeatureSetting = {
+  /**
+   * Model selection allowlist for the feature. Returns `null` when the current user cannot read the allowlist or when the feature does not support one. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly allowList: Maybe<AiModelSelectionAllowList>;
   /** LLMs Compatible with the feature. */
   readonly defaultModel: Maybe<AiModelSelectionOfferedModel>;
   /** Identifier for the AI feature. */
@@ -3999,6 +4170,30 @@ export type AiModelSelectionNamespaceFeatureSettingEdge = {
   readonly cursor: Scalars['String']['output'];
   /** The item at the end of the edge. */
   readonly node: Maybe<AiModelSelectionNamespaceFeatureSetting>;
+};
+
+/** Autogenerated input type of AiModelSelectionNamespaceModelAllowlistUpdate */
+export type AiModelSelectionNamespaceModelAllowlistUpdateInput = {
+  /** Whether the model selection allowlist is enabled for the feature. */
+  readonly allowlistEnabled: Scalars['Boolean']['input'];
+  /** Identifiers of the GitLab-managed models allowed for the feature. Ignored when `allowlistEnabled` is false. */
+  readonly allowlistModelRefs: ReadonlyArray<Scalars['String']['input']>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** AI feature whose model allowlist is being configured. */
+  readonly feature: AiFeatures;
+  /** Group whose model allowlist is being configured. */
+  readonly groupId: Scalars['GroupID']['input'];
+};
+
+/** Autogenerated return type of AiModelSelectionNamespaceModelAllowlistUpdate. */
+export type AiModelSelectionNamespaceModelAllowlistUpdatePayload = {
+  /** Model selection allowlist for the feature after the update. */
+  readonly allowList: Maybe<AiModelSelectionAllowList>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
 };
 
 /** Autogenerated input type of AiModelSelectionNamespaceUpdate */
@@ -4218,7 +4413,7 @@ export type AiSelfHostedModelProvider =
   | 'API'
   /** Amazon Bedrock provider. */
   | 'BEDROCK'
-  /** Google Vertex AI provider. */
+  /** Gemini Enterprise Agent Platform provider. */
   | 'VERTEX_AI';
 
 /** GitLab release state of the model */
@@ -4276,6 +4471,67 @@ export type AiSummarizeReviewInput = {
   /** Global ID of the resource to mutate. */
   readonly resourceId: Scalars['AiModelID']['input'];
 };
+
+/** Action type categorisation for an AI tool */
+export type AiToolActionType =
+  /** Tool performs destructive operations. */
+  | 'DESTROY'
+  /** Tool performs read-only operations. */
+  | 'READ'
+  /** Tool performs write operations. */
+  | 'WRITE';
+
+/** Permission mode for an AI tool */
+export type AiToolPermission =
+  /** Tool is always allowed to run without approval. */
+  | 'ALLOW'
+  /** Tool requires human approval before running. */
+  | 'ASK'
+  /** Tool is always blocked from running. */
+  | 'DENY';
+
+/** A governance rule for an AI agent tool */
+export type AiToolRule = {
+  /** Action type categorisation for the tool. */
+  readonly actionType: AiToolActionType;
+  /** Display category for the tool. For example, GitLab Read, Files, and Commands. */
+  readonly category: Scalars['String']['output'];
+  /** Tool name. Used as stable identifier. Always the tool name string and never a database ID. */
+  readonly id: Scalars['ID']['output'];
+  /** Permission mode for local or IDE surface. Null means no rule set and the value is inherited from the namespace default. */
+  readonly localAccess: Maybe<AiToolPermission>;
+  /** Name of the tool as registered in the tool registry. */
+  readonly name: Scalars['String']['output'];
+  /** Source of the tool. Either "gitlab" or "mcp". */
+  readonly source: AiToolSource;
+  /** Permission mode for web surface. Null means no rule set and the value is inherited from the namespace default. */
+  readonly webAccess: Maybe<AiToolPermission>;
+};
+
+/** The connection type for AiToolRule. */
+export type AiToolRuleConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<AiToolRuleEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<AiToolRule>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** An edge in a connection. */
+export type AiToolRuleEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<AiToolRule>;
+};
+
+/** Source of an AI tool. */
+export type AiToolSource =
+  /** Tool provided by GitLab. */
+  | 'GITLAB'
+  /** Tool provided via MCP. */
+  | 'MCP';
 
 /** Usage data for events stored in either PostgreSQL (default) or ClickHouse (when configured). Data retention: three months in PostgreSQL, indefinite in ClickHouse. Requires a personal access token. Works only on top-level groups. Premium and Ultimate only. */
 export type AiUsageData = {
@@ -4394,6 +4650,8 @@ export type AiUsageEventType =
   | 'REQUEST_REVIEW_DUO_CODE_REVIEW_ON_MR_BY_AUTHOR'
   /** Non-author requested Duo Code Review on MR. */
   | 'REQUEST_REVIEW_DUO_CODE_REVIEW_ON_MR_BY_NON_AUTHOR'
+  /** AI Catalog item version was restored as new latest version. */
+  | 'RESTORE_AI_CATALOG_ITEM'
   /** MCP tool call was started. */
   | 'START_MCP_TOOL_CALL'
   /** Troubleshoot job feature was used. */
@@ -4405,6 +4663,8 @@ export type AiUsageEventType =
 export type AiUserMetrics = {
   /** Agent Platform metrics for the user. */
   readonly agentPlatform: Maybe<AgentPlatformUserMetrics>;
+  /** Ai Catalog metrics for the user. */
+  readonly aiCatalog: Maybe<AiCatalogUserMetrics>;
   /** Chat metrics for the user. */
   readonly chat: Maybe<ChatUserMetrics>;
   /** Code Review metrics for the user. */
@@ -4431,7 +4691,10 @@ export type AiUserMetrics = {
   readonly mcp: Maybe<McpUserMetrics>;
   /** Total count of all tracked events for the user. */
   readonly totalEventCount: Maybe<Scalars['Int']['output']>;
-  /** Troubleshoot Job metrics for the user. */
+  /**
+   * Troubleshoot Job metrics for the user. Deprecated in GitLab 19.1: Legacy troubleshoot job metrics for the user (event ID 7 only). For current GitLab Duo Agent Platform-based troubleshoot jobs, use `agentPlatformSessions` with `flow_type = 'fix_pipeline/v1'`.
+   * @deprecated Legacy troubleshoot job metrics for the user (event ID 7 only). For current GitLab Duo Agent Platform-based troubleshoot jobs, use `agentPlatformSessions` with `flow_type = 'fix_pipeline/v1'`. Deprecated in GitLab 19.1.
+   */
   readonly troubleshootJob: Maybe<TroubleshootJobUserMetrics>;
   /** User associated with metrics. */
   readonly user: Maybe<AddOnUser>;
@@ -4485,6 +4748,10 @@ export type AiUserMetricsSort =
   | 'AGENT_PLATFORM_TOTAL_COUNT_ASC'
   /** Agent Platform total event count in descending order. */
   | 'AGENT_PLATFORM_TOTAL_COUNT_DESC'
+  /** Ai Catalog total event count in ascending order. */
+  | 'AI_CATALOG_TOTAL_COUNT_ASC'
+  /** Ai Catalog total event count in descending order. */
+  | 'AI_CATALOG_TOTAL_COUNT_DESC'
   /** Chat total event count in ascending order. */
   | 'CHAT_TOTAL_COUNT_ASC'
   /** Chat total event count in descending order. */
@@ -4593,6 +4860,10 @@ export type AiUserMetricsSort =
   | 'REQUEST_REVIEW_DUO_CODE_REVIEW_ON_MR_BY_NON_AUTHOR_ASC'
   /** Request Review Duo Code Review On Mr By Non Author event count in descending order. */
   | 'REQUEST_REVIEW_DUO_CODE_REVIEW_ON_MR_BY_NON_AUTHOR_DESC'
+  /** Restore Ai Catalog Item event count in ascending order. */
+  | 'RESTORE_AI_CATALOG_ITEM_ASC'
+  /** Restore Ai Catalog Item event count in descending order. */
+  | 'RESTORE_AI_CATALOG_ITEM_DESC'
   /** Start Mcp Tool Call event count in ascending order. */
   | 'START_MCP_TOOL_CALL_ASC'
   /** Start Mcp Tool Call event count in descending order. */
@@ -4665,7 +4936,7 @@ export type AiVectorizableFileUploadRegistry = {
 
 /** The connection type for AiVectorizableFileUploadRegistry. */
 export type AiVectorizableFileUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<AiVectorizableFileUploadRegistryEdge>>>;
@@ -5015,6 +5286,81 @@ export type AlertManagementIntegrationType =
   /** Prometheus integration. */
   | 'PROMETHEUS';
 
+/** Represents the Geo replication and verification state of a alert_management_metric_image_upload */
+export type AlertManagementMetricImageUploadRegistry = {
+  /** ID of the Alert Management Metric Image Upload. */
+  readonly alertManagementMetricImageUploadId: Scalars['ID']['output'];
+  /** Indicate if the checksums of the AlertManagementMetricImageUploadRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the AlertManagementMetricImageUploadRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this AlertManagementMetricImageUploadRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the AlertManagementMetricImageUploadRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** Error message during sync of the AlertManagementMetricImageUploadRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the AlertManagementMetricImageUploadRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the AlertManagementMetricImageUploadRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the AlertManagementMetricImageUploadRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** Timestamp after which the AlertManagementMetricImageUploadRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the AlertManagementMetricImageUploadRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the AlertManagementMetricImageUploadRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** The local checksum of the AlertManagementMetricImageUploadRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the AlertManagementMetricImageUploadRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the AlertManagementMetricImageUploadRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the AlertManagementMetricImageUploadRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the AlertManagementMetricImageUploadRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of AlertManagementMetricImageUploadRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the AlertManagementMetricImageUploadRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the AlertManagementMetricImageUploadRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+};
+
+/** The connection type for AlertManagementMetricImageUploadRegistry. */
+export type AlertManagementMetricImageUploadRegistryConnection = {
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<AlertManagementMetricImageUploadRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<AlertManagementMetricImageUploadRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for AlertManagementMetricImageUploadRegistry. */
+export type AlertManagementMetricImageUploadRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type AlertManagementMetricImageUploadRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<AlertManagementMetricImageUploadRegistry>;
+};
+
 /** Parsed field from an alert used for custom mappings */
 export type AlertManagementPayloadAlertField = {
   /** Human-readable label of the payload path. */
@@ -5237,15 +5583,24 @@ export type AmazonS3ConfigurationTypeEdge = {
 export type Analytics = {
   /** Aggregation engine for GitLab Duo Agent Platform sessions usage */
   readonly agentPlatformSessions: Maybe<AgentPlatformSessionsAggregationScope>;
-  /** Aggregation engine for contribution analytics */
+  /**
+   * Aggregation engine for contribution analytics Introduced in GitLab 19.0: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
+   */
   readonly contributions: Maybe<ContributionsAggregationScope>;
-  /** Aggregation engine for deployment analytics */
+  /**
+   * Aggregation engine for deployment analytics Introduced in GitLab 19.0: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
+   */
   readonly deployments: Maybe<DeploymentsAggregationScope>;
   /** Aggregation engine for GitLab Duo Code Suggestions usage */
   readonly duoCodeSuggestions: Maybe<DuoCodeSuggestionsAggregationScope>;
   /** Aggregation engine for GitLab Duo AI usage events */
   readonly duoUsageEvents: Maybe<DuoUsageEventsAggregationScope>;
-  /** Aggregation engine for finished pipelines analytics */
+  /**
+   * Aggregation engine for finished pipelines analytics Introduced in GitLab 19.0: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
+   */
   readonly finishedPipelines: Maybe<FinishedPipelinesAggregationScope>;
 };
 
@@ -6257,6 +6612,44 @@ export type AuditEventsAmazonS3ConfigurationUpdatePayload = {
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
 };
 
+/** Autogenerated input type of AuditEventsGroupDestinationDenylistEventsAdd */
+export type AuditEventsGroupDestinationDenylistEventsAddInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Destination id. */
+  readonly destinationId: Scalars['AuditEventsGroupExternalStreamingDestinationID']['input'];
+  /** List of event type filters to add to the denylist. */
+  readonly eventTypeFilters: ReadonlyArray<Scalars['String']['input']>;
+};
+
+/** Autogenerated return type of AuditEventsGroupDestinationDenylistEventsAdd. */
+export type AuditEventsGroupDestinationDenylistEventsAddPayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** List of denylisted event type filters for the audit event external destination. */
+  readonly eventTypeFilters: Maybe<ReadonlyArray<Scalars['String']['output']>>;
+};
+
+/** Autogenerated input type of AuditEventsGroupDestinationDenylistEventsDelete */
+export type AuditEventsGroupDestinationDenylistEventsDeleteInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Destination id. */
+  readonly destinationId: Scalars['AuditEventsGroupExternalStreamingDestinationID']['input'];
+  /** List of event type filters to remove from the denylist. */
+  readonly eventTypeFilters: ReadonlyArray<Scalars['String']['input']>;
+};
+
+/** Autogenerated return type of AuditEventsGroupDestinationDenylistEventsDelete. */
+export type AuditEventsGroupDestinationDenylistEventsDeletePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
 /** Autogenerated input type of AuditEventsGroupDestinationEventsAdd */
 export type AuditEventsGroupDestinationEventsAddInput = {
   /** A unique identifier for the client performing the mutation. */
@@ -6793,6 +7186,8 @@ export type AutocompletedUser = Todoable & User & {
   readonly email: Maybe<Scalars['String']['output']>;
   /** User's email addresses. */
   readonly emails: Maybe<EmailConnection>;
+  /** Activity events visible to the current user, most recent first. */
+  readonly events: Maybe<EventConnection>;
   /** GitHub profile name of the user. */
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Ona is enabled at the user level. */
@@ -7028,6 +7423,16 @@ export type AutocompletedUserContributedProjectsArgs = {
 export type AutocompletedUserEmailsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Core representation of a GitLab user. */
+export type AutocompletedUserEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<UserEventFilter>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
@@ -8708,7 +9113,7 @@ export type BulkImportExportUploadUploadRegistry = {
 
 /** The connection type for BulkImportExportUploadUploadRegistry. */
 export type BulkImportExportUploadUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<BulkImportExportUploadUploadRegistryEdge>>>;
@@ -8763,6 +9168,48 @@ export type BulkSetVulnerabilityFindingsDueDatesInput = {
    * A maximum of 1000 updates is allowed per request.
    */
   readonly updates: ReadonlyArray<FindingDueDatesSetInput>;
+};
+
+/** Input for a single tool rule update within a bulk operation. */
+export type BulkToolRuleInput = {
+  /** Permission mode for local or IDE surface. Omitting the field sets it to null, clearing any existing value. */
+  readonly localAccess: InputMaybe<AiToolPermission>;
+  /** Tool name string identifying the tool to update. For example, "create_issue". */
+  readonly toolId: Scalars['String']['input'];
+  /** Permission mode for web surface. Omitting the field sets it to null, clearing any existing value. */
+  readonly webAccess: InputMaybe<AiToolPermission>;
+};
+
+/** Result for a single tool rule update within a bulk operation. */
+export type BulkToolRuleResult = {
+  /** Errors for the specific tool rule update. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Tool name that was processed. */
+  readonly toolId: Scalars['String']['output'];
+  /** Updated tool rule, if successful. */
+  readonly toolRule: Maybe<AiToolRule>;
+};
+
+/** Autogenerated input type of BulkUpdateAiToolRules */
+export type BulkUpdateAiToolRulesInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Full path of the root namespace to update tool rules for. */
+  readonly fullPath: Scalars['ID']['input'];
+  /** Full path of the project to update tool rules for. When provided, rules can only be stricter than the namespace rule. */
+  readonly projectPath: InputMaybe<Scalars['ID']['input']>;
+  /** Tool rules to update (maximum 100 entries). */
+  readonly toolRules: ReadonlyArray<BulkToolRuleInput>;
+};
+
+/** Autogenerated return type of BulkUpdateAiToolRules. */
+export type BulkUpdateAiToolRulesPayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Results for each tool rule update, including any per-item errors. */
+  readonly results: ReadonlyArray<BulkToolRuleResult>;
 };
 
 /** Autogenerated input type of BulkUpdateSecurityAttributes */
@@ -8850,6 +9297,144 @@ export type CatalogResourcesDestroyPayload = {
   readonly clientMutationId: Maybe<Scalars['String']['output']>;
   /** Errors encountered during the mutation. */
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
+/** Continuous deployment application. */
+export type CdApplication = {
+  /** Timestamp of when the application was created. */
+  readonly createdAt: Scalars['Time']['output'];
+  /** Description of the application. */
+  readonly description: Maybe<Scalars['String']['output']>;
+  /** Group the application belongs to. */
+  readonly group: Maybe<Group>;
+  /** Global ID of the application. */
+  readonly id: Scalars['CdApplicationID']['output'];
+  /** Name of the application. */
+  readonly name: Scalars['String']['output'];
+  /** Organization the application belongs to. */
+  readonly organization: Maybe<Organization>;
+  /** Timestamp of when the application was last updated. */
+  readonly updatedAt: Scalars['Time']['output'];
+};
+
+/** The connection type for CdApplication. */
+export type CdApplicationConnection = {
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<CdApplicationEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<CdApplication>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for CdApplication. */
+export type CdApplicationConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Autogenerated input type of CdApplicationCreate */
+export type CdApplicationCreateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Description of the application. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** Full path of the group to create the application in. Exactly one of `groupPath` or `organizationId` must be provided. */
+  readonly groupPath: InputMaybe<Scalars['ID']['input']>;
+  /** Name of the application. */
+  readonly name: Scalars['String']['input'];
+  /** Global ID of the organization to create the application in. Exactly one of `groupPath` or `organizationId` must be provided. */
+  readonly organizationId: InputMaybe<Scalars['OrganizationsOrganizationID']['input']>;
+};
+
+/** Autogenerated return type of CdApplicationCreate. */
+export type CdApplicationCreatePayload = {
+  /** Application created by the mutation. */
+  readonly application: Maybe<CdApplication>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
+/** An edge in a connection. */
+export type CdApplicationEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<CdApplication>;
+};
+
+/** Continuous deployment environment. */
+export type CdEnvironment = {
+  /** Timestamp of when the environment was created. */
+  readonly createdAt: Scalars['Time']['output'];
+  /** Description of the environment. */
+  readonly description: Maybe<Scalars['String']['output']>;
+  /** Group the environment belongs to. */
+  readonly group: Maybe<Group>;
+  /** Global ID of the environment. */
+  readonly id: Scalars['CdEnvironmentID']['output'];
+  /** Name of the environment. */
+  readonly name: Scalars['String']['output'];
+  /** Organization the environment belongs to. */
+  readonly organization: Maybe<Organization>;
+  /** Timestamp of when the environment was last updated. */
+  readonly updatedAt: Scalars['Time']['output'];
+};
+
+/** The connection type for CdEnvironment. */
+export type CdEnvironmentConnection = {
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<CdEnvironmentEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<CdEnvironment>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for CdEnvironment. */
+export type CdEnvironmentConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Autogenerated input type of CdEnvironmentCreate */
+export type CdEnvironmentCreateInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the cluster agent the environment targets. */
+  readonly clusterAgentId: Scalars['ClustersAgentID']['input'];
+  /** Description of the environment. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** Full path of the group to create the environment in. Exactly one of `groupPath` or `organizationId` must be provided. */
+  readonly groupPath: InputMaybe<Scalars['ID']['input']>;
+  /** Name of the environment. */
+  readonly name: Scalars['String']['input'];
+  /** Global ID of the organization to create the environment in. Exactly one of `groupPath` or `organizationId` must be provided. */
+  readonly organizationId: InputMaybe<Scalars['OrganizationsOrganizationID']['input']>;
+};
+
+/** Autogenerated return type of CdEnvironmentCreate. */
+export type CdEnvironmentCreatePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Environment created by the mutation. */
+  readonly environment: Maybe<CdEnvironment>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
+/** An edge in a connection. */
+export type CdEnvironmentEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<CdEnvironment>;
 };
 
 export type CiApplicationSettings = {
@@ -9887,6 +10472,8 @@ export type CiInstanceVariable = CiVariable & {
    * @deprecated No longer used, only available for GroupVariableType and ProjectVariableType. Deprecated in GitLab 15.3.
    */
   readonly environmentScope: Maybe<Scalars['String']['output']>;
+  /** Indicates whether the variable is hidden. */
+  readonly hidden: Maybe<Scalars['Boolean']['output']>;
   /** ID of the variable. */
   readonly id: Scalars['ID']['output'];
   /** Name of the variable. */
@@ -10156,7 +10743,7 @@ export type CiJobAnalyticsStatistics = {
   readonly count: Maybe<Scalars['BigInt']['output']>;
   /** Duration statistics for the jobs. */
   readonly durationStatistics: Maybe<CiDurationStatistics>;
-  /** Percentage of jobs, optionally filtered by status. */
+  /** Percentage of jobs, optionally filtered by status. SUCCESS and FAILED rates use (success + failed) as the denominator; OTHER (canceled or skipped) uses the total job count. */
   readonly rate: Maybe<Scalars['Float']['output']>;
 };
 
@@ -10209,7 +10796,7 @@ export type CiJobArtifactEdge = {
 
 /** The connection type for CiJob. */
 export type CiJobConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CiJobEdge>>>;
@@ -10252,6 +10839,8 @@ export type CiJobFailureReason =
   | 'DOWNSTREAM_BRIDGE_PROJECT_NOT_FOUND'
   /** A job that failed due to downstream pipeline creation failed. */
   | 'DOWNSTREAM_PIPELINE_CREATION_FAILED'
+  /** A job that failed due to downstream project trigger resolved to empty. */
+  | 'DOWNSTREAM_PROJECT_TRIGGER_RESOLVED_TO_EMPTY'
   /** A job that failed due to duo workflow not allowed. */
   | 'DUO_WORKFLOW_NOT_ALLOWED'
   /** A job that failed due to environment creation failure. */
@@ -10260,6 +10849,8 @@ export type CiJobFailureReason =
   | 'FAILED_OUTDATED_DEPLOYMENT_JOB'
   /** A job that failed due to forward deployment failure. */
   | 'FORWARD_DEPLOYMENT_FAILURE'
+  /** A job that failed due to id token burned project path. */
+  | 'ID_TOKEN_BURNED_PROJECT_PATH'
   /** A job that failed due to insufficient bridge permissions. */
   | 'INSUFFICIENT_BRIDGE_PERMISSIONS'
   /** A job that failed due to insufficient upstream permissions. */
@@ -10296,6 +10887,12 @@ export type CiJobFailureReason =
   | 'REACHED_MAX_DESCENDANT_PIPELINES_DEPTH'
   /** A job that failed due to reached max pipeline hierarchy size. */
   | 'REACHED_MAX_PIPELINE_HIERARCHY_SIZE'
+  /** A job that failed due to runner configuration error. */
+  | 'RUNNER_CONFIGURATION_ERROR'
+  /** A job that failed due to runner external dependency failure. */
+  | 'RUNNER_EXTERNAL_DEPENDENCY_FAILURE'
+  /** A job that failed due to runner interrupted. */
+  | 'RUNNER_INTERRUPTED'
   /** A job that failed due to runner system failure. */
   | 'RUNNER_SYSTEM_FAILURE'
   /** A job that failed due to runner unsupported. */
@@ -10434,7 +11031,7 @@ export type CiJobInterfaceArtifactsArgs = {
 
 /** The connection type for CiJobInterface. */
 export type CiJobInterfaceConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CiJobInterfaceEdge>>>;
@@ -10899,6 +11496,8 @@ export type CiJobTokenScopeDirection =
 
 /** CI_JOB_TOKEN policy */
 export type CiJobTokenScopePolicies =
+  /** Admin Badges */
+  | 'ADMIN_BADGES'
   /** Admin Deployments */
   | 'ADMIN_DEPLOYMENTS'
   /** Admin Environments */
@@ -10917,6 +11516,8 @@ export type CiJobTokenScopePolicies =
   | 'ADMIN_SECURE_FILES'
   /** Admin Terraform State */
   | 'ADMIN_TERRAFORM_STATE'
+  /** Read Badges */
+  | 'READ_BADGES'
   /** Read Deployments */
   | 'READ_DEPLOYMENTS'
   /** Read Environments */
@@ -11832,7 +12433,7 @@ export type CiSecureFileRegistry = {
 
 /** The connection type for CiSecureFileRegistry. */
 export type CiSecureFileRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<CiSecureFileRegistryEdge>>>;
@@ -12684,7 +13285,7 @@ export type CommentTemplatePathType = {
   readonly text: Scalars['String']['output'];
 };
 
-export type Commit = Todoable & {
+export type Commit = NoteableInterface & Todoable & {
   /** Author of the commit. */
   readonly author: Maybe<UserCore>;
   /** Commit author's email. */
@@ -12695,6 +13296,8 @@ export type Commit = Todoable & {
   readonly authorName: Maybe<Scalars['String']['output']>;
   /** Timestamp of when the commit was authored. */
   readonly authoredDate: Maybe<Scalars['Time']['output']>;
+  /** All commenters on the noteable. */
+  readonly commenters: UserCoreConnection;
   /** Timestamp of when the commit was committed. */
   readonly committedDate: Maybe<Scalars['Time']['output']>;
   /** Email of the committer. */
@@ -12707,16 +13310,22 @@ export type Commit = Todoable & {
   readonly descriptionHtml: Maybe<Scalars['String']['output']>;
   /** Diffs contained within the commit. This field can only be resolved for 10 diffs in any single request. */
   readonly diffs: Maybe<ReadonlyArray<Diff>>;
+  /** All discussions on the noteable. */
+  readonly discussions: DiscussionConnection;
   /** Full title of the commit message. */
   readonly fullTitle: Maybe<Scalars['String']['output']>;
   /** HTML rendering of `full_title` */
   readonly fullTitleHtml: Maybe<Scalars['String']['output']>;
+  /** Indicates the commit was authored during a GitLab Duo Agent Platform flow. */
+  readonly hasAgentSession: Scalars['Boolean']['output'];
   /** ID (global ID) of the commit. */
   readonly id: Scalars['ID']['output'];
   /** Raw commit message. */
   readonly message: Maybe<Scalars['String']['output']>;
   /** Name or title of the object. */
   readonly name: Maybe<Scalars['String']['output']>;
+  /** All notes on this noteable. */
+  readonly notes: NoteConnection;
   /** SHA ID of the first parent. */
   readonly parentSha: Maybe<Scalars['String']['output']>;
   /** Pipelines of the commit ordered latest first. */
@@ -12739,6 +13348,31 @@ export type Commit = Todoable & {
   readonly webPath: Scalars['String']['output'];
   /** Web URL of the commit. */
   readonly webUrl: Scalars['String']['output'];
+};
+
+
+export type CommitCommentersArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type CommitDiscussionsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type CommitNotesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter?: InputMaybe<NotesFilterType>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -13094,11 +13728,8 @@ export type ComplianceFrameworkPipelineExecutionPoliciesArgs = {
 export type ComplianceFrameworkPipelineExecutionSchedulePoliciesArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
-  deduplicatePolicies?: InputMaybe<Scalars['Boolean']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
-  includeUnscoped?: InputMaybe<Scalars['Boolean']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
-  relationship?: InputMaybe<SecurityPolicyRelationType>;
 };
 
 
@@ -14413,7 +15044,7 @@ export type ContainerRepositoryRegistry = {
 
 /** The connection type for ContainerRepositoryRegistry. */
 export type ContainerRepositoryRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ContainerRepositoryRegistryEdge>>>;
@@ -15239,6 +15870,11 @@ export type CountableVulnerability = NoteableInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
    */
   readonly dueDate: Maybe<Scalars['ISO8601Date']['output']>;
+  /**
+   * Indicates whether the SAST vulnerability review workflow is enabled for the project. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly duoSastVrWorkflowEnabled: Maybe<Scalars['Boolean']['output']>;
   /** List of external issue links related to the vulnerability. */
   readonly externalIssueLinks: VulnerabilityExternalIssueLinkConnection;
   /** Indicates whether the vulnerability is a false positive. */
@@ -15273,6 +15909,11 @@ export type CountableVulnerability = NoteableInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.5.
    */
   readonly latestFlag: Maybe<VulnerabilityFlag>;
+  /**
+   * Latest non-closed merge request linked to fix the vulnerability. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly latestNonClosedMergeRequest: Maybe<MergeRequest>;
   /**
    * Latest security report finding for the vulnerability. Introduced in GitLab 18.4: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.4.
@@ -15761,7 +16402,7 @@ export type CreateContainerProtectionRepositoryRuleInput = {
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
   /**
-   * Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. Valid only when feature flag `container_registry_protected_containers_delete` is enabled. Introduced in GitLab 17.11: **Status**: Experiment. Introduced in GitLab 17.11: **Status**: Experiment.
+   * Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. Valid only when feature flag `container_registry_protected_containers_delete` is enabled. Introduced in GitLab 17.11: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
    */
   readonly minimumAccessLevelForDelete: InputMaybe<ContainerProtectionRepositoryRuleAccessLevel>;
@@ -16113,7 +16754,7 @@ export type CreatePackagesProtectionRuleInput = {
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
   /**
-   * Minimum GitLab access required to delete packages from the package registry. Valid values include `OWNER` or `ADMIN`. If the value is `nil`, the default minimum access level is `MAINTAINER`. Available only when feature flag `packages_protected_packages_delete` is enabled. Introduced in GitLab 17.10: **Status**: Experiment. Introduced in GitLab 17.10: **Status**: Experiment.
+   * Minimum GitLab access required to delete packages from the package registry. Valid values include `OWNER` or `ADMIN`. If the value is `nil`, the default minimum access level is `MAINTAINER`. Available only when feature flag `packages_protected_packages_delete` is enabled. Introduced in GitLab 17.10: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
    */
   readonly minimumAccessLevelForDelete: InputMaybe<PackagesProtectionRuleAccessLevelForDelete>;
@@ -16185,6 +16826,36 @@ export type CreateSnippetPayload = {
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
   /** Snippet after mutation. */
   readonly snippet: Maybe<Snippet>;
+};
+
+/** Autogenerated input type of CreateTerraformStateProtectionRule */
+export type CreateTerraformStateProtectionRuleInput = {
+  /**
+   * Restriction on the source of write requests. `ANYWHERE` allows all sources, `CI_ONLY` requires a CI job token, `CI_ON_PROTECTED_BRANCH_ONLY` requires a CI job on a protected branch. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly allowedFrom: InputMaybe<TerraformStateProtectionRuleAllowedFrom>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Minimum GitLab access level required to perform write operations on the Terraform state. Valid values include `DEVELOPER`, `MAINTAINER`, `OWNER`, or `ADMIN`. */
+  readonly minimumAccessLevelForWrite: TerraformStateProtectionRuleAccessLevel;
+  /** Full path of the project where the protection rule is located. */
+  readonly projectPath: Scalars['ID']['input'];
+  /** Terraform state name protected by the rule. */
+  readonly stateName: Scalars['String']['input'];
+};
+
+/** Autogenerated return type of CreateTerraformStateProtectionRule. */
+export type CreateTerraformStateProtectionRulePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /**
+   * Terraform state protection rule after mutation. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly terraformStateProtectionRule: Maybe<TerraformStateProtectionRule>;
 };
 
 /** Autogenerated input type of CreateTestCase */
@@ -16334,6 +17005,8 @@ export type CurrentUser = Todoable & User & {
   readonly email: Maybe<Scalars['String']['output']>;
   /** User's email addresses. */
   readonly emails: Maybe<EmailConnection>;
+  /** Activity events visible to the current user, most recent first. */
+  readonly events: Maybe<EventConnection>;
   /** GitHub profile name of the user. */
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Ona is enabled at the user level. */
@@ -16645,6 +17318,16 @@ export type CurrentUserContributedProjectsArgs = {
 export type CurrentUserEmailsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** The currently authenticated GitLab user. */
+export type CurrentUserEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<UserEventFilter>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
@@ -16997,6 +17680,8 @@ export type CustomDashboard = CustomDashboardInterface & {
   readonly organization: Organization;
   /** Project scope of the dashboard, if any. */
   readonly project: Maybe<Project>;
+  /** Dashboard url slug. */
+  readonly slug: Maybe<Scalars['String']['output']>;
   /** Whether the dashboard is a built-in GitLab dashboard. */
   readonly system: Scalars['Boolean']['output'];
   /** Timestamp when the dashboard was last updated. */
@@ -17152,6 +17837,8 @@ export type CustomDashboardInterface = {
   readonly id: Scalars['ID']['output'];
   /** Display name of the dashboard. */
   readonly name: Scalars['String']['output'];
+  /** Dashboard url slug. */
+  readonly slug: Maybe<Scalars['String']['output']>;
   /** Whether the dashboard is a built-in GitLab dashboard. */
   readonly system: Scalars['Boolean']['output'];
 };
@@ -17482,6 +18169,8 @@ export type CustomSystemDashboard = CustomDashboardInterface & {
   readonly id: Scalars['ID']['output'];
   /** Display name of the dashboard. */
   readonly name: Scalars['String']['output'];
+  /** Dashboard url slug. */
+  readonly slug: Maybe<Scalars['String']['output']>;
   /** Whether the dashboard is a built-in GitLab dashboard. */
   readonly system: Scalars['Boolean']['output'];
 };
@@ -18993,6 +19682,27 @@ export type DeleteProjectCustomAttributePayload = {
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
 };
 
+/** Autogenerated input type of DeleteTerraformStateProtectionRule */
+export type DeleteTerraformStateProtectionRuleInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the Terraform state protection rule to delete. */
+  readonly id: Scalars['TerraformStateProtectionRuleID']['input'];
+};
+
+/** Autogenerated return type of DeleteTerraformStateProtectionRule. */
+export type DeleteTerraformStateProtectionRulePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /**
+   * Terraform state protection rule that was deleted. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly terraformStateProtectionRule: Maybe<TerraformStateProtectionRule>;
+};
+
 /** Autogenerated input type of DeleteUserCustomAttribute */
 export type DeleteUserCustomAttributeInput = {
   /** A unique identifier for the client performing the mutation. */
@@ -19043,6 +19753,11 @@ export type Dependency = DependencyInterface & {
   readonly licenses: Maybe<ReadonlyArray<License>>;
   /** Information about where the dependency is located. */
   readonly location: Maybe<Location>;
+  /**
+   * Indicates whether the dependency is a malware package. Returns `true` if a malware package is identified (regardless of add-on status). Returns `false` when the SSCS add-on is active and the package is not a malware package. Returns `null` when the add-on is not active. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly malware: Maybe<Scalars['Boolean']['output']>;
   /** Name of the dependency. */
   readonly name: Scalars['String']['output'];
   /** Description of the tool used to manage the dependency. */
@@ -19093,6 +19808,11 @@ export type DependencyAggregation = DependencyInterface & {
   readonly licenses: Maybe<ReadonlyArray<License>>;
   /** Information about where the dependency is located. */
   readonly location: Maybe<Location>;
+  /**
+   * Indicates whether the dependency is a malware package. Returns `true` if a malware package is identified (regardless of add-on status). Returns `false` when the SSCS add-on is active and the package is not a malware package. Returns `null` when the add-on is not active. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly malware: Maybe<Scalars['Boolean']['output']>;
   /** Name of the dependency. */
   readonly name: Scalars['String']['output'];
   /** Number of occurrences of the dependency across projects. */
@@ -19186,6 +19906,11 @@ export type DependencyInterface = {
   readonly licenses: Maybe<ReadonlyArray<License>>;
   /** Information about where the dependency is located. */
   readonly location: Maybe<Location>;
+  /**
+   * Indicates whether the dependency is a malware package. Returns `true` if a malware package is identified (regardless of add-on status). Returns `false` when the SSCS add-on is active and the package is not a malware package. Returns `null` when the add-on is not active. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly malware: Maybe<Scalars['Boolean']['output']>;
   /** Name of the dependency. */
   readonly name: Scalars['String']['output'];
   /** Description of the tool used to manage the dependency. */
@@ -19220,6 +19945,111 @@ export type DependencyInterfaceVulnerabilitiesArgs = {
 
 /** Represents metadata associated with a dependency link */
 export type DependencyLinkMetadata = NugetDependencyLinkMetadata;
+
+/** Represents the Geo replication and verification state of a `dependency_list_export_upload` */
+export type DependencyListExportUploadRegistry = {
+  /** Indicate if the checksums of the DependencyListExportUploadRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the DependencyListExportUploadRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this DependencyListExportUploadRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /** ID of the Dependency List Export Upload. */
+  readonly dependencyListExportUploadId: Scalars['ID']['output'];
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the DependencyListExportUploadRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** Error message during sync of the DependencyListExportUploadRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the DependencyListExportUploadRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the DependencyListExportUploadRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the DependencyListExportUploadRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** Timestamp after which the DependencyListExportUploadRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the DependencyListExportUploadRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the DependencyListExportUploadRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** The local checksum of the DependencyListExportUploadRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the DependencyListExportUploadRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the DependencyListExportUploadRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the DependencyListExportUploadRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the DependencyListExportUploadRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of DependencyListExportUploadRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the DependencyListExportUploadRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the DependencyListExportUploadRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+};
+
+/** The connection type for DependencyListExportUploadRegistry. */
+export type DependencyListExportUploadRegistryConnection = {
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<DependencyListExportUploadRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<DependencyListExportUploadRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for DependencyListExportUploadRegistry. */
+export type DependencyListExportUploadRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type DependencyListExportUploadRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<DependencyListExportUploadRegistry>;
+};
+
+/** Location of a software dependency within a project. */
+export type DependencyLocation = {
+  /** Indicates whether the dependency has any dependency paths. */
+  readonly hasDependencyPaths: Scalars['Boolean']['output'];
+  /** Information about where the dependency is located. */
+  readonly location: Maybe<Location>;
+  /** Global ID of the SBOM occurrence. */
+  readonly occurrenceId: Scalars['SbomOccurrenceID']['output'];
+  /** Project containing the dependency. */
+  readonly project: Maybe<Project>;
+};
+
+/** The connection type for DependencyLocation. */
+export type DependencyLocationConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<DependencyLocationEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<DependencyLocation>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** An edge in a connection. */
+export type DependencyLocationEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<DependencyLocation>;
+};
 
 /** Ancestor path of a given dependency. */
 export type DependencyPath = {
@@ -19347,7 +20177,7 @@ export type DependencyProxyBlobRegistry = {
 
 /** The connection type for DependencyProxyBlobRegistry. */
 export type DependencyProxyBlobRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<DependencyProxyBlobRegistryEdge>>>;
@@ -19472,7 +20302,7 @@ export type DependencyProxyManifestRegistry = {
 
 /** The connection type for DependencyProxyManifestRegistry. */
 export type DependencyProxyManifestRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<DependencyProxyManifestRegistryEdge>>>;
@@ -20142,7 +20972,7 @@ export type DesignManagementActionUploadRegistry = {
 
 /** The connection type for DesignManagementActionUploadRegistry. */
 export type DesignManagementActionUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<DesignManagementActionUploadRegistryEdge>>>;
@@ -20261,7 +21091,7 @@ export type DesignManagementRepositoryRegistry = {
 
 /** The connection type for DesignManagementRepositoryRegistry. */
 export type DesignManagementRepositoryRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<DesignManagementRepositoryRegistryEdge>>>;
@@ -20928,6 +21758,24 @@ export type DiffImagePositionInput = {
   readonly y: Scalars['Int']['input'];
 };
 
+/** A single line of a diff displayed above a diff note. */
+export type DiffLine = {
+  /** Indicates whether the line can receive a suggestion. */
+  readonly canReceiveSuggestion: Scalars['Boolean']['output'];
+  /** Line code of the diff line. */
+  readonly lineCode: Maybe<Scalars['String']['output']>;
+  /** Line number on the HEAD SHA. */
+  readonly newLine: Maybe<Scalars['Int']['output']>;
+  /** Line number on the start SHA. */
+  readonly oldLine: Maybe<Scalars['Int']['output']>;
+  /** Syntax-highlighted HTML of the diff line. */
+  readonly richText: Maybe<Scalars['String']['output']>;
+  /** Raw text of the diff line, including the leading diff sign. */
+  readonly text: Maybe<Scalars['String']['output']>;
+  /** Type of the diff line, such as 'new' or 'old'. Null for unchanged context lines. */
+  readonly type: Maybe<Scalars['String']['output']>;
+};
+
 export type DiffPathsInput = {
   /** Path of the file on the HEAD SHA. */
   readonly newPath: InputMaybe<Scalars['String']['input']>;
@@ -21050,6 +21898,8 @@ export type Discussion = BaseDiscussionInterface & ResolvableInterface & {
   readonly resolvedAt: Maybe<Scalars['Time']['output']>;
   /** User who resolved the object. */
   readonly resolvedBy: Maybe<UserCore>;
+  /** At most 16 highlighted diff lines above the diff note, up to and including the commented line. Null for non-diff discussions. */
+  readonly truncatedDiffLines: Maybe<ReadonlyArray<DiffLine>>;
   /** Permissions for the current user on the resource */
   readonly userPermissions: DiscussionPermissions;
 };
@@ -21493,6 +22343,10 @@ export type DuoUsageEventsAggregationResponse = {
   readonly dimensions: Maybe<DuoUsageEventsAggregationResponseDimensions>;
   /** Number of unique features */
   readonly featuresCount: Maybe<Scalars['Int']['output']>;
+  /** Number of unique users in the previous period */
+  readonly previousPeriodUsersCount: Maybe<Scalars['Int']['output']>;
+  /** Number of users who also used this feature in the previous period */
+  readonly returningUsersCount: Maybe<Scalars['Int']['output']>;
   /** Total number of events */
   readonly totalCount: Maybe<Scalars['Int']['output']>;
   /** Number of unique users */
@@ -21557,8 +22411,6 @@ export type DuoUsageEventsAggregationScopeAggregatedArgs = {
 
 /** Autogenerated input type of DuoUserFeedback */
 export type DuoUserFeedbackInput = {
-  /** Global ID of the agent to answer the chat. */
-  readonly agentVersionId: InputMaybe<Scalars['AiAgentVersionID']['input']>;
   /** ID of the AI Message. */
   readonly aiMessageId: Scalars['String']['input'];
   /** A unique identifier for the client performing the mutation. */
@@ -21589,10 +22441,17 @@ export type DuoWorkflow = Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.4.
    */
   readonly aiCatalogItemVersionId: Maybe<Scalars['AiCatalogItemVersionID']['output']>;
+  /** List of all the executor logs for the workflow. */
+  readonly allExecutorLogsUrls: Maybe<ReadonlyArray<Scalars['String']['output']>>;
   /** Allow the agent to request user input. */
   readonly allowAgentToRequestUser: Maybe<Scalars['Boolean']['output']>;
   /** Archived due to retention policy. */
   readonly archived: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Audit events recorded for the session. Returns no events when the `agent_artifacts_page` feature flag is disabled. Introduced in GitLab 19.0: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
+   */
+  readonly auditEvents: Maybe<AiAuditEventConnection>;
   /** Timestamp of when the session was created. */
   readonly createdAt: Scalars['Time']['output'];
   /** Environment, like IDE or web. */
@@ -21611,6 +22470,8 @@ export type DuoWorkflow = Todoable & {
   readonly latestCheckpoint: Maybe<DuoWorkflowEvent>;
   /** Has MCP been enabled for the namespace. */
   readonly mcpEnabled: Maybe<Scalars['Boolean']['output']>;
+  /** Associated merge request, if any. */
+  readonly mergeRequest: Maybe<MergeRequest>;
   /** Name or title of the object. */
   readonly name: Maybe<Scalars['String']['output']>;
   /** namespace that the session is in. */
@@ -21637,18 +22498,42 @@ export type DuoWorkflow = Todoable & {
   readonly statusName: Maybe<Scalars['String']['output']>;
   /** Summary of the session. */
   readonly summary: Maybe<Scalars['String']['output']>;
+  /** Title of the session. */
+  readonly title: Maybe<Scalars['String']['output']>;
   /** Tools approval per session policy. */
   readonly toolCallApprovals: Maybe<Scalars['JSON']['output']>;
+  /** Whether the specified tool call is approved for the session. */
+  readonly toolCallApproved: Scalars['Boolean']['output'];
   /** Timestamp of when the session was last updated. */
   readonly updatedAt: Scalars['Time']['output'];
+  /** User who created the session. */
+  readonly user: Maybe<UserCore>;
   /** ID of the user. */
   readonly userId: Scalars['UserID']['output'];
   /** Permissions of the current user for the workflow. */
   readonly userPermissions: Maybe<DuoWorkflowPermissions>;
   /** URL of the object. */
   readonly webUrl: Maybe<Scalars['String']['output']>;
+  /** Associated work item (issue or epic), if any. */
+  readonly workItem: Maybe<WorkItem>;
   /** GitLab Duo Agent Platform flow type based on its capabilities. */
   readonly workflowDefinition: Maybe<Scalars['String']['output']>;
+};
+
+
+/** GitLab Duo Agent Platform session */
+export type DuoWorkflowAuditEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** GitLab Duo Agent Platform session */
+export type DuoWorkflowToolCallApprovedArgs = {
+  toolCallArgs: Scalars['String']['input'];
+  toolName: Scalars['String']['input'];
 };
 
 /** The connection type for DuoWorkflow. */
@@ -21756,6 +22641,56 @@ export type DuoWorkflowPermissions = {
   readonly resumeDuoWorkflow: Scalars['Boolean']['output'];
   /** If `true`, the user can perform `update_duo_workflow` on this resource */
   readonly updateDuoWorkflow: Scalars['Boolean']['output'];
+};
+
+/** A Duo Agent Platform session artifact. */
+export type DuoWorkflowSessionArtifact = {
+  /** Number of audit events recorded for the session. */
+  readonly auditEventsCount: Scalars['Int']['output'];
+  /** Global ID of the session, as an `Ai::DuoWorkflows::Workflow`. */
+  readonly id: Scalars['ID']['output'];
+  /** Project the session belongs to. */
+  readonly project: Maybe<Project>;
+  /** Path of the session. */
+  readonly webPath: Maybe<Scalars['String']['output']>;
+  /** Timestamp of when the session was created. */
+  readonly workflowCreatedAt: Scalars['Time']['output'];
+  /** Workflow definition type of the session. */
+  readonly workflowDefinition: Scalars['String']['output'];
+};
+
+/** The connection type for DuoWorkflowSessionArtifact. */
+export type DuoWorkflowSessionArtifactConnection = {
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<DuoWorkflowSessionArtifactEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<DuoWorkflowSessionArtifact>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for DuoWorkflowSessionArtifact. */
+export type DuoWorkflowSessionArtifactConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type DuoWorkflowSessionArtifactEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<DuoWorkflowSessionArtifact>;
+};
+
+/** Negated filter arguments for Duo Agent Platform session artifacts. */
+export type DuoWorkflowSessionArtifactNegatedFilterInput = {
+  /** Exclude session artifacts belonging to the project full path. */
+  readonly projectPath: InputMaybe<Scalars['String']['input']>;
+  /** Exclude session artifacts with the workflow definition. */
+  readonly workflowDefinition: InputMaybe<Scalars['String']['input']>;
 };
 
 /** The status of the workflow. */
@@ -23636,6 +24571,8 @@ export type Event = {
   readonly id: Scalars['ID']['output'];
   /** Project of the event. */
   readonly project: Maybe<Project>;
+  /** Payload of the push event, when the event represents a push. `null` for non-push events. */
+  readonly pushEventPayload: Maybe<PushEventPayload>;
   /** Target of the event. */
   readonly target: Maybe<EventTargetType>;
   /** When the event was updated. */
@@ -23666,6 +24603,8 @@ export type EventAction =
   | 'PUSHED'
   /** Reopened action */
   | 'REOPENED'
+  /** Transferred action */
+  | 'TRANSFERRED'
   /** Updated action */
   | 'UPDATED';
 
@@ -24164,6 +25103,11 @@ export type GeoNode = {
    */
   readonly aiVectorizableFileUploadRegistries: Maybe<AiVectorizableFileUploadRegistryConnection>;
   /**
+   * Find Alert Management Metric Image Upload registries on this Geo node. Ignored if `geo_alert_management_metric_image_upload_replication` feature flag is disabled. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly alertManagementMetricImageUploadRegistries: Maybe<AlertManagementMetricImageUploadRegistryConnection>;
+  /**
    * Find bulk import/export archive upload registries on this Geo node. Ignored if `geo_bulk_import_export_upload_upload_replication` feature flag is disabled. Introduced in GitLab 19.0: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
    */
@@ -24174,6 +25118,11 @@ export type GeoNode = {
   readonly containerRepositoriesMaxCapacity: Maybe<Scalars['Int']['output']>;
   /** Find Container Repository registries on this Geo node. */
   readonly containerRepositoryRegistries: Maybe<ContainerRepositoryRegistryConnection>;
+  /**
+   * Find Dependency List Export Upload registries on this Geo node. Ignored if `geo_dependency_list_export_upload_replication` feature flag is disabled. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly dependencyListExportUploadRegistries: Maybe<DependencyListExportUploadRegistryConnection>;
   /**
    * Find Dependency Proxy Blob registries on this Geo node. Introduced in GitLab 15.6: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 15.6.
@@ -24211,6 +25160,11 @@ export type GeoNode = {
   readonly importExportUploadUploadRegistries: Maybe<ImportExportUploadUploadRegistryConnection>;
   /** URL defined on the primary node secondary nodes should use to contact it. */
   readonly internalUrl: Maybe<Scalars['String']['output']>;
+  /**
+   * Find Issuable Metric Image Upload registries on this Geo node. Ignored if `geo_issuable_metric_image_upload_replication` feature flag is disabled. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly issuableMetricImageUploadRegistries: Maybe<IssuableMetricImageUploadRegistryConnection>;
   /** Find Job Artifact registries on this Geo node. */
   readonly jobArtifactRegistries: Maybe<JobArtifactRegistryConnection>;
   /** Find LFS object registries on this Geo node. */
@@ -24223,12 +25177,22 @@ export type GeoNode = {
   readonly name: Maybe<Scalars['String']['output']>;
   /** Package file registries of the GeoNode. */
   readonly packageFileRegistries: Maybe<PackageFileRegistryConnection>;
+  /**
+   * Find Debian Project Component File registries on this Geo node. Ignored if `geo_packages_debian_project_component_file_replication` feature flag is disabled. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly packagesDebianProjectComponentFileRegistries: Maybe<PackagesDebianProjectComponentFileRegistryConnection>;
   /** Find Helm Metadata Cache registries on this Geo node. Ignored if `geo_packages_helm_metadata_cache_replication` feature flag is disabled. */
   readonly packagesHelmMetadataCacheRegistries: Maybe<PackagesHelmMetadataCacheRegistryConnection>;
   /** Find Packages::Nuget::Symbols registries on this Geo node. Ignored if `geo_packages_nuget_symbol_replication` feature flag is disabled. */
   readonly packagesNugetSymbolRegistries: Maybe<PackagesNugetSymbolRegistryConnection>;
   /** Find Pages Deployment registries on this Geo node */
   readonly pagesDeploymentRegistries: Maybe<PagesDeploymentRegistryConnection>;
+  /**
+   * Find Personal Snippet Upload registries on this Geo node. Ignored if `geo_personal_snippet_upload_replication` feature flag is disabled. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly personalSnippetUploadRegistries: Maybe<PersonalSnippetUploadRegistryConnection>;
   /** Find pipeline artifact registries on this Geo node. */
   readonly pipelineArtifactRegistries: Maybe<PipelineArtifactRegistryConnection>;
   /** Indicates whether the Geo node is the primary. */
@@ -24266,6 +25230,11 @@ export type GeoNode = {
   /** User-facing URL for the Geo node. */
   readonly url: Maybe<Scalars['String']['output']>;
   /**
+   * Find User Permission Export File Upload registries on this Geo node. Ignored if `geo_user_permission_export_upload_upload_replication` feature flag is disabled. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly userPermissionExportUploadUploadRegistries: Maybe<UserPermissionExportUploadUploadRegistryConnection>;
+  /**
    * Find User Upload registries on this Geo node. Ignored if `geo_user_upload_replication` feature flag is disabled. Introduced in GitLab 18.11: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
    */
@@ -24277,6 +25246,11 @@ export type GeoNode = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
    */
   readonly vulnerabilityArchiveExportUploadRegistries: Maybe<VulnerabilityArchiveExportUploadRegistryConnection>;
+  /**
+   * Find Vulnerability Export Part Upload registries on this Geo node. Ignored if `geo_vulnerability_export_part_upload_replication` feature flag is disabled. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly vulnerabilityExportPartUploadRegistries: Maybe<VulnerabilityExportPartUploadRegistryConnection>;
   /**
    * Find Vulnerability Export Upload registries on this Geo node. Ignored if `geo_vulnerability_export_upload_replication` feature flag is disabled. Introduced in GitLab 19.0: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
@@ -24324,6 +25298,19 @@ export type GeoNodeAiVectorizableFileUploadRegistriesArgs = {
 };
 
 
+export type GeoNodeAlertManagementMetricImageUploadRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoAlertManagementMetricImageUploadRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
+};
+
+
 export type GeoNodeBulkImportExportUploadUploadRegistriesArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -24355,6 +25342,19 @@ export type GeoNodeContainerRepositoryRegistriesArgs = {
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   ids: InputMaybe<ReadonlyArray<Scalars['GeoContainerRepositoryRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
+};
+
+
+export type GeoNodeDependencyListExportUploadRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoDependencyListExportUploadRegistryID']['input']>>;
   keyword: InputMaybe<Scalars['String']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   replicationState: InputMaybe<ReplicationStateEnum>;
@@ -24454,6 +25454,19 @@ export type GeoNodeImportExportUploadUploadRegistriesArgs = {
 };
 
 
+export type GeoNodeIssuableMetricImageUploadRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoIssuableMetricImageUploadRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
+};
+
+
 export type GeoNodeJobArtifactRegistriesArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -24506,6 +25519,19 @@ export type GeoNodePackageFileRegistriesArgs = {
 };
 
 
+export type GeoNodePackagesDebianProjectComponentFileRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoPackagesDebianProjectComponentFileRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
+};
+
+
 export type GeoNodePackagesHelmMetadataCacheRegistriesArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -24537,6 +25563,19 @@ export type GeoNodePagesDeploymentRegistriesArgs = {
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   ids: InputMaybe<ReadonlyArray<Scalars['GeoPagesDeploymentRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
+};
+
+
+export type GeoNodePersonalSnippetUploadRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoPersonalSnippetUploadRegistryID']['input']>>;
   keyword: InputMaybe<Scalars['String']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   replicationState: InputMaybe<ReplicationStateEnum>;
@@ -24657,6 +25696,19 @@ export type GeoNodeUploadRegistriesArgs = {
 };
 
 
+export type GeoNodeUserPermissionExportUploadUploadRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoUserPermissionExportUploadUploadRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
+};
+
+
 export type GeoNodeUserUploadRegistriesArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -24675,6 +25727,19 @@ export type GeoNodeVulnerabilityArchiveExportUploadRegistriesArgs = {
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   ids: InputMaybe<ReadonlyArray<Scalars['GeoVulnerabilityArchiveExportUploadRegistryID']['input']>>;
+  keyword: InputMaybe<Scalars['String']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  replicationState: InputMaybe<ReplicationStateEnum>;
+  sort: InputMaybe<GeoRegistrySort>;
+  verificationState: InputMaybe<VerificationStateEnum>;
+};
+
+
+export type GeoNodeVulnerabilityExportPartUploadRegistriesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['GeoVulnerabilityExportPartUploadRegistryID']['input']>>;
   keyword: InputMaybe<Scalars['String']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   replicationState: InputMaybe<ReplicationStateEnum>;
@@ -24763,12 +25828,16 @@ export type GeoRegistryClass =
   | 'ACHIEVEMENT_UPLOAD_REGISTRY'
   /** Geo::AiVectorizableFileUploadRegistry registry class */
   | 'AI_VECTORIZABLE_FILE_UPLOAD_REGISTRY'
+  /** Geo::AlertManagementMetricImageUploadRegistry registry class */
+  | 'ALERT_MANAGEMENT_METRIC_IMAGE_UPLOAD_REGISTRY'
   /** Geo::BulkImportExportUploadUploadRegistry registry class */
   | 'BULK_IMPORT_EXPORT_UPLOAD_UPLOAD_REGISTRY'
   /** Geo::CiSecureFileRegistry registry class */
   | 'CI_SECURE_FILE_REGISTRY'
   /** Geo::ContainerRepositoryRegistry registry class */
   | 'CONTAINER_REPOSITORY_REGISTRY'
+  /** Geo::DependencyListExportUploadRegistry registry class */
+  | 'DEPENDENCY_LIST_EXPORT_UPLOAD_REGISTRY'
   /** Geo::DependencyProxyBlobRegistry registry class */
   | 'DEPENDENCY_PROXY_BLOB_REGISTRY'
   /** Geo::DependencyProxyManifestRegistry registry class */
@@ -24783,12 +25852,16 @@ export type GeoRegistryClass =
   | 'GROUP_WIKI_REPOSITORY_REGISTRY'
   /** Geo::ImportExportUploadUploadRegistry registry class */
   | 'IMPORT_EXPORT_UPLOAD_UPLOAD_REGISTRY'
+  /** Geo::IssuableMetricImageUploadRegistry registry class */
+  | 'ISSUABLE_METRIC_IMAGE_UPLOAD_REGISTRY'
   /** Geo::JobArtifactRegistry registry class */
   | 'JOB_ARTIFACT_REGISTRY'
   /** Geo::LfsObjectRegistry registry class */
   | 'LFS_OBJECT_REGISTRY'
   /** Geo::MergeRequestDiffRegistry registry class */
   | 'MERGE_REQUEST_DIFF_REGISTRY'
+  /** Geo::PackagesDebianProjectComponentFileRegistry registry class */
+  | 'PACKAGES_DEBIAN_PROJECT_COMPONENT_FILE_REGISTRY'
   /** Geo::PackagesHelmMetadataCacheRegistry registry class */
   | 'PACKAGES_HELM_METADATA_CACHE_REGISTRY'
   /** Geo::PackagesNugetSymbolRegistry registry class */
@@ -24797,6 +25870,8 @@ export type GeoRegistryClass =
   | 'PACKAGE_FILE_REGISTRY'
   /** Geo::PagesDeploymentRegistry registry class */
   | 'PAGES_DEPLOYMENT_REGISTRY'
+  /** Geo::PersonalSnippetUploadRegistry registry class */
+  | 'PERSONAL_SNIPPET_UPLOAD_REGISTRY'
   /** Geo::PipelineArtifactRegistry registry class */
   | 'PIPELINE_ARTIFACT_REGISTRY'
   /** Geo::ProjectImportExportRelationExportUploadUploadRegistry registry class */
@@ -24815,10 +25890,14 @@ export type GeoRegistryClass =
   | 'TERRAFORM_STATE_VERSION_REGISTRY'
   /** Geo::UploadRegistry registry class */
   | 'UPLOAD_REGISTRY'
+  /** Geo::UserPermissionExportUploadUploadRegistry registry class */
+  | 'USER_PERMISSION_EXPORT_UPLOAD_UPLOAD_REGISTRY'
   /** Geo::UserUploadRegistry registry class */
   | 'USER_UPLOAD_REGISTRY'
   /** Geo::VulnerabilityArchiveExportUploadRegistry registry class */
   | 'VULNERABILITY_ARCHIVE_EXPORT_UPLOAD_REGISTRY'
+  /** Geo::VulnerabilityExportPartUploadRegistry registry class */
+  | 'VULNERABILITY_EXPORT_PART_UPLOAD_REGISTRY'
   /** Geo::VulnerabilityExportUploadRegistry registry class */
   | 'VULNERABILITY_EXPORT_UPLOAD_REGISTRY';
 
@@ -25267,7 +26346,9 @@ export type GitlabSubscriptionsUserRole =
   /** Planner. */
   | 'PLANNER'
   /** Reporter. */
-  | 'REPORTER';
+  | 'REPORTER'
+  /** Security manager access. */
+  | 'SECURITY_MANAGER';
 
 /** Values for sorting users */
 export type GitlabSubscriptionsUserSort =
@@ -25750,6 +26831,16 @@ export type Group = GroupInterface & Todoable & {
    */
   readonly canPushInitialCommit: Scalars['Boolean']['output'];
   /**
+   * Continuous deployment applications in the group and its descendant subgroups. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly cdApplications: Maybe<CdApplicationConnection>;
+  /**
+   * Continuous deployment environments in the group and its descendant subgroups. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly cdEnvironments: Maybe<CdEnvironmentConnection>;
+  /**
    * Namespace CI/CD settings for the namespace. Introduced in GitLab 17.9: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
    */
@@ -25842,6 +26933,11 @@ export type Group = GroupInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.0.
    */
   readonly dependencyAggregations: Maybe<DependencyAggregationConnection>;
+  /**
+   * Locations of a software dependency across projects under this group. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly dependencyLocations: Maybe<DependencyLocationConnection>;
   /** Number of dependency proxy blobs cached in the group. */
   readonly dependencyProxyBlobCount: Scalars['Int']['output'];
   /** Dependency Proxy blobs. */
@@ -25892,6 +26988,11 @@ export type Group = GroupInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.9.
    */
   readonly duoSettingsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Duo Agent Platform session artifacts for the group. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly duoWorkflowSessionArtifacts: Maybe<DuoWorkflowSessionArtifactConnection>;
   /** Path for editing group. */
   readonly editPath: Scalars['String']['output'];
   /** Indicates if a group has email notifications disabled. */
@@ -26374,6 +27475,11 @@ export type Group = GroupInterface & Todoable & {
    */
   readonly workItemDescriptionTemplates: Maybe<WorkItemDescriptionTemplateConnection>;
   /**
+   * Valid target work item types and a suggested default for moving work items of given source types into this namespace. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly workItemMoveTargets: Maybe<ReadonlyArray<WorkItemMoveTarget>>;
+  /**
    * Work item settings for the group. Introduced in GitLab 19.0: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
    */
@@ -26497,6 +27603,22 @@ export type GroupBoardsArgs = {
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   id: InputMaybe<Scalars['BoardID']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type GroupCdApplicationsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type GroupCdEnvironmentsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -26706,6 +27828,16 @@ export type GroupDependencyAggregationsArgs = {
 };
 
 
+export type GroupDependencyLocationsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  componentVersionId: Scalars['SbomComponentVersionID']['input'];
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type GroupDependencyProxyBlobsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -26742,6 +27874,19 @@ export type GroupDoraPerformanceScoreCountsArgs = {
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   projectFilters: InputMaybe<DoraProjectFilterInput>;
+};
+
+
+export type GroupDuoWorkflowSessionArtifactsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  not: InputMaybe<DuoWorkflowSessionArtifactNegatedFilterInput>;
+  projectPath: InputMaybe<Scalars['String']['input']>;
+  workflowCreatedAfter: InputMaybe<Scalars['Time']['input']>;
+  workflowCreatedBefore: InputMaybe<Scalars['Time']['input']>;
+  workflowDefinition: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -27620,6 +28765,12 @@ export type GroupWorkItemDescriptionTemplatesArgs = {
   last: InputMaybe<Scalars['Int']['input']>;
   name: InputMaybe<Scalars['String']['input']>;
   search: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type GroupWorkItemMoveTargetsArgs = {
+  sourceFullPath: Scalars['String']['input'];
+  sourceTypeIds: ReadonlyArray<Scalars['WorkItemsTypeID']['input']>;
 };
 
 
@@ -28854,7 +30005,10 @@ export type GroupUpdateInput = {
   readonly builtInProjectTemplatesEnabled: InputMaybe<Scalars['Boolean']['input']>;
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
-  /** Indicates whether GitLab Duo features are enabled for the group. Introduced in GitLab 16.10: **Status**: Experiment. */
+  /**
+   * Indicates whether GitLab Duo features are enabled for the group. Introduced in GitLab 16.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 16.10.
+   */
   readonly duoFeaturesEnabled: InputMaybe<Scalars['Boolean']['input']>;
   /** Full path of the group that will be updated. */
   readonly fullPath: Scalars['ID']['input'];
@@ -28863,11 +30017,17 @@ export type GroupUpdateInput = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
    */
   readonly lockBuiltInProjectTemplatesEnabled: InputMaybe<Scalars['Boolean']['input']>;
-  /** Indicates if the GitLab Duo features enabled setting is enforced for all subgroups. Introduced in GitLab 16.10: **Status**: Experiment. */
+  /**
+   * Indicates if the GitLab Duo features enabled setting is enforced for all subgroups. Introduced in GitLab 16.10: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 16.10.
+   */
   readonly lockDuoFeaturesEnabled: InputMaybe<Scalars['Boolean']['input']>;
   /** Indicates if math rendering limits are locked for all descendant groups. */
   readonly lockMathRenderingLimitsEnabled: InputMaybe<Scalars['Boolean']['input']>;
-  /** Indicates if the tool approval for session setting is enforced for all subgroups. Introduced in GitLab 18.11: **Status**: Experiment. */
+  /**
+   * Indicates if the tool approval for session setting is enforced for all subgroups. Introduced in GitLab 18.11: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
+   */
   readonly lockToolApprovalForSessionEnabled: InputMaybe<Scalars['Boolean']['input']>;
   /** Indicates if math rendering limits are used for the group. */
   readonly mathRenderingLimitsEnabled: InputMaybe<Scalars['Boolean']['input']>;
@@ -28879,12 +30039,15 @@ export type GroupUpdateInput = {
   readonly sharedRunnersSetting: InputMaybe<SharedRunnersSetting>;
   /** OAuth provider required for step-up authentication. */
   readonly stepUpAuthRequiredOauthProvider: InputMaybe<Scalars['String']['input']>;
-  /** Indicates whether tool approval for session is enabled for the group. Introduced in GitLab 18.11: **Status**: Experiment. */
+  /**
+   * Indicates whether tool approval for session is enabled for the group. Introduced in GitLab 18.11: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
+   */
   readonly toolApprovalForSessionEnabled: InputMaybe<Scalars['Boolean']['input']>;
   /** Visibility of the namespace. */
   readonly visibility: InputMaybe<VisibilityLevelsEnum>;
   /**
-   * Indicates whether web-based commit signing is enabled for the group. Introduced in GitLab 18.2: **Status**: Experiment. Introduced in GitLab 18.2: **Status**: Experiment.
+   * Indicates whether web-based commit signing is enabled for the group. Introduced in GitLab 18.2: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.2.
    */
   readonly webBasedCommitSigningEnabled: InputMaybe<Scalars['Boolean']['input']>;
@@ -28951,7 +30114,7 @@ export type GroupUploadRegistry = {
 
 /** The connection type for GroupUploadRegistry. */
 export type GroupUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<GroupUploadRegistryEdge>>>;
@@ -29130,7 +30293,7 @@ export type GroupWikiRepositoryRegistry = {
 
 /** The connection type for GroupWikiRepositoryRegistry. */
 export type GroupWikiRepositoryRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<GroupWikiRepositoryRegistryEdge>>>;
@@ -29376,7 +30539,7 @@ export type ImportExportUploadUploadRegistry = {
 
 /** The connection type for ImportExportUploadUploadRegistry. */
 export type ImportExportUploadUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ImportExportUploadUploadRegistryEdge>>>;
@@ -29427,7 +30590,9 @@ export type ImportSource =
   /** Manifest */
   | 'MANIFEST'
   /** Not imported */
-  | 'NONE';
+  | 'NONE'
+  /** Offline Transfer */
+  | 'OFFLINE_TRANSFER';
 
 export type ImportSourceUser = {
   /** Timestamp of when the source user was created. */
@@ -30354,6 +31519,81 @@ export type IntegrationType =
 
 /** Represents an issuable. */
 export type Issuable = Epic | Issue | MergeRequest | WorkItem;
+
+/** Represents the Geo replication and verification state of a `issuable_metric_image_upload` */
+export type IssuableMetricImageUploadRegistry = {
+  /** Indicate if the checksums of the IssuableMetricImageUploadRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the IssuableMetricImageUploadRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this IssuableMetricImageUploadRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the IssuableMetricImageUploadRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** ID of the Issuable Metric Image Upload. */
+  readonly issuableMetricImageUploadId: Scalars['ID']['output'];
+  /** Error message during sync of the IssuableMetricImageUploadRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the IssuableMetricImageUploadRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the IssuableMetricImageUploadRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the IssuableMetricImageUploadRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** Timestamp after which the IssuableMetricImageUploadRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the IssuableMetricImageUploadRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the IssuableMetricImageUploadRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** The local checksum of the IssuableMetricImageUploadRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the IssuableMetricImageUploadRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the IssuableMetricImageUploadRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the IssuableMetricImageUploadRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the IssuableMetricImageUploadRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of IssuableMetricImageUploadRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the IssuableMetricImageUploadRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the IssuableMetricImageUploadRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+};
+
+/** The connection type for IssuableMetricImageUploadRegistry. */
+export type IssuableMetricImageUploadRegistryConnection = {
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<IssuableMetricImageUploadRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<IssuableMetricImageUploadRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for IssuableMetricImageUploadRegistry. */
+export type IssuableMetricImageUploadRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type IssuableMetricImageUploadRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<IssuableMetricImageUploadRegistry>;
+};
 
 /** Describes an issuable resource link for incident issues */
 export type IssuableResourceLink = {
@@ -31798,8 +33038,6 @@ export type JobArtifactFileType =
   | 'DEPENDENCY_SCANNING'
   /** DOTENV job artifact file type. */
   | 'DOTENV'
-  /** ENVIRONMENT KEY job artifact file type. */
-  | 'ENVIRONMENT_KEY'
   /** JACOCO job artifact file type. */
   | 'JACOCO'
   /** JUNIT job artifact file type. */
@@ -31830,8 +33068,6 @@ export type JobArtifactFileType =
   | 'SARIF'
   /** SAST job artifact file type. */
   | 'SAST'
-  /** SCIP job artifact file type. */
-  | 'SCIP'
   /** SECRET DETECTION job artifact file type. */
   | 'SECRET_DETECTION'
   /** TERRAFORM job artifact file type. */
@@ -31890,7 +33126,7 @@ export type JobArtifactRegistry = {
 
 /** The connection type for JobArtifactRegistry. */
 export type JobArtifactRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<JobArtifactRegistryEdge>>>;
@@ -32369,7 +33605,7 @@ export type LfsObjectRegistry = {
 
 /** The connection type for LfsObjectRegistry. */
 export type LfsObjectRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<LfsObjectRegistryEdge>>>;
@@ -32458,8 +33694,6 @@ export type LicensedFeature =
   | 'AGENTIC_CHAT'
   /** Agent managed resources feature. */
   | 'AGENT_MANAGED_RESOURCES'
-  /** Ai agents feature. */
-  | 'AI_AGENTS'
   /** Ai analytics feature. */
   | 'AI_ANALYTICS'
   /** Ai catalog feature. */
@@ -33865,7 +35099,9 @@ export type MemberAccessLevel =
   /** The Planner role is suitable for team members who need to manage projects and track work items but do not need to contribute code. */
   | 'PLANNER'
   /** The Reporter role is suitable for team members who need to stay informed about a project or group but do not actively contribute code. */
-  | 'REPORTER';
+  | 'REPORTER'
+  /** The Security Manager role is for security team members who need to view and manage security features for the group or project. */
+  | 'SECURITY_MANAGER';
 
 /** Name of access levels of a group or project member */
 export type MemberAccessLevelName =
@@ -33880,7 +35116,9 @@ export type MemberAccessLevelName =
   /** Planner access. */
   | 'PLANNER'
   /** Reporter access. */
-  | 'REPORTER';
+  | 'REPORTER'
+  /** Security Manager access. */
+  | 'SECURITY_MANAGER';
 
 /** Represents a Member Approval queued for role promotion. */
 export type MemberApproval = {
@@ -34256,7 +35494,9 @@ export type MemberRolePermission =
   /** Ability to delete or restore a subgroup. This ability does not allow deleting top-level groups. Review the retention period settings to prevent accidental deletion. */
   | 'REMOVE_GROUP'
   /** Allows deletion of projects. */
-  | 'REMOVE_PROJECT';
+  | 'REMOVE_PROJECT'
+  /** Update security AI workflow settings such as SAST Vulnerability Resolution. Also requires the `read_vulnerability` permission. */
+  | 'UPDATE_SEC_AI_WORKFLOW_SETTINGS';
 
 /** Member role standard permission */
 export type MemberRoleStandardPermission =
@@ -34325,7 +35565,9 @@ export type MemberRoleStandardPermission =
   /** Ability to delete or restore a subgroup. This ability does not allow deleting top-level groups. Review the retention period settings to prevent accidental deletion. */
   | 'REMOVE_GROUP'
   /** Allows deletion of projects. */
-  | 'REMOVE_PROJECT';
+  | 'REMOVE_PROJECT'
+  /** Update security AI workflow settings such as SAST Vulnerability Resolution. Also requires the `read_vulnerability` permission. */
+  | 'UPDATE_SEC_AI_WORKFLOW_SETTINGS';
 
 /** Autogenerated input type of MemberRoleToUserAssign */
 export type MemberRoleToUserAssignInput = {
@@ -34387,7 +35629,9 @@ export type MemberRolesAccessLevel =
   /** The Planner role is suitable for team members who need to manage projects and track work items but do not need to contribute code. */
   | 'PLANNER'
   /** The Reporter role is suitable for team members who need to stay informed about a project or group but do not actively contribute code. */
-  | 'REPORTER';
+  | 'REPORTER'
+  /** The Security Manager role is for security team members who need to view and manage security features for the group or project. */
+  | 'SECURITY_MANAGER';
 
 /** Values for ordering member roles by a specific field */
 export type MemberRolesOrderBy =
@@ -34707,6 +35951,8 @@ export type MergeRequest = CurrentUserTodos & NoteableInterface & Todoable & {
   readonly squashOnMerge: Scalars['Boolean']['output'];
   /** Indicates if `squashReadOnly` is enabled. */
   readonly squashReadOnly: Scalars['Boolean']['output'];
+  /** Other open merge requests in the same stack as this merge request, ordered from the top of the stack to the bottom. Returns null if this merge request is not part of a stack. */
+  readonly stack: Maybe<ReadonlyArray<MergeRequest>>;
   /** State of the merge request. */
   readonly state: MergeRequestState;
   /** Indicates if the currently logged in user is subscribed to the merge request. */
@@ -35020,6 +36266,8 @@ export type MergeRequestAssignee = Todoable & User & {
   readonly email: Maybe<Scalars['String']['output']>;
   /** User's email addresses. */
   readonly emails: Maybe<EmailConnection>;
+  /** Activity events visible to the current user, most recent first. */
+  readonly events: Maybe<EventConnection>;
   /** GitHub profile name of the user. */
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Ona is enabled at the user level. */
@@ -35255,6 +36503,16 @@ export type MergeRequestAssigneeContributedProjectsArgs = {
 export type MergeRequestAssigneeEmailsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** A user assigned to a merge request. */
+export type MergeRequestAssigneeEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<UserEventFilter>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
@@ -35553,6 +36811,8 @@ export type MergeRequestAuthor = Todoable & User & {
   readonly email: Maybe<Scalars['String']['output']>;
   /** User's email addresses. */
   readonly emails: Maybe<EmailConnection>;
+  /** Activity events visible to the current user, most recent first. */
+  readonly events: Maybe<EventConnection>;
   /** GitHub profile name of the user. */
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Ona is enabled at the user level. */
@@ -35788,6 +37048,16 @@ export type MergeRequestAuthorContributedProjectsArgs = {
 export type MergeRequestAuthorEmailsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** The author of the merge request. */
+export type MergeRequestAuthorEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<UserEventFilter>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
@@ -36196,7 +37466,7 @@ export type MergeRequestDiffRegistry = {
 
 /** The connection type for MergeRequestDiffRegistry. */
 export type MergeRequestDiffRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MergeRequestDiffRegistryEdge>>>;
@@ -36300,6 +37570,8 @@ export type MergeRequestParticipant = Todoable & User & {
   readonly email: Maybe<Scalars['String']['output']>;
   /** User's email addresses. */
   readonly emails: Maybe<EmailConnection>;
+  /** Activity events visible to the current user, most recent first. */
+  readonly events: Maybe<EventConnection>;
   /** GitHub profile name of the user. */
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Ona is enabled at the user level. */
@@ -36535,6 +37807,16 @@ export type MergeRequestParticipantContributedProjectsArgs = {
 export type MergeRequestParticipantEmailsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** A user participating in a merge request. */
+export type MergeRequestParticipantEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<UserEventFilter>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
@@ -36892,6 +38174,8 @@ export type MergeRequestReviewer = Todoable & User & {
   readonly email: Maybe<Scalars['String']['output']>;
   /** User's email addresses. */
   readonly emails: Maybe<EmailConnection>;
+  /** Activity events visible to the current user, most recent first. */
+  readonly events: Maybe<EventConnection>;
   /** GitHub profile name of the user. */
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Ona is enabled at the user level. */
@@ -37127,6 +38411,16 @@ export type MergeRequestReviewerContributedProjectsArgs = {
 export type MergeRequestReviewerEmailsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** A user assigned to a merge request as a reviewer. */
+export type MergeRequestReviewerEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<UserEventFilter>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
@@ -38223,7 +39517,7 @@ export type MlCandidateParamsArgs = {
 
 /** The connection type for MlCandidate. */
 export type MlCandidateConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MlCandidateEdge>>>;
@@ -38259,7 +39553,7 @@ export type MlCandidateMetadata = {
 
 /** The connection type for MlCandidateMetadata. */
 export type MlCandidateMetadataConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MlCandidateMetadataEdge>>>;
@@ -38297,7 +39591,7 @@ export type MlCandidateMetric = {
 
 /** The connection type for MlCandidateMetric. */
 export type MlCandidateMetricConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MlCandidateMetricEdge>>>;
@@ -38333,7 +39627,7 @@ export type MlCandidateParam = {
 
 /** The connection type for MlCandidateParam. */
 export type MlCandidateParamConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MlCandidateParamEdge>>>;
@@ -38390,7 +39684,7 @@ export type MlExperimentCandidatesArgs = {
 
 /** The connection type for MlExperiment. */
 export type MlExperimentConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MlExperimentEdge>>>;
@@ -38475,7 +39769,7 @@ export type MlModelVersionsArgs = {
 
 /** The connection type for MlModel. */
 export type MlModelConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MlModelEdge>>>;
@@ -38613,7 +39907,7 @@ export type MlModelVersion = {
 
 /** The connection type for MlModelVersion. */
 export type MlModelVersionConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<MlModelVersionEdge>>>;
@@ -38749,8 +40043,6 @@ export type Mutation = {
   readonly adminSidekiqQueuesDeleteJobs: Maybe<AdminSidekiqQueuesDeleteJobsPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 15.11. */
   readonly aiAction: Maybe<AiActionPayload>;
-  /** @deprecated **Status**: Experiment. Introduced in GitLab 16.8. */
-  readonly aiAgentCreate: Maybe<AiAgentCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.2. */
   readonly aiCatalogAgentCreate: Maybe<AiCatalogAgentCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.2. */
@@ -38763,6 +40055,8 @@ export type Mutation = {
   readonly aiCatalogFlowDelete: Maybe<AiCatalogFlowDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.3. */
   readonly aiCatalogFlowUpdate: Maybe<AiCatalogFlowUpdatePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 19.1. */
+  readonly aiCatalogItemConsumerBulkCreate: Maybe<AiCatalogItemConsumerBulkCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.3. */
   readonly aiCatalogItemConsumerCreate: Maybe<AiCatalogItemConsumerCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.3. */
@@ -38773,6 +40067,8 @@ export type Mutation = {
   readonly aiCatalogItemReport: Maybe<AiCatalogItemReportPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.11. */
   readonly aiCatalogItemStar: Maybe<AiCatalogItemStarPayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 19.1. */
+  readonly aiCatalogItemVersionRestore: Maybe<AiCatalogItemVersionRestorePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
   readonly aiCatalogMcpServerCreate: Maybe<AiCatalogMcpServerCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.10. */
@@ -38796,6 +40092,11 @@ export type Mutation = {
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.1. */
   readonly aiDuoWorkflowCreate: Maybe<AiDuoWorkflowCreatePayload>;
   /**
+   * Updates the instance-level model selection allowlist for an AI feature. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly aiFeatureSettingModelAllowlistUpdate: Maybe<AiFeatureSettingModelAllowlistUpdatePayload>;
+  /**
    * Updates or creates settings for AI features. Introduced in GitLab 17.4: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.4.
    */
@@ -38806,6 +40107,11 @@ export type Mutation = {
   readonly aiFlowTriggerDelete: Maybe<AiFlowTriggerDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.3. */
   readonly aiFlowTriggerUpdate: Maybe<AiFlowTriggerUpdatePayload>;
+  /**
+   * Updates the namespace-level model selection allowlist for an AI feature. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly aiModelSelectionNamespaceModelAllowlistUpdate: Maybe<AiModelSelectionNamespaceModelAllowlistUpdatePayload>;
   /**
    * Updates or creates settings for AI features for a namespace. Introduced in GitLab 18.1: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.1.
@@ -38848,6 +40154,10 @@ export type Mutation = {
   readonly auditEventsAmazonS3ConfigurationDelete: Maybe<AuditEventsAmazonS3ConfigurationDeletePayload>;
   /** @deprecated Use `groupAuditEventStreamingDestinationsUpdate` instead. Deprecated in GitLab 18.10. */
   readonly auditEventsAmazonS3ConfigurationUpdate: Maybe<AuditEventsAmazonS3ConfigurationUpdatePayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 19.1. */
+  readonly auditEventsGroupDestinationDenylistEventsAdd: Maybe<AuditEventsGroupDestinationDenylistEventsAddPayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 19.1. */
+  readonly auditEventsGroupDestinationDenylistEventsDelete: Maybe<AuditEventsGroupDestinationDenylistEventsDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.0. */
   readonly auditEventsGroupDestinationEventsAdd: Maybe<AuditEventsGroupDestinationEventsAddPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.0. */
@@ -38965,11 +40275,26 @@ export type Mutation = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
    */
   readonly bulkSetVulnerabilityFindingsDueDates: Maybe<FindingDueDatesSetPayload>;
+  /**
+   * Bulk updates permission settings for multiple AI tool rules. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly bulkUpdateAiToolRules: Maybe<BulkUpdateAiToolRulesPayload>;
   readonly bulkUpdateSecurityAttributes: Maybe<BulkUpdateSecurityAttributesPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 15.11. */
   readonly catalogResourcesCreate: Maybe<CatalogResourcesCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 16.6. */
   readonly catalogResourcesDestroy: Maybe<CatalogResourcesDestroyPayload>;
+  /**
+   * Creates a continuous deployment application in a group or organization. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly cdApplicationCreate: Maybe<CdApplicationCreatePayload>;
+  /**
+   * Creates a continuous deployment environment in a group or organization. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly cdEnvironmentCreate: Maybe<CdEnvironmentCreatePayload>;
   readonly ciJobTokenScopeAddGroupOrProject: Maybe<CiJobTokenScopeAddGroupOrProjectPayload>;
   readonly ciJobTokenScopeAddProject: Maybe<CiJobTokenScopeAddProjectPayload>;
   readonly ciJobTokenScopeRemoveGroup: Maybe<CiJobTokenScopeRemoveGroupPayload>;
@@ -39103,6 +40428,11 @@ export type Mutation = {
   readonly createPackagesProtectionRule: Maybe<CreatePackagesProtectionRulePayload>;
   readonly createRequirement: Maybe<CreateRequirementPayload>;
   readonly createSnippet: Maybe<CreateSnippetPayload>;
+  /**
+   * Creates a protection rule for a Terraform state backend. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly createTerraformStateProtectionRule: Maybe<CreateTerraformStateProtectionRulePayload>;
   readonly createTestCase: Maybe<CreateTestCasePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.9. */
   readonly customFieldArchive: Maybe<CustomFieldArchivePayload>;
@@ -39165,6 +40495,11 @@ export type Mutation = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.9.
    */
   readonly deleteProjectCustomAttribute: Maybe<DeleteProjectCustomAttributePayload>;
+  /**
+   * Deletes a protection rule for a Terraform state backend. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly deleteTerraformStateProtectionRule: Maybe<DeleteTerraformStateProtectionRulePayload>;
   /**
    * Deletes a custom attribute from a user. Only available to admins. Introduced in GitLab 18.9: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.9.
@@ -39501,6 +40836,8 @@ export type Mutation = {
   readonly organizationCreate: Maybe<OrganizationCreatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.11. */
   readonly organizationCreateClusterAgentMapping: Maybe<OrganizationCreateClusterAgentMappingPayload>;
+  /** @deprecated **Status**: Experiment. Introduced in GitLab 19.1. */
+  readonly organizationDelete: Maybe<OrganizationDeletePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.11. */
   readonly organizationDeleteClusterAgentMapping: Maybe<OrganizationDeleteClusterAgentMappingPayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 16.7. */
@@ -39545,7 +40882,6 @@ export type Mutation = {
   readonly pipelineTriggerUpdate: Maybe<PipelineTriggerUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.2. */
   readonly processUserBillablePromotionRequest: Maybe<ProcessUserBillablePromotionRequestPayload>;
-  readonly productAnalyticsProjectSettingsUpdate: Maybe<ProductAnalyticsProjectSettingsUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 17.1. */
   readonly projectBlobsRemove: Maybe<ProjectBlobsRemovePayload>;
   readonly projectCiCdSettingsUpdate: Maybe<ProjectCiCdSettingsUpdatePayload>;
@@ -39554,7 +40890,6 @@ export type Mutation = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.9.
    */
   readonly projectCustomAttributeSet: Maybe<ProjectCustomAttributeSetPayload>;
-  readonly projectInitializeProductAnalytics: Maybe<ProjectInitializeProductAnalyticsPayload>;
   /** Updates multiple members of a project. To use this mutation, you must have at least the Maintainer role. */
   readonly projectMemberBulkUpdate: Maybe<ProjectMemberBulkUpdatePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 16.11. */
@@ -39715,6 +41050,11 @@ export type Mutation = {
    *
    */
   readonly setLicenseConfigurationSource: Maybe<SetLicenseConfigurationSourcePayload>;
+  /**
+   * Enable/disable license scanning for CycloneDX SBOM files for the given project.
+   *
+   */
+  readonly setLicenseScanningForCyclonedx: Maybe<SetLicenseScanningForCyclonedxPayload>;
   readonly setPagesForceHttps: Maybe<SetPagesForceHttpsPayload>;
   readonly setPagesUseUniqueDomain: Maybe<SetPagesUseUniqueDomainPayload>;
   /**
@@ -39768,6 +41108,11 @@ export type Mutation = {
   readonly todosMarkAllDone: Maybe<TodosMarkAllDonePayload>;
   /** @deprecated **Status**: Experiment. Introduced in GitLab 18.3. */
   readonly unlinkProjectComplianceViolationIssue: Maybe<UnlinkProjectComplianceViolationIssuePayload>;
+  /**
+   * Updates the permission settings for an AI tool rule. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly updateAiToolRule: Maybe<UpdateAiToolRulePayload>;
   readonly updateAlertStatus: Maybe<UpdateAlertStatusPayload>;
   readonly updateBoard: Maybe<UpdateBoardPayload>;
   /** @deprecated Replaced by WorkItem type. Deprecated in GitLab 17.5. */
@@ -39947,7 +41292,7 @@ export type Mutation = {
    */
   readonly workItemAddLinkedItems: Maybe<WorkItemAddLinkedItemsPayload>;
   /**
-   * Enables or disables a work item type for a namespace. Only available when the `work_item_configurable_types` feature flag is enabled for the namespace. Introduced in GitLab 18.11: **Status**: Experiment.
+   * Enables or disables a work item type for a namespace. Introduced in GitLab 18.11: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
    */
   readonly workItemAvailabilityToggle: Maybe<WorkItemAvailabilityTogglePayload>;
@@ -40024,7 +41369,7 @@ export type Mutation = {
    */
   readonly workItemSavedViewUpdate: Maybe<WorkItemSavedViewUpdatePayload>;
   /**
-   * Updates work item settings for a root group or organization. Omit fullPath to update settings for the current organization. Only available when the `work_item_configurable_types` feature flag is enabled. Introduced in GitLab 19.0: **Status**: Experiment.
+   * Updates work item settings for a root group or organization. Omit fullPath to update settings for the current organization. Introduced in GitLab 19.0: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
    */
   readonly workItemSettingsUpdate: Maybe<WorkItemSettingsUpdatePayload>;
@@ -40108,11 +41453,6 @@ export type MutationAiActionArgs = {
 };
 
 
-export type MutationAiAgentCreateArgs = {
-  input: AiAgentCreateInput;
-};
-
-
 export type MutationAiCatalogAgentCreateArgs = {
   input: AiCatalogAgentCreateInput;
 };
@@ -40143,6 +41483,11 @@ export type MutationAiCatalogFlowUpdateArgs = {
 };
 
 
+export type MutationAiCatalogItemConsumerBulkCreateArgs = {
+  input: AiCatalogItemConsumerBulkCreateInput;
+};
+
+
 export type MutationAiCatalogItemConsumerCreateArgs = {
   input: AiCatalogItemConsumerCreateInput;
 };
@@ -40165,6 +41510,11 @@ export type MutationAiCatalogItemReportArgs = {
 
 export type MutationAiCatalogItemStarArgs = {
   input: AiCatalogItemStarInput;
+};
+
+
+export type MutationAiCatalogItemVersionRestoreArgs = {
+  input: AiCatalogItemVersionRestoreInput;
 };
 
 
@@ -40208,6 +41558,11 @@ export type MutationAiDuoWorkflowCreateArgs = {
 };
 
 
+export type MutationAiFeatureSettingModelAllowlistUpdateArgs = {
+  input: AiFeatureSettingModelAllowlistUpdateInput;
+};
+
+
 export type MutationAiFeatureSettingUpdateArgs = {
   input: AiFeatureSettingUpdateInput;
 };
@@ -40225,6 +41580,11 @@ export type MutationAiFlowTriggerDeleteArgs = {
 
 export type MutationAiFlowTriggerUpdateArgs = {
   input: AiFlowTriggerUpdateInput;
+};
+
+
+export type MutationAiModelSelectionNamespaceModelAllowlistUpdateArgs = {
+  input: AiModelSelectionNamespaceModelAllowlistUpdateInput;
 };
 
 
@@ -40310,6 +41670,16 @@ export type MutationAuditEventsAmazonS3ConfigurationDeleteArgs = {
 
 export type MutationAuditEventsAmazonS3ConfigurationUpdateArgs = {
   input: AuditEventsAmazonS3ConfigurationUpdateInput;
+};
+
+
+export type MutationAuditEventsGroupDestinationDenylistEventsAddArgs = {
+  input: AuditEventsGroupDestinationDenylistEventsAddInput;
+};
+
+
+export type MutationAuditEventsGroupDestinationDenylistEventsDeleteArgs = {
+  input: AuditEventsGroupDestinationDenylistEventsDeleteInput;
 };
 
 
@@ -40528,6 +41898,11 @@ export type MutationBulkSetVulnerabilityFindingsDueDatesArgs = {
 };
 
 
+export type MutationBulkUpdateAiToolRulesArgs = {
+  input: BulkUpdateAiToolRulesInput;
+};
+
+
 export type MutationBulkUpdateSecurityAttributesArgs = {
   input: BulkUpdateSecurityAttributesInput;
 };
@@ -40540,6 +41915,16 @@ export type MutationCatalogResourcesCreateArgs = {
 
 export type MutationCatalogResourcesDestroyArgs = {
   input: CatalogResourcesDestroyInput;
+};
+
+
+export type MutationCdApplicationCreateArgs = {
+  input: CdApplicationCreateInput;
+};
+
+
+export type MutationCdEnvironmentCreateArgs = {
+  input: CdEnvironmentCreateInput;
 };
 
 
@@ -40818,6 +42203,11 @@ export type MutationCreateSnippetArgs = {
 };
 
 
+export type MutationCreateTerraformStateProtectionRuleArgs = {
+  input: CreateTerraformStateProtectionRuleInput;
+};
+
+
 export type MutationCreateTestCaseArgs = {
   input: CreateTestCaseInput;
 };
@@ -40980,6 +42370,11 @@ export type MutationDeletePagesDeploymentArgs = {
 
 export type MutationDeleteProjectCustomAttributeArgs = {
   input: DeleteProjectCustomAttributeInput;
+};
+
+
+export type MutationDeleteTerraformStateProtectionRuleArgs = {
+  input: DeleteTerraformStateProtectionRuleInput;
 };
 
 
@@ -41953,6 +43348,11 @@ export type MutationOrganizationCreateClusterAgentMappingArgs = {
 };
 
 
+export type MutationOrganizationDeleteArgs = {
+  input: OrganizationDeleteInput;
+};
+
+
 export type MutationOrganizationDeleteClusterAgentMappingArgs = {
   input: OrganizationDeleteClusterAgentMappingInput;
 };
@@ -42058,11 +43458,6 @@ export type MutationProcessUserBillablePromotionRequestArgs = {
 };
 
 
-export type MutationProductAnalyticsProjectSettingsUpdateArgs = {
-  input: ProductAnalyticsProjectSettingsUpdateInput;
-};
-
-
 export type MutationProjectBlobsRemoveArgs = {
   input: ProjectBlobsRemoveInput;
 };
@@ -42075,11 +43470,6 @@ export type MutationProjectCiCdSettingsUpdateArgs = {
 
 export type MutationProjectCustomAttributeSetArgs = {
   input: ProjectCustomAttributeSetInput;
-};
-
-
-export type MutationProjectInitializeProductAnalyticsArgs = {
-  input: ProjectInitializeProductAnalyticsInput;
 };
 
 
@@ -42533,6 +43923,11 @@ export type MutationSetLicenseConfigurationSourceArgs = {
 };
 
 
+export type MutationSetLicenseScanningForCyclonedxArgs = {
+  input: SetLicenseScanningForCyclonedxInput;
+};
+
+
 export type MutationSetPagesForceHttpsArgs = {
   input: SetPagesForceHttpsInput;
 };
@@ -42685,6 +44080,11 @@ export type MutationTodosMarkAllDoneArgs = {
 
 export type MutationUnlinkProjectComplianceViolationIssueArgs = {
   input: UnlinkProjectComplianceViolationIssueInput;
+};
+
+
+export type MutationUpdateAiToolRuleArgs = {
+  input: UpdateAiToolRuleInput;
 };
 
 
@@ -43423,6 +44823,11 @@ export type Namespace = Todoable & {
    */
   readonly workItemDescriptionTemplates: Maybe<WorkItemDescriptionTemplateConnection>;
   /**
+   * Valid target work item types and a suggested default for moving work items of given source types into this namespace. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly workItemMoveTargets: Maybe<ReadonlyArray<WorkItemMoveTarget>>;
+  /**
    * Work item settings for the namespace. Introduced in GitLab 19.0: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
    */
@@ -43704,6 +45109,12 @@ export type NamespaceWorkItemDescriptionTemplatesArgs = {
   last: InputMaybe<Scalars['Int']['input']>;
   name: InputMaybe<Scalars['String']['input']>;
   search: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type NamespaceWorkItemMoveTargetsArgs = {
+  sourceFullPath: Scalars['String']['input'];
+  sourceTypeIds: ReadonlyArray<Scalars['WorkItemsTypeID']['input']>;
 };
 
 
@@ -44827,7 +46238,7 @@ export type NoteableInterfaceNotesArgs = {
 };
 
 /** Represents an object that supports notes. */
-export type NoteableType = Design | Issue | MergeRequest;
+export type NoteableType = AlertManagementAlert | Commit | Design | Epic | Issue | MergeRequest | ProjectComplianceViolation | Snippet | Vulnerability | WikiPage;
 
 /** Work item notes collection type. */
 export type NotesFilterType =
@@ -45275,6 +46686,16 @@ export type Organization = {
    */
   readonly avatarUrl: Maybe<Scalars['String']['output']>;
   /**
+   * Continuous deployment applications in the organization, including those attached to groups belonging to the organization. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly cdApplications: Maybe<CdApplicationConnection>;
+  /**
+   * Continuous deployment environments in the organization, including those attached to groups belonging to the organization. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly cdEnvironments: Maybe<CdEnvironmentConnection>;
+  /**
    * Description of the organization. Introduced in GitLab 16.7: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 16.7.
    */
@@ -45320,12 +46741,17 @@ export type Organization = {
    */
   readonly rootPath: Scalars['String']['output'];
   /**
+   * Timestamp when the organization was soft-deleted.Visible to admins and organization owners only. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly softDeletedAt: Maybe<Scalars['Time']['output']>;
+  /**
    * State of the organization. Introduced in GitLab 19.0: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
    */
   readonly state: OrganizationState;
-  /** Visibility level of the organization. */
-  readonly visibility: Maybe<Scalars['String']['output']>;
+  /** Visibility of the organization. */
+  readonly visibility: Maybe<OrganizationVisibility>;
   /**
    * Web path of the organization. Introduced in GitLab 19.0: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
@@ -45351,6 +46777,22 @@ export type Organization = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
    */
   readonly workspacesClusterAgents: Maybe<ClusterAgentConnection>;
+};
+
+
+export type OrganizationCdApplicationsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type OrganizationCdEnvironmentsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -45406,7 +46848,6 @@ export type OrganizationProjectsArgs = {
   topics: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
   trending: InputMaybe<Scalars['Boolean']['input']>;
   visibilityLevel: InputMaybe<VisibilityLevelsEnum>;
-  withDuoEligible: InputMaybe<Scalars['Boolean']['input']>;
   withIssuesEnabled: InputMaybe<Scalars['Boolean']['input']>;
   withMergeRequestsEnabled: InputMaybe<Scalars['Boolean']['input']>;
 };
@@ -45485,6 +46926,8 @@ export type OrganizationCreateInput = {
   readonly name: Scalars['String']['input'];
   /** Path for the organization. */
   readonly path: Scalars['String']['input'];
+  /** Visibility for the organization. */
+  readonly visibility: InputMaybe<OrganizationVisibility>;
 };
 
 /** Autogenerated return type of OrganizationCreate. */
@@ -45513,6 +46956,28 @@ export type OrganizationDeleteClusterAgentMappingPayload = {
   readonly clientMutationId: Maybe<Scalars['String']['output']>;
   /** Errors encountered during the mutation. */
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
+};
+
+/** Autogenerated input type of OrganizationDelete */
+export type OrganizationDeleteInput = {
+  /** Avatar for the organization. */
+  readonly avatar: InputMaybe<Scalars['Upload']['input']>;
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Description of the organization. */
+  readonly description: InputMaybe<Scalars['String']['input']>;
+  /** ID of the organization to soft-delete. */
+  readonly id: Scalars['OrganizationsOrganizationID']['input'];
+};
+
+/** Autogenerated return type of OrganizationDelete. */
+export type OrganizationDeletePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Soft-deleted organization. */
+  readonly organization: Maybe<Organization>;
 };
 
 /** An edge in a connection. */
@@ -45592,8 +47057,8 @@ export type OrganizationState =
   | 'CONFIRMED'
   /** Deletion In Progress organization. Introduced in GitLab 19.0: **Status**: Experiment. */
   | 'DELETION_IN_PROGRESS'
-  /** Deletion Scheduled organization. Introduced in GitLab 19.0: **Status**: Experiment. */
-  | 'DELETION_SCHEDULED'
+  /** Soft Deleted organization. Introduced in GitLab 19.0: **Status**: Experiment. */
+  | 'SOFT_DELETED'
   /** Unconfirmed organization. Introduced in GitLab 19.0: **Status**: Experiment. */
   | 'UNCONFIRMED';
 
@@ -45742,6 +47207,13 @@ export type OrganizationUserUpdatePayload = {
    */
   readonly organizationUser: Maybe<OrganizationUser>;
 };
+
+/** Visibilities available to an organization. */
+export type OrganizationVisibility =
+  /** Private visibility. */
+  | 'private'
+  /** Public visibility. */
+  | 'public';
 
 /** Represents a package with pipelines in the package registry */
 export type Package = {
@@ -46162,7 +47634,7 @@ export type PackageFileRegistry = {
 
 /** The connection type for PackageFileRegistry. */
 export type PackageFileRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PackageFileRegistryEdge>>>;
@@ -46560,6 +48032,81 @@ export type PackagesCleanupPolicy = {
   readonly nextRunAt: Maybe<Scalars['Time']['output']>;
 };
 
+/** Represents the Geo replication and verification state of a packages_debian_project_component_file */
+export type PackagesDebianProjectComponentFileRegistry = {
+  /** Indicate if the checksums of the PackagesDebianProjectComponentFileRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the PackagesDebianProjectComponentFileRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this PackagesDebianProjectComponentFileRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the PackagesDebianProjectComponentFileRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** Error message during sync of the PackagesDebianProjectComponentFileRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the PackagesDebianProjectComponentFileRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the PackagesDebianProjectComponentFileRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the PackagesDebianProjectComponentFileRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** ID of the Packages::Debian::ProjectComponentFile. */
+  readonly packagesDebianProjectComponentFileId: Scalars['ID']['output'];
+  /** Timestamp after which the PackagesDebianProjectComponentFileRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the PackagesDebianProjectComponentFileRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the PackagesDebianProjectComponentFileRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** The local checksum of the PackagesDebianProjectComponentFileRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the PackagesDebianProjectComponentFileRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the PackagesDebianProjectComponentFileRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the PackagesDebianProjectComponentFileRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the PackagesDebianProjectComponentFileRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of PackagesDebianProjectComponentFileRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the PackagesDebianProjectComponentFileRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the PackagesDebianProjectComponentFileRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+};
+
+/** The connection type for PackagesDebianProjectComponentFileRegistry. */
+export type PackagesDebianProjectComponentFileRegistryConnection = {
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<PackagesDebianProjectComponentFileRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<PackagesDebianProjectComponentFileRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for PackagesDebianProjectComponentFileRegistry. */
+export type PackagesDebianProjectComponentFileRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type PackagesDebianProjectComponentFileRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<PackagesDebianProjectComponentFileRegistry>;
+};
+
 /** Represents the Geo replication and verification state of a packages_helm_metadata_cache. */
 export type PackagesHelmMetadataCacheRegistry = {
   /** Indicate if the checksums of the PackagesHelmMetadataCacheRegistry do not match on the primary and secondary. */
@@ -46611,7 +48158,7 @@ export type PackagesHelmMetadataCacheRegistry = {
 
 /** The connection type for PackagesHelmMetadataCacheRegistry. */
 export type PackagesHelmMetadataCacheRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PackagesHelmMetadataCacheRegistryEdge>>>;
@@ -46686,7 +48233,7 @@ export type PackagesNugetSymbolRegistry = {
 
 /** The connection type for PackagesNugetSymbolRegistry. */
 export type PackagesNugetSymbolRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PackagesNugetSymbolRegistryEdge>>>;
@@ -46899,7 +48446,7 @@ export type PagesDeploymentRegistry = {
 
 /** The connection type for PagesDeploymentRegistry. */
 export type PagesDeploymentRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PagesDeploymentRegistryEdge>>>;
@@ -47238,6 +48785,81 @@ export type PersonalAccessTokenRotatePayload = {
 /** Scope applied to a personal access token. */
 export type PersonalAccessTokenScope = AccessTokenGranularScope | AccessTokenLegacyScope;
 
+/** Represents the Geo replication and verification state of a personal_snippet_upload */
+export type PersonalSnippetUploadRegistry = {
+  /** Indicate if the checksums of the PersonalSnippetUploadRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the PersonalSnippetUploadRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this PersonalSnippetUploadRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the PersonalSnippetUploadRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** Error message during sync of the PersonalSnippetUploadRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the PersonalSnippetUploadRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the PersonalSnippetUploadRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the PersonalSnippetUploadRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** ID of the Personal Snippet Upload. */
+  readonly personalSnippetUploadId: Scalars['ID']['output'];
+  /** Timestamp after which the PersonalSnippetUploadRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the PersonalSnippetUploadRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the PersonalSnippetUploadRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** The local checksum of the PersonalSnippetUploadRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the PersonalSnippetUploadRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the PersonalSnippetUploadRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the PersonalSnippetUploadRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the PersonalSnippetUploadRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of PersonalSnippetUploadRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the PersonalSnippetUploadRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the PersonalSnippetUploadRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+};
+
+/** The connection type for PersonalSnippetUploadRegistry. */
+export type PersonalSnippetUploadRegistryConnection = {
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<PersonalSnippetUploadRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<PersonalSnippetUploadRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for PersonalSnippetUploadRegistry. */
+export type PersonalSnippetUploadRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type PersonalSnippetUploadRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<PersonalSnippetUploadRegistry>;
+};
+
 export type Pipeline = PipelineInterface & {
   /** Indicates if the pipeline is active. */
   readonly active: Scalars['Boolean']['output'];
@@ -47271,7 +48893,7 @@ export type Pipeline = PipelineInterface & {
   readonly dastProfile: Maybe<DastProfile>;
   /** Detailed status of the pipeline. */
   readonly detailedStatus: DetailedStatus;
-  /** Pipelines the pipeline will trigger. */
+  /** Latest pipelines triggered by the pipeline. Pipelines from trigger jobs that have since been retried are excluded. */
   readonly downstream: Maybe<PipelineConnection>;
   /** Duration of the pipeline in seconds. */
   readonly duration: Maybe<Scalars['Int']['output']>;
@@ -47606,7 +49228,7 @@ export type PipelineArtifactRegistry = {
 
 /** The connection type for PipelineArtifactRegistry. */
 export type PipelineArtifactRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<PipelineArtifactRegistryEdge>>>;
@@ -47834,6 +49456,42 @@ export type PipelineExecutionPolicyEdge = {
   readonly node: Maybe<PipelineExecutionPolicy>;
 };
 
+/** Represents a project schedule for a pipeline execution policy. */
+export type PipelineExecutionProjectSchedule = {
+  /** Cron expression for the schedule. */
+  readonly cron: Scalars['String']['output'];
+  /** Timezone for the cron schedule. */
+  readonly cronTimezone: Scalars['String']['output'];
+  /** ID of the schedule record. */
+  readonly id: Scalars['SecurityPipelineExecutionProjectScheduleID']['output'];
+  /** Timestamp of the next scheduled run. */
+  readonly nextRunAt: Maybe<Scalars['Time']['output']>;
+  /** Project the scheduled pipeline will run for. */
+  readonly project: Project;
+  /** Timestamp until which the schedule is snoozed. */
+  readonly snoozedUntil: Maybe<Scalars['Time']['output']>;
+  /** Time window in seconds for distributing pipeline runs. */
+  readonly timeWindowSeconds: Scalars['Int']['output'];
+};
+
+/** The connection type for PipelineExecutionProjectSchedule. */
+export type PipelineExecutionProjectScheduleConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<PipelineExecutionProjectScheduleEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<PipelineExecutionProjectSchedule>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** An edge in a connection. */
+export type PipelineExecutionProjectScheduleEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<PipelineExecutionProjectSchedule>;
+};
+
 /** Represents the pipeline execution schedule policy */
 export type PipelineExecutionSchedulePolicy = OrchestrationPolicy & {
   /**
@@ -47863,14 +49521,47 @@ export type PipelineExecutionSchedulePolicy = OrchestrationPolicy & {
   readonly policyConfigurationId: Maybe<Scalars['SecurityOrchestrationPolicyConfigurationID']['output']>;
   /** Scope of the policy. */
   readonly policyScope: Maybe<PolicyScope>;
+  /**
+   * Pipelines created by this scheduled policy. Introduced in GitLab 19.0: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
+   */
+  readonly schedulePipelines: Maybe<PolicySchedulePipelineConnection>;
+  /**
+   * Time window in seconds from the first schedule of the policy. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly scheduleTimeWindowSeconds: Maybe<Scalars['Int']['output']>;
   /** Source of the policy. Its fields depend on the source type. */
   readonly source: SecurityPolicySource;
+  /**
+   * Upcoming scheduled runs for this policy. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly upcomingSchedules: Maybe<PipelineExecutionProjectScheduleConnection>;
   /** Timestamp of when the policy YAML was last updated. */
   readonly updatedAt: Scalars['Time']['output'];
   /** Warnings associated with the policy. */
   readonly warnings: ReadonlyArray<Scalars['String']['output']>;
   /** YAML definition of the policy. */
   readonly yaml: Scalars['String']['output'];
+};
+
+
+/** Represents the pipeline execution schedule policy */
+export type PipelineExecutionSchedulePolicySchedulePipelinesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Represents the pipeline execution schedule policy */
+export type PipelineExecutionSchedulePolicyUpcomingSchedulesArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** The connection type for PipelineExecutionSchedulePolicy. */
@@ -47907,8 +49598,6 @@ export type PipelineExecutionSchedulePolicyTestRunPayload = {
   readonly clientMutationId: Maybe<Scalars['String']['output']>;
   /** Errors encountered during the mutation. */
   readonly errors: ReadonlyArray<Scalars['String']['output']>;
-  /** Pipeline created by the test-run. */
-  readonly pipeline: Maybe<Pipeline>;
   /** Test-run record created. */
   readonly testRun: Maybe<PolicyScheduleTestRun>;
 };
@@ -47917,6 +49606,11 @@ export type PipelineExecutionSchedulePolicyTestRunPayload = {
 export type PipelineExecutionScheduledPolicyAttributesType = {
   /** Path to the policy file in the project. */
   readonly policyBlobFilePath: Scalars['String']['output'];
+  /**
+   * Time window in seconds from the first schedule of the policy. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly scheduleTimeWindowSeconds: Maybe<Scalars['Int']['output']>;
   /** Source of the policy. Its fields depend on the source type. */
   readonly source: SecurityPolicySource;
   /** Warnings associated with the policy. */
@@ -47924,6 +49618,8 @@ export type PipelineExecutionScheduledPolicyAttributesType = {
 };
 
 export type PipelineInterface = {
+  /** Git commit of the pipeline. */
+  readonly commit: Maybe<Commit>;
   /** ID of the pipeline. */
   readonly id: Maybe<Scalars['ID']['output']>;
   /** Internal ID of the pipeline. */
@@ -47999,6 +49695,8 @@ export type PipelineMessageEdge = {
 };
 
 export type PipelineMinimalAccess = PipelineInterface & {
+  /** Git commit of the pipeline. */
+  readonly commit: Maybe<Commit>;
   /** ID of the pipeline. */
   readonly id: Scalars['ID']['output'];
   /** Internal ID of the pipeline. */
@@ -48798,6 +50496,36 @@ export type PolicyScanFindingViolation = {
   readonly severity: Maybe<VulnerabilitySeverity>;
 };
 
+/** Represents a pipeline created by a scheduled security policy. */
+export type PolicySchedulePipeline = {
+  /** Timestamp when the pipeline was triggered by the schedule. */
+  readonly createdAt: Scalars['Time']['output'];
+  /** ID of the policy schedule pipeline record. */
+  readonly id: Scalars['SecurityPolicySchedulePipelineID']['output'];
+  /** Pipeline created by the scheduled policy. */
+  readonly pipeline: Pipeline;
+  /** Project the pipeline was created for. */
+  readonly project: Project;
+};
+
+/** The connection type for PolicySchedulePipeline. */
+export type PolicySchedulePipelineConnection = {
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<PolicySchedulePipelineEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<PolicySchedulePipeline>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+/** An edge in a connection. */
+export type PolicySchedulePipelineEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<PolicySchedulePipeline>;
+};
+
 /** Represents a test run for a scheduled pipeline execution policy. */
 export type PolicyScheduleTestRun = {
   /** Whether the test run has completed. */
@@ -48846,6 +50574,8 @@ export type PolicyScheduleTestRunState =
   | 'COMPLETE'
   /** Test run failed. */
   | 'FAILED'
+  /** Test run is pending and waiting for pipeline creation. */
+  | 'PENDING'
   /** Test run is in progress. */
   | 'RUNNING';
 
@@ -49169,61 +50899,6 @@ export type ProcessUserBillablePromotionRequestPayload = {
   readonly result: Maybe<UserPromotionStatusType>;
 };
 
-/** Project-level settings for product analytics provider. */
-export type ProductAnalyticsProjectSettings = {
-  /** Base URL for the Cube API. */
-  readonly cubeApiBaseUrl: Maybe<Scalars['String']['output']>;
-  /** API key for the Cube API. */
-  readonly cubeApiKey: Maybe<Scalars['String']['output']>;
-  /** Connection string for the product analytics configurator. */
-  readonly productAnalyticsConfiguratorConnectionString: Maybe<Scalars['String']['output']>;
-  /** Host for the product analytics data collector. */
-  readonly productAnalyticsDataCollectorHost: Maybe<Scalars['String']['output']>;
-};
-
-/** Autogenerated input type of ProductAnalyticsProjectSettingsUpdate */
-export type ProductAnalyticsProjectSettingsUpdateInput = {
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
-  /** Base URL for the Cube API. */
-  readonly cubeApiBaseUrl: InputMaybe<Scalars['String']['input']>;
-  /** API key for the Cube API. */
-  readonly cubeApiKey: InputMaybe<Scalars['String']['input']>;
-  /** Full path of the project the settings belong to. */
-  readonly fullPath: Scalars['ID']['input'];
-  /** Connection string for the product analytics configurator. */
-  readonly productAnalyticsConfiguratorConnectionString: InputMaybe<Scalars['String']['input']>;
-  /** Host for the product analytics data collector. */
-  readonly productAnalyticsDataCollectorHost: InputMaybe<Scalars['String']['input']>;
-};
-
-/** Autogenerated return type of ProductAnalyticsProjectSettingsUpdate. */
-export type ProductAnalyticsProjectSettingsUpdatePayload = {
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: Maybe<Scalars['String']['output']>;
-  /** Base URL for the Cube API. */
-  readonly cubeApiBaseUrl: Maybe<Scalars['String']['output']>;
-  /** API key for the Cube API. */
-  readonly cubeApiKey: Maybe<Scalars['String']['output']>;
-  /** Errors encountered during the mutation. */
-  readonly errors: ReadonlyArray<Scalars['String']['output']>;
-  /** Connection string for the product analytics configurator. */
-  readonly productAnalyticsConfiguratorConnectionString: Maybe<Scalars['String']['output']>;
-  /** Host for the product analytics data collector. */
-  readonly productAnalyticsDataCollectorHost: Maybe<Scalars['String']['output']>;
-};
-
-/** Current state of the product analytics stack. */
-export type ProductAnalyticsState =
-  /** Stack has been initialized and has data. */
-  | 'COMPLETE'
-  /** Stack has not been created yet. */
-  | 'CREATE_INSTANCE'
-  /** Stack is currently initializing. */
-  | 'LOADING_INSTANCE'
-  /** Stack is waiting for events from users. */
-  | 'WAITING_FOR_EVENTS';
-
 export type Project = ProjectInterface & Todoable & {
   /** Size limit for the repository in bytes. */
   readonly actualRepositorySizeLimit: Maybe<Scalars['Float']['output']>;
@@ -49233,16 +50908,6 @@ export type Project = ProjectInterface & Todoable & {
   readonly adminShowPath: Maybe<Scalars['String']['output']>;
   /** Agent configurations defined by the project */
   readonly agentConfigurations: Maybe<AgentConfigurationConnection>;
-  /**
-   * Find a specific AI Agent. Introduced in GitLab 16.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.10.
-   */
-  readonly aiAgent: Maybe<AiAgent>;
-  /**
-   * Ai Agents for the project. Introduced in GitLab 16.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.9.
-   */
-  readonly aiAgents: Maybe<AiAgentConnection>;
   /**
    * AI Catalog item of the project. Introduced in GitLab 18.5: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.5.
@@ -49526,6 +51191,11 @@ export type Project = ProjectInterface & Todoable & {
   readonly duoFeaturesEnabled: Maybe<Scalars['Boolean']['output']>;
   /** Checkpoints for GitLab Duo Agent Platform flows, for all users (remote flows only). Returns only the latest checkpoint by default. Use `first` and `after` to page through history. */
   readonly duoWorkflowEvents: Maybe<DuoWorkflowEventConnection>;
+  /**
+   * Duo Agent Platform session artifacts for the project. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly duoWorkflowSessionArtifacts: Maybe<DuoWorkflowSessionArtifactConnection>;
   /**
    * Indicates whether Duo Agent Platform is enabled for the project. Introduced in GitLab 17.7: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.7.
@@ -49813,18 +51483,6 @@ export type Project = ProjectInterface & Todoable & {
   readonly preventMergeWithoutJiraIssueEnabled: Scalars['Boolean']['output'];
   /** Indicates if a link to create or view a merge request should display after a push to Git repositories of the project from the command line. */
   readonly printingMergeRequestLinkEnabled: Maybe<Scalars['Boolean']['output']>;
-  /**
-   * Product Analytics instrumentation key assigned to the project. Introduced in GitLab 16.0: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.0.
-   */
-  readonly productAnalyticsInstrumentationKey: Maybe<Scalars['String']['output']>;
-  /** Project-level settings for product analytics. */
-  readonly productAnalyticsSettings: Maybe<ProductAnalyticsProjectSettings>;
-  /**
-   * Current state of the product analytics stack for this project.Can only be called for one project in a single request Introduced in GitLab 15.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 15.10.
-   */
-  readonly productAnalyticsState: Maybe<ProductAnalyticsState>;
   /** Members of the project. */
   readonly projectMembers: Maybe<MemberInterfaceConnection>;
   /**
@@ -49895,6 +51553,8 @@ export type Project = ProjectInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.5.
    */
   readonly securityAttributes: Maybe<SecurityAttributeConnection>;
+  /** Path to project's security configuration. */
+  readonly securityConfigurationPath: Maybe<Scalars['String']['output']>;
   /** Path to project's security dashboard. */
   readonly securityDashboardPath: Maybe<Scalars['String']['output']>;
   /**
@@ -50101,19 +51761,6 @@ export type ProjectAgentConfigurationsArgs = {
 };
 
 
-export type ProjectAiAgentArgs = {
-  id: Scalars['AiAgentID']['input'];
-};
-
-
-export type ProjectAiAgentsArgs = {
-  after: InputMaybe<Scalars['String']['input']>;
-  before: InputMaybe<Scalars['String']['input']>;
-  first: InputMaybe<Scalars['Int']['input']>;
-  last: InputMaybe<Scalars['Int']['input']>;
-};
-
-
 export type ProjectAiCatalogItemArgs = {
   id: Scalars['AiCatalogItemID']['input'];
   showSoftDeleted?: InputMaybe<Scalars['Boolean']['input']>;
@@ -50134,6 +51781,7 @@ export type ProjectAiCatalogItemsArgs = {
   itemTypes: InputMaybe<ReadonlyArray<AiCatalogItemType>>;
   last: InputMaybe<Scalars['Int']['input']>;
   search: InputMaybe<Scalars['String']['input']>;
+  sort: InputMaybe<AiCatalogItemsSort>;
 };
 
 
@@ -50606,12 +52254,25 @@ export type ProjectDuoWorkflowEventsArgs = {
 };
 
 
+export type ProjectDuoWorkflowSessionArtifactsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+  not: InputMaybe<DuoWorkflowSessionArtifactNegatedFilterInput>;
+  workflowCreatedAfter: InputMaybe<Scalars['Time']['input']>;
+  workflowCreatedBefore: InputMaybe<Scalars['Time']['input']>;
+  workflowDefinition: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type ProjectDuoWorkflowWorkflowsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   environment: InputMaybe<WorkflowEnvironment>;
   excludeTypes: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
   first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['AiDuoWorkflowsWorkflowID']['input']>>;
   last: InputMaybe<Scalars['Int']['input']>;
   projectPath: InputMaybe<Scalars['ID']['input']>;
   search: InputMaybe<Scalars['String']['input']>;
@@ -51441,6 +53102,7 @@ export type ProjectSecurityPolicyEligibleProjectsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['ProjectID']['input']>>;
   last: InputMaybe<Scalars['Int']['input']>;
   search: InputMaybe<Scalars['String']['input']>;
 };
@@ -52332,7 +53994,7 @@ export type ProjectImportExportRelationExportUploadUploadRegistry = {
 
 /** The connection type for ProjectImportExportRelationExportUploadUploadRegistry. */
 export type ProjectImportExportRelationExportUploadUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ProjectImportExportRelationExportUploadUploadRegistryEdge>>>;
@@ -52354,24 +54016,6 @@ export type ProjectImportExportRelationExportUploadUploadRegistryEdge = {
   readonly cursor: Scalars['String']['output'];
   /** The item at the end of the edge. */
   readonly node: Maybe<ProjectImportExportRelationExportUploadUploadRegistry>;
-};
-
-/** Autogenerated input type of ProjectInitializeProductAnalytics */
-export type ProjectInitializeProductAnalyticsInput = {
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
-  /** Full path of the project to initialize. */
-  readonly projectPath: Scalars['ID']['input'];
-};
-
-/** Autogenerated return type of ProjectInitializeProductAnalytics. */
-export type ProjectInitializeProductAnalyticsPayload = {
-  /** A unique identifier for the client performing the mutation. */
-  readonly clientMutationId: Maybe<Scalars['String']['output']>;
-  /** Errors encountered during the mutation. */
-  readonly errors: ReadonlyArray<Scalars['String']['output']>;
-  /** Project on which the initialization took place. */
-  readonly project: Maybe<Project>;
 };
 
 export type ProjectInterface = {
@@ -52897,7 +54541,7 @@ export type ProjectRepositoryRegistry = {
 
 /** The connection type for ProjectRepositoryRegistry. */
 export type ProjectRepositoryRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ProjectRepositoryRegistryEdge>>>;
@@ -53495,6 +55139,8 @@ export type ProjectSettingsUpdateInput = {
   readonly duoContextExclusionSettings: InputMaybe<DuoContextExclusionSettingsInput>;
   /** Indicates whether GitLab Duo features are enabled for the project. */
   readonly duoFeaturesEnabled: InputMaybe<Scalars['Boolean']['input']>;
+  /** Indicates whether SAST Vulnerability Resolution workflow is enabled for the project. */
+  readonly duoSastVrWorkflowEnabled: InputMaybe<Scalars['Boolean']['input']>;
   /** Full Path of the project the settings belong to. */
   readonly fullPath: Scalars['ID']['input'];
   /** Indicates whether tool approval for Duo Workflow sessions is enabled for the project. */
@@ -53853,7 +55499,7 @@ export type ProjectUploadRegistry = {
 
 /** The connection type for ProjectUploadRegistry. */
 export type ProjectUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ProjectUploadRegistryEdge>>>;
@@ -54026,7 +55672,7 @@ export type ProjectWikiRepositoryRegistry = {
 
 /** The connection type for ProjectWikiRepositoryRegistry. */
 export type ProjectWikiRepositoryRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<ProjectWikiRepositoryRegistryEdge>>>;
@@ -54349,6 +55995,38 @@ export type PushAccessLevelInput = {
   readonly userId: InputMaybe<Scalars['UserID']['input']>;
 };
 
+/** Commit details associated with a push event. */
+export type PushEventCommit = {
+  /** Number of commits in the push. */
+  readonly count: Scalars['Int']['output'];
+  /** SHA of the ref tip before the push. `null` when the ref was created. */
+  readonly from: Maybe<Scalars['String']['output']>;
+  /** Title of the most recent commit in the push. */
+  readonly title: Maybe<Scalars['String']['output']>;
+  /** SHA of the ref tip after the push. `null` when the ref was removed. */
+  readonly to: Maybe<Scalars['String']['output']>;
+};
+
+/** Represents the payload of a push event. */
+export type PushEventPayload = {
+  /** Action performed on the ref. One of `created`, `removed`, or `pushed`. */
+  readonly action: Scalars['String']['output'];
+  /** Commit details for the push. */
+  readonly commit: PushEventCommit;
+  /** Ref (branch or tag) involved in the push. */
+  readonly ref: PushEventRef;
+};
+
+/** Ref (branch or tag) involved in a push event. */
+export type PushEventRef = {
+  /** Number of refs pushed when more than one ref was pushed at once. */
+  readonly count: Maybe<Scalars['Int']['output']>;
+  /** Name of the ref (branch or tag) that was pushed. */
+  readonly name: Maybe<Scalars['String']['output']>;
+  /** Type of the ref. One of `branch` or `tag`. */
+  readonly type: Scalars['String']['output'];
+};
+
 /** Represents rules that commit pushes must follow. */
 export type PushRules = {
   /** All commit author emails must match the regular expression. */
@@ -54525,6 +56203,11 @@ export type Query = {
    */
   readonly aiFeatureSettings: Maybe<AiFeatureSettingConnection>;
   /**
+   * Core agent in GitLab. Introduced in GitLab 19.0: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
+   */
+  readonly aiFoundationalChatAgent: Maybe<AiFoundationalChatAgent>;
+  /**
    * Core agents in GitLab. Introduced in GitLab 18.6: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
    */
@@ -54546,6 +56229,11 @@ export type Query = {
   readonly aiSelfHostedModels: Maybe<AiSelfHostedModelConnection>;
   /** Get available GitLab Duo Chat slash commands for the current user for a specific URL */
   readonly aiSlashCommands: Maybe<ReadonlyArray<SlashCommand>>;
+  /**
+   * AI tool governance rules for a namespace. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly aiToolRules: AiToolRuleConnection;
   /**
    * Instance level AI-related data. Admins only. Introduced in GitLab 18.7: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.7.
@@ -54605,10 +56293,7 @@ export type Query = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.3.
    */
   readonly cloudConnectorStatus: Maybe<CloudConnectorStatus>;
-  /**
-   * List of available compliance framework templates. Introduced in GitLab 19.0: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 19.0.
-   */
+  /** List of available compliance framework templates. */
   readonly complianceFrameworkTemplates: Maybe<ReadonlyArray<ComplianceFrameworkTemplate>>;
   /** Get the list of all the compliance requirement controls. */
   readonly complianceRequirementControls: Maybe<ComplianceRequirementControl>;
@@ -54627,6 +56312,8 @@ export type Query = {
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
    */
   readonly customField: Maybe<CustomField>;
+  /** Find a GitLab-provided system dashboard by slug. */
+  readonly customSystemDashboard: Maybe<CustomSystemDashboard>;
   /** Find a dependency. */
   readonly dependency: Maybe<Dependency>;
   /** Fields related to design management. */
@@ -54907,6 +56594,11 @@ export type Query = {
   /** Find Snippets visible to the current user. */
   readonly snippets: Maybe<SnippetConnection>;
   /**
+   * List of SPDX licenses from the SPDX licence catalogue. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly spdxLicenses: Maybe<ReadonlyArray<SpdxLicense>>;
+  /**
    * Finds a single default role for the instance. Available only for GitLab Self-Managed. Introduced in GitLab 17.6: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.6.
    */
@@ -55091,7 +56783,6 @@ export type QueryAdminProjectsArgs = {
   topics: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
   trending: InputMaybe<Scalars['Boolean']['input']>;
   visibilityLevel: InputMaybe<VisibilityLevelsEnum>;
-  withDuoEligible: InputMaybe<Scalars['Boolean']['input']>;
   withIssuesEnabled: InputMaybe<Scalars['Boolean']['input']>;
   withMergeRequestsEnabled: InputMaybe<Scalars['Boolean']['input']>;
 };
@@ -55163,6 +56854,7 @@ export type QueryAiCatalogItemVersionsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   createdAfter: InputMaybe<Scalars['Time']['input']>;
+  excludeDeprecated?: InputMaybe<Scalars['Boolean']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
@@ -55254,6 +56946,11 @@ export type QueryAiFeatureSettingsArgs = {
 };
 
 
+export type QueryAiFoundationalChatAgentArgs = {
+  reference: Scalars['String']['input'];
+};
+
+
 export type QueryAiFoundationalChatAgentsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -55266,7 +56963,6 @@ export type QueryAiFoundationalChatAgentsArgs = {
 
 export type QueryAiMessagesArgs = {
   after: InputMaybe<Scalars['String']['input']>;
-  agentVersionId: InputMaybe<Scalars['AiAgentVersionID']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
   conversationType: InputMaybe<AiConversationsThreadsConversationType>;
   first: InputMaybe<Scalars['Int']['input']>;
@@ -55297,6 +56993,18 @@ export type QueryAiSelfHostedModelsArgs = {
 
 export type QueryAiSlashCommandsArgs = {
   url: Scalars['String']['input'];
+};
+
+
+export type QueryAiToolRulesArgs = {
+  actionType: InputMaybe<AiToolActionType>;
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  fullPath: Scalars['ID']['input'];
+  last: InputMaybe<Scalars['Int']['input']>;
+  projectPath: InputMaybe<Scalars['ID']['input']>;
+  search: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -55450,6 +57158,11 @@ export type QueryCustomFieldArgs = {
 };
 
 
+export type QueryCustomSystemDashboardArgs = {
+  slug: Scalars['String']['input'];
+};
+
+
 export type QueryDependencyArgs = {
   id: Scalars['SbomOccurrenceID']['input'];
 };
@@ -55487,6 +57200,7 @@ export type QueryDuoWorkflowWorkflowsArgs = {
   environment: InputMaybe<WorkflowEnvironment>;
   excludeTypes: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
   first: InputMaybe<Scalars['Int']['input']>;
+  ids: InputMaybe<ReadonlyArray<Scalars['AiDuoWorkflowsWorkflowID']['input']>>;
   last: InputMaybe<Scalars['Int']['input']>;
   projectPath: InputMaybe<Scalars['ID']['input']>;
   search: InputMaybe<Scalars['String']['input']>;
@@ -55804,9 +57518,11 @@ export type QueryOrganizationArgs = {
 export type QueryOrganizationsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
+  excludeDefault?: InputMaybe<Scalars['Boolean']['input']>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
   search: InputMaybe<Scalars['String']['input']>;
+  state: InputMaybe<OrganizationState>;
 };
 
 
@@ -55916,7 +57632,6 @@ export type QueryProjectsArgs = {
   topics: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
   trending: InputMaybe<Scalars['Boolean']['input']>;
   visibilityLevel: InputMaybe<VisibilityLevelsEnum>;
-  withDuoEligible: InputMaybe<Scalars['Boolean']['input']>;
   withIssuesEnabled: InputMaybe<Scalars['Boolean']['input']>;
   withMergeRequestsEnabled: InputMaybe<Scalars['Boolean']['input']>;
 };
@@ -56335,7 +58050,7 @@ export type RecentlyViewedItem = {
   readonly viewedAt: Scalars['Time']['output'];
 };
 
-export type RecentlyViewedItemUnion = Epic | Issue | MergeRequest | WikiPage;
+export type RecentlyViewedItemUnion = Epic | Issue | MergeRequest | WikiPage | WorkItem;
 
 /** Type of ref */
 export type RefType =
@@ -56416,7 +58131,7 @@ export type RefreshVulnerabilityFindingTokenStatusPayload = {
   readonly findingTokenStatus: Maybe<VulnerabilityFindingTokenStatus>;
 };
 
-export type Registrable = AbuseReportUploadRegistry | AchievementUploadRegistry | AiVectorizableFileUploadRegistry | BulkImportExportUploadUploadRegistry | CiSecureFileRegistry | ContainerRepositoryRegistry | DependencyProxyBlobRegistry | DependencyProxyManifestRegistry | DesignManagementActionUploadRegistry | DesignManagementRepositoryRegistry | GroupUploadRegistry | GroupWikiRepositoryRegistry | ImportExportUploadUploadRegistry | JobArtifactRegistry | LfsObjectRegistry | MergeRequestDiffRegistry | PackageFileRegistry | PackagesHelmMetadataCacheRegistry | PackagesNugetSymbolRegistry | PagesDeploymentRegistry | PipelineArtifactRegistry | ProjectImportExportRelationExportUploadUploadRegistry | ProjectRepositoryRegistry | ProjectUploadRegistry | ProjectWikiRepositoryRegistry | SnippetRepositoryRegistry | TerraformStateVersionRegistry | UploadRegistry | UserUploadRegistry | VulnerabilityArchiveExportUploadRegistry | VulnerabilityExportUploadRegistry;
+export type Registrable = AbuseReportUploadRegistry | AchievementUploadRegistry | AiVectorizableFileUploadRegistry | AlertManagementMetricImageUploadRegistry | BulkImportExportUploadUploadRegistry | CiSecureFileRegistry | ContainerRepositoryRegistry | DependencyListExportUploadRegistry | DependencyProxyBlobRegistry | DependencyProxyManifestRegistry | DesignManagementActionUploadRegistry | DesignManagementRepositoryRegistry | GroupUploadRegistry | GroupWikiRepositoryRegistry | ImportExportUploadUploadRegistry | IssuableMetricImageUploadRegistry | JobArtifactRegistry | LfsObjectRegistry | MergeRequestDiffRegistry | PackageFileRegistry | PackagesDebianProjectComponentFileRegistry | PackagesHelmMetadataCacheRegistry | PackagesNugetSymbolRegistry | PagesDeploymentRegistry | PersonalSnippetUploadRegistry | PipelineArtifactRegistry | ProjectImportExportRelationExportUploadUploadRegistry | ProjectRepositoryRegistry | ProjectUploadRegistry | ProjectWikiRepositoryRegistry | SnippetRepositoryRegistry | TerraformStateVersionRegistry | UploadRegistry | UserPermissionExportUploadUploadRegistry | UserUploadRegistry | VulnerabilityArchiveExportUploadRegistry | VulnerabilityExportPartUploadRegistry | VulnerabilityExportUploadRegistry;
 
 export type RegistryInterface = {
   /** Description of the virtual registry. */
@@ -58772,12 +60487,20 @@ export type SecurityAttributeBulkUpdateMode =
 
 /** The connection type for SecurityAttribute. */
 export type SecurityAttributeConnection = {
+  /** Total count of collection. Returns limit + 1 for counts greater than the limit. */
+  readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<SecurityAttributeEdge>>>;
   /** A list of nodes. */
   readonly nodes: Maybe<ReadonlyArray<Maybe<SecurityAttribute>>>;
   /** Information to aid in pagination. */
   readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for SecurityAttribute. */
+export type SecurityAttributeConnectionCountArgs = {
+  limit: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Autogenerated input type of SecurityAttributeCreate */
@@ -59038,6 +60761,8 @@ export type SecurityConfiguration = {
   readonly latestPipelinePath: Maybe<Scalars['String']['output']>;
   /** Source of license configuration. */
   readonly licenseConfigurationSource: Maybe<Scalars['String']['output']>;
+  /** Whether license scanning for CycloneDX SBOM files is enabled. */
+  readonly licenseScanningForCyclonedxEnabled: Maybe<Scalars['Boolean']['output']>;
   /** Maximum number of refs that can be tracked for security scanning. */
   readonly maxTrackedRefs: Maybe<Scalars['Int']['output']>;
   /** Path to secret detection configuration. */
@@ -59455,6 +61180,11 @@ export type SecurityPolicyType = OrchestrationPolicy & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
    */
   readonly id: Maybe<Scalars['SecurityPolicyID']['output']>;
+  /**
+   * Number of projects linked to this policy. Does not account for policy_scope filtering. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly linkedProjectsCount: Maybe<Scalars['Int']['output']>;
   /** Name of the policy. */
   readonly name: Scalars['String']['output'];
   /** Attributes specific to the policy type. */
@@ -60363,6 +62093,26 @@ export type SetLicenseConfigurationSourcePayload = {
   readonly licenseConfigurationSource: Maybe<SecurityPreferredLicenseSourceConfiguration>;
 };
 
+/** Autogenerated input type of SetLicenseScanningForCyclonedx */
+export type SetLicenseScanningForCyclonedxInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Desired status for license scanning for CycloneDX files. */
+  readonly enable: Scalars['Boolean']['input'];
+  /** Full path of the project. */
+  readonly projectPath: Scalars['ID']['input'];
+};
+
+/** Autogenerated return type of SetLicenseScanningForCyclonedx. */
+export type SetLicenseScanningForCyclonedxPayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Whether license scanning for CycloneDX files is enabled. */
+  readonly licenseScanningForCyclonedxEnabled: Maybe<Scalars['Boolean']['output']>;
+};
+
 /** Autogenerated input type of SetPagesForceHttps */
 export type SetPagesForceHttpsInput = {
   /** A unique identifier for the client performing the mutation. */
@@ -60783,7 +62533,7 @@ export type SnippetRepositoryRegistry = {
 
 /** The connection type for SnippetRepositoryRegistry. */
 export type SnippetRepositoryRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<SnippetRepositoryRegistryEdge>>>;
@@ -60847,6 +62597,16 @@ export type SourceUserSort =
   | 'STATUS_ASC'
   /** Status of the mapping by descending order. */
   | 'STATUS_DESC';
+
+/** SPDX license entry from the SPDX licence catalogue. */
+export type SpdxLicense = {
+  /** Full name of the license. */
+  readonly name: Scalars['String']['output'];
+  /** SPDX identifier of the license. */
+  readonly spdxIdentifier: Scalars['String']['output'];
+  /** URL to the SPDX license page. */
+  readonly url: Maybe<Scalars['String']['output']>;
+};
 
 /** Squash option overrides for a protected branch */
 export type SquashOption = {
@@ -61156,7 +62916,6 @@ export type Subscription = {
 
 
 export type SubscriptionAiCompletionResponseArgs = {
-  agentVersionId: InputMaybe<Scalars['AiAgentVersionID']['input']>;
   aiAction: InputMaybe<AiAction>;
   clientSubscriptionId: InputMaybe<Scalars['String']['input']>;
   resourceId: InputMaybe<Scalars['AiModelID']['input']>;
@@ -61459,6 +63218,8 @@ export type TagDeletePayload = {
 export type TargetedMessage = {
   /** ID of the targeted message. */
   readonly id: Scalars['ID']['output'];
+  /** Roles targeted by the message. Empty array means all roles. */
+  readonly roles: ReadonlyArray<Scalars['Int']['output']>;
   /** Type of the targeted message (e.g., banner_page_level). */
   readonly targetType: Scalars['String']['output'];
 };
@@ -61818,7 +63579,7 @@ export type TerraformStateVersionRegistry = {
 
 /** The connection type for TerraformStateVersionRegistry. */
 export type TerraformStateVersionRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<TerraformStateVersionRegistryEdge>>>;
@@ -63205,6 +64966,32 @@ export type UnprotectAccessLevelEdge = {
   readonly node: Maybe<UnprotectAccessLevel>;
 };
 
+/** Autogenerated input type of UpdateAiToolRule */
+export type UpdateAiToolRuleInput = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Full path of the root namespace to update the tool rule for. */
+  readonly fullPath: Scalars['ID']['input'];
+  /** Permission mode for local or IDE surface. */
+  readonly localAccess: InputMaybe<AiToolPermission>;
+  /** Full path of the project to update the tool rule for. When provided, creates a project-level rule that can only be stricter than the namespace rule. */
+  readonly projectPath: InputMaybe<Scalars['ID']['input']>;
+  /** Tool name string identifying the tool to update. For example, "create_issue". */
+  readonly toolId: Scalars['String']['input'];
+  /** Permission mode for web surface. */
+  readonly webAccess: InputMaybe<AiToolPermission>;
+};
+
+/** Autogenerated return type of UpdateAiToolRule. */
+export type UpdateAiToolRulePayload = {
+  /** A unique identifier for the client performing the mutation. */
+  readonly clientMutationId: Maybe<Scalars['String']['output']>;
+  /** Errors encountered during the mutation. */
+  readonly errors: ReadonlyArray<Scalars['String']['output']>;
+  /** Updated tool rule after mutation. */
+  readonly toolRule: Maybe<AiToolRule>;
+};
+
 /** Autogenerated input type of UpdateAlertStatus */
 export type UpdateAlertStatusInput = {
   /** A unique identifier for the client performing the mutation. */
@@ -63417,7 +65204,7 @@ export type UpdateContainerProtectionRepositoryRuleInput = {
   /** Global ID of the container repository protection rule to be updated. */
   readonly id: Scalars['ContainerRegistryProtectionRuleID']['input'];
   /**
-   * Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. Valid only when feature flag `container_registry_protected_containers_delete` is enabled. Introduced in GitLab 17.11: **Status**: Experiment. Introduced in GitLab 17.11: **Status**: Experiment.
+   * Minimum GitLab access level required to delete container images from the container repository. Valid values include `MAINTAINER`, `OWNER`, or `ADMIN`. If the value is `nil`, the default minimum access level is `DEVELOPER`. Valid only when feature flag `container_registry_protected_containers_delete` is enabled. Introduced in GitLab 17.11: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
    */
   readonly minimumAccessLevelForDelete: InputMaybe<ContainerProtectionRepositoryRuleAccessLevel>;
@@ -63572,8 +65359,10 @@ export type UpdateDiffImagePositionInput = {
 export type UpdateDuoWorkflowToolCallApprovalsInput = {
   /** A unique identifier for the client performing the mutation. */
   readonly clientMutationId: InputMaybe<Scalars['String']['input']>;
+  /** Glob pattern to approve for matching tool call arguments. */
+  readonly pattern: InputMaybe<Scalars['String']['input']>;
   /** Arguments for the tool call. */
-  readonly toolCallArgs: Scalars['JSON']['input'];
+  readonly toolCallArgs: InputMaybe<Scalars['JSON']['input']>;
   /** Name of the tool to approve. */
   readonly toolName: Scalars['String']['input'];
   /** Global ID of the workflow to update. */
@@ -63862,7 +65651,7 @@ export type UpdatePackagesProtectionRuleInput = {
   /** Global ID of the package protection rule to be updated. */
   readonly id: Scalars['PackagesProtectionRuleID']['input'];
   /**
-   * Minimum GitLab access required to delete packages from the package registry. Valid values include `OWNER` or `ADMIN`. If the value is `nil`, the default minimum access level is `MAINTAINER`. Available only when feature flag `packages_protected_packages_delete` is enabled. Introduced in GitLab 17.10: **Status**: Experiment. Introduced in GitLab 17.10: **Status**: Experiment.
+   * Minimum GitLab access required to delete packages from the package registry. Valid values include `OWNER` or `ADMIN`. If the value is `nil`, the default minimum access level is `MAINTAINER`. Available only when feature flag `packages_protected_packages_delete` is enabled. Introduced in GitLab 17.10: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
    */
   readonly minimumAccessLevelForDelete: InputMaybe<PackagesProtectionRuleAccessLevelForDelete>;
@@ -63966,7 +65755,7 @@ export type UpdateSnippetPayload = {
 /** Autogenerated input type of UpdateTerraformStateProtectionRule */
 export type UpdateTerraformStateProtectionRuleInput = {
   /**
-   * Restriction on the source of write requests. `ANYWHERE` allows all sources, `CI_ONLY` requires a CI job token, `CI_ON_PROTECTED_BRANCH_ONLY` requires a CI job on a protected branch. Introduced in GitLab 18.11: **Status**: Experiment. Introduced in GitLab 18.11: **Status**: Experiment.
+   * Restriction on the source of write requests. `ANYWHERE` allows all sources, `CI_ONLY` requires a CI job token, `CI_ON_PROTECTED_BRANCH_ONLY` requires a CI job on a protected branch. Introduced in GitLab 18.11: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
    */
   readonly allowedFrom: InputMaybe<TerraformStateProtectionRuleAllowedFrom>;
@@ -63975,12 +65764,12 @@ export type UpdateTerraformStateProtectionRuleInput = {
   /** Global ID of the Terraform state protection rule to update. */
   readonly id: Scalars['TerraformStateProtectionRuleID']['input'];
   /**
-   * Minimum GitLab access level required to perform write operations on the Terraform state. Valid values include `DEVELOPER`, `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 18.11: **Status**: Experiment. Introduced in GitLab 18.11: **Status**: Experiment.
+   * Minimum GitLab access level required to perform write operations on the Terraform state. Valid values include `DEVELOPER`, `MAINTAINER`, `OWNER`, or `ADMIN`. Introduced in GitLab 18.11: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
    */
   readonly minimumAccessLevelForWrite: InputMaybe<TerraformStateProtectionRuleAccessLevel>;
   /**
-   * Terraform state name protected by the rule. Introduced in GitLab 18.11: **Status**: Experiment. Introduced in GitLab 18.11: **Status**: Experiment.
+   * Terraform state name protected by the rule. Introduced in GitLab 18.11: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
    */
   readonly stateName: InputMaybe<Scalars['String']['input']>;
@@ -64144,7 +65933,7 @@ export type UploadRegistry = {
 
 /** The connection type for UploadRegistry. */
 export type UploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<UploadRegistryEdge>>>;
@@ -64308,6 +66097,8 @@ export type User = {
   readonly email: Maybe<Scalars['String']['output']>;
   /** User's email addresses. */
   readonly emails: Maybe<EmailConnection>;
+  /** Activity events visible to the current user, most recent first. */
+  readonly events: Maybe<EventConnection>;
   /** GitHub profile name of the user. */
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Ona is enabled at the user level. */
@@ -64545,6 +66336,16 @@ export type UserEmailsArgs = {
 
 
 /** Representation of a GitLab user. */
+export type UserEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<UserEventFilter>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Representation of a GitLab user. */
 export type UserGroupCalloutsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
@@ -64763,6 +66564,10 @@ export type UserUserAchievementsArgs = {
 export type UserAchievement = {
   /** Achievement awarded. */
   readonly achievement: Achievement;
+  /** Message associated with the awarded achievement. */
+  readonly awardMessage: Maybe<Scalars['String']['output']>;
+  /** GitLab Flavored Markdown rendering of `award_message` */
+  readonly awardMessageHtml: Maybe<Scalars['String']['output']>;
   /** Awarded by. */
   readonly awardedByUser: UserCore;
   /** Timestamp the achievement was created. */
@@ -65128,6 +66933,8 @@ export type UserCalloutFeatureNameEnum =
   | 'SECURITY_CONFIGURATION_DEVOPS_ALERT'
   /** Callout feature name for security_configuration_upgrade_banner. */
   | 'SECURITY_CONFIGURATION_UPGRADE_BANNER'
+  /** Callout feature name for security_manager_role. */
+  | 'SECURITY_MANAGER_ROLE'
   /** Callout feature name for security_policy_protected_branch_modification. */
   | 'SECURITY_POLICY_PROTECTED_BRANCH_MODIFICATION'
   /** Callout feature name for security_scanner_profiles_announcement. */
@@ -65162,8 +66969,6 @@ export type UserCalloutFeatureNameEnum =
   | 'VIRTUAL_REGISTRY_PERMISSION_CHANGE_ALERT'
   /** Callout feature name for vulnerability_archival. */
   | 'VULNERABILITY_ARCHIVAL'
-  /** Callout feature name for vulnerability_report_grouping. */
-  | 'VULNERABILITY_REPORT_GROUPING'
   /** Callout feature name for vulnerability_report_limited_experience. */
   | 'VULNERABILITY_REPORT_LIMITED_EXPERIENCE'
   /** Callout feature name for web_ide_alert_dismissed. */
@@ -65212,6 +67017,8 @@ export type UserCore = Todoable & User & {
   readonly email: Maybe<Scalars['String']['output']>;
   /** User's email addresses. */
   readonly emails: Maybe<EmailConnection>;
+  /** Activity events visible to the current user, most recent first. */
+  readonly events: Maybe<EventConnection>;
   /** GitHub profile name of the user. */
   readonly github: Maybe<Scalars['String']['output']>;
   /** Whether Ona is enabled at the user level. */
@@ -65445,6 +67252,16 @@ export type UserCoreContributedProjectsArgs = {
 export type UserCoreEmailsArgs = {
   after: InputMaybe<Scalars['String']['input']>;
   before: InputMaybe<Scalars['String']['input']>;
+  first: InputMaybe<Scalars['Int']['input']>;
+  last: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Core representation of a GitLab user. */
+export type UserCoreEventsArgs = {
+  after: InputMaybe<Scalars['String']['input']>;
+  before: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<UserEventFilter>;
   first: InputMaybe<Scalars['Int']['input']>;
   last: InputMaybe<Scalars['Int']['input']>;
 };
@@ -65738,6 +67555,25 @@ export type UserDuoStatus = {
   readonly flowTriggerEvents: ReadonlyArray<AiFlowTriggerEventType>;
 };
 
+/** Filter for user activity events. */
+export type UserEventFilter =
+  /** All events. */
+  | 'ALL'
+  /** Comment events. */
+  | 'COMMENTS'
+  /** Design events. */
+  | 'DESIGNS'
+  /** Issue events. */
+  | 'ISSUE'
+  /** Merge events. */
+  | 'MERGED'
+  /** Push events. */
+  | 'PUSH'
+  /** Team events. */
+  | 'TEAM'
+  /** Wiki page events. */
+  | 'WIKI';
+
 export type UserGroupCallout = {
   /** Date when the callout was dismissed. */
   readonly dismissedAt: Scalars['Time']['output'];
@@ -65797,6 +67633,8 @@ export type UserGroupCalloutFeatureName =
   | 'CI_MINUTES_LIMIT_ALERT_EXCEEDED_STAGE'
   /** Callout feature name for ci_minutes_limit_alert_warning_stage. */
   | 'CI_MINUTES_LIMIT_ALERT_WARNING_STAGE'
+  /** Callout feature name for duo_code_review_enabled_by_default. */
+  | 'DUO_CODE_REVIEW_ENABLED_BY_DEFAULT'
   /** Callout feature name for end_of_trial_modal. */
   | 'END_OF_TRIAL_MODAL'
   /** Callout feature name for enforcement_at_limit_alert. */
@@ -65999,6 +67837,81 @@ export type UserNamespaceMetadata = NamespaceMetadata & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.6.
    */
   readonly timeTrackingLimitToHours: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Represents the Geo replication and verification state of a `user_permission_export_upload_upload`. */
+export type UserPermissionExportUploadUploadRegistry = {
+  /** Indicate if the checksums of the UserPermissionExportUploadUploadRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the UserPermissionExportUploadUploadRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this UserPermissionExportUploadUploadRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the UserPermissionExportUploadUploadRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** Error message during sync of the UserPermissionExportUploadUploadRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the UserPermissionExportUploadUploadRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the UserPermissionExportUploadUploadRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the UserPermissionExportUploadUploadRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** Timestamp after which the UserPermissionExportUploadUploadRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the UserPermissionExportUploadUploadRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the UserPermissionExportUploadUploadRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** ID of the User Permission Export File Upload. */
+  readonly userPermissionExportUploadUploadId: Scalars['ID']['output'];
+  /** The local checksum of the UserPermissionExportUploadUploadRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the UserPermissionExportUploadUploadRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the UserPermissionExportUploadUploadRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the UserPermissionExportUploadUploadRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the UserPermissionExportUploadUploadRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of UserPermissionExportUploadUploadRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the UserPermissionExportUploadUploadRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the UserPermissionExportUploadUploadRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+};
+
+/** The connection type for UserPermissionExportUploadUploadRegistry. */
+export type UserPermissionExportUploadUploadRegistryConnection = {
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<UserPermissionExportUploadUploadRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<UserPermissionExportUploadUploadRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for UserPermissionExportUploadUploadRegistry. */
+export type UserPermissionExportUploadUploadRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type UserPermissionExportUploadUploadRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<UserPermissionExportUploadUploadRegistry>;
 };
 
 export type UserPermissions = {
@@ -66260,7 +68173,7 @@ export type UserUploadRegistry = {
 
 /** The connection type for UserUploadRegistry. */
 export type UserUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<UserUploadRegistryEdge>>>;
@@ -67124,6 +69037,11 @@ export type Vulnerability = NoteableInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.11.
    */
   readonly dueDate: Maybe<Scalars['ISO8601Date']['output']>;
+  /**
+   * Indicates whether the SAST vulnerability review workflow is enabled for the project. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly duoSastVrWorkflowEnabled: Maybe<Scalars['Boolean']['output']>;
   /** List of external issue links related to the vulnerability. */
   readonly externalIssueLinks: VulnerabilityExternalIssueLinkConnection;
   /** Indicates whether the vulnerability is a false positive. */
@@ -67158,6 +69076,11 @@ export type Vulnerability = NoteableInterface & Todoable & {
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.5.
    */
   readonly latestFlag: Maybe<VulnerabilityFlag>;
+  /**
+   * Latest non-closed merge request linked to fix the vulnerability. Introduced in GitLab 19.1: **Status**: Experiment.
+   * @deprecated **Status**: Experiment. Introduced in GitLab 19.1.
+   */
+  readonly latestNonClosedMergeRequest: Maybe<MergeRequest>;
   /**
    * Latest security report finding for the vulnerability. Introduced in GitLab 18.4: **Status**: Experiment.
    * @deprecated **Status**: Experiment. Introduced in GitLab 18.4.
@@ -67434,7 +69357,7 @@ export type VulnerabilityArchiveExportUploadRegistry = {
 
 /** The connection type for VulnerabilityArchiveExportUploadRegistry. */
 export type VulnerabilityArchiveExportUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<VulnerabilityArchiveExportUploadRegistryEdge>>>;
@@ -67907,6 +69830,81 @@ export type VulnerabilityEvidenceSupportingMessage = {
   readonly response: Maybe<VulnerabilityResponse>;
 };
 
+/** Represents the Geo replication and verification state of a Vulnerability Export Part Upload. */
+export type VulnerabilityExportPartUploadRegistry = {
+  /** Indicate if the checksums of the VulnerabilityExportPartUploadRegistry do not match on the primary and secondary. */
+  readonly checksumMismatch: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp when the VulnerabilityExportPartUploadRegistry was created */
+  readonly createdAt: Maybe<Scalars['Time']['output']>;
+  /** Path to the data management view for this VulnerabilityExportPartUploadRegistry */
+  readonly dataManagementDetailsPath: Maybe<Scalars['String']['output']>;
+  /**
+   * Indicate if a forced redownload is to be performed. Deprecated in GitLab 17.10: Removed from registry tables in the database in favor of the newer reusable framework.
+   * @deprecated Removed from registry tables in the database in favor of the newer reusable framework. Deprecated in GitLab 17.10.
+   */
+  readonly forceToRedownload: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the VulnerabilityExportPartUploadRegistry */
+  readonly id: Scalars['ID']['output'];
+  /** Error message during sync of the VulnerabilityExportPartUploadRegistry */
+  readonly lastSyncFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the most recent successful sync of the VulnerabilityExportPartUploadRegistry */
+  readonly lastSyncedAt: Maybe<Scalars['Time']['output']>;
+  /** Indicate if the VulnerabilityExportPartUploadRegistry is missing on primary. */
+  readonly missingOnPrimary: Maybe<Scalars['Boolean']['output']>;
+  /** ID of the VulnerabilityExportPartUploadRegistry's model record. */
+  readonly modelRecordId: Maybe<Scalars['Int']['output']>;
+  /** Timestamp after which the VulnerabilityExportPartUploadRegistry is resynced */
+  readonly retryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed sync attempts of the VulnerabilityExportPartUploadRegistry */
+  readonly retryCount: Maybe<Scalars['Int']['output']>;
+  /** Sync state of the VulnerabilityExportPartUploadRegistry */
+  readonly state: Maybe<RegistryState>;
+  /** The local checksum of the VulnerabilityExportPartUploadRegistry */
+  readonly verificationChecksum: Maybe<Scalars['String']['output']>;
+  /** The expected checksum of the VulnerabilityExportPartUploadRegistry in case of mismatch. */
+  readonly verificationChecksumMismatched: Maybe<Scalars['String']['output']>;
+  /** Error message during verification of the VulnerabilityExportPartUploadRegistry */
+  readonly verificationFailure: Maybe<Scalars['String']['output']>;
+  /** Timestamp after which the VulnerabilityExportPartUploadRegistry is reverified */
+  readonly verificationRetryAt: Maybe<Scalars['Time']['output']>;
+  /** Number of consecutive failed verification attempts of the VulnerabilityExportPartUploadRegistry */
+  readonly verificationRetryCount: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when the verification of VulnerabilityExportPartUploadRegistry started */
+  readonly verificationStartedAt: Maybe<Scalars['Time']['output']>;
+  /** Verification state of the VulnerabilityExportPartUploadRegistry */
+  readonly verificationState: Maybe<VerificationStateEnum>;
+  /** Timestamp of the most recent successful verification of the VulnerabilityExportPartUploadRegistry */
+  readonly verifiedAt: Maybe<Scalars['Time']['output']>;
+  /** ID of the Vulnerability Export Part Upload. */
+  readonly vulnerabilityExportPartUploadId: Scalars['ID']['output'];
+};
+
+/** The connection type for VulnerabilityExportPartUploadRegistry. */
+export type VulnerabilityExportPartUploadRegistryConnection = {
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
+  readonly count: Scalars['Int']['output'];
+  /** A list of edges. */
+  readonly edges: Maybe<ReadonlyArray<Maybe<VulnerabilityExportPartUploadRegistryEdge>>>;
+  /** A list of nodes. */
+  readonly nodes: Maybe<ReadonlyArray<Maybe<VulnerabilityExportPartUploadRegistry>>>;
+  /** Information to aid in pagination. */
+  readonly pageInfo: PageInfo;
+};
+
+
+/** The connection type for VulnerabilityExportPartUploadRegistry. */
+export type VulnerabilityExportPartUploadRegistryConnectionCountArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** An edge in a connection. */
+export type VulnerabilityExportPartUploadRegistryEdge = {
+  /** A cursor for use in pagination. */
+  readonly cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  readonly node: Maybe<VulnerabilityExportPartUploadRegistry>;
+};
+
 /** Represents the Geo replication and verification state of a Vulnerability Export Upload. */
 export type VulnerabilityExportUploadRegistry = {
   /** Indicate if the checksums of the VulnerabilityExportUploadRegistry do not match on the primary and secondary. */
@@ -67958,7 +69956,7 @@ export type VulnerabilityExportUploadRegistry = {
 
 /** The connection type for VulnerabilityExportUploadRegistry. */
 export type VulnerabilityExportUploadRegistryConnection = {
-  /** Limited count of collection. Returns limit + 1 for counts greater than the limit. */
+  /** Returns the number of items in the connection up to a limit. If the number is greater than the limit, returns `limit + 1`. */
   readonly count: Scalars['Int']['output'];
   /** A list of edges. */
   readonly edges: Maybe<ReadonlyArray<Maybe<VulnerabilityExportUploadRegistryEdge>>>;
@@ -70029,6 +72027,16 @@ export type WorkItemLinkedResourceEdge = {
   readonly node: Maybe<WorkItemLinkedResource>;
 };
 
+/** Valid target work item types and a suggested target for moving work items of a given source type to a different namespace. */
+export type WorkItemMoveTarget = {
+  /** Source work item type the suggestion is computed for. */
+  readonly sourceType: WorkItemType;
+  /** Recommended target work item type in the destination namespace. Matches by global ID first (covers system-defined and converted custom types across namespaces), then falls back to matching by name. Returns `null` when no clear match exists; callers should let the user pick manually. */
+  readonly suggestedTargetType: Maybe<WorkItemType>;
+  /** Work item types in the destination namespace that the source type can be moved into. Includes the destination type that equals the source by global ID (if present) and the source type's conversion targets that exist in the destination namespace. */
+  readonly validTargetTypes: ReadonlyArray<WorkItemType>;
+};
+
 export type WorkItemNumberFieldValue = WorkItemCustomFieldValue & {
   /** Custom field associated with the custom field value. */
   readonly customField: CustomField;
@@ -71955,7 +73963,9 @@ export type WorkItemWidgetStatusFilterInput = {
 };
 
 export type WorkItemWidgetStatusInput = {
-  /** Global ID of the status. */
+  /** Name of the status. Resolved case-insensitively against the work item's status lifecycle. Mutually exclusive with `status`. */
+  readonly name: InputMaybe<Scalars['String']['input']>;
+  /** Global ID of the status. Mutually exclusive with `name`. */
   readonly status: InputMaybe<Scalars['WorkItemsStatusesStatusID']['input']>;
 };
 
@@ -72761,6 +74771,16 @@ export type AgentPlatformUserMetrics = {
   readonly totalEventCount: Maybe<Scalars['Int']['output']>;
   /** Total count of `view_duo_agentic_subscription_expired_empty_state` event. */
   readonly viewDuoAgenticSubscriptionExpiredEmptyStateEventCount: Maybe<Scalars['Int']['output']>;
+};
+
+/** Ai Catalog user metrics for a user. Requires ClickHouse. Premium and Ultimate with GitLab Duo Enterprise only. */
+export type AiCatalogUserMetrics = {
+  /** Date of the last Ai Catalog activity for the user. */
+  readonly lastDuoActivityOn: Maybe<Scalars['Date']['output']>;
+  /** Total count of `restore_ai_catalog_item` event. */
+  readonly restoreAiCatalogItemEventCount: Maybe<Scalars['Int']['output']>;
+  /** Total count of all Ai Catalog events for the user. */
+  readonly totalEventCount: Maybe<Scalars['Int']['output']>;
 };
 
 /** Autogenerated input type of approvalProjectRuleDelete */

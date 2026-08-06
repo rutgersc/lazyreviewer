@@ -4,6 +4,7 @@ fragment MergeRequestStampFields on MergeRequest {
   updatedAt
   state
   detailedMergeStatus
+  autoMergeEnabled
   diffHeadSha
   approvedBy {
     nodes {

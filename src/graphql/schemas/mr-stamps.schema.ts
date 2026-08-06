@@ -8,6 +8,7 @@ export const MergeRequestStampFieldsFragmentSchema: Schema.Codec<MergeRequestSta
   updatedAt: Schema.String,
   state: MergeRequestStateSchema,
   detailedMergeStatus: Schema.NullOr(DetailedMergeStatusSchema),
+  autoMergeEnabled: Schema.Boolean,
   diffHeadSha: Schema.NullOr(Schema.String),
   approvedBy: Schema.NullOr(Schema.Struct({
     nodes: Schema.NullOr(Schema.Array(

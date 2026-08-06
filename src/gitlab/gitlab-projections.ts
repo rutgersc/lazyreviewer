@@ -89,6 +89,7 @@ export const mapMrFragment = (
     targetbranch: mr.targetBranch,
     diffHeadSha: mr.diffHeadSha ?? null,
     detailedMergeStatus: mr.detailedMergeStatus ?? null,
+    autoMergeEnabled: mr.autoMergeEnabled,
     project: {
       name: mr.project.name,
       path: mr.project.path,
