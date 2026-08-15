@@ -1,31 +1,44 @@
-import { TextAttributes, SyntaxStyle, parseColor } from '@opentui/core';
-import { useMemo } from 'react';
+import { TextAttributes } from '@opentui/core';
 import type { Discussion, DiscussionNote } from '../domain/merge-request-schema';
+import type { JiraIssue } from '../jira/jira-schema';
 import { formatCompactTime } from '../utils/formatting';
-import { Colors, getColorScheme } from '../colors';
+import { Colors } from '../colors';
 import { useDoubleClick } from '../hooks/useDoubleClick';
 import { useAtom, useAtomValue } from "@effect/atom-react";
-import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
+import { selectedMrAtom, selectedMergeRequestJiraIssuesAtom } from '../mergerequests/mergerequests-atom';
 import { openUrl } from '../system/open-url';
+import { JiraHierarchyRow } from './JiraHierarchy';
+import { buildJiraListItems } from '../jira/jira-hierarchy';
+import { JiraCommentRow } from './JiraCommentRow';
+import { commentsNewestFirst } from '../jira/jira-display';
 import {
   overviewCursorIndexAtom,
   unresolvedExpandedAtom,
   resolvedExpandedAtom,
+  jiraCommentsExpandedAtom,
   scrollToDiscussionRequestAtom,
   overviewSelectableItemsAtom,
   currentSelectionAtom,
   findCursorForItem,
   getScrollId,
   itemsEqual,
+  toggleJiraCommentsExpanded,
+  jiraUrlForItem,
 } from './overview-selection';
 import type { SelectableItem } from './overview-selection';
 
-export default function MergeRequestInfo() {
+// useDoubleClick compares its payload by reference, and rows are rebuilt every render,
+// so clicks travel as a string key that indexes back into a lookup.
+const itemKey = (item: SelectableItem) => getScrollId(item);
+
+export default function OverviewContent() {
   const mergeRequest = useAtomValue(selectedMrAtom);
+  const jiraIssues = useAtomValue(selectedMergeRequestJiraIssuesAtom);
   const selection = useAtomValue(currentSelectionAtom);
   const selectableItems = useAtomValue(overviewSelectableItemsAtom);
   const [unresolvedExpanded, setUnresolvedExpanded] = useAtom(unresolvedExpandedAtom);
   const [resolvedExpanded, setResolvedExpanded] = useAtom(resolvedExpandedAtom);
+  const [jiraCommentsExpanded, setJiraCommentsExpanded] = useAtom(jiraCommentsExpandedAtom);
   const [, setOverviewCursorIndex] = useAtom(overviewCursorIndexAtom);
   const [, setScrollRequest] = useAtom(scrollToDiscussionRequestAtom);
 
@@ -61,34 +74,26 @@ export default function MergeRequestInfo() {
     onDoubleClick: (index) => handleOpenDiscussion({ type: 'resolved-discussion', index }),
   });
 
+  const jiraListItems = buildJiraListItems(jiraIssues);
+
+  const itemByKey = new Map<string, SelectableItem>(selectableItems.map(item => [itemKey(item), item]));
+
+  const handleJiraClick = useDoubleClick<string>({
+    onSingleClick: (key) => {
+      const item = itemByKey.get(key);
+      if (item) handleClickItem(item);
+    },
+    onDoubleClick: (key) => {
+      const item = itemByKey.get(key);
+      const url = item && jiraUrlForItem(item, jiraIssues);
+      if (url) openUrl(url);
+    },
+  });
+
   const isSelected = (item: SelectableItem): boolean => {
     if (!selection) return false;
     return itemsEqual(item, selection);
   };
-
-  const markdownStyle = useMemo(() => SyntaxStyle.fromStyles({
-    "default": { fg: parseColor(Colors.PRIMARY) },
-    "markup.heading.1": { fg: parseColor(Colors.ACCENT), bold: true },
-    "markup.heading.2": { fg: parseColor(Colors.ACCENT), bold: true },
-    "markup.heading.3": { fg: parseColor(Colors.ACCENT), bold: true },
-    "markup.heading.4": { fg: parseColor(Colors.ACCENT) },
-    "markup.heading.5": { fg: parseColor(Colors.ACCENT) },
-    "markup.heading.6": { fg: parseColor(Colors.ACCENT) },
-    "markup.heading": { fg: parseColor(Colors.ACCENT), bold: true },
-    "markup.strong": { bold: true },
-    "markup.italic": { italic: true },
-    "markup.raw": { fg: parseColor(Colors.WARNING) },
-    "markup.raw.block": { fg: parseColor(Colors.WARNING) },
-    "markup.link": { fg: parseColor(Colors.INFO) },
-    "markup.link.url": { fg: parseColor(Colors.INFO), underline: true },
-    "markup.link.label": { fg: parseColor(Colors.INFO) },
-    "markup.list": { fg: parseColor(Colors.NEUTRAL) },
-    "markup.list.checked": { fg: parseColor(Colors.SUCCESS) },
-    "markup.list.unchecked": { fg: parseColor(Colors.ERROR) },
-    "markup.quote": { fg: parseColor(Colors.DIM), italic: true },
-    "markup.strikethrough": { fg: parseColor(Colors.DIM), dim: true },
-    "punctuation.special": { fg: parseColor(Colors.DIM) },
-  }), [getColorScheme()]);
 
   if (!mergeRequest) return null;
 
@@ -152,6 +157,56 @@ export default function MergeRequestInfo() {
     );
   };
 
+  const renderSectionHeader = (
+    item: SelectableItem,
+    label: string,
+    color: string,
+    expanded: boolean,
+    onToggle: () => void,
+  ) => (
+    <box
+      id={getScrollId(item)}
+      onMouseDown={() => {
+        handleClickItem(item);
+        onToggle();
+      }}
+      style={{
+        marginBottom: 1,
+        ...(isSelected(item) && { backgroundColor: Colors.SELECTED }),
+      }}
+    >
+      <text style={{ fg: color, attributes: TextAttributes.BOLD }} wrapMode='word'>
+        {`${expanded ? '▼' : '▶'} ${label}`}
+      </text>
+    </box>
+  );
+
+  const renderJiraHierarchy = () => {
+    if (jiraIssues.length === 0) {
+      return (
+        <text style={{ fg: Colors.NEUTRAL, attributes: TextAttributes.DIM }} wrapMode='none'>
+          No Jira tickets
+        </text>
+      );
+    }
+
+    return (
+      <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
+        {jiraListItems.map(item => {
+          const selectable: SelectableItem = { type: 'jira-issue', parentIssueIndex: item.parentIssueIndex, subIndex: item.subIndex };
+          return (
+            <JiraHierarchyRow
+              key={`${item.parentIssueIndex}-${item.subIndex}`}
+              item={item}
+              selected={isSelected(selectable)}
+              onMouseDown={() => handleJiraClick(itemKey(selectable))}
+            />
+          );
+        })}
+      </box>
+    );
+  };
+
   const renderUnresolvedDiscussions = (discussions: Discussion[]) => {
     const unresolvedDiscussions = discussions.filter(d => d.resolvable && !d.resolved);
 
@@ -166,32 +221,15 @@ export default function MergeRequestInfo() {
       );
     }
 
-    const headerSelected = isSelected({ type: 'unresolved-header' });
-    const toggleLabel = unresolvedExpanded ? '▼' : '▶';
-
     return (
       <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
-        <box
-          id="unresolved-header"
-          onMouseDown={() => {
-            handleClickItem({ type: 'unresolved-header' });
-            setUnresolvedExpanded(!unresolvedExpanded);
-          }}
-          style={{
-            marginBottom: 1,
-            ...(headerSelected && { backgroundColor: Colors.SELECTED }),
-          }}
-        >
-          <text
-            style={{
-              fg: Colors.ERROR,
-              attributes: TextAttributes.BOLD,
-            }}
-            wrapMode='word'
-          >
-            {`${toggleLabel} Unresolved Discussions (${unresolvedDiscussions.length})`}
-          </text>
-        </box>
+        {renderSectionHeader(
+          { type: 'unresolved-header' },
+          `Unresolved Discussions (${unresolvedDiscussions.length})`,
+          Colors.ERROR,
+          unresolvedExpanded,
+          () => setUnresolvedExpanded(!unresolvedExpanded),
+        )}
         {unresolvedExpanded && unresolvedDiscussions.map((discussion, index) => {
           const selected = isSelected({ type: 'unresolved-discussion', index });
           return (
@@ -223,32 +261,15 @@ export default function MergeRequestInfo() {
 
     if (resolvedDiscussions.length === 0) return null;
 
-    const headerSelected = isSelected({ type: 'resolved-header' });
-    const toggleLabel = resolvedExpanded ? '▼' : '▶';
-
     return (
       <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
-        <box
-          id="resolved-header"
-          onMouseDown={() => {
-            handleClickItem({ type: 'resolved-header' });
-            setResolvedExpanded(!resolvedExpanded);
-          }}
-          style={{
-            marginBottom: 1,
-            ...(headerSelected && { backgroundColor: Colors.SELECTED }),
-          }}
-        >
-          <text
-            style={{
-              fg: Colors.SUCCESS,
-              attributes: TextAttributes.BOLD,
-            }}
-            wrapMode='word'
-          >
-            {`${toggleLabel} Resolved Discussions (${resolvedDiscussions.length})`}
-          </text>
-        </box>
+        {renderSectionHeader(
+          { type: 'resolved-header' },
+          `Resolved Discussions (${resolvedDiscussions.length})`,
+          Colors.SUCCESS,
+          resolvedExpanded,
+          () => setResolvedExpanded(!resolvedExpanded),
+        )}
         {resolvedExpanded && resolvedDiscussions.map((discussion, index) => {
           const selected = isSelected({ type: 'resolved-discussion', index });
           return (
@@ -271,6 +292,32 @@ export default function MergeRequestInfo() {
             </box>
           );
         })}
+      </box>
+    );
+  };
+
+  const renderJiraComments = (issue: JiraIssue) => {
+    const comments = commentsNewestFirst(issue);
+    const expanded = jiraCommentsExpanded.has(issue.key);
+
+    return (
+      <box key={issue.key} style={{ flexDirection: "column", gap: 0, width: "100%", marginBottom: 1 }}>
+        {renderSectionHeader(
+          { type: 'jira-comments-header', issueKey: issue.key },
+          `${issue.key} Comments (${comments.length})`,
+          Colors.INFO,
+          expanded,
+          () => setJiraCommentsExpanded(toggleJiraCommentsExpanded(jiraCommentsExpanded, issue.key)),
+        )}
+        {expanded && comments.map((comment, index) => (
+          <JiraCommentRow
+            key={comment.id}
+            comment={comment}
+            id={getScrollId({ type: 'jira-comment', issueKey: issue.key, index })}
+            selected={isSelected({ type: 'jira-comment', issueKey: issue.key, index })}
+            onMouseDown={() => handleJiraClick(itemKey({ type: 'jira-comment', issueKey: issue.key, index }))}
+          />
+        ))}
       </box>
     );
   };
@@ -298,16 +345,9 @@ export default function MergeRequestInfo() {
         </box>
       </box>
 
-      {mergeRequest.description && (
-        <box style={{ width: "100%", marginBottom: 1 }}>
-          <markdown
-            content={mergeRequest.description}
-            syntaxStyle={markdownStyle}
-            conceal={true}
-            style={{ width: "100%" }}
-          />
-        </box>
-      )}
+      <box style={{ width: "100%" }}>
+        {renderJiraHierarchy()}
+      </box>
 
       <box style={{ marginBottom: 1, width: "100%" }}>
         {renderUnresolvedDiscussions(mergeRequest.discussions || [])}
@@ -315,6 +355,10 @@ export default function MergeRequestInfo() {
 
       <box style={{ marginBottom: 1, width: "100%" }}>
         {renderResolvedDiscussions(mergeRequest.discussions || [])}
+      </box>
+
+      <box style={{ flexDirection: "column", gap: 0, width: "100%" }}>
+        {jiraIssues.map(renderJiraComments)}
       </box>
     </box>
   );

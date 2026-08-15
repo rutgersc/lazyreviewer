@@ -2,15 +2,13 @@ import { TextAttributes, type ParsedKey } from '@opentui/core';
 import { useKeyboard } from '@opentui/react';
 import Overview from './Overview';
 import ActivityLog from './ActivityLog';
-import JiraIssuesList from './JiraIssuesList';
 import PipelineJobsList from './PipelineJobsList';
 import { ActivePane } from '../userselection/userSelection';
 import { Colors } from '../colors';
 import type { PipelineJob, PipelineStage } from '../domain/merge-request-schema';
-import { Atom } from "effect/unstable/reactivity"
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { activePaneAtom, activeModalAtom, infoPaneTabAtom, type InfoPaneTab } from '../ui/navigation-atom';
-import { selectedMrAtom, allJiraIssuesAtom } from '../mergerequests/mergerequests-atom';
+import { selectedMrAtom } from '../mergerequests/mergerequests-atom';
 import { selectedPipelineJobIndexAtom } from './JobHistoryModal';
 
 interface InfoPaneProps {
@@ -18,23 +16,10 @@ interface InfoPaneProps {
 }
 
 const TAB_LABELS: Record<InfoPaneTab, string> = {
-  overview: 'Merge request',
-  jira: 'Jira',
+  overview: 'Overview',
   pipeline: 'Pipeline',
   activity: 'Activity'
 };
-
-export const selectedMergeRequestJiraIssuesAtom = Atom.readable(get => {
-  const selectedMergeRequest = get(selectedMrAtom);
-  const jiraIssuesMap = get(allJiraIssuesAtom);
-
-  return selectedMergeRequest?.jiraIssueKeys.flatMap(key => {
-    const issue = jiraIssuesMap.get(key);
-    return issue
-      ? [issue]
-      : [];
-  }) || [];
-});
 
 export default function InfoPane({ activePane }: InfoPaneProps) {
   const setActivePane = useAtomSet(activePaneAtom);
@@ -55,7 +40,7 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
   });
 
   const renderTabBar = () => {
-    const tabs: InfoPaneTab[] = ['overview', 'jira', 'pipeline', 'activity'];
+    const tabs: InfoPaneTab[] = ['overview', 'pipeline', 'activity'];
 
     return (
       <box style={{ flexDirection: "column", gap: 0, marginBottom: 1 }}>
@@ -88,9 +73,6 @@ export default function InfoPane({ activePane }: InfoPaneProps) {
         return <Overview
           selectedMergeRequest={selectedMergeRequest}
         />;
-
-      case 'jira':
-        return <JiraIssuesList />;
 
       case 'pipeline':
         return <PipelineJobsList

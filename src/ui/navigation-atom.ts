@@ -1,7 +1,7 @@
 import { Atom } from "effect/unstable/reactivity";
 import { ActivePane } from "../userselection/userSelection";
 
-export type InfoPaneTab = 'overview' | 'jira' | 'pipeline' | 'activity';
+export type InfoPaneTab = 'overview' | 'pipeline' | 'activity';
 
 export type ActiveModal =
   | 'none'
@@ -26,7 +26,7 @@ export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);
 export const activeModalAtom = Atom.make<ActiveModal>('none');
 export const infoPaneTabAtom = Atom.make<InfoPaneTab>('overview');
 
-const INFO_PANE_TABS: InfoPaneTab[] = ['overview', 'jira', 'pipeline', 'activity'];
+const INFO_PANE_TABS: InfoPaneTab[] = ['overview', 'pipeline', 'activity'];
 
 export const cycleInfoPaneTabAtom = Atom.writable(
   (get) => get(infoPaneTabAtom),

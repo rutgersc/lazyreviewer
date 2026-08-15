@@ -13,7 +13,6 @@ import { infoPaneTabAtom } from '../../ui/navigation-atom';
 import { targetNoteIdAtom } from '../ActivityLog';
 import { useDiscussionScroll } from '../../hooks/useDiscussionScroll';
 import { useJiraScroll } from '../../hooks/useJiraScroll';
-import { selectedJiraIndexAtom, selectedJiraSubIndexAtom } from '../JiraIssuesList';
 
 // --- Pure functions ---
 
@@ -313,11 +312,8 @@ export const selectMrForChangeAtom = Atom.fnSync((change: Change, get) => {
         : undefined;
 
     if (fromAll) {
-      get.registry.set(infoPaneTabAtom, 'jira');
+      get.registry.set(infoPaneTabAtom, 'overview');
       selectMrAndNavigate(fromAll.id);
-      const issueIndex = fromAll.jiraIssueKeys.findIndex(k => k === issueKey);
-      get.registry.set(selectedJiraIndexAtom, issueIndex >= 0 ? issueIndex : 0);
-      get.registry.set(selectedJiraSubIndexAtom, 0);
 
       const { scroll: scrollJira } = useJiraScroll();
       void scrollJira(issueKey, change.type === 'jira-comment' ? change.commentId : undefined);

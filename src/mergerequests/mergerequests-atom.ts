@@ -113,6 +113,18 @@ export const allJiraIssuesAtom = Atom.map(
     })
 );
 
+export const selectedMergeRequestJiraIssuesAtom = Atom.readable(get => {
+  const selectedMergeRequest = get(selectedMrAtom);
+  const jiraIssuesMap = get(allJiraIssuesAtom);
+
+  return selectedMergeRequest?.jiraIssueKeys.flatMap(key => {
+    const issue = jiraIssuesMap.get(key);
+    return issue
+      ? [issue]
+      : [];
+  }) || [];
+});
+
 // Unique authors across all fetched MRs, enriched with settings user info
 export const knownAuthorsAtom = Atom.make((get): readonly UserId[] => {
   const allMrsResult = get(allMrsAtom);

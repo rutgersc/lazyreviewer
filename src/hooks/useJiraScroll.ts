@@ -4,7 +4,7 @@ import { runWithAppServices } from '../appLayerRuntime';
 
 export function useJiraScroll() {
   return {
-    registerHandler: (handler: (req: { issueKey: string; commentId?: string }) => void) =>
+    registerHandler: (handler: (req: { issueKey: string; commentId?: string }) => boolean) =>
       runWithAppServices(
         Effect.gen(function* () {
           const svc = yield* JiraScrollService

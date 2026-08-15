@@ -73,7 +73,6 @@ const getPaneTitle = (pane: ActivePane, infoPaneTab?: InfoPaneTab): string => {
     case ActivePane.MergeRequests: return 'Merge Requests Pane';
     case ActivePane.InfoPane:
       if (infoPaneTab === 'overview') return 'Info Pane - Overview Tab';
-      if (infoPaneTab === 'jira') return 'Info Pane - Jira Tab';
       if (infoPaneTab === 'pipeline') return 'Info Pane - Pipeline Tab';
       if (infoPaneTab === 'activity') return 'Info Pane - Activity Tab';
       return 'Info Pane';

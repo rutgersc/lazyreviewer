@@ -5,7 +5,6 @@ import { mrActionsAtom } from "../components/MergeRequestPaneActions";
 import { factsPaneActionsAtom } from "../components/FactsPaneActions";
 import { repositoriesPaneActionsAtom } from "../components/RepositoriesPaneActions";
 import { overviewActionsAtom } from "../components/OverviewActions";
-import { jiraIssuesListActionsAtom } from "../components/JiraIssuesListActions";
 import { pipelineJobsListActionsAtom } from "../components/PipelineJobsListActions";
 
 // Re-export for convenience
@@ -29,8 +28,6 @@ const paneActionsForDisplayAtom = Atom.make((get) => {
       switch (infoPaneTab) {
         case 'overview':
           return get(overviewActionsAtom);
-        case 'jira':
-          return get(jiraIssuesListActionsAtom);
         case 'pipeline':
           return get(pipelineJobsListActionsAtom);
         case 'activity':

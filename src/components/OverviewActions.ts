@@ -7,7 +7,9 @@ import { copyToClipboard } from "../system/clipboard";
 import { formatDiscussionsForClipboard } from "../domain/display/discussionFormatter";
 import { copyNotificationAtom } from "./Overview";
 import { openUrl } from "../system/open-url";
-import { overviewCursorIndexAtom, unresolvedExpandedAtom, resolvedExpandedAtom, scrollToDiscussionRequestAtom, overviewSelectableItemsAtom, getScrollId } from "./overview-selection";
+import { overviewCursorIndexAtom, unresolvedExpandedAtom, resolvedExpandedAtom, jiraCommentsExpandedAtom, scrollToDiscussionRequestAtom, overviewSelectableItemsAtom, getScrollId, toggleJiraCommentsExpanded, jiraUrlForItem } from "./overview-selection";
+import { selectedMergeRequestJiraIssuesAtom } from "../mergerequests/mergerequests-atom";
+import type { SelectableItem } from "./overview-selection";
 import { getPipelineJobsFromMr } from "./PipelineJobsList";
 import { loadJobLogAtom, jobLogDownloadSignalAtom } from "../mergerequests/open-pipelinejob-log-atom";
 import { failedJobPickerItemsAtom, failedJobPickerMrAtom } from "./FailedJobPickerModal";
@@ -21,7 +23,21 @@ const getSelectableContext = (registry: AtomRegistry.AtomRegistry) => {
   const items = registry.get(overviewSelectableItemsAtom);
   const cursor = registry.get(overviewCursorIndexAtom);
   const clampedCursor = Math.min(cursor, Math.max(0, items.length - 1));
-  return { selectedMr, unresolvedDiscussions, resolvedDiscussions, items, cursor: clampedCursor };
+  const jiraIssues = registry.get(selectedMergeRequestJiraIssuesAtom);
+  return { selectedMr, unresolvedDiscussions, resolvedDiscussions, jiraIssues, items, cursor: clampedCursor };
+};
+
+type SelectableContext = ReturnType<typeof getSelectableContext>;
+
+const urlForItem = (item: SelectableItem, ctx: SelectableContext): string | null => {
+  if (item.type === 'unresolved-discussion' || item.type === 'resolved-discussion') {
+    if (!ctx.selectedMr?.webUrl) return null;
+    const discussions = item.type === 'unresolved-discussion' ? ctx.unresolvedDiscussions : ctx.resolvedDiscussions;
+    const discussion = discussions[item.index];
+    return discussion ? `${ctx.selectedMr.webUrl}#note_${discussion.id}` : null;
+  }
+
+  return jiraUrlForItem(item, ctx.jiraIssues);
 };
 
 export const overviewActionsAtom = Atom.make((get) => {
@@ -32,7 +48,7 @@ export const overviewActionsAtom = Atom.make((get) => {
       id: 'overview:nav-down',
       keys: [parseKeyString('j'), parseKeyString('down')],
       displayKey: 'j/k, ↑/↓',
-      description: 'Navigate discussions',
+      description: 'Navigate overview',
       handler: () => {
         const { items, cursor } = getSelectableContext(registry);
         if (items.length === 0) return;
@@ -64,51 +80,41 @@ export const overviewActionsAtom = Atom.make((get) => {
       id: 'overview:toggle',
       keys: [parseKeyString('enter'), parseKeyString('space')],
       displayKey: 'enter',
-      description: 'Toggle section / Open discussion',
+      description: 'Toggle section / Open item',
       handler: () => {
-        const { items, cursor, selectedMr, unresolvedDiscussions, resolvedDiscussions } = getSelectableContext(registry);
-        const item = items[cursor];
+        const context = getSelectableContext(registry);
+        const item = context.items[context.cursor];
         if (!item) return;
 
         if (item.type === 'unresolved-header') {
-          const current = registry.get(unresolvedExpandedAtom);
-          registry.set(unresolvedExpandedAtom, !current);
-        } else if (item.type === 'resolved-header') {
-          const current = registry.get(resolvedExpandedAtom);
-          registry.set(resolvedExpandedAtom, !current);
-        } else if (selectedMr?.webUrl) {
-          let discussion;
-          if (item.type === 'unresolved-discussion') {
-            discussion = unresolvedDiscussions[item.index];
-          } else if (item.type === 'resolved-discussion') {
-            discussion = resolvedDiscussions[item.index];
-          }
-          if (discussion) {
-            openUrl(`${selectedMr.webUrl}#note_${discussion.id}`);
-          }
+          registry.set(unresolvedExpandedAtom, !registry.get(unresolvedExpandedAtom));
+          return;
         }
+        if (item.type === 'resolved-header') {
+          registry.set(resolvedExpandedAtom, !registry.get(resolvedExpandedAtom));
+          return;
+        }
+        if (item.type === 'jira-comments-header') {
+          registry.set(jiraCommentsExpandedAtom, toggleJiraCommentsExpanded(registry.get(jiraCommentsExpandedAtom), item.issueKey));
+          return;
+        }
+
+        const url = urlForItem(item, context);
+        if (url) openUrl(url);
       },
     },
     {
       id: 'overview:copy-url',
       keys: [parseKeyString('c')],
       displayKey: 'c',
-      description: 'Copy discussion URL',
+      description: 'Copy item URL',
       handler: () => {
-        const { items, cursor, selectedMr, unresolvedDiscussions, resolvedDiscussions } = getSelectableContext(registry);
-        const item = items[cursor];
-        if (!item || !selectedMr?.webUrl) return;
+        const context = getSelectableContext(registry);
+        const item = context.items[context.cursor];
+        if (!item) return;
 
-        let discussion;
-        if (item.type === 'unresolved-discussion') {
-          discussion = unresolvedDiscussions[item.index];
-        } else if (item.type === 'resolved-discussion') {
-          discussion = resolvedDiscussions[item.index];
-        }
-        if (discussion) {
-          const discussionUrl = `${selectedMr.webUrl}#note_${discussion.id}`;
-          copyToClipboard(discussionUrl);
-        }
+        const url = urlForItem(item, context);
+        if (url) copyToClipboard(url);
       },
     },
     {

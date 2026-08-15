@@ -48,6 +48,12 @@ export const JiraIssueSchema = Schema.Struct({
       key: Schema.String,
       fields: Schema.Struct({
         summary: Schema.String,
+        status: Schema.optional(Schema.Struct({
+          name: Schema.String,
+          statusCategory: Schema.Struct({
+            name: Schema.String
+          })
+        })),
         issuetype: Schema.Struct({
           name: Schema.String
         })
