@@ -6,6 +6,10 @@ import type { GitlabUserMergeRequestsFetchedEvent, GitlabprojectMergeRequestsFet
 import type { MergeRequestFieldsFragment, MRsQuery } from "../graphql/mrs.generated";
 
 
+const AREA_TAG_RULES = [
+  { pathPrefix: 'BlackLotus/', label: 'BL' },
+] as const
+
 export const mapMrFragment = (
   mr: MergeRequestFieldsFragment)
   : MergeRequest => {
@@ -70,6 +74,10 @@ export const mapMrFragment = (
     return originating?.authorIsBot === true;
   };
 
+  const areaTags = AREA_TAG_RULES
+    .filter(rule => (mr.diffStats ?? []).some(file => file.path.startsWith(rule.pathPrefix)))
+    .map(rule => rule.label);
+
   const humanDiscussions = discussions.filter(d => !isAiDiscussion(d));
   const totalDiscussions = humanDiscussions.length;
   const resolvableDiscussions = humanDiscussions.filter(d => d.resolvable).length;
@@ -106,6 +114,7 @@ export const mapMrFragment = (
     unresolvedDiscussions,
     totalDiscussions,
     aiDiscussions,
+    areaTags,
     discussions,
     pipeline: pipeline
   } satisfies MergeRequest;

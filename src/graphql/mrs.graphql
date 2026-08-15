@@ -10,6 +10,9 @@ fragment MergeRequestFields on MergeRequest {
   detailedMergeStatus
   autoMergeEnabled
   diffHeadSha
+  diffStats {
+    path
+  }
   project {
     name
     path

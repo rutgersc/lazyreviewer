@@ -101,6 +101,15 @@ const TimeColumnAuthorTitle = ({
       </box>
 
       <box style={{ flexGrow: 1, flexDirection: "row", gap: 1 }}>
+        {mr.areaTags.map(tag => (
+          <text
+            key={tag}
+            style={{ fg: Colors.INFO, attributes: TextAttributes.BOLD }}
+            wrapMode='none'
+          >
+            {`[${tag}]`}
+          </text>
+        ))}
         {badge && (
           <text
             style={{

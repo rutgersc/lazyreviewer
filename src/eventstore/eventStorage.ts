@@ -19,6 +19,7 @@ const migrateEventJson = (data: unknown): unknown => {
   if ('iid' in migrated && 'sourceBranch' in migrated) {
     if (!('detailedMergeStatus' in migrated)) migrated.detailedMergeStatus = null
     if (!('autoMergeEnabled' in migrated)) migrated.autoMergeEnabled = false
+    if (!('diffStats' in migrated)) migrated.diffStats = null
   }
 
   return migrated

@@ -14,6 +14,11 @@ export const MergeRequestFieldsFragmentSchema: Schema.Codec<MergeRequestFieldsFr
   detailedMergeStatus: Schema.NullOr(DetailedMergeStatusSchema),
   autoMergeEnabled: Schema.Boolean,
   diffHeadSha: Schema.NullOr(Schema.String),
+  diffStats: Schema.NullOr(Schema.Array(
+    Schema.Struct({
+    path: Schema.String
+  })
+  )),
   project: Schema.Struct({
     name: Schema.String,
     path: Schema.String,

@@ -94,6 +94,7 @@ export const MergeRequestSchema = Schema.Struct({
   unresolvedDiscussions: Schema.Number,
   totalDiscussions: Schema.Number,
   aiDiscussions: Schema.Number,
+  areaTags: Schema.mutable(Schema.Array(Schema.String)),
   discussions: Schema.mutable(Schema.Array(DiscussionSchema)),
   pipeline: Schema.Struct({
     iid: Schema.NullOr(Schema.String),

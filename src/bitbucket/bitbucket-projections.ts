@@ -129,6 +129,7 @@ export function mapBitbucketToMergeRequest(
     unresolvedDiscussions,
     totalDiscussions,
     aiDiscussions: 0,
+    areaTags: [],
     discussions,
     pipeline: {
       iid: null,
