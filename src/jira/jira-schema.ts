@@ -61,7 +61,7 @@ export const JiraIssueSchema = Schema.Struct({
     }),
     assignee: Schema.optional(Schema.NullOr(Schema.Struct({
       displayName: Schema.String,
-      emailAddress: Schema.String
+      emailAddress: Schema.optional(Schema.String)
     }))),
     priority: Schema.Struct({
       name: Schema.String
