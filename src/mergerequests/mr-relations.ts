@@ -52,6 +52,15 @@ export const getRelationType = (ctx: SelectedMrContext, mr: MergeRequest, jiraIs
 
 export const relationTagOrder: readonly RelationType['_tag'][] = ['stack-base', 'stacked-on-this', 'same-ticket', 'sibling-ticket'];
 
+export const inverseRelationTag = (tag: RelationType['_tag']): RelationType['_tag'] => {
+  switch (tag) {
+    case 'stack-base': return 'stacked-on-this';
+    case 'stacked-on-this': return 'stack-base';
+    case 'same-ticket': return 'same-ticket';
+    case 'sibling-ticket': return 'sibling-ticket';
+  }
+};
+
 export const getOutOfViewRelatedGids = (
   selectedMr: MergeRequest,
   jiraIssuesMap: ReadonlyMap<string, JiraIssue>,

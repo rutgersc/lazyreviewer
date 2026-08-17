@@ -11,7 +11,7 @@ import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useDoubleClick } from "../hooks/useDoubleClick";
 import { Colors } from "../colors";
 import { mapStatus } from "../jiraboard/board-utils";
-import { type RelationType, type SelectedMrContext, buildSelectedMrContext, getRelationType, relationTagOrder } from "../mergerequests/mr-relations";
+import { type RelationType, type SelectedMrContext, buildSelectedMrContext, getRelationType, inverseRelationTag, relationTagOrder } from "../mergerequests/mr-relations";
 import { repositoryBranchesAtom, projectBranchMapAtom, type WorktreeMatch } from "../mergerequests/hooks/useRepositoryBranches";
 import { formatDetachedLabel } from "../git/git-effects";
 import { type JobImportance } from "../settings/settings";
@@ -618,6 +618,12 @@ export default function MergeRequestPane() {
     );
   }, [mergeRequests, selectedIndex, selectedMrContext, jiraIssuesMap]);
 
+  const selectedRelationType = useMemo((): RelationType | null => {
+    const inverseTags = new Set([...relatedMrIndices.values()].map(rel => inverseRelationTag(rel._tag)));
+    const tag = relationTagOrder.find(t => inverseTags.has(t));
+    return tag ? { _tag: tag } : null;
+  }, [relatedMrIndices]);
+
   const allMrsResult = useAtomValue(allMrsAtom);
   const outOfViewRelations = useMemo((): ReadonlyMap<RelationType['_tag'], readonly MergeRequest[]> => {
     if (!selectedMrContext) return new Map();
@@ -855,7 +861,7 @@ export default function MergeRequestPane() {
                   <IgnoredMergeRequestRow mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} isMyMr={isMyMr} now={now} />
                 ) : (
                   <>
-                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={relatedMrIndices.get(index) ?? null} now={now} />
+                    <TimeColumnAuthorTitle mr={mr} isMyMr={isMyMr} relationType={index === selectedIndex ? selectedRelationType : relatedMrIndices.get(index) ?? null} now={now} />
                     <ProjectStatusInfo mr={mr} isActiveInLocalRepo={isActiveInLocalRepo || worktreeMatch !== null} worktreeMatch={worktreeMatch} createdAt={mr.createdAt} branchDifferenceMap={branchDifferences} jiraIssuesMap={jiraIssuesMap} now={now} currentUser={currentUser} seenMergeRequests={seenMergeRequests} pipelineJobImportance={pipelineJobImportance} />
                     {index === selectedIndex && <OutOfViewRelations relations={outOfViewRelations} hasPinnedMrs={pinnedMrGids.size > 0} />}
                   </>
