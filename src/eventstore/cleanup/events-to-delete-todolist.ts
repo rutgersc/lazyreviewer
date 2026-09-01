@@ -25,7 +25,7 @@ const eventGroupKey = (event: LazyReviewerEvent): string => {
     case "gitlab-single-mr-fetched-event":
       return `${event.type}|${event.forProjectPath}|${event.forIid}`
     case "gitlab-mrs-fetched-event":
-      return `${event.type}|${event.forProjectPath}|${[...event.forIids].sort().join(",")}`
+      return `${event.type}|${event.forProjectPath}`
     case "gitlab-jobtrace-fetched-event":
       return `${event.type}|${event.forProjectId}|${event.forJobId}`
     case "gitlab-pipeline-fetched-event":
@@ -33,7 +33,7 @@ const eventGroupKey = (event: LazyReviewerEvent): string => {
     case "gitlab-jobhistory-fetched-event":
       return `${event.type}|${event.forProjectPath}|${event.forJobName}`
     case "jira-issues-fetched-event":
-      return `${event.type}|${[...event.forTicketKeys].sort().join(",")}`
+      return `${event.type}`
     case "jira-sprint-issues-fetched-event":
       return `${event.type}|${event.boardId}|${event.sprintId}`
     case "jira-sprints-loaded-event":
