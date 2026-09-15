@@ -121,13 +121,22 @@ export const fetchMrDetails = (
 
   yield* Console.log(`[Fetch] Detail fetch for ${iids.length} MRs in ${projectPath} (${batches.length} batch(es))`)
 
+  // GitLab aborts fields once a request passes its 30s budget, which is a coin flip on MRs with long
+  // discussion threads. Failing the sweep on one batch threw away the batches that did return, so
+  // the next sweep saw the same MRs unchanged and asked for all of them again.
   const jiraKeysPerBatch = yield* Effect.forEach(
     batches,
     batch => Effect.gen(function* () {
       const event = yield* getMrsAsEvent(projectPath, batch)
       yield* eventStorage.appendEvent(event)
       return projectGitlabMrsFetchedEvent(event).flatMap(mr => mr.jiraIssueKeys)
-    }),
+    }).pipe(
+      Effect.catch(error =>
+        Console.error(`[Fetch] Batch of ${batch.length} MRs in ${projectPath} failed, keeping the rest:`, error).pipe(
+          Effect.as([] as string[])
+        )
+      )
+    ),
     { concurrency: 2 }
   )
 
