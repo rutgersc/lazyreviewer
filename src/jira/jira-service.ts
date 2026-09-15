@@ -141,13 +141,13 @@ export const loadJiraTicketsAsEvent = Effect.fn(function* (ticketKeys: string[])
 
   const result = yield* searchIssues(`issuekey in (${ticketKeys.join(',')})`);
 
-  if (result.issues.length === 0) {
-    return yield* new UnauthorizedError({
-      service: 'Jira',
-      reason: `searched ${ticketKeys.length} ticket keys but got 0 results — token is likely expired or invalid`
-    });
+  // Jira omits keys that do not exist rather than failing the search, and the keys come from branch
+  // names, so placeholders like ELAB-0000 never resolve. An expired token answers 401/403, which
+  // searchIssues already turns into UnauthorizedError; a short result only means those keys are gone.
+  const unresolved = ticketKeys.filter(key => !result.issues.some(issue => issue.key === key));
+  if (unresolved.length > 0) {
+    yield* Console.warn(`[Jira] ${unresolved.length}/${ticketKeys.length} keys did not resolve: ${unresolved.join(', ')}`);
   }
-
 
   const timestamp = new Date().toISOString();
   const type = 'jira-issues-fetched-event' as const;
