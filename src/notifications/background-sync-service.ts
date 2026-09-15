@@ -1,4 +1,4 @@
-import { Data, Effect, ServiceMap, PubSub, Ref, Console } from 'effect';
+import { Cause, Data, Effect, ServiceMap, PubSub, Ref, Console } from 'effect';
 import { Atom, AsyncResult } from "effect/unstable/reactivity";
 import { settingsAtom, repoSelectionAtom } from '../settings/settings-atom';
 import { resolveRepoPath, type RepositoryId } from '../userselection/userSelection';
@@ -272,7 +272,7 @@ const createBackgroundWorker = (
         withFetchLock,
         Effect.catchTag("FetchLockBusy", () => Effect.succeed(null)),
         Effect.catchCause((cause) =>
-          Console.error('[BackgroundSync] Sweep failed:', cause).pipe(Effect.as(null))
+          Console.error('[BackgroundSync] Sweep failed:', Cause.pretty(cause)).pipe(Effect.as(null))
         )
       );
 

@@ -12,7 +12,7 @@ import {
 } from "./decide-fetch-mrs";
 import { EventStorage } from "../events/events";
 import type { MergeRequestState } from "../domain/merge-request-state";
-import { Effect, Console, Stream, Option } from "effect";
+import { Cause, Effect, Console, Stream, Option } from "effect";
 import { UnauthorizedError } from "../domain/unauthorized-error";
 import { appAtomRuntime } from "../appLayerRuntime";
 import type { BranchDifference } from "./hooks/useRepositoryBranches";
@@ -297,7 +297,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
         const knownMrs = getKnownMrsForCacheKey(allMrs, cacheKey);
         const discoveredPaths = yield* decideFetchUserMrs([...userFilter], filterMrState, knownMrs).pipe(
           Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
-          Effect.catchCause((cause) => Console.error("Error fetching user MRs:", cause).pipe(Effect.as([] as readonly string[])))
+          Effect.catchCause((cause) => Console.error("Error fetching user MRs:", Cause.pretty(cause)).pipe(Effect.as([] as readonly string[])))
         );
         if (discoveredPaths.length > 0) {
           yield* settingsService.modify(s => {
@@ -325,7 +325,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
           { concurrency: 3 }
         ).pipe(
           Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
-          Effect.catchCause((cause) => Console.error("Error fetching GitLab project MRs:", cause))
+          Effect.catchCause((cause) => Console.error("Error fetching GitLab project MRs:", Cause.pretty(cause)))
         );
       }
 
@@ -341,7 +341,7 @@ export const refreshMergeRequestsAtom = appAtomRuntime.fn((overrideUserFilter: r
         { concurrency: 3 }
       ).pipe(
         Effect.catchTag("UnauthorizedError", (e) => Effect.die(e)),
-        Effect.catchCause((cause) => Console.error("Error fetching Bitbucket project MRs:", cause))
+        Effect.catchCause((cause) => Console.error("Error fetching Bitbucket project MRs:", Cause.pretty(cause)))
       );
     });
   }

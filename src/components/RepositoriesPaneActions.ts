@@ -1,5 +1,5 @@
 import { Atom, AsyncResult } from "effect/unstable/reactivity";
-import { Console, Effect } from "effect";
+import { Cause, Console, Effect } from "effect";
 import { parseKeyString } from "../actions/key-matcher";
 import { repoSelectionAtom } from "../settings/settings-atom";
 import { allMrsAtom, knownProjectsAtom } from "../mergerequests/mergerequests-atom";
@@ -19,7 +19,7 @@ export const openCredentialsFileAtom = appAtomRuntime.fn((_: void) =>
     yield* ensureCredentialsFile();
     yield* openFileInEditor(getCredentialsFilePath());
   }).pipe(
-    Effect.catchCause((cause) => Console.error("Error opening credentials file:", cause)),
+    Effect.catchCause((cause) => Console.error("Error opening credentials file:", Cause.pretty(cause))),
   )
 );
 
@@ -55,7 +55,7 @@ export const refreshSingleRepoAtom = appAtomRuntime.fn(({ repoPath, deep }: { re
   }).pipe(
     withFetchLock,
     Effect.catchTag("FetchLockBusy", () => Console.log("[ManualRefresh] Skipped: sync in progress")),
-    Effect.catchCause((cause) => Console.error("Error refreshing single repo:", cause)),
+    Effect.catchCause((cause) => Console.error("Error refreshing single repo:", Cause.pretty(cause))),
   )
 );
 
