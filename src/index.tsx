@@ -2,6 +2,7 @@ import { createRoot } from "@opentui/react";
 import { createCliRenderer } from "@opentui/core";
 import { ensureCredentialsFileSync } from "./config/credentials-config";
 import { DarkColors, detectSchemeFromBackground, setColorScheme } from "./colors";
+import { startRunLog } from "./logging/run-log";
 import App from "./App";
 
 ensureCredentialsFileSync();
@@ -17,6 +18,9 @@ const renderer = await createCliRenderer({
     titleBarColor: DarkColors.TRACK,
   },
 });
+
+const runLogFile = startRunLog();
+if (runLogFile) console.log(`[run-log] ${runLogFile}`);
 
 // Detect terminal color scheme via OSC 11 (background color query)
 const palette = await renderer.getPalette({ timeout: 1000 });
