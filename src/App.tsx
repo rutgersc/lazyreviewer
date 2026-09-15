@@ -33,7 +33,7 @@ import { getScroller } from "./hooks/useScrollBox";
 import { useAtom, useAtomValue, useAtomSet } from "@effect/atom-react";
 import { filterMrStateAtom, selectedMrIndexAtom, unwrappedMergeRequestsAtom, mrSortOrderAtom, repoFilterAtom, type MrSortOrder } from './mergerequests/mergerequests-atom';
 import { toggleBackgroundSyncAtom, backgroundSyncSettingsAtom, jiraBoardIdAtom, appViewAtom, factsViewStyleAtom, isOnboardingCompleteAtom, repoSelectionAtom, repositoryPathsAtom } from './settings/settings-atom';
-import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom } from './ui/navigation-atom';
+import { activePaneAtom, activeModalAtom, cycleInfoPaneTabAtom, leftCollapsedAtom } from './ui/navigation-atom';
 import { jiraBoardFocusKeyAtom } from './jiraboard/atoms';
 import { Effect } from 'effect';
 import { appLayer } from './appLayerRuntime';
@@ -45,6 +45,9 @@ import { clearUnreadCount } from './notifications/title-indicator';
 import { missingCredentialsAtom } from './config/config-atom';
 import { Colors, detectSchemeFromBackground, getColorScheme, setColorScheme } from './colors';
 
+const LEFT_PANES = [ActivePane.Facts, ActivePane.UserSelection];
+const PANE_CYCLE = [ActivePane.Facts, ActivePane.MergeRequests, ActivePane.UserSelection];
+
 export default function App() {
   useAtomValue(appInitAtom);
 
@@ -55,6 +58,7 @@ export default function App() {
   const [activePane, setActivePane] = useAtom(activePaneAtom);
   const [activeModal, setActiveModal] = useAtom(activeModalAtom);
   const cycleInfoPaneTab = useAtomSet(cycleInfoPaneTabAtom);
+  const [leftCollapsed, setLeftCollapsed] = useAtom(leftCollapsedAtom);
 
   const mergeRequests = useAtomValue(unwrappedMergeRequestsAtom);
   const [selectedIndex] = useAtom(selectedMrIndexAtom);
@@ -91,6 +95,21 @@ export default function App() {
 
   // Read active pane's actions from derived atom
   const paneActions = useAtomValue(activePaneActionsAtom);
+
+  const toggleLeftPanel = () => {
+    if (!leftCollapsed && LEFT_PANES.includes(activePane)) {
+      setActivePane(ActivePane.MergeRequests);
+    }
+    setLeftCollapsed(!leftCollapsed);
+  };
+
+  const cyclePane = (direction: 1 | -1) => {
+    const panes = leftCollapsed ? [ActivePane.MergeRequests] : PANE_CYCLE;
+    const currentIndex = panes.indexOf(activePane);
+    if (currentIndex === -1) return;
+    const next = panes[(currentIndex + direction + panes.length) % panes.length];
+    if (next !== undefined) setActivePane(next);
+  };
 
   // Global actions defined inline in App.tsx
   const globalActions: Action[] = useMemo(() => [
@@ -205,34 +224,21 @@ export default function App() {
       keys: [parseKeyString('h'), parseKeyString('left')],
       displayKey: 'h/l, ←/→',
       description: 'Navigate panes',
-      handler: () => {
-        if (activePane === ActivePane.InfoPane) {
-          cycleInfoPaneTab('prev');
-        } else if (activePane === ActivePane.UserSelection) {
-          setActivePane(ActivePane.MergeRequests);
-        } else if (activePane === ActivePane.MergeRequests) {
-          setActivePane(ActivePane.Facts);
-        } else if (activePane === ActivePane.Facts) {
-          setActivePane(ActivePane.UserSelection);
-        }
-      },
+      handler: () => activePane === ActivePane.InfoPane ? cycleInfoPaneTab('prev') : cyclePane(-1),
     },
     {
       id: 'global:nav-right',
       keys: [parseKeyString('l'), parseKeyString('right')],
       displayKey: '',
       description: '',
-      handler: () => {
-        if (activePane === ActivePane.InfoPane) {
-          cycleInfoPaneTab('next');
-        } else if (activePane === ActivePane.Facts) {
-          setActivePane(ActivePane.MergeRequests);
-        } else if (activePane === ActivePane.MergeRequests) {
-          setActivePane(ActivePane.UserSelection);
-        } else if (activePane === ActivePane.UserSelection) {
-          setActivePane(ActivePane.Facts);
-        }
-      },
+      handler: () => activePane === ActivePane.InfoPane ? cycleInfoPaneTab('next') : cyclePane(1),
+    },
+    {
+      id: 'global:toggle-left-panel',
+      keys: [parseKeyString('B')],
+      displayKey: 'B',
+      description: leftCollapsed ? 'Expand left panel' : 'Collapse left panel',
+      handler: toggleLeftPanel,
     },
     {
       id: 'global:job-history-input',
@@ -271,7 +277,7 @@ export default function App() {
         );
       },
     },
-  ], [activePane, mergeRequests.length, backgroundSyncSettings.enabled, jiraBoardId, appView, factsViewStyle]);
+  ], [activePane, leftCollapsed, mergeRequests.length, backgroundSyncSettings.enabled, jiraBoardId, appView, factsViewStyle]);
 
   // Force re-render on color scheme change
   const [, setSchemeVersion] = useState(0);
@@ -337,6 +343,15 @@ export default function App() {
     middle: NonNullable<RenderableOptions["width"]>;
     right: NonNullable<RenderableOptions["width"]>;
   } => {
+    if (leftCollapsed) {
+      const rightFocused = activePane === ActivePane.InfoPane || activePane === ActivePane.Console;
+      return {
+        left: 0,
+        middle: rightFocused ? "40%" : "60%",
+        right: rightFocused ? "60%" : "40%",
+      };
+    }
+
     switch (activePane) {
       case ActivePane.Facts:
         return {
@@ -375,6 +390,7 @@ export default function App() {
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
 
         {/* Left panel - Facts and Repositories */}
+        {!leftCollapsed && (
         <box style={{ flexDirection: "column", width: widths.left }}>
           {/* Facts Pane */}
           <box
@@ -403,6 +419,7 @@ export default function App() {
             <RepositoriesPane />
           </box>
         </box>
+        )}
 
         {/* Middle panel - Merge Request Pane */}
         <box
@@ -451,6 +468,16 @@ export default function App() {
             <ConsolePane isActive={activePane === ActivePane.Console} />
           </box>
         </box>
+      </box>
+
+      {/* Left panel collapse toggle */}
+      <box
+        onMouseDown={toggleLeftPanel}
+        style={{ position: "absolute", top: 0, left: 1, backgroundColor: Colors.BACKGROUND }}
+      >
+        <text style={{ fg: Colors.PRIMARY, attributes: TextAttributes.BOLD }} wrapMode='none'>
+          {leftCollapsed ? ' ▶ ' : ' ◀ '}
+        </text>
       </box>
 
       {/* F Chooser Modal - pick filter or sort */}

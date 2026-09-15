@@ -2,7 +2,7 @@ import { Atom, AsyncResult, AtomRegistry } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 import type { Action } from "../actions/action-types";
 import { parseKeyString } from "../actions/key-matcher";
-import { activePaneAtom, activeModalAtom } from "../ui/navigation-atom";
+import { activePaneAtom, activeModalAtom, leftCollapsedAtom } from "../ui/navigation-atom";
 import { ActivePane } from "../userselection/userSelection";
 import { unwrappedMergeRequestsAtom, selectedMrIndexAtom, refetchSelectedMrAtom, allMrsAtom, allJiraIssuesAtom, pinnedMrGidsAtom } from "../mergerequests/mergerequests-atom";
 import { toggleIgnoreMergeRequestAtom, toggleSeenMergeRequestAtom, toggleMonitorMergeRequestAtom } from "../settings/settings-atom";
@@ -37,7 +37,10 @@ export const mrActionsAtom = Atom.make((get) => {
       keys: [parseKeyString('escape')],
       displayKey: 'Esc',
       description: 'Return to facts pane',
-      handler: () => registry.set(activePaneAtom, ActivePane.Facts),
+      handler: () => {
+        if (registry.get(leftCollapsedAtom)) return;
+        registry.set(activePaneAtom, ActivePane.Facts);
+      },
     },
     {
       id: 'mr:filter-sort',

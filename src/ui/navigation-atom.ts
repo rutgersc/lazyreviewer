@@ -25,6 +25,7 @@ export type ActiveModal =
 export const activePaneAtom = Atom.make<ActivePane>(ActivePane.MergeRequests);
 export const activeModalAtom = Atom.make<ActiveModal>('none');
 export const infoPaneTabAtom = Atom.make<InfoPaneTab>('overview');
+export const leftCollapsedAtom = Atom.make(false);
 
 const INFO_PANE_TABS: InfoPaneTab[] = ['overview', 'pipeline', 'activity'];
 
