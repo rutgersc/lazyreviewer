@@ -1,10 +1,10 @@
-query GitlabMRs($projectPath: ID!, $iids: [String!]) {
+query GitlabMRs($projectPath: ID!, $iids: [String!], $first: Int) {
   project(fullPath: $projectPath) {
     id
     name
     path
     fullPath
-    mergeRequests(iids: $iids) {
+    mergeRequests(iids: $iids, first: $first) {
       nodes {
         ...MergeRequestFields
       }

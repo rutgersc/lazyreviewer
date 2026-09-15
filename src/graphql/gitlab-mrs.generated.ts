@@ -7,6 +7,7 @@ type GraphQLClientRequestHeaders = RequestOptions['requestHeaders'];
 export type GitlabMRsQueryVariables = Types.Exact<{
   projectPath: Types.Scalars['ID']['input'];
   iids: Types.InputMaybe<ReadonlyArray<Types.Scalars['String']['input']> | Types.Scalars['String']['input']>;
+  first: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 
@@ -14,13 +15,13 @@ export type GitlabMRsQuery = { readonly project: { readonly id: string, readonly
 
 
 export const GitlabMRsDocument = gql`
-    query GitlabMRs($projectPath: ID!, $iids: [String!]) {
+    query GitlabMRs($projectPath: ID!, $iids: [String!], $first: Int) {
   project(fullPath: $projectPath) {
     id
     name
     path
     fullPath
-    mergeRequests(iids: $iids) {
+    mergeRequests(iids: $iids, first: $first) {
       nodes {
         ...MergeRequestFields
       }

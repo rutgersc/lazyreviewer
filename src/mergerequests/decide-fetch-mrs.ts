@@ -7,7 +7,7 @@ import type { FetchGitlabMrsError, FetchGitlabProjectMrsError, FetchSingleMrErro
 import type { JiraApiError } from "../jira/jira-common"
 import type { UnauthorizedError } from "../domain/unauthorized-error"
 import type { BitbucketCredentialsNotConfiguredError, FetchBitbucketPrsError, BitbucketPrsJsonParseError } from "../bitbucket/bitbucketapi"
-import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getAllGitlabMrsByProjectAsEvents, getSingleMrAsEvent, getMrsAsEvent } from "../gitlab/gitlab-graphql"
+import { getGitlabMrsAsEvent, getGitlabMrsByProjectAsEvent, getAllGitlabMrsByProjectAsEvents, getSingleMrAsEvent, getMrsAsEvent, MR_DETAIL_PAGE_LIMIT } from "../gitlab/gitlab-graphql"
 import { getBitbucketPrsAsEvent } from "../bitbucket/bitbucketapi"
 import { loadJiraTicketsAsEvent } from "../jira/jira-service"
 import { projectGitlabMrsFetchedEvent, projectGitlabProjectMrsFetchedEvent, projectGitlabSingleMrFetchedEvent, projectGitlabUserMrsFetchedEvent } from "../gitlab/gitlab-projections"
@@ -61,6 +61,16 @@ export const getKnownMrsForCacheKey = (
       .map(([gid, mr]) => [gid, { projectPath: mr.project.fullPath, iid: mr.iid, updatedAt: mr.updatedAt }])
   );
 
+// One GitlabMRs request may only ask for MR_DETAIL_PAGE_LIMIT MRs before GitLab rejects it on query
+// complexity, so every caller of getMrsAsEvent splits its iids first.
+const batchIids = (iids: readonly string[]): string[][] =>
+  iids.reduce<string[][]>((acc, iid) => {
+    const last = acc[acc.length - 1]
+    if (!last || last.length >= MR_DETAIL_PAGE_LIMIT) acc.push([iid])
+    else last.push(iid)
+    return acc
+  }, [])
+
 const fetchMissingMrs = (missingMrs: readonly KnownMrInfo[]) => Effect.gen(function* () {
   const byProject = missingMrs.reduce(
     (acc, mr) => acc.set(mr.projectPath, [...(acc.get(mr.projectPath) ?? []), mr.iid]),
@@ -72,9 +82,12 @@ const fetchMissingMrs = (missingMrs: readonly KnownMrInfo[]) => Effect.gen(funct
     ([projectPath, iids]) => Effect.gen(function* () {
       const eventStorage = yield* EventStorage
       yield* Console.log(`[Fetch] Fetching ${iids.length} missing MRs for ${projectPath}`)
-      const event = yield* getMrsAsEvent(projectPath, iids)
-      yield* eventStorage.appendEvent(event)
-      return projectGitlabMrsFetchedEvent(event).flatMap(mr => mr.jiraIssueKeys)
+      const keysPerBatch = yield* Effect.forEach(batchIids(iids), batch => Effect.gen(function* () {
+        const event = yield* getMrsAsEvent(projectPath, batch)
+        yield* eventStorage.appendEvent(event)
+        return projectGitlabMrsFetchedEvent(event).flatMap(mr => mr.jiraIssueKeys)
+      }))
+      return keysPerBatch.flat()
     }).pipe(
       Effect.catch(err =>
         Console.error(`[Fetch] Failed to fetch MRs for ${projectPath}`, err).pipe(
@@ -95,8 +108,6 @@ const fetchJiraForKeys = (jiraKeys: readonly string[]) => Effect.gen(function* (
   yield* eventStorage.appendEvent(jiraEvent)
 })
 
-const DETAIL_BATCH_SIZE = 20
-
 // Tier 2 of the sweep: full-fidelity fetch for the MRs a stamp diff flagged. Awaited rather than
 // forked so the caller's fetch lock still covers the writes.
 export const fetchMrDetails = (
@@ -106,12 +117,7 @@ export const fetchMrDetails = (
   if (iids.length === 0) return
 
   const eventStorage = yield* EventStorage
-  const batches = iids.reduce<string[][]>((acc, iid) => {
-    const last = acc[acc.length - 1]
-    if (!last || last.length >= DETAIL_BATCH_SIZE) acc.push([iid])
-    else last.push(iid)
-    return acc
-  }, [])
+  const batches = batchIids(iids)
 
   yield* Console.log(`[Fetch] Detail fetch for ${iids.length} MRs in ${projectPath} (${batches.length} batch(es))`)
 

@@ -331,13 +331,18 @@ export const fetchJobHistoryAsEvent = Effect.fn("fetchJobHistoryAsEvent")(functi
   return event;
 });
 
+// GitLab scores this query at 94 + 47 x (page size / 10) against a max complexity of 250, so the
+// page size has to travel with the batch: without `first` the connection defaults to 100 and the
+// request is rejected outright.
+export const MR_DETAIL_PAGE_LIMIT = 20
+
 export const getMrsAsEvent = Effect.fn("getSingleMrAsEvent")(function* (projectPath: string, mrIids: string[]) {
   yield* Console.log(`[GitLab] Fetching bulk MRs: [${mrIids}] in projects "${projectPath}"`);
 
   const sdk = yield* getGitlabSdk
 
   const mrs = yield* Effect.tryPromise({
-    try: () => sdk.GitlabMRs({ projectPath: projectPath, iids: mrIids }),
+    try: () => sdk.GitlabMRs({ projectPath: projectPath, iids: mrIids, first: mrIids.length }),
     catch: cause => new FetchSingleMrError({ cause })
   });
 
