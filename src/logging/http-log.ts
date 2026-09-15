@@ -31,6 +31,22 @@ const describeGraphqlBody = (body: unknown): string => {
   }
 }
 
+// GraphQL answers with 200 and an `errors` array instead of a failing status, so the status alone
+// reads as success. Only bodies small enough to be an error payload are parsed; a full MR page
+// arrives without a content-length and is never buffered a second time.
+const MAX_INSPECTED_BODY_BYTES = 64 * 1024
+
+const graphqlErrors = async (response: Response): Promise<string> => {
+  const length = Number(response.headers.get('content-length'))
+  if (!Number.isFinite(length) || length > MAX_INSPECTED_BODY_BYTES) return ''
+  try {
+    const body = await response.clone().json() as { errors?: { message?: string }[] }
+    return (body.errors ?? []).map(error => error.message ?? JSON.stringify(error)).join('; ')
+  } catch {
+    return ''
+  }
+}
+
 const formatDuration = (ms: number): string => ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(1)}s`
 
 const formatSize = (response: Response): string => {
@@ -53,7 +69,10 @@ export const loggedFetch = async (input: FetchInput, init?: FetchInit): Promise<
 
   try {
     const response = await fetch(input, init)
-    console.log(`[HTTP] ${label} → ${response.status} in ${formatDuration(performance.now() - startedAt)}${formatSize(response)}`)
+    const errors = detail ? await graphqlErrors(response) : ''
+    const outcome = `[HTTP] ${label} → ${response.status} in ${formatDuration(performance.now() - startedAt)}${formatSize(response)}`
+    if (errors) console.error(`${outcome} GraphQL errors: ${errors}`)
+    else console.log(outcome)
     return response
   } catch (cause) {
     console.log(`[HTTP] ${label} → FAILED in ${formatDuration(performance.now() - startedAt)}: ${cause}`)
